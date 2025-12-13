@@ -1,0 +1,101 @@
+# ----------------------------
+# GLOBAL
+# ----------------------------
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# Env files
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+*.log.*
+debug.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE folders
+.vscode/
+.idea/
+*.swp
+
+# ----------------------------
+# FRONTEND (Next.js)
+# ----------------------------
+
+# Next.js build output
+.next/
+out/
+
+# Static exports
+export/
+
+# Next.js cache
+.next/cache/
+
+# Vercel
+.vercel/
+
+# Turbopack
+.turbo/
+
+# ----------------------------
+# BACKEND (NestJS)
+# ----------------------------
+
+# Dist output
+dist/
+build/
+
+# Nest debug
+.nest-debug.log
+
+# Temp files
+.tmp/
+temp/
+uploads/
+
+# Local database / sqlite
+*.sqlite
+*.sqlite-journal
+
+# Swagger generated files
+swagger.json
+swagger.yaml
+
+# ----------------------------
+# SUPABASE
+# ----------------------------
+
+supabase/.branches/
+supabase/.temp/
+supabase/migrations/.history/
+
+# ----------------------------
+# MISC
+# ----------------------------
+
+# JetBrains
+*.iml
+*.iws
+out/
+
+# Sentry
+.sentryclirc
+
+# dotenv backups
+*.env.backup
+*.env.local.backup
