@@ -103,4 +103,39 @@ export class EventService {
 
     return { events };
   }
+
+  async getEventById(eventId: string, userId?: string) {
+  const supabase = this.supabaseService.getClient();
+
+  const { data: event, error } = await supabase
+    .from('events')
+    .select(`
+      *,
+      organization_profiles (
+        name,
+        org_type
+      )
+    `)
+    .eq('id', eventId)
+    .single();
+
+  if (error) {
+    throw new NotFoundException('Event not found');
+  }
+
+  // If userId provided, verify they own this event
+  if (userId) {
+    const { data: orgProfile } = await supabase
+      .from('organization_profiles')
+      .select('id')
+      .eq('user_id', userId)
+      .single();
+
+    if (orgProfile && event.organization_id !== orgProfile.id) {
+      throw new ForbiddenException('You do not have access to this event');
+    }
+  }
+
+  return { event };
+}
 }

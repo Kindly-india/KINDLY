@@ -65,7 +65,7 @@ export const api = {
     }
 
     const result = await response.json();
-    
+
     // Now sign in the user with Supabase client
     const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
       email: data.email,
@@ -184,15 +184,9 @@ export const api = {
   // Create event
   createEvent: async (data: CreateEventData) => {
     const { data: { session } } = await supabase.auth.getSession();
-    
+
     if (!session) {
       throw new Error('Not authenticated');
-    }
-
-    // Get user ID
-    const user = await api.getCurrentUser();
-    if (!user) {
-      throw new Error('User not found');
     }
 
     const response = await fetch(`${API_URL}/events`, {
@@ -201,10 +195,7 @@ export const api = {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${session.access_token}`,
       },
-      body: JSON.stringify({
-        ...data,
-        userId: user.id, // Include userId for now
-      }),
+      body: JSON.stringify(data), // Remove userId from here
     });
 
     if (!response.ok) {
@@ -218,23 +209,16 @@ export const api = {
   // Get organization's events
   getMyEvents: async () => {
     const { data: { session } } = await supabase.auth.getSession();
-    
+
     if (!session) {
       throw new Error('Not authenticated');
-    }
-
-    const user = await api.getCurrentUser();
-    if (!user) {
-      throw new Error('User not found');
     }
 
     const response = await fetch(`${API_URL}/events/my-events`, {
       method: 'GET',
       headers: {
-        'Content-Type': 'application/json',
         'Authorization': `Bearer ${session.access_token}`,
       },
-      body: JSON.stringify({ userId: user.id }),
     });
 
     if (!response.ok) {
@@ -252,6 +236,29 @@ export const api = {
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.message || 'Failed to fetch events');
+    }
+
+    return response.json();
+  },
+
+  // Get single event by ID
+  getEventById: async (eventId: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session) {
+      throw new Error('Not authenticated');
+    }
+
+    const response = await fetch(`${API_URL}/events/${eventId}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to fetch event');
     }
 
     return response.json();

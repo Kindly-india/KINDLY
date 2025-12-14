@@ -1,7 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
-import Image from "next/image"
+import { useState, useRef, useEffect } from "react"
 import Link from "next/link"
 import {
   Clock,
@@ -20,63 +19,10 @@ import {
   User,
   Calendar,
   Building2,
+  AlertTriangle,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-
-const orgEvents = [
-  {
-    id: 1,
-    title: "River Godavari Cleanup",
-    category: "Environment",
-    categoryColor: "bg-emerald-500",
-    date: "Dec 25",
-    time: "6 AM",
-    location: "College Road",
-    image: "/river-cleanup-volunteers-garbage-bags-nature.jpg",
-    registered: 48,
-    capacity: 50,
-    status: "Published",
-  },
-  {
-    id: 2,
-    title: "Tree Plantation Drive",
-    category: "Environment",
-    categoryColor: "bg-emerald-500",
-    date: "Dec 26",
-    time: "7 AM",
-    location: "City Garden",
-    image: "/tree-planting-volunteers-nature-green.jpg",
-    registered: 30,
-    capacity: 40,
-    status: "Published",
-  },
-  {
-    id: 3,
-    title: "Teach Kids to Read",
-    category: "Teaching",
-    categoryColor: "bg-blue-500",
-    date: "Dec 27",
-    time: "8 AM",
-    location: "Community Center",
-    image: "/teaching-children-classroom-education.jpg",
-    registered: 12,
-    capacity: 20,
-    status: "Draft",
-  },
-  {
-    id: 4,
-    title: "Senior Care Visit",
-    category: "Elderly",
-    categoryColor: "bg-purple-500",
-    date: "Dec 28",
-    time: "9 AM",
-    location: "Sunshine Home",
-    image: "/elderly-care-volunteers-seniors-happy.jpg",
-    registered: 8,
-    capacity: 15,
-    status: "Published",
-  },
-]
+import { api } from "@/lib/api"
 
 const recentActivity = [
   { id: 1, text: "You published 'Tree Plantation Drive'.", time: "2h ago", type: "publish" },
@@ -89,11 +35,62 @@ export function OrgHomePage() {
   const [menuOpen, setMenuOpen] = useState(false)
   const eventsRef = useRef<HTMLDivElement>(null)
 
+  // Add these new states
+  const [events, setEvents] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Fetch events on mount
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        setLoading(true)
+        const response = await api.getMyEvents()
+        setEvents(response.events || [])
+      } catch (err: any) {
+        setError(err.message || 'Failed to load events')
+        console.error('Error fetching events:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchEvents()
+  }, [])
+
   const scrollEvents = (direction: "left" | "right") => {
     if (eventsRef.current) {
       const scrollAmount = direction === "left" ? -300 : 300
       eventsRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" })
     }
+  }
+
+  // Helper function to get category color
+  const getCategoryColor = (category: string) => {
+    const colors: Record<string, string> = {
+      environment: "bg-emerald-500",
+      education: "bg-blue-500",
+      health: "bg-red-500",
+      animals: "bg-amber-500",
+      elderly: "bg-purple-500",
+      community: "bg-cyan-500",
+    }
+    return colors[category] || "bg-gray-500"
+  }
+
+  // Helper function to format date
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  }
+
+  // Helper function to format time
+  const formatTime = (timeString: string) => {
+    const [hours, minutes] = timeString.split(':')
+    const hour = parseInt(hours)
+    const ampm = hour >= 12 ? 'PM' : 'AM'
+    const displayHour = hour % 12 || 12
+    return `${displayHour} ${ampm}`
   }
 
   return (
@@ -123,7 +120,7 @@ export function OrgHomePage() {
           {/* Desktop - Org Avatar */}
           <Link href="/org-profile" className="hidden md:block">
             <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-[#f5f5f7] hover:ring-[#0066cc] transition-all">
-              <Image
+              <img
                 src="/green-earth-ngo-logo.jpg"
                 alt="Green Earth Foundation"
                 width={40}
@@ -153,7 +150,7 @@ export function OrgHomePage() {
                     className="flex items-center gap-3 px-4 py-3 hover:bg-[#f5f5f7] transition-colors border-b border-[#f5f5f7]"
                   >
                     <div className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-[#f5f5f7]">
-                      <Image
+                      <img
                         src="/green-earth-ngo-logo.jpg"
                         alt="Organization"
                         width={32}
@@ -288,107 +285,144 @@ export function OrgHomePage() {
             </Link>
           </div>
 
-          <div
-            ref={eventsRef}
-            className="flex md:grid md:grid-cols-4 gap-3 md:gap-4 overflow-x-auto md:overflow-visible pb-4 md:pb-0 snap-x snap-mandatory scrollbar-hide"
-          >
-            {orgEvents.map((event) => (
-              <Link
-                key={event.id}
-                href={`/org-events/${event.id}`}
-                className="shrink-0 w-50 md:w-auto snap-start group bg-white rounded-xl md:rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300"
-              >
-                <div className="relative aspect-4/3 overflow-hidden">
-                  <Image
-                    src={event.image || "/placeholder.svg"}
-                    alt={event.title}
-                    width={300}
-                    height={225}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <div
-                    className={cn(
-                      "absolute top-2 left-2 px-2 py-0.5 rounded text-[9px] md:text-[11px] font-semibold text-white",
-                      event.categoryColor,
-                    )}
-                  >
-                    {event.category}
-                  </div>
-                  <div
-                    className={cn(
-                      "absolute top-2 right-2 px-2 py-0.5 rounded text-[9px] md:text-[11px] font-semibold",
-                      event.status === "Published" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700",
-                    )}
-                  >
-                    {event.status}
-                  </div>
-                </div>
-                <div className="p-3 md:p-4">
-                  <h3 className="text-[13px] md:text-[15px] font-semibold text-[#1d1d1f] mb-1.5 line-clamp-1">
-                    {event.title}
-                  </h3>
-                  <div className="space-y-0.5">
-                    <div className="flex items-center gap-1.5 text-[#86868b]">
-                      <Clock className="w-3 h-3" />
-                      <span className="text-[10px] md:text-[12px]">
-                        {event.date} • {event.time}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-[#86868b]">
-                      <MapPin className="w-3 h-3" />
-                      <span className="text-[10px] md:text-[12px] line-clamp-1">{event.location}</span>
-                    </div>
-                  </div>
-                  {/* Progress bar */}
-                  <div className="mt-2 pt-2 border-t border-[#f5f5f7]">
-                    <div className="flex items-center justify-between text-[10px] md:text-[11px] mb-1">
-                      <span className="text-[#86868b]">
-                        {event.registered}/{event.capacity} registered
-                      </span>
-                      <span className="font-medium text-[#10b981]">
-                        {Math.round((event.registered / event.capacity) * 100)}%
-                      </span>
-                    </div>
-                    <div className="h-1.5 bg-[#f5f5f7] rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-linear-to-r from-[#10b981] to-[#34d399] rounded-full transition-all"
-                        style={{ width: `${(event.registered / event.capacity) * 100}%` }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-
-          {/* Pagination */}
-          <div className="flex items-center justify-center gap-1.5 md:gap-2 mt-6 md:mt-10">
-            <button
-              onClick={() => scrollEvents("left")}
-              className="w-8 h-8 md:w-10 md:h-10 rounded-full border border-[#d2d2d7] flex items-center justify-center hover:bg-white transition-colors"
-            >
-              <ChevronLeft className="w-4 h-4 md:w-5 md:h-5 text-[#1d1d1f]" />
-            </button>
-            <div className="flex items-center gap-1">
-              {[1, 2, 3].map((page) => (
-                <button
-                  key={page}
-                  className={cn(
-                    "w-7 h-7 md:w-8 md:h-8 rounded-full text-[11px] md:text-[13px] font-medium transition-colors",
-                    page === 1 ? "bg-[#1d1d1f] text-white" : "text-[#86868b] hover:bg-white",
-                  )}
-                >
-                  {page}
-                </button>
-              ))}
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#0066cc]"></div>
+              <p className="text-sm text-[#86868b] mt-3">Loading events...</p>
             </div>
-            <button
-              onClick={() => scrollEvents("right")}
-              className="w-8 h-8 md:w-10 md:h-10 rounded-full border border-[#d2d2d7] flex items-center justify-center hover:bg-white transition-colors"
-            >
-              <ChevronRight className="w-4 h-4 md:w-5 md:h-5 text-[#1d1d1f]" />
-            </button>
-          </div>
+          ) : error ? (
+            <div className="text-center py-12">
+              <p className="text-sm text-red-600">{error}</p>
+            </div>
+          ) : events.length === 0 ? (
+            <div className="text-center py-12 bg-white rounded-xl">
+              <Calendar className="w-12 h-12 text-[#86868b] mx-auto mb-3" />
+              <p className="text-sm text-[#86868b]">No events yet. Create your first event!</p>
+              <Link
+                href="/org-events/create"
+                className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-linear-to-r from-emerald-500 to-teal-500 text-white rounded-full text-sm font-medium hover:opacity-90 transition-opacity"
+              >
+                <Plus className="w-4 h-4" />
+                Create Event
+              </Link>
+            </div>
+          ) : (
+            <>
+              <div
+                ref={eventsRef}
+                className="flex md:grid md:grid-cols-4 gap-3 md:gap-4 overflow-x-auto md:overflow-visible pb-4 md:pb-0 snap-x snap-mandatory scrollbar-hide"
+              >
+                {events.map((event) => (
+                  <Link
+                    key={event.id}
+                    href={`/org-events/${event.id}`}
+                    className="shrink-0 w-50 md:w-auto snap-start group bg-white rounded-xl md:rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300"
+                  >
+                    <div className="relative aspect-4/3 overflow-hidden">
+                      {event.cover_image_url ? (
+                        <img
+                          src={event.cover_image_url}
+                          alt={event.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-linear-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                          <Calendar className="w-12 h-12 text-gray-400" />
+                        </div>
+                      )}
+                      <div
+                        className={cn(
+                          "absolute top-2 left-2 px-2 py-0.5 rounded text-[9px] md:text-[11px] font-semibold text-white capitalize",
+                          getCategoryColor(event.category),
+                        )}
+                      >
+                        {event.category}
+                      </div>
+                      <div
+                        className={cn(
+                          "absolute top-2 right-2 px-2 py-0.5 rounded text-[9px] md:text-[11px] font-semibold capitalize",
+                          event.status === "published" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700",
+                        )}
+                      >
+                        {event.status}
+                      </div>
+                      {event.is_urgent && (
+                        <div className="absolute bottom-2 left-2 px-2 py-0.5 bg-amber-500 text-white rounded text-[9px] md:text-[11px] font-semibold flex items-center gap-1">
+                          <AlertTriangle className="w-3 h-3" />
+                          Urgent
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-3 md:p-4">
+                      <h3 className="text-[13px] md:text-[15px] font-semibold text-[#1d1d1f] mb-1.5 line-clamp-1">
+                        {event.title}
+                      </h3>
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-1.5 text-[#86868b]">
+                          <Clock className="w-3 h-3" />
+                          <span className="text-[10px] md:text-[12px]">
+                            {formatDate(event.event_date)} • {formatTime(event.start_time)}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-[#86868b]">
+                          <MapPin className="w-3 h-3" />
+                          <span className="text-[10px] md:text-[12px] line-clamp-1">{event.location}</span>
+                        </div>
+                      </div>
+                      {/* Progress bar */}
+                      <div className="mt-2 pt-2 border-t border-[#f5f5f7]">
+                        <div className="flex items-center justify-between text-[10px] md:text-[11px] mb-1">
+                          <span className="text-[#86868b]">
+                            {event.registered_count}/{event.total_slots} registered
+                          </span>
+                          <span className="font-medium text-[#10b981]">
+                            {Math.round((event.registered_count / event.total_slots) * 100)}%
+                          </span>
+                        </div>
+                        <div className="h-1.5 bg-[#f5f5f7] rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-linear-to-r from-[#10b981] to-[#34d399] rounded-full transition-all"
+                            style={{ width: `${(event.registered_count / event.total_slots) * 100}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+
+              {/* Pagination - Only show if more than 4 events */}
+              {events.length > 4 && (
+                <div className="flex items-center justify-center gap-1.5 md:gap-2 mt-6 md:mt-10">
+                  <button
+                    onClick={() => scrollEvents("left")}
+                    className="w-8 h-8 md:w-10 md:h-10 rounded-full border border-[#d2d2d7] flex items-center justify-center hover:bg-white transition-colors"
+                  >
+                    <ChevronLeft className="w-4 h-4 md:w-5 md:h-5 text-[#1d1d1f]" />
+                  </button>
+                  <div className="flex items-center gap-1">
+                    {[1, 2, 3].map((page) => (
+                      <button
+                        key={page}
+                        className={cn(
+                          "w-7 h-7 md:w-8 md:h-8 rounded-full text-[11px] md:text-[13px] font-medium transition-colors",
+                          page === 1 ? "bg-[#1d1d1f] text-white" : "text-[#86868b] hover:bg-white",
+                        )}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => scrollEvents("right")}
+                    className="w-8 h-8 md:w-10 md:h-10 rounded-full border border-[#d2d2d7] flex items-center justify-center hover:bg-white transition-colors"
+                  >
+                    <ChevronRight className="w-4 h-4 md:w-5 md:h-5 text-[#1d1d1f]" />
+                  </button>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </section>
 

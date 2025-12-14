@@ -1,0 +1,750 @@
+"use client"
+
+import { useState } from "react"
+import Image from "next/image"
+import Link from "next/link"
+import {
+  Search,
+  X,
+  MapPin,
+  Users,
+  SlidersHorizontal,
+  Calendar,
+  Leaf,
+  GraduationCap,
+  Heart,
+  Dog,
+  Sun,
+  Sunset,
+  Moon,
+  TrendingUp,
+  Star,
+  Filter,
+  Sparkles,
+  ChevronDown,
+} from "lucide-react"
+import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+
+const events = [
+  {
+    id: 1,
+    title: "River Godavari Cleanup",
+    date: "Dec 25",
+    time: "6 AM",
+    location: "College Road, Nashik",
+    image: "/river-cleanup-volunteers-garbage-bags-nature.jpg",
+    category: "Environment",
+    categoryColor: "bg-[#10b981]",
+    joined: 5,
+    spotsLeft: 2,
+    status: "Fast Filling",
+  },
+  {
+    id: 2,
+    title: "Tree Plantation Drive",
+    date: "Dec 25",
+    time: "7 AM",
+    location: "City Garden, Nashik",
+    image: "/tree-planting-volunteers-nature-green.jpg",
+    category: "Environment",
+    categoryColor: "bg-[#10b981]",
+    joined: 11,
+    spotsLeft: null,
+    status: "Available",
+  },
+  {
+    id: 3,
+    title: "Teach Kids to Read",
+    date: "Dec 25",
+    time: "8 AM",
+    location: "Community Center",
+    image: "/teaching-children-classroom-education.jpg",
+    category: "Teaching",
+    categoryColor: "bg-[#f59e0b]",
+    joined: 9,
+    spotsLeft: 5,
+    status: "Available",
+  },
+  {
+    id: 4,
+    title: "Senior Care Visit",
+    date: "Dec 25",
+    time: "9 AM",
+    location: "Sunshine Home",
+    image: "/elderly-care-volunteers-seniors-happy.jpg",
+    category: "Elderly",
+    categoryColor: "bg-[#ec4899]",
+    joined: 17,
+    spotsLeft: null,
+    status: "Available",
+  },
+  {
+    id: 5,
+    title: "Animal Shelter Help",
+    date: "Dec 26",
+    time: "10 AM",
+    location: "Paws Shelter",
+    image: "/animal-shelter-dogs-cats-volunteers.jpg",
+    category: "Animals",
+    categoryColor: "bg-[#8b5cf6]",
+    joined: 9,
+    spotsLeft: 5,
+    status: "Available",
+  },
+  {
+    id: 6,
+    title: "Blood Donation Camp",
+    date: "Dec 26",
+    time: "11 AM",
+    location: "City Hospital",
+    image: "/blood-donation-medical-volunteers.jpg",
+    category: "Health",
+    categoryColor: "bg-[#ef4444]",
+    joined: 14,
+    spotsLeft: null,
+    status: "Available",
+  },
+  {
+    id: 7,
+    title: "Beach Cleanup Drive",
+    date: "Dec 26",
+    time: "12 PM",
+    location: "Miramar Beach",
+    image: "/beach-cleanup-volunteers-ocean.jpg",
+    category: "Environment",
+    categoryColor: "bg-[#10b981]",
+    joined: 21,
+    spotsLeft: 1,
+    status: "Almost Full",
+  },
+  {
+    id: 8,
+    title: "Food Distribution",
+    date: "Dec 26",
+    time: "2 PM",
+    location: "Railway Station",
+    image: "/food-distribution-charity-volunteers.jpg",
+    category: "Community",
+    categoryColor: "bg-[#06b6d4]",
+    joined: 24,
+    spotsLeft: null,
+    status: "Available",
+  },
+  {
+    id: 9,
+    title: "Park Beautification",
+    date: "Dec 27",
+    time: "6 AM",
+    location: "Central Park",
+    image: "/tree-planting-volunteers-nature.jpg",
+    category: "Environment",
+    categoryColor: "bg-[#10b981]",
+    joined: 8,
+    spotsLeft: 12,
+    status: "Available",
+  },
+]
+
+const causes = [
+  { id: "environment", label: "Environment", icon: Leaf, color: "text-emerald-500" },
+  { id: "education", label: "Education", icon: GraduationCap, color: "text-amber-500" },
+  { id: "animals", label: "Animals", icon: Dog, color: "text-purple-500" },
+  { id: "health", label: "Health", icon: Heart, color: "text-red-500" },
+  { id: "elderly", label: "Elderly Care", icon: Users, color: "text-pink-500" },
+  { id: "community", label: "Community", icon: Sparkles, color: "text-cyan-500" },
+]
+
+const timeOfDay = [
+  { id: "morning", label: "Morning", icon: Sun, time: "6 AM - 12 PM" },
+  { id: "afternoon", label: "Afternoon", icon: Sunset, time: "12 PM - 5 PM" },
+  { id: "evening", label: "Evening", icon: Moon, time: "5 PM - 9 PM" },
+]
+
+const datePills = [
+  { id: "today", label: "Today" },
+  { id: "tomorrow", label: "Tomorrow" },
+  { id: "weekend", label: "Weekend" },
+  { id: "week", label: "This Week" },
+]
+
+const difficultyLevels = [
+  { id: "easy", label: "Easy", description: "For beginners" },
+  { id: "moderate", label: "Moderate", description: "Some experience" },
+  { id: "challenging", label: "Hard", description: "Experienced" },
+]
+
+const durationOptions = [
+  { id: "1-2", label: "1-2 hrs" },
+  { id: "2-4", label: "2-4 hrs" },
+  { id: "4-8", label: "4-8 hrs" },
+  { id: "full-day", label: "Full Day" },
+]
+
+export function EventsDiscoveryPage() {
+  const [searchQuery, setSearchQuery] = useState("")
+  const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const [selectedCauses, setSelectedCauses] = useState<string[]>([])
+  const [selectedTime, setSelectedTime] = useState<string | null>(null)
+  const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(null)
+  const [selectedDuration, setSelectedDuration] = useState<string | null>(null)
+  const [showFilledEvents, setShowFilledEvents] = useState(true)
+  const [sortBy, setSortBy] = useState("newest")
+  const [isFilterOpen, setIsFilterOpen] = useState(false)
+  const [visibleEvents, setVisibleEvents] = useState(6)
+
+  const toggleCause = (causeId: string) => {
+    setSelectedCauses((prev) => (prev.includes(causeId) ? prev.filter((c) => c !== causeId) : [...prev, causeId]))
+  }
+
+  const clearAllFilters = () => {
+    setSelectedDate(null)
+    setSelectedCauses([])
+    setSelectedTime(null)
+    setSelectedDifficulty(null)
+    setSelectedDuration(null)
+    setShowFilledEvents(true)
+    setSearchQuery("")
+  }
+
+  const hasActiveFilters =
+    selectedDate || selectedCauses.length > 0 || selectedTime || selectedDifficulty || selectedDuration
+
+  const loadMore = () => {
+    setVisibleEvents((prev) => Math.min(prev + 6, events.length))
+  }
+
+  const FilterContent = ({ isMobile = false }: { isMobile?: boolean }) => (
+    <div className={cn("space-y-4", isMobile ? "space-y-3" : "space-y-5")}>
+      {/* Date Section */}
+      <div>
+        <h3
+          className={cn(
+            "font-semibold text-[#1d1d1f] uppercase tracking-wide",
+            isMobile ? "text-[10px] mb-2" : "text-[12px] mb-3",
+          )}
+        >
+          Date
+        </h3>
+        <div className="flex flex-wrap gap-1.5">
+          {datePills.map((pill) => (
+            <button
+              key={pill.id}
+              onClick={() => setSelectedDate(selectedDate === pill.id ? null : pill.id)}
+              className={cn(
+                "rounded-full font-medium transition-all",
+                isMobile ? "px-2.5 py-1 text-[10px]" : "px-3 py-1.5 text-[11px]",
+                selectedDate === pill.id
+                  ? "bg-linear-to-r from-[#ff6b6b] to-[#ff8e53] text-white shadow-md"
+                  : "bg-[#f5f5f7] text-[#1d1d1f] hover:bg-[#e8e8ed]",
+              )}
+            >
+              {pill.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Causes Section */}
+      <div>
+        <h3
+          className={cn(
+            "font-semibold text-[#1d1d1f] uppercase tracking-wide",
+            isMobile ? "text-[10px] mb-2" : "text-[12px] mb-3",
+          )}
+        >
+          Causes
+        </h3>
+        <div className="grid grid-cols-2 gap-1.5">
+          {causes.map((cause) => (
+            <label
+              key={cause.id}
+              className={cn(
+                "flex items-center gap-1.5 rounded-lg cursor-pointer transition-all border",
+                isMobile ? "p-2" : "p-2.5",
+                selectedCauses.includes(cause.id)
+                  ? "bg-linear-to-br from-white to-[#f5f5f7] border-[#1d1d1f] shadow-sm"
+                  : "bg-white border-[#e8e8ed] hover:border-[#d1d1d6]",
+              )}
+            >
+              <Checkbox
+                checked={selectedCauses.includes(cause.id)}
+                onCheckedChange={() => toggleCause(cause.id)}
+                className={cn(
+                  "rounded border-[#d1d1d6] data-[state=checked]:bg-[#1d1d1f] data-[state=checked]:border-[#1d1d1f]",
+                  isMobile ? "w-3 h-3" : "w-4 h-4",
+                )}
+              />
+              <cause.icon className={cn(cause.color, isMobile ? "w-3 h-3" : "w-3.5 h-3.5")} />
+              <span className={cn("font-medium text-[#1d1d1f]", isMobile ? "text-[9px]" : "text-[11px]")}>
+                {cause.label}
+              </span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Duration */}
+      <div>
+        <h3
+          className={cn(
+            "font-semibold text-[#1d1d1f] uppercase tracking-wide",
+            isMobile ? "text-[10px] mb-2" : "text-[12px] mb-3",
+          )}
+        >
+          Duration
+        </h3>
+        <div className="grid grid-cols-2 gap-1.5">
+          {durationOptions.map((duration) => (
+            <button
+              key={duration.id}
+              onClick={() => setSelectedDuration(selectedDuration === duration.id ? null : duration.id)}
+              className={cn(
+                "rounded-lg font-medium transition-all border",
+                isMobile ? "px-2 py-1.5 text-[9px]" : "px-3 py-2 text-[11px]",
+                selectedDuration === duration.id
+                  ? "bg-linear-to-br from-[#d4f4dd] to-[#b8f2c5] border-emerald-300 text-emerald-800"
+                  : "bg-white border-[#e8e8ed] text-[#1d1d1f] hover:border-[#d1d1d6]",
+              )}
+            >
+              {duration.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Time of Day Section */}
+      <div>
+        <h3
+          className={cn(
+            "font-semibold text-[#1d1d1f] uppercase tracking-wide",
+            isMobile ? "text-[10px] mb-2" : "text-[12px] mb-3",
+          )}
+        >
+          Time of Day
+        </h3>
+        <div className="space-y-1.5">
+          {timeOfDay.map((time) => (
+            <button
+              key={time.id}
+              onClick={() => setSelectedTime(selectedTime === time.id ? null : time.id)}
+              className={cn(
+                "w-full flex items-center gap-2 rounded-lg text-left transition-all border",
+                isMobile ? "p-2" : "p-2.5",
+                selectedTime === time.id
+                  ? "bg-linear-to-br from-[#fef3c7] to-[#fde68a] border-amber-300"
+                  : "bg-white border-[#e8e8ed] hover:border-[#d1d1d6]",
+              )}
+            >
+              <time.icon
+                className={cn(
+                  selectedTime === time.id ? "text-amber-600" : "text-[#86868b]",
+                  isMobile ? "w-3 h-3" : "w-4 h-4",
+                )}
+              />
+              <div className="flex-1">
+                <div
+                  className={cn(
+                    "font-medium",
+                    selectedTime === time.id ? "text-amber-900" : "text-[#1d1d1f]",
+                    isMobile ? "text-[10px]" : "text-[12px]",
+                  )}
+                >
+                  {time.label}
+                </div>
+                <div
+                  className={cn(
+                    selectedTime === time.id ? "text-amber-700" : "text-[#86868b]",
+                    isMobile ? "text-[8px]" : "text-[10px]",
+                  )}
+                >
+                  {time.time}
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Difficulty Level */}
+      <div>
+        <h3
+          className={cn(
+            "font-semibold text-[#1d1d1f] uppercase tracking-wide",
+            isMobile ? "text-[10px] mb-2" : "text-[12px] mb-3",
+          )}
+        >
+          Difficulty
+        </h3>
+        <div className="space-y-1.5">
+          {difficultyLevels.map((level) => (
+            <button
+              key={level.id}
+              onClick={() => setSelectedDifficulty(selectedDifficulty === level.id ? null : level.id)}
+              className={cn(
+                "w-full flex items-center justify-between rounded-lg text-left transition-all border",
+                isMobile ? "p-2" : "p-2.5",
+                selectedDifficulty === level.id
+                  ? "bg-linear-to-br from-[#ddd6fe] to-[#c4b5fd] border-purple-300"
+                  : "bg-white border-[#e8e8ed] hover:border-[#d1d1d6]",
+              )}
+            >
+              <div>
+                <div
+                  className={cn(
+                    "font-medium",
+                    selectedDifficulty === level.id ? "text-purple-900" : "text-[#1d1d1f]",
+                    isMobile ? "text-[10px]" : "text-[12px]",
+                  )}
+                >
+                  {level.label}
+                </div>
+                <div
+                  className={cn(
+                    selectedDifficulty === level.id ? "text-purple-700" : "text-[#86868b]",
+                    isMobile ? "text-[8px]" : "text-[10px]",
+                  )}
+                >
+                  {level.description}
+                </div>
+              </div>
+              {selectedDifficulty === level.id && (
+                <Star className={cn("text-purple-600", isMobile ? "w-3 h-3" : "w-4 h-4")} fill="currentColor" />
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Location */}
+      <div>
+        <h3
+          className={cn(
+            "font-semibold text-[#1d1d1f] uppercase tracking-wide",
+            isMobile ? "text-[10px] mb-2" : "text-[12px] mb-3",
+          )}
+        >
+          Location
+        </h3>
+        <div className="relative">
+          <MapPin
+            className={cn(
+              "absolute left-2.5 top-1/2 -translate-y-1/2 text-[#86868b]",
+              isMobile ? "w-3 h-3" : "w-4 h-4",
+            )}
+          />
+          <input
+            type="text"
+            placeholder="Enter location..."
+            defaultValue="Nashik, Maharashtra"
+            className={cn(
+              "w-full bg-white border border-[#e8e8ed] rounded-lg text-[#1d1d1f] placeholder:text-[#86868b] focus:outline-none focus:border-[#06b6d4] transition-colors",
+              isMobile ? "pl-7 pr-3 py-2 text-[10px]" : "pl-9 pr-4 py-2.5 text-[12px]",
+            )}
+          />
+        </div>
+      </div>
+
+      {/* Show Filled Events */}
+      <div className={cn("bg-[#f5f5f7] rounded-lg", isMobile ? "p-3" : "p-4")}>
+        <label className="flex items-center justify-between cursor-pointer">
+          <div>
+            <div className={cn("font-medium text-[#1d1d1f]", isMobile ? "text-[10px]" : "text-[12px]")}>
+              Show Filled Events
+            </div>
+            <div className={cn("text-[#86868b]", isMobile ? "text-[8px]" : "text-[10px]")}>
+              Display events with no spots
+            </div>
+          </div>
+          <Checkbox
+            checked={showFilledEvents}
+            onCheckedChange={(checked) => setShowFilledEvents(checked as boolean)}
+            className={cn(
+              "rounded border-[#d1d1d6] data-[state=checked]:bg-[#1d1d1f] data-[state=checked]:border-[#1d1d1f]",
+              isMobile ? "w-4 h-4" : "w-5 h-5",
+            )}
+          />
+        </label>
+      </div>
+    </div>
+  )
+
+  return (
+    <div className="min-h-screen bg-white overflow-x-hidden">
+      <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-[#f5f5f7] shadow-sm">
+        <div className="max-w-350 mx-auto px-3 md:px-8 h-12 md:h-16 flex items-center justify-between gap-3">
+          {/* Logo */}
+          <Link href="/home" className="shrink-0">
+            <h1 className="text-[16px] md:text-[22px] font-bold tracking-tight text-[#1d1d1f]">KINDLY</h1>
+          </Link>
+
+          {/* Desktop Search */}
+          <div className="flex-1 max-w-2xl hidden md:block">
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#86868b]" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search by event name, location, or organization..."
+                className="w-full pl-11 pr-10 py-3 bg-linear-to-r from-[#f5f5f7] to-[#fafafa] rounded-full text-[14px] text-[#1d1d1f] placeholder:text-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#ff6b6b]/20 border border-transparent focus:border-[#ff6b6b]/30 transition-all"
+              />
+              {searchQuery ? (
+                <button onClick={() => setSearchQuery("")} className="absolute right-4 top-1/2 -translate-y-1/2">
+                  <X className="w-4 h-4 text-[#86868b] hover:text-[#1d1d1f]" />
+                </button>
+              ) : (
+                <Filter className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#86868b]" />
+              )}
+            </div>
+          </div>
+
+          {/* Profile Avatar */}
+          <Link href="/profile" className="shrink-0">
+            <div className="w-7 h-7 md:w-10 md:h-10 rounded-full overflow-hidden border-2 border-gradient-to-r from-[#ff6b6b] to-[#ff8e53] shadow-md hover:shadow-lg transition-shadow">
+              <Image src="/IMG_2048.jpeg" alt="Profile" width={40} height={40} className="w-full h-full object-cover" />
+            </div>
+          </Link>
+        </div>
+
+        <div className="md:hidden px-3 pb-2">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#86868b]" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search events..."
+              className="w-full pl-8 pr-3 py-2 bg-[#f5f5f7] rounded-full text-[11px] text-[#1d1d1f] placeholder:text-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#ff6b6b]/20"
+            />
+          </div>
+        </div>
+      </header>
+
+      <div className="flex">
+        {/* Left Sidebar - Desktop Only */}
+        <aside className="hidden lg:block w-70 shrink-0 sticky top-16 h-[calc(100vh-64px)] overflow-y-auto border-r border-[#f5f5f7] bg-linear-to-b from-white to-[#fafafa]">
+          <div className="p-5">
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-2">
+                <SlidersHorizontal className="w-4 h-4 text-[#ff6b6b]" />
+                <h2 className="text-[14px] font-bold text-[#1d1d1f]">Filters</h2>
+              </div>
+              {hasActiveFilters && (
+                <button onClick={clearAllFilters} className="text-[11px] text-[#ff6b6b] hover:underline font-medium">
+                  Clear All
+                </button>
+              )}
+            </div>
+            <FilterContent />
+          </div>
+        </aside>
+
+        {/* Right Content Area */}
+        <main className="flex-1 bg-linear-to-br from-[#fafafa] via-white to-[#f5f5f7] min-h-[calc(100vh-64px)]">
+          <div className="sticky top-12 md:top-16 z-40 bg-white/80 backdrop-blur-xl border-b border-[#e8e8ed] shadow-sm">
+            <div className="px-3 md:px-6 py-2 md:py-3">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                {/* Left - Results & Filters */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  {/* Mobile Filter Button */}
+                  <Sheet open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+                    <SheetTrigger asChild>
+                      <button className="lg:hidden flex items-center gap-1.5 px-3 py-1.5 bg-[#1d1d1f] text-white rounded-full shadow-sm hover:shadow-md transition-all">
+                        <SlidersHorizontal className="w-3 h-3" />
+                        <span className="text-[10px] font-semibold">Filters</span>
+                        {hasActiveFilters && <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />}
+                      </button>
+                    </SheetTrigger>
+                    <SheetContent side="bottom" className="h-[85vh] rounded-t-2xl bg-white px-5">
+                      <SheetHeader className="mb-3">
+                        <div className="flex items-center justify-between">
+                          <SheetTitle className="text-[16px] font-bold">Filters</SheetTitle>
+                          {hasActiveFilters && (
+                            <button onClick={clearAllFilters} className="text-[11px] text-[#ff6b6b] font-medium">
+                              Clear All
+                            </button>
+                          )}
+                        </div>
+                      </SheetHeader>
+                      <div className="overflow-y-auto h-[calc(100%-90px)] pb-16 px-1">
+                        <FilterContent isMobile={true} />
+                      </div>
+                      <div className="absolute bottom-0 left-0 right-0 p-3 px-5 bg-white border-t border-[#f5f5f7]">
+                        <Button
+                          onClick={() => setIsFilterOpen(false)}
+                          className="w-full bg-linear-to-r from-[#ff6b6b] to-[#ff8e53] hover:from-[#ff5252] hover:to-[#ff7a3a] text-white rounded-full py-5 text-[12px] font-semibold shadow-lg"
+                        >
+                          Show {events.length} Events
+                        </Button>
+                      </div>
+                    </SheetContent>
+                  </Sheet>
+
+                  <div className="flex items-center gap-1.5">
+                    <TrendingUp className="w-3 h-3 md:w-4 md:h-4 text-[#10b981]" />
+                    <p className="text-[10px] md:text-[13px] text-[#1d1d1f]">
+                      <span className="font-bold text-[#ff6b6b]">{events.length}</span> events
+                    </p>
+                  </div>
+                </div>
+
+                {/* Right - Sort Only */}
+                <div className="flex items-center gap-1.5">
+                  <Select value={sortBy} onValueChange={setSortBy}>
+                    <SelectTrigger className="w-auto min-w-25 md:min-w-35 h-7 md:h-9 px-2 md:px-4 bg-white border border-[#e8e8ed] hover:border-[#d1d1d6] shadow-sm rounded-full text-[10px] md:text-[12px] font-medium gap-1">
+                      <span className="text-[#86868b]">Sort:</span>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="newest">Newest</SelectItem>
+                      <SelectItem value="oldest">Oldest</SelectItem>
+                      <SelectItem value="soon">Happening Soon</SelectItem>
+                      <SelectItem value="popular">Most Popular</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Active Filters Pills */}
+          {hasActiveFilters && (
+            <div className="px-3 md:px-6 py-2 bg-linear-to-r from-[#fff5f5] to-[#fffbeb] border-b border-[#ffe8e8]">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-[9px] md:text-[11px] font-semibold text-[#86868b] uppercase tracking-wide">
+                  Active:
+                </span>
+                {selectedDate && (
+                  <span className="px-2 py-0.5 bg-white rounded-full text-[9px] md:text-[11px] font-medium text-[#1d1d1f] shadow-sm border border-[#e8e8ed]">
+                    {datePills.find((p) => p.id === selectedDate)?.label}
+                  </span>
+                )}
+                {selectedCauses.map((causeId) => (
+                  <span
+                    key={causeId}
+                    className="px-2 py-0.5 bg-white rounded-full text-[9px] md:text-[11px] font-medium text-[#1d1d1f] shadow-sm border border-[#e8e8ed]"
+                  >
+                    {causes.find((c) => c.id === causeId)?.label}
+                  </span>
+                ))}
+                {selectedTime && (
+                  <span className="px-2 py-0.5 bg-white rounded-full text-[9px] md:text-[11px] font-medium text-[#1d1d1f] shadow-sm border border-[#e8e8ed]">
+                    {timeOfDay.find((t) => t.id === selectedTime)?.label}
+                  </span>
+                )}
+                {selectedDuration && (
+                  <span className="px-2 py-0.5 bg-white rounded-full text-[9px] md:text-[11px] font-medium text-[#1d1d1f] shadow-sm border border-[#e8e8ed]">
+                    {durationOptions.find((d) => d.id === selectedDuration)?.label}
+                  </span>
+                )}
+                {selectedDifficulty && (
+                  <span className="px-2 py-0.5 bg-white rounded-full text-[9px] md:text-[11px] font-medium text-[#1d1d1f] shadow-sm border border-[#e8e8ed]">
+                    {difficultyLevels.find((d) => d.id === selectedDifficulty)?.label}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Events Grid - Always List View */}
+          <div className="p-2 md:p-6">
+            <div className="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-3 gap-2 md:gap-5">
+              {events.slice(0, visibleEvents).map((event) => (
+                <div
+                  key={event.id}
+                  className="bg-white rounded-xl md:rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 group border border-[#f5f5f7]"
+                >
+                  {/* Image */}
+                  <div className="relative aspect-4/3 md:aspect-video overflow-hidden">
+                    <Image
+                      src={event.image || "/placeholder.svg"}
+                      alt={event.title}
+                      width={400}
+                      height={225}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                    />
+                    <div
+                      className={cn(
+                        "absolute top-1.5 md:top-3 left-1.5 md:left-3 px-1.5 md:px-3 py-0.5 md:py-1.5 rounded-full text-[8px] md:text-[11px] font-bold text-white backdrop-blur-sm shadow-lg",
+                        event.categoryColor,
+                      )}
+                    >
+                      {event.category}
+                    </div>
+                    {event.status === "Fast Filling" && (
+                      <div className="absolute top-1.5 md:top-3 right-1.5 md:right-3 px-1.5 md:px-3 py-0.5 md:py-1.5 bg-[#ff6b6b] rounded-full text-[7px] md:text-[10px] font-bold text-white backdrop-blur-sm shadow-lg animate-pulse">
+                        Fast
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Content */}
+                  <div className="p-2 md:p-5">
+                    <h3 className="text-[11px] md:text-[16px] font-bold text-[#1d1d1f] mb-1.5 md:mb-3 line-clamp-1 group-hover:text-[#ff6b6b] transition-colors">
+                      {event.title}
+                    </h3>
+
+                    <div className="space-y-1 md:space-y-2 mb-2 md:mb-4">
+                      <div className="flex items-center gap-1 md:gap-2 text-[#86868b]">
+                        <Calendar className="w-2.5 h-2.5 md:w-4 md:h-4 text-[#ff6b6b]" />
+                        <span className="text-[9px] md:text-[13px] font-medium">
+                          {event.date} • {event.time}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1 md:gap-2 text-[#86868b]">
+                        <MapPin className="w-2.5 h-2.5 md:w-4 md:h-4 text-[#10b981]" />
+                        <span className="text-[9px] md:text-[13px] font-medium line-clamp-1">{event.location}</span>
+                      </div>
+                    </div>
+
+                    {/* Footer */}
+                    <div className="flex items-center justify-between pt-2 md:pt-4 border-t border-[#f5f5f7]">
+                      <div className="flex items-center gap-1 md:gap-3">
+                        <div className="flex items-center gap-0.5 md:gap-1.5 text-[#10b981]">
+                          <Users className="w-2.5 h-2.5 md:w-4 md:h-4" />
+                          <span className="text-[9px] md:text-[12px] font-bold">{event.joined}</span>
+                        </div>
+                        {event.spotsLeft && (
+                          <span className="text-[8px] md:text-[11px] font-semibold text-[#ff6b6b] hidden md:inline">
+                            {event.spotsLeft} left
+                          </span>
+                        )}
+                      </div>
+                      <Link
+                        href={`/events/${event.id}`}
+                        className="px-2 py-1 md:px-5 md:py-2 bg-linear-to-r from-[#1d1d1f] to-[#3d3d3f] hover:from-[#ff6b6b] hover:to-[#ff8e53] rounded-full text-[9px] md:text-[12px] font-bold text-white transition-all shadow-md hover:shadow-lg"
+                      >
+                        Book
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Load More */}
+            {visibleEvents < events.length && (
+              <div className="flex justify-center mt-4 md:mt-8">
+                <Button
+                  onClick={loadMore}
+                  className="px-6 py-4 md:px-8 md:py-6 bg-linear-to-r from-[#ff6b6b] to-[#ff8e53] hover:from-[#ff5252] hover:to-[#ff7a3a] text-white rounded-full text-[11px] md:text-[14px] font-bold shadow-lg hover:shadow-xl transition-all"
+                >
+                  Load More
+                  <ChevronDown className="w-3 h-3 md:w-4 md:h-4 ml-1.5" />
+                </Button>
+              </div>
+            )}
+
+            {visibleEvents >= events.length && (
+              <p className="text-center text-[10px] md:text-[13px] text-[#86868b] mt-4 md:mt-8">All events loaded</p>
+            )}
+          </div>
+        </main>
+      </div>
+    </div>
+  )
+}
