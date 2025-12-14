@@ -23,6 +23,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
 import { api } from "@/lib/api"
+import { supabase } from "@/lib/supabase"
 
 type OrgType = "registered" | "supported" | "informal" | "individual" | null
 type ViewState = "category" | "form" | "success"
@@ -72,11 +73,31 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
   const [registrationType, setRegistrationType] = useState<string>("ngo")
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [uploadedFiles, setUploadedFiles] = useState<{
+    registrationCertificate?: string;
+    panCard?: string;
+    proofDocument?: string;
+  }>({});
+  const [uploading, setUploading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     const formData = new FormData(e.currentTarget);
+
+    // Validate required uploads based on org type
+    if (selectedOrg === 'registered' && !uploadedFiles.registrationCertificate) {
+      alert('Please upload Registration Certificate');
+      return;
+    }
+    if (selectedOrg === 'supported' && !uploadedFiles.proofDocument) {
+      alert('Please upload Proof of Organization');
+      return;
+    }
+    if (selectedOrg === 'informal' && !uploadedFiles.proofDocument) {
+      alert('Please upload Verification Proof');
+      return;
+    }
 
     try {
       const data: any = {
@@ -94,11 +115,15 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
         data.representativeName = formData.get('representativeName') as string;
         data.designation = formData.get('designation') as string;
         data.website = formData.get('website') as string;
+        data.registrationCertificateUrl = uploadedFiles.registrationCertificate;
+        data.panCardUrl = uploadedFiles.panCard;
       } else if (selectedOrg === 'supported') {
         data.parentInstitution = formData.get('parentInstitution') as string;
         data.coordinatorName = formData.get('coordinatorName') as string;
+        data.proofDocumentUrl = uploadedFiles.proofDocument;
       } else if (selectedOrg === 'informal') {
         data.areaLocality = formData.get('areaLocality') as string;
+        data.proofDocumentUrl = uploadedFiles.proofDocument;
       } else if (selectedOrg === 'individual') {
         data.intentDescription = formData.get('intentDescription') as string;
       }
@@ -107,6 +132,52 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
       setCurrentView('success');
     } catch (error: any) {
       alert(error.message || 'Signup failed. Please try again.');
+    }
+  };
+
+  const handleFileUpload = async (
+    file: File,
+    fileType: 'registrationCertificate' | 'panCard' | 'proofDocument'
+  ) => {
+    if (!file) return;
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File size must be less than 5MB');
+      return;
+    }
+
+    // Validate file type
+    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+    if (!allowedTypes.includes(file.type)) {
+      alert('Only PDF and image files (JPG, PNG) are allowed');
+      return;
+    }
+
+    setUploading(true);
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const filePath = `${selectedOrg}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('organization-documents')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('organization-documents')
+        .getPublicUrl(filePath);
+
+      setUploadedFiles(prev => ({ ...prev, [fileType]: publicUrl }));
+      alert('File uploaded successfully!');
+    } catch (error: any) {
+      alert(error.message || 'Upload failed');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -354,7 +425,7 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
                     <Input
                       name="name"
                       placeholder="Green Earth Foundation"
-                      
+
                       className="h-10 md:h-14 bg-[#f5f5f7] border-0 rounded-lg md:rounded-xl text-[13px] md:text-[17px] text-[#1d1d1f] placeholder:text-[#86868b] focus-visible:ring-2 focus-visible:ring-[#3b82f6]"
                     />
                   </div>
@@ -365,7 +436,7 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
                       name="email"
                       type="email"
                       placeholder="contact@organisation.org"
-                      
+
                       className="h-10 md:h-14 bg-[#f5f5f7] border-0 rounded-lg md:rounded-xl text-[13px] md:text-[17px] text-[#1d1d1f] placeholder:text-[#86868b] focus-visible:ring-2 focus-visible:ring-[#3b82f6]"
                     />
                   </div>
@@ -377,7 +448,7 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
                         name="password"
                         type={showPassword ? "text" : "password"}
                         placeholder="Create a password"
-                        
+
                         className="h-10 md:h-14 bg-[#f5f5f7] border-0 rounded-lg md:rounded-xl text-[13px] md:text-[17px] text-[#1d1d1f] placeholder:text-[#86868b] focus-visible:ring-2 focus-visible:ring-[#3b82f6] pr-10"
                       />
                       <button
@@ -401,7 +472,7 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
                         name="confirmPassword"
                         type={showConfirmPassword ? "text" : "password"}
                         placeholder="Confirm your password"
-                        
+
                         className="h-10 md:h-14 bg-[#f5f5f7] border-0 rounded-lg md:rounded-xl text-[13px] md:text-[17px] text-[#1d1d1f] placeholder:text-[#86868b] focus-visible:ring-2 focus-visible:ring-[#3b82f6] pr-10"
                       />
                       <button
@@ -444,7 +515,7 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
                     <Input
                       name="registrationNumber"
                       placeholder="MH/2024/12345"
-                      
+
                       className="h-10 md:h-14 bg-[#f5f5f7] border-0 rounded-lg md:rounded-xl text-[13px] md:text-[17px] text-[#1d1d1f] placeholder:text-[#86868b] focus-visible:ring-2 focus-visible:ring-[#3b82f6]"
                     />
                   </div>
@@ -455,7 +526,7 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
                       <Input
                         name="representativeName"
                         placeholder="John Doe"
-                        
+
                         className="h-10 md:h-14 bg-[#f5f5f7] border-0 rounded-lg md:rounded-xl text-[13px] md:text-[17px] text-[#1d1d1f] placeholder:text-[#86868b] focus-visible:ring-2 focus-visible:ring-[#3b82f6]"
                       />
                     </div>
@@ -464,7 +535,7 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
                       <Input
                         name="designation"
                         placeholder="Director"
-                        
+
                         className="h-10 md:h-14 bg-[#f5f5f7] border-0 rounded-lg md:rounded-xl text-[13px] md:text-[17px] text-[#1d1d1f] placeholder:text-[#86868b] focus-visible:ring-2 focus-visible:ring-[#3b82f6]"
                       />
                     </div>
@@ -480,7 +551,7 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
                         name="phone"
                         type="tel"
                         placeholder="9876543210"
-                        
+
                         pattern="[0-9]{10}"
                         className="flex-1 h-10 md:h-14 bg-[#f5f5f7] border-0 rounded-lg md:rounded-xl text-[13px] md:text-[17px] text-[#1d1d1f] placeholder:text-[#86868b] focus-visible:ring-2 focus-visible:ring-[#3b82f6]"
                       />
@@ -501,8 +572,32 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
                       Upload Registration Certificate <span className="text-[#ef4444]">*</span>
                     </Label>
                     <div className="border-2 border-dashed border-[#d2d2d7] rounded-lg md:rounded-xl p-4 md:p-6 text-center bg-linear-to-br from-[#eff6ff]/50 to-[#dbeafe]/50 hover:border-[#3b82f6] transition-colors cursor-pointer">
-                      <Upload className="w-6 h-6 md:w-8 md:h-8 mx-auto mb-2 text-[#3b82f6]" />
-                      <p className="text-[11px] md:text-[13px] text-[#86868b]">Drop PDF or image here</p>
+                      <input
+                        type="file"
+                        id="registrationCertificate"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleFileUpload(file, 'registrationCertificate');
+                        }}
+                        className="hidden"
+                        disabled={uploading}
+                      />
+                      <label htmlFor="registrationCertificate" className="cursor-pointer">
+                        {uploadedFiles.registrationCertificate ? (
+                          <div className="text-[#10b981]">
+                            <Check className="w-6 h-6 md:w-8 md:h-8 mx-auto mb-2" />
+                            <p className="text-[11px] md:text-[13px]">File uploaded successfully!</p>
+                          </div>
+                        ) : (
+                          <>
+                            <Upload className="w-6 h-6 md:w-8 md:h-8 mx-auto mb-2 text-[#3b82f6]" />
+                            <p className="text-[11px] md:text-[13px] text-[#86868b]">
+                              {uploading ? 'Uploading...' : 'Click to upload PDF or image'}
+                            </p>
+                          </>
+                        )}
+                      </label>
                     </div>
                   </div>
 
@@ -511,8 +606,32 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
                       Upload PAN Card <span className="text-[#86868b]">(Optional)</span>
                     </Label>
                     <div className="border-2 border-dashed border-[#d2d2d7] rounded-lg md:rounded-xl p-3 md:p-4 text-center bg-[#f5f5f7]/50 hover:border-[#3b82f6] transition-colors cursor-pointer">
-                      <Upload className="w-5 h-5 md:w-6 md:h-6 mx-auto mb-1 text-[#86868b]" />
-                      <p className="text-[10px] md:text-[12px] text-[#86868b]">Drop PAN card image here</p>
+                      <input
+                        type="file"
+                        id="panCard"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleFileUpload(file, 'panCard');
+                        }}
+                        className="hidden"
+                        disabled={uploading}
+                      />
+                      <label htmlFor="panCard" className="cursor-pointer">
+                        {uploadedFiles.panCard ? (
+                          <div className="text-[#10b981]">
+                            <Check className="w-5 h-5 md:w-6 md:h-6 mx-auto mb-1" />
+                            <p className="text-[10px] md:text-[12px]">Uploaded!</p>
+                          </div>
+                        ) : (
+                          <>
+                            <Upload className="w-5 h-5 md:w-6 md:h-6 mx-auto mb-1 text-[#86868b]" />
+                            <p className="text-[10px] md:text-[12px] text-[#86868b]">
+                              {uploading ? 'Uploading...' : 'Click to upload'}
+                            </p>
+                          </>
+                        )}
+                      </label>
                     </div>
                   </div>
                 </>
@@ -523,9 +642,9 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
                   <div className="space-y-1 md:space-y-2">
                     <Label className="text-[10px] md:text-xs text-[#86868b] font-normal">Club / Team Name</Label>
                     <Input
-                      name="clubName"
+                      name="name"
                       placeholder="NSS Unit, ABC College"
-                      
+
                       className="h-10 md:h-14 bg-[#f5f5f7] border-0 rounded-lg md:rounded-xl text-[13px] md:text-[17px] text-[#1d1d1f] placeholder:text-[#86868b] focus-visible:ring-2 focus-visible:ring-[#8b5cf6]"
                     />
                   </div>
@@ -535,7 +654,7 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
                     <Input
                       name="parentInstitution"
                       placeholder="ABC Engineering College"
-                      
+
                       className="h-10 md:h-14 bg-[#f5f5f7] border-0 rounded-lg md:rounded-xl text-[13px] md:text-[17px] text-[#1d1d1f] placeholder:text-[#86868b] focus-visible:ring-2 focus-visible:ring-[#8b5cf6]"
                     />
                   </div>
@@ -544,7 +663,7 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
                     <Label className="text-[10px] md:text-xs text-[#86868b] font-normal">Coordinator Name</Label>
                     <Input
                       name="coordinatorName"
-                      
+
                       placeholder="Prof. Sharma"
                       className="h-10 md:h-14 bg-[#f5f5f7] border-0 rounded-lg md:rounded-xl text-[13px] md:text-[17px] text-[#1d1d1f] placeholder:text-[#86868b] focus-visible:ring-2 focus-visible:ring-[#8b5cf6]"
                     />
@@ -553,8 +672,8 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
                   <div className="space-y-1 md:space-y-2">
                     <Label className="text-[10px] md:text-xs text-[#86868b] font-normal">Coordinator Email</Label>
                     <Input
-                      name="coordinatorEmail"
-                      
+                      name="email"
+
                       type="email"
                       placeholder="coordinator@college.edu"
                       className="h-10 md:h-14 bg-[#f5f5f7] border-0 rounded-lg md:rounded-xl text-[13px] md:text-[17px] text-[#1d1d1f] placeholder:text-[#86868b] focus-visible:ring-2 focus-visible:ring-[#8b5cf6]"
@@ -566,7 +685,7 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
                     <div className="relative">
                       <Input
                         name="password"
-                        
+
                         type={showPassword ? "text" : "password"}
                         placeholder="Create a password"
                         className="h-10 md:h-14 bg-[#f5f5f7] border-0 rounded-lg md:rounded-xl text-[13px] md:text-[17px] text-[#1d1d1f] placeholder:text-[#86868b] focus-visible:ring-2 focus-visible:ring-[#8b5cf6] pr-10"
@@ -590,7 +709,7 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
                     <div className="relative">
                       <Input
                         name="confirmPassword"
-                        
+
                         type={showConfirmPassword ? "text" : "password"}
                         placeholder="Confirm your password"
                         className="h-10 md:h-14 bg-[#f5f5f7] border-0 rounded-lg md:rounded-xl text-[13px] md:text-[17px] text-[#1d1d1f] placeholder:text-[#86868b] focus-visible:ring-2 focus-visible:ring-[#8b5cf6] pr-10"
@@ -618,8 +737,8 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
                         +91
                       </div>
                       <Input
-                        name="coordinatorPhone"
-                        
+                        name="phone"
+
                         type="tel"
                         placeholder="9876543210"
                         className="flex-1 h-10 md:h-14 bg-[#f5f5f7] border-0 rounded-lg md:rounded-xl text-[13px] md:text-[17px] text-[#1d1d1f] placeholder:text-[#86868b] focus-visible:ring-2 focus-visible:ring-[#8b5cf6]"
@@ -632,22 +751,44 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
                       Upload Proof of Organisation <span className="text-[#ef4444]">*</span>
                     </Label>
                     <div className="border-2 border-dashed border-[#d2d2d7] rounded-lg md:rounded-xl p-4 md:p-6 text-center bg-linear-to-br from-[#f5f3ff]/50 to-[#ede9fe]/50 hover:border-[#8b5cf6] transition-colors cursor-pointer">
-                      <Upload className="w-6 h-6 md:w-8 md:h-8 mx-auto mb-2 text-[#8b5cf6]" />
-                      <p className="text-[11px] md:text-[13px] text-[#86868b]">
-                        College ID, Letter from Institution, etc.
-                      </p>
+                      <input
+                        type="file"
+                        id="proofDocument"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleFileUpload(file, 'proofDocument');
+                        }}
+                        className="hidden"
+                        disabled={uploading}
+                      />
+                      <label htmlFor="proofDocument" className="cursor-pointer">
+                        {uploadedFiles.proofDocument ? (
+                          <div className="text-[#10b981]">
+                            <Check className="w-6 h-6 md:w-8 md:h-8 mx-auto mb-2" />
+                            <p className="text-[11px] md:text-[13px]">File uploaded successfully!</p>
+                          </div>
+                        ) : (
+                          <>
+                            <Upload className="w-6 h-6 md:w-8 md:h-8 mx-auto mb-2 text-[#8b5cf6]" />
+                            <p className="text-[11px] md:text-[13px] text-[#86868b]">
+                              {uploading ? 'Uploading...' : 'College ID, Letter from Institution, etc.'}
+                            </p>
+                          </>
+                        )}
+                      </label>
                     </div>
                   </div>
                 </>
               )}
 
               {selectedOrg === "informal" && (
-                <>
+                <div>
                   <div className="space-y-1 md:space-y-2">
                     <Label className="text-[10px] md:text-xs text-[#86868b] font-normal">Group Name</Label>
                     <Input
-                      name="groupName"
-                      
+                      name="name"
+
                       placeholder="Green Warriors Nashik"
                       className="h-10 md:h-14 bg-[#f5f5f7] border-0 rounded-lg md:rounded-xl text-[13px] md:text-[17px] text-[#1d1d1f] placeholder:text-[#86868b] focus-visible:ring-2 focus-visible:ring-[#f59e0b]"
                     />
@@ -657,7 +798,7 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
                     <Label className="text-[10px] md:text-xs text-[#86868b] font-normal">Area / Locality</Label>
                     <Input
                       name="areaLocality"
-                      
+
                       placeholder="Nashik, Maharashtra"
                       className="h-10 md:h-14 bg-[#f5f5f7] border-0 rounded-lg md:rounded-xl text-[13px] md:text-[17px] text-[#1d1d1f] placeholder:text-[#86868b] focus-visible:ring-2 focus-visible:ring-[#f59e0b]"
                     />
@@ -669,7 +810,7 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
                     </Label>
                     <Input
                       name="representativeName"
-                      
+
                       placeholder="Rahul Sharma"
                       className="h-10 md:h-14 bg-[#f5f5f7] border-0 rounded-lg md:rounded-xl text-[13px] md:text-[17px] text-[#1d1d1f] placeholder:text-[#86868b] focus-visible:ring-2 focus-visible:ring-[#f59e0b]"
                     />
@@ -683,7 +824,7 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
                       </div>
                       <Input
                         name="phone"
-                        
+
                         type="tel"
                         placeholder="9876543210"
                         className="flex-1 h-10 md:h-14 bg-[#f5f5f7] border-0 rounded-lg md:rounded-xl text-[13px] md:text-[17px] text-[#1d1d1f] placeholder:text-[#86868b] focus-visible:ring-2 focus-visible:ring-[#f59e0b]"
@@ -695,7 +836,7 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
                     <Label className="text-[10px] md:text-xs text-[#86868b] font-normal">Email</Label>
                     <Input
                       name="email"
-                      
+
                       type="email"
                       placeholder="contact@group.com"
                       className="h-10 md:h-14 bg-[#f5f5f7] border-0 rounded-lg md:rounded-xl text-[13px] md:text-[17px] text-[#1d1d1f] placeholder:text-[#86868b] focus-visible:ring-2 focus-visible:ring-[#f59e0b]"
@@ -707,7 +848,7 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
                     <div className="relative">
                       <Input
                         name="password"
-                        
+
                         type={showPassword ? "text" : "password"}
                         placeholder="Create a password"
                         className="h-10 md:h-14 bg-[#f5f5f7] border-0 rounded-lg md:rounded-xl text-[13px] md:text-[17px] text-[#1d1d1f] placeholder:text-[#86868b] focus-visible:ring-2 focus-visible:ring-[#f59e0b] pr-10"
@@ -731,7 +872,7 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
                     <div className="relative">
                       <Input
                         name="confirmPassword"
-                        
+
                         type={showConfirmPassword ? "text" : "password"}
                         placeholder="Confirm your password"
                         className="h-10 md:h-14 bg-[#f5f5f7] border-0 rounded-lg md:rounded-xl text-[13px] md:text-[17px] text-[#1d1d1f] placeholder:text-[#86868b] focus-visible:ring-2 focus-visible:ring-[#f59e0b] pr-10"
@@ -754,14 +895,43 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
                     <Label className="text-[10px] md:text-xs text-[#86868b] font-normal">
                       Upload Verification Proof <span className="text-[#ef4444]">*</span>
                     </Label>
-                    <div className="border-2 border-dashed border-[#d2d2d7] rounded-lg md:rounded-xl p-4 md:p-6 text-center bg-linear-to-br from-[#fffbeb]/50 to-[#fef3c7]/50 hover:border-[#f59e0b] transition-colors cursor-pointer">
-                      <Upload className="w-6 h-6 md:w-8 md:h-8 mx-auto mb-2 text-[#f59e0b]" />
-                      <p className="text-[11px] md:text-[13px] text-[#86868b]">
-                        Social media URL, certificate, or any proof
-                      </p>
+                    <div className="border-2 border-dashed border-[#d2d2d7] rounded-lg md:rounded-xl p-4 md:p-6 text-center bg-linear-to-br from-[#f5f3ff]/50 to-[#ede9fe]/50 hover:border-[#8b5cf6] transition-colors cursor-pointer">
+                      <input
+                        type="file"
+                        id="proofDocument"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleFileUpload(file, 'proofDocument');
+                        }}
+                        className="hidden"
+                        disabled={uploading}
+                      />
+                      <label htmlFor="proofDocument" className="cursor-pointer">
+                        {uploadedFiles.proofDocument ? (
+                          <div className="text-[#10b981]">
+                            <Check className="w-6 h-6 md:w-8 md:h-8 mx-auto mb-2" />
+                            <p className="text-[11px] md:text-[13px]">File uploaded successfully!</p>
+                          </div>
+                        ) : (
+                          <>
+                            <Upload className="w-6 h-6 md:w-8 md:h-8 mx-auto mb-2 text-[#8b5cf6]" />
+                            <p className="text-[11px] md:text-[13px] text-[#86868b]">
+                              {uploading ? 'Uploading...' : 'Social media URL, certificate, etc.'}
+                            </p>
+                          </>
+                        )}
+                      </label>
                     </div>
                   </div>
-                </>
+
+                  <div className="border-2 border-dashed border-[#d2d2d7] rounded-lg md:rounded-xl p-4 md:p-6 text-center bg-linear-to-br from-[#fffbeb]/50 to-[#fef3c7]/50 hover:border-[#f59e0b] transition-colors cursor-pointer">
+                    <Upload className="w-6 h-6 md:w-8 md:h-8 mx-auto mb-2 text-[#f59e0b]" />
+                    <p className="text-[11px] md:text-[13px] text-[#86868b]">
+                      Social media URL, certificate, or any proof
+                    </p>
+                  </div>
+                </div>
               )}
 
               {selectedOrg === "individual" && (
@@ -770,7 +940,7 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
                     <Label className="text-[10px] md:text-xs text-[#86868b] font-normal">Full Name</Label>
                     <Input
                       name="name"
-                      
+
                       placeholder="Rajesh Kumar"
                       className="h-10 md:h-14 bg-[#f5f5f7] border-0 rounded-lg md:rounded-xl text-[13px] md:text-[17px] text-[#1d1d1f] placeholder:text-[#86868b] focus-visible:ring-2 focus-visible:ring-[#10b981]"
                     />
@@ -781,7 +951,7 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
                     <Input
                       type="email"
                       name="email"
-                      
+
                       placeholder="rajesh@email.com"
                       className="h-10 md:h-14 bg-[#f5f5f7] border-0 rounded-lg md:rounded-xl text-[13px] md:text-[17px] text-[#1d1d1f] placeholder:text-[#86868b] focus-visible:ring-2 focus-visible:ring-[#10b981]"
                     />
@@ -795,7 +965,7 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
                       </div>
                       <Input
                         name="phone"
-                        
+
                         type="tel"
                         placeholder="9876543210"
                         className="flex-1 h-10 md:h-14 bg-[#f5f5f7] border-0 rounded-lg md:rounded-xl text-[13px] md:text-[17px] text-[#1d1d1f] placeholder:text-[#86868b] focus-visible:ring-2 focus-visible:ring-[#10b981]"
@@ -808,7 +978,7 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
                     <div className="relative">
                       <Input
                         name="password"
-                        
+
                         type={showPassword ? "text" : "password"}
                         placeholder="Create a password"
                         className="h-10 md:h-14 bg-[#f5f5f7] border-0 rounded-lg md:rounded-xl text-[13px] md:text-[17px] text-[#1d1d1f] placeholder:text-[#86868b] focus-visible:ring-2 focus-visible:ring-[#10b981] pr-10"
@@ -832,7 +1002,7 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
                     <div className="relative">
                       <Input
                         name="confirmPassword"
-                        
+
                         type={showConfirmPassword ? "text" : "password"}
                         placeholder="Confirm your password"
                         className="h-10 md:h-14 bg-[#f5f5f7] border-0 rounded-lg md:rounded-xl text-[13px] md:text-[17px] text-[#1d1d1f] placeholder:text-[#86868b] focus-visible:ring-2 focus-visible:ring-[#10b981] pr-10"
@@ -873,6 +1043,6 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
           </div>
         </div>
       </div>
-    </section>
+    </section >
   )
 }

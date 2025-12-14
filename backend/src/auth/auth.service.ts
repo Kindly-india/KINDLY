@@ -5,7 +5,7 @@ import { OrganizationSignupDto } from './dto/organization-signup.dto';
 
 @Injectable()
 export class AuthService {
-  constructor(private supabaseService: SupabaseService) {}
+  constructor(private supabaseService: SupabaseService) { }
 
   async signupVolunteer(dto: VolunteerSignupDto) {
     const supabase = this.supabaseService.getClient();
@@ -102,11 +102,14 @@ export class AuthService {
         coordinator_name: dto.coordinatorName,
         area_locality: dto.areaLocality,
         intent_description: dto.intentDescription,
+        registration_certificate_url: dto.registrationCertificateUrl,
+        pan_card_url: dto.panCardUrl,
+        proof_document_url: dto.proofDocumentUrl,
         approval_status: 'pending',
       })
       .select()
       .single();
-
+      
     if (profileError) {
       // Rollback
       await supabase.auth.admin.deleteUser(authData.user.id);

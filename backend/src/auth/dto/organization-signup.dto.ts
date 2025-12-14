@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsString, MinLength, IsIn, IsOptional } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString, MinLength, IsIn, IsOptional, IsUrl } from 'class-validator';
 
 export class OrganizationSignupDto {
   @IsString()
@@ -59,4 +59,17 @@ export class OrganizationSignupDto {
   @IsOptional()
   @IsString()
   intentDescription?: string;
+
+  // File URLs
+  @IsOptional()
+  @IsUrl()
+  registrationCertificateUrl?: string;
+
+  @IsOptional()
+  @IsUrl()
+  panCardUrl?: string;
+
+  @IsOptional()
+  @IsUrl()
+  proofDocumentUrl?: string;
 }
