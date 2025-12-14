@@ -4,6 +4,7 @@ import { SupabaseModule } from './supabase/supabase.module';
 import { AuthModule } from './auth/auth.module';
 import { VolunteerModule } from './volunteer/volunteer.module';
 import { OrganizationModule } from './organization/organization.module';
+import { EventModule } from './event/event.module'; // Add this
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { OrganizationModule } from './organization/organization.module';
     AuthModule,
     VolunteerModule,
     OrganizationModule,
+    EventModule, // Add this
   ],
 })
 export class AppModule {}

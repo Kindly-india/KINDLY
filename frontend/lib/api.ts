@@ -26,10 +26,30 @@ export interface OrganizationSignupData {
   coordinatorName?: string;
   areaLocality?: string;
   intentDescription?: string;
+  registrationCertificateUrl?: string;
+  panCardUrl?: string;
+  proofDocumentUrl?: string;
+}
+
+export interface CreateEventData {
+  title: string;
+  description: string;
+  coverImageUrl?: string;
+  category: string;
+  isUrgent: boolean;
+  eventDate: string;
+  startTime: string;
+  endTime: string;
+  location: string;
+  dressCode?: string;
+  thingsToBring?: string;
+  totalSlots: number;
+  registrationDeadline: string;
+  minimumAge?: number;
 }
 
 export const api = {
-  // Volunteer signup - still goes through backend to create profile
+  // Volunteer signup
   signupVolunteer: async (data: VolunteerSignupData) => {
     const response = await fetch(`${API_URL}/auth/signup/volunteer`, {
       method: 'POST',
@@ -75,7 +95,6 @@ export const api = {
     }
 
     return response.json();
-    // Organizations don't auto-login (need approval)
   },
 
   // Login
@@ -130,5 +149,111 @@ export const api = {
     }
 
     return null;
+  },
+
+  // Upload event cover image
+  uploadEventImage: async (file: File): Promise<string> => {
+    // Validate file
+    if (file.size > 5 * 1024 * 1024) {
+      throw new Error('File size must be less than 5MB');
+    }
+
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+    if (!allowedTypes.includes(file.type)) {
+      throw new Error('Only JPG and PNG images are allowed');
+    }
+
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+    const filePath = `events/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('event-images')
+      .upload(filePath, file);
+
+    if (uploadError) throw uploadError;
+
+    // Get public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from('event-images')
+      .getPublicUrl(filePath);
+
+    return publicUrl;
+  },
+
+  // Create event
+  createEvent: async (data: CreateEventData) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      throw new Error('Not authenticated');
+    }
+
+    // Get user ID
+    const user = await api.getCurrentUser();
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    const response = await fetch(`${API_URL}/events`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+        ...data,
+        userId: user.id, // Include userId for now
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to create event');
+    }
+
+    return response.json();
+  },
+
+  // Get organization's events
+  getMyEvents: async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      throw new Error('Not authenticated');
+    }
+
+    const user = await api.getCurrentUser();
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    const response = await fetch(`${API_URL}/events/my-events`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ userId: user.id }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to fetch events');
+    }
+
+    return response.json();
+  },
+
+  // Get public events
+  getPublicEvents: async () => {
+    const response = await fetch(`${API_URL}/events/public`);
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to fetch events');
+    }
+
+    return response.json();
   },
 };
