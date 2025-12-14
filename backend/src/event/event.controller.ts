@@ -26,10 +26,22 @@ export class EventController {
     return this.eventService.getPublicEvents();
   }
 
+  @Get(':id/public')
+  async getPublicEventById(@Param('id') id: string) {
+    return this.eventService.getPublicEventById(id);
+  }
+
   @Get(':id')
   @UseGuards(JwtAuthGuard)
   async getEventById(@Request() req: any, @Param('id') id: string) {
     const userId = req.user.id;
     return this.eventService.getEventById(id, userId);
+  }
+
+  @Post(':id/register')
+  @UseGuards(JwtAuthGuard)
+  async registerForEvent(@Request() req: any, @Param('id') id: string) {
+    const userId = req.user.id;
+    return this.eventService.registerForEvent(userId, id);
   }
 }

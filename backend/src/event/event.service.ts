@@ -1,10 +1,10 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { CreateEventDto } from './dto/create-event.dto';
 
 @Injectable()
 export class EventService {
-  constructor(private supabaseService: SupabaseService) {}
+  constructor(private supabaseService: SupabaseService) { }
 
   async createEvent(userId: string, dto: CreateEventDto) {
     const supabase = this.supabaseService.getClient();
@@ -89,12 +89,12 @@ export class EventService {
     const { data: events, error } = await supabase
       .from('events')
       .select(`
-        *,
-        organization_profiles (
-          name,
-          org_type
-        )
-      `)
+      *,
+      organization_profiles (
+        name,
+        org_type
+      )
+    `)
       .eq('status', 'published')
       .gte('event_date', new Date().toISOString().split('T')[0])
       .order('event_date', { ascending: true });
@@ -105,37 +105,123 @@ export class EventService {
   }
 
   async getEventById(eventId: string, userId?: string) {
-  const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getClient();
 
-  const { data: event, error } = await supabase
-    .from('events')
-    .select(`
+    const { data: event, error } = await supabase
+      .from('events')
+      .select(`
       *,
       organization_profiles (
         name,
         org_type
       )
     `)
-    .eq('id', eventId)
-    .single();
+      .eq('id', eventId)
+      .single();
 
-  if (error) {
-    throw new NotFoundException('Event not found');
+    if (error) {
+      throw new NotFoundException('Event not found');
+    }
+
+    // If userId provided, verify they own this event
+    if (userId) {
+      const { data: orgProfile } = await supabase
+        .from('organization_profiles')
+        .select('id')
+        .eq('user_id', userId)
+        .single();
+
+      if (orgProfile && event.organization_id !== orgProfile.id) {
+        throw new ForbiddenException('You do not have access to this event');
+      }
+    }
+
+    return { event };
   }
 
-  // If userId provided, verify they own this event
-  if (userId) {
-    const { data: orgProfile } = await supabase
-      .from('organization_profiles')
+  async getPublicEventById(eventId: string) {
+    const supabase = this.supabaseService.getClient();
+
+    const { data: event, error } = await supabase
+      .from('events')
+      .select(`
+      *,
+      organization_profiles (
+        name,
+        org_type,
+        email,
+        phone
+      )
+    `)
+      .eq('id', eventId)
+      .eq('status', 'published')
+      .single();
+
+    if (error || !event) {
+      throw new NotFoundException('Event not found');
+    }
+
+    return { event };
+  }
+
+  async registerForEvent(userId: string, eventId: string) {
+    const supabase = this.supabaseService.getClient();
+
+    // Get volunteer profile
+    const { data: volunteerProfile, error: profileError } = await supabase
+      .from('volunteer_profiles')
       .select('id')
       .eq('user_id', userId)
       .single();
 
-    if (orgProfile && event.organization_id !== orgProfile.id) {
-      throw new ForbiddenException('You do not have access to this event');
+    if (profileError || !volunteerProfile) {
+      throw new NotFoundException('Volunteer profile not found');
     }
-  }
 
-  return { event };
-}
+    // Get event details
+    const { data: event, error: eventError } = await supabase
+      .from('events')
+      .select('*')
+      .eq('id', eventId)
+      .eq('status', 'published')
+      .single();
+
+    if (eventError || !event) {
+      throw new NotFoundException('Event not found');
+    }
+
+    // Check if event is full
+    if (event.registered_count >= event.total_slots) {
+      throw new BadRequestException('Event is already full');
+    }
+
+    // Check if already registered
+    const { data: existing } = await supabase
+      .from('event_registrations')
+      .select('id')
+      .eq('event_id', eventId)
+      .eq('volunteer_id', volunteerProfile.id)
+      .single();
+
+    if (existing) {
+      throw new BadRequestException('Already registered for this event');
+    }
+
+    // Register
+    const { data: registration, error: regError } = await supabase
+      .from('event_registrations')
+      .insert({
+        event_id: eventId,
+        volunteer_id: volunteerProfile.id,
+      })
+      .select()
+      .single();
+
+    if (regError) throw regError;
+
+    return {
+      message: 'Successfully registered for event',
+      registration,
+    };
+  }
 }

@@ -263,4 +263,39 @@ export const api = {
 
     return response.json();
   },
+
+  // Get public event by ID (no auth needed)
+  getPublicEventById: async (eventId: string) => {
+    const response = await fetch(`${API_URL}/events/${eventId}/public`);
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to fetch event');
+    }
+
+    return response.json();
+  },
+
+  // Register for event
+  registerForEvent: async (eventId: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session) {
+      throw new Error('Please login to register for events');
+    }
+
+    const response = await fetch(`${API_URL}/events/${eventId}/register`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to register for event');
+    }
+
+    return response.json();
+  },
 };
