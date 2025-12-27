@@ -1,8 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
+import { useParams, useRouter } from "next/navigation"
 import {
   ArrowLeft,
   Share2,
@@ -17,41 +18,119 @@ import {
   AlertCircle,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { api } from "@/lib/api"
 
 export default function EventDetailsPage() {
+  const params = useParams()
+  const router = useRouter()
+  const eventId = params?.id as string
+
+  const [event, setEvent] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [isSaved, setIsSaved] = useState(false)
   const [showFullDescription, setShowFullDescription] = useState(false)
+  const [isRegistering, setIsRegistering] = useState(false)
+  const [isRegistered, setIsRegistered] = useState(false)
 
-  const event = {
-    id: 1,
-    title: "River Godavari Cleanup Drive",
-    image: "/river-cleanup-volunteers-garbage-bags-nature.jpg",
-    category: "Environment",
-    isUrgent: true,
-    organizer: {
-      name: "Green Earth NGO",
-      avatar: "/green-earth-ngo-logo.jpg",
-      isVerified: true,
-    },
-    date: "Sun, 25 Dec",
-    time: "07:00 AM",
-    location: "College Road Ghat",
-    dress: "Wear Sports Shoes",
-    ageLimit: "16+ Only",
-    description:
-      "Join us for a meaningful morning by the banks of River Godavari. We'll be cleaning up plastic waste, debris, and helping restore the natural beauty of our sacred river. All equipment will be provided including gloves, bags, and refreshments. This is a great opportunity to give back to nature and meet like-minded individuals who care about our environment.",
-    slotsLeft: 5,
-    totalSlots: 25,
-    attendees: [
-      { name: "Rahul", avatar: "/indian-man-avatar.png" },
-      { name: "Priya", avatar: "/indian-woman-avatar.png" },
-      { name: "Amit", avatar: "/young-indian-man-avatar.jpg" },
-    ],
-    totalGoing: 15,
-    mapPreview: "/map-preview-college-road-ghat-nashik.jpg",
+  // Fetch event data
+  useEffect(() => {
+    const fetchEvent = async () => {
+      try {
+        setLoading(true)
+        const response = await api.getPublicEventById(eventId)
+        setEvent(response.event)
+      } catch (err: any) {
+        setError(err.message || 'Failed to load event')
+        console.error('Error fetching event:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (eventId) {
+      fetchEvent()
+    }
+  }, [eventId])
+
+  // Handle registration
+  const handleBookSlot = async () => {
+    try {
+      setIsRegistering(true)
+      
+      // Check if user is logged in
+      const user = await api.getCurrentUser()
+      if (!user) {
+        alert('Please login to register for events')
+        router.push('/login')
+        return
+      }
+
+      await api.registerForEvent(eventId)
+      
+      // Update local state
+      setIsRegistered(true)
+      setEvent((prev: any) => ({
+        ...prev,
+        registered_count: prev.registered_count + 1
+      }))
+      
+      alert('Successfully registered for the event! 🎉')
+    } catch (err: any) {
+      if (err.message.includes('login')) {
+        router.push('/login')
+      } else {
+        alert(err.message || 'Failed to register for event')
+      }
+    } finally {
+      setIsRegistering(false)
+    }
   }
 
-  const shortDescription = event.description.slice(0, 150) + "..."
+  // Format helpers
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+  }
+
+  const formatTime = (timeString: string) => {
+    const [hours, minutes] = timeString.split(':')
+    const hour = parseInt(hours)
+    const ampm = hour >= 12 ? 'PM' : 'AM'
+    const displayHour = hour % 12 || 12
+    return `${displayHour}:${minutes} ${ampm}`
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
+          <p className="text-sm text-gray-600">Loading event...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error || !event) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-sm text-red-600 mb-4">{error || 'Event not found'}</p>
+          <Link href="/events" className="text-sm text-blue-600 hover:underline">
+            Back to Events
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  const shortDescription = event.description?.length > 150 
+    ? event.description.slice(0, 150) + "..." 
+    : event.description
+
+  const slotsLeft = event.total_slots - event.registered_count
+  const isFull = slotsLeft <= 0
 
   return (
     <div className="min-h-screen bg-white pb-24 md:pb-8">
@@ -62,7 +141,17 @@ export default function EventDetailsPage() {
           {/* Hero Image with Overlay Navigation */}
           <div className="relative">
             <div className="relative h-70 md:h-100 md:rounded-2xl md:overflow-hidden">
-              <Image src={event.image || "/placeholder.svg"} alt={event.title} fill className="object-cover" priority />
+              {event.cover_image_url ? (
+                <img 
+                  src={event.cover_image_url} 
+                  alt={event.title}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-linear-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                  <Calendar className="w-16 h-16 text-gray-400" />
+                </div>
+              )}
 
               {/* Overlay Navigation Buttons */}
               <div className="absolute top-4 left-4 right-4 flex justify-between items-center z-10">
@@ -98,10 +187,10 @@ export default function EventDetailsPage() {
 
             {/* Badges Row */}
             <div className="flex items-center gap-2 mb-4">
-              <span className="px-2.5 py-1 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full">
+              <span className="px-2.5 py-1 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full capitalize">
                 {event.category}
               </span>
-              {event.isUrgent && (
+              {event.is_urgent && (
                 <span className="px-2.5 py-1 bg-red-100 text-red-600 text-xs font-medium rounded-full flex items-center gap-1">
                   <AlertCircle className="w-3 h-3" />
                   Urgent
@@ -112,19 +201,15 @@ export default function EventDetailsPage() {
             {/* Organizer Row */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-full overflow-hidden bg-gray-100">
-                  <Image
-                    src={event.organizer.avatar || "/placeholder.svg"}
-                    alt={event.organizer.name}
-                    width={36}
-                    height={36}
-                    className="object-cover"
-                  />
+                <div className="w-9 h-9 rounded-full overflow-hidden bg-linear-to-br from-orange-400 to-rose-500 flex items-center justify-center text-white font-semibold">
+                  {event.organization_profiles?.name?.charAt(0) || 'O'}
                 </div>
-                <Link href="/org-profile" className="flex items-center gap-1.5 hover:opacity-70 transition-opacity">
-                  <span className="text-sm font-medium text-gray-900">{event.organizer.name}</span>
-                  {event.organizer.isVerified && <CheckCircle2 className="w-4 h-4 text-blue-500 fill-blue-500" />}
-                </Link>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm font-medium text-gray-900">
+                    {event.organization_profiles?.name || 'Organization'}
+                  </span>
+                  <CheckCircle2 className="w-4 h-4 text-blue-500 fill-blue-500" />
+                </div>
               </div>
             </div>
           </div>
@@ -142,7 +227,7 @@ export default function EventDetailsPage() {
                   <div>
                     <p className="text-xs text-gray-500">When</p>
                     <p className="text-sm font-medium text-gray-900">
-                      {event.date} • {event.time}
+                      {formatDate(event.event_date)} • {formatTime(event.start_time)}
                     </p>
                   </div>
                 </div>
@@ -159,86 +244,59 @@ export default function EventDetailsPage() {
                 </div>
 
                 {/* Dress Code */}
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-sm">
-                    <Footprints className="w-4 h-4 text-amber-500" />
+                {event.dress_code && (
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-sm">
+                      <Footprints className="w-4 h-4 text-amber-500" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">Dress</p>
+                      <p className="text-sm font-medium text-gray-900">{event.dress_code}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs text-gray-500">Dress</p>
-                    <p className="text-sm font-medium text-gray-900">{event.dress}</p>
-                  </div>
-                </div>
+                )}
 
                 {/* Age Limit */}
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-sm">
-                    <User className="w-4 h-4 text-purple-500" />
+                {event.minimum_age && (
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-sm">
+                      <User className="w-4 h-4 text-purple-500" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">Age</p>
+                      <p className="text-sm font-medium text-gray-900">{event.minimum_age}+ Only</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs text-gray-500">Age</p>
-                    <p className="text-sm font-medium text-gray-900">{event.ageLimit}</p>
-                  </div>
-                </div>
+                )}
               </div>
             </div>
           </div>
 
           {/* Description */}
-          <div className="px-4 md:px-0 pb-5">
-            <h3 className="text-sm font-semibold text-gray-900 mb-2">About This Event</h3>
-            <p className="text-sm text-gray-600 leading-relaxed">
-              {showFullDescription ? event.description : shortDescription}
-            </p>
-            <button
-              onClick={() => setShowFullDescription(!showFullDescription)}
-              className="text-sm font-medium text-blue-600 hover:text-blue-700 mt-1"
-            >
-              {showFullDescription ? "Show Less" : "Read More"}
-            </button>
-          </div>
-
-          {/* Map Preview */}
-          <div className="px-4 md:px-0 pb-5">
-            <h3 className="text-sm font-semibold text-gray-900 mb-2">Location</h3>
-            <div className="relative rounded-xl overflow-hidden">
-              <div className="h-40 md:h-50 bg-gray-100">
-                <Image
-                  src={event.mapPreview || "/placeholder.svg"}
-                  alt="Event location map"
-                  fill
-                  className="object-cover"
-                />
-              </div>
-              <button className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-lg hover:shadow-xl transition-shadow">
-                <Navigation className="w-4 h-4 text-blue-600" />
-                <span className="text-sm font-medium text-gray-900">Get Directions</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Social Proof */}
-          <div className="px-4 md:px-0 pb-6">
-            <div className="flex items-center gap-3 py-4 border-t border-gray-100">
-              {/* Avatar Stack */}
-              <div className="flex -space-x-2">
-                {event.attendees.map((attendee, index) => (
-                  <div key={index} className="w-8 h-8 rounded-full border-2 border-white overflow-hidden">
-                    <Image
-                      src={attendee.avatar || "/placeholder.svg"}
-                      alt={attendee.name}
-                      width={32}
-                      height={32}
-                      className="object-cover"
-                    />
-                  </div>
-                ))}
-              </div>
-              <p className="text-sm text-gray-600">
-                <span className="font-medium text-gray-900">{event.attendees[0].name}</span> and{" "}
-                <span className="font-medium text-gray-900">{event.totalGoing - 1} others</span> are going
+          {event.description && (
+            <div className="px-4 md:px-0 pb-5">
+              <h3 className="text-sm font-semibold text-gray-900 mb-2">About This Event</h3>
+              <p className="text-sm text-gray-600 leading-relaxed">
+                {showFullDescription ? event.description : shortDescription}
               </p>
+              {event.description.length > 150 && (
+                <button
+                  onClick={() => setShowFullDescription(!showFullDescription)}
+                  className="text-sm font-medium text-blue-600 hover:text-blue-700 mt-1"
+                >
+                  {showFullDescription ? "Show Less" : "Read More"}
+                </button>
+              )}
             </div>
-          </div>
+          )}
+
+          {/* Things to Bring */}
+          {event.things_to_bring && (
+            <div className="px-4 md:px-0 pb-5">
+              <h3 className="text-sm font-semibold text-gray-900 mb-2">Things to Bring</h3>
+              <p className="text-sm text-gray-600">{event.things_to_bring}</p>
+            </div>
+          )}
         </div>
 
         {/* Right Sidebar - Desktop Booking Card */}
@@ -248,25 +306,29 @@ export default function EventDetailsPage() {
             <div className="p-5 border-b border-gray-100">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <p className="text-xs text-red-500 font-medium mb-0.5">Only {event.slotsLeft} slots left!</p>
-                  <p className="text-2xl font-bold text-gray-900">{event.date}</p>
+                  {!isFull && (
+                    <p className="text-xs text-red-500 font-medium mb-0.5">
+                      Only {slotsLeft} slot{slotsLeft !== 1 ? 's' : ''} left!
+                    </p>
+                  )}
+                  <p className="text-2xl font-bold text-gray-900">{formatDate(event.event_date)}</p>
                 </div>
                 <div className="text-right">
                   <p className="text-xs text-gray-500">Starts at</p>
-                  <p className="text-lg font-semibold text-gray-900">{event.time}</p>
+                  <p className="text-lg font-semibold text-gray-900">{formatTime(event.start_time)}</p>
                 </div>
               </div>
 
               {/* Progress Bar */}
               <div className="mb-2">
                 <div className="flex justify-between text-xs text-gray-500 mb-1">
-                  <span>{event.totalSlots - event.slotsLeft} joined</span>
-                  <span>{event.totalSlots} total</span>
+                  <span>{event.registered_count} joined</span>
+                  <span>{event.total_slots} total</span>
                 </div>
                 <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-linear-to-r from-teal-400 to-teal-500 rounded-full"
-                    style={{ width: `${((event.totalSlots - event.slotsLeft) / event.totalSlots) * 100}%` }}
+                    className="h-full bg-linear-to-r from-teal-400 to-teal-500 rounded-full transition-all"
+                    style={{ width: `${(event.registered_count / event.total_slots) * 100}%` }}
                   />
                 </div>
               </div>
@@ -274,11 +336,17 @@ export default function EventDetailsPage() {
 
             {/* Card Body */}
             <div className="p-5">
-              <Button className="w-full h-12 bg-linear-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold rounded-full text-base shadow-lg shadow-blue-500/25">
-                Book Your Slot
+              <Button 
+                onClick={handleBookSlot}
+                disabled={isRegistering || isFull || isRegistered}
+                className="w-full h-12 bg-linear-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold rounded-full text-base shadow-lg shadow-blue-500/25 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isRegistering ? 'Booking...' : isRegistered ? 'Registered ✓' : isFull ? 'Event Full' : 'Book Your Slot'}
               </Button>
 
-              <p className="text-center text-xs text-gray-500 mt-3">Free to join • Instant confirmation</p>
+              <p className="text-center text-xs text-gray-500 mt-3">
+                {isFull ? 'No slots available' : 'Free to join • Instant confirmation'}
+              </p>
             </div>
 
             {/* Card Footer */}
@@ -299,11 +367,17 @@ export default function EventDetailsPage() {
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] z-50 md:hidden">
         <div className="flex items-center justify-between px-4 py-3">
           <div>
-            <p className="text-xs text-red-500 font-medium">{event.slotsLeft} Slots Left</p>
-            <p className="text-base font-bold text-gray-900">{event.date}</p>
+            {!isFull && (
+              <p className="text-xs text-red-500 font-medium">{slotsLeft} Slot{slotsLeft !== 1 ? 's' : ''} Left</p>
+            )}
+            <p className="text-base font-bold text-gray-900">{formatDate(event.event_date)}</p>
           </div>
-          <Button className="h-11 px-8 bg-linear-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold rounded-full text-sm shadow-lg shadow-blue-500/25">
-            Book Slot
+          <Button 
+            onClick={handleBookSlot}
+            disabled={isRegistering || isFull || isRegistered}
+            className="h-11 px-8 bg-linear-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold rounded-full text-sm shadow-lg shadow-blue-500/25 disabled:opacity-50"
+          >
+            {isRegistering ? 'Booking...' : isRegistered ? 'Registered ✓' : isFull ? 'Full' : 'Book Slot'}
           </Button>
         </div>
       </div>
