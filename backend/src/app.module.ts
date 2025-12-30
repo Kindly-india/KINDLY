@@ -6,6 +6,7 @@ import { VolunteerModule } from './volunteer/volunteer.module';
 import { OrganizationModule } from './organization/organization.module';
 import { EventModule } from './event/event.module'; // Add this
 
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -15,7 +16,8 @@ import { EventModule } from './event/event.module'; // Add this
     AuthModule,
     VolunteerModule,
     OrganizationModule,
-    EventModule, // Add this
+    EventModule,
+    VolunteerModule, 
   ],
 })
 export class AppModule {}
