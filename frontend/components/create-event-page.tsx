@@ -38,7 +38,7 @@ export function CreateEventPage() {
     const [coverImageUrl, setCoverImageUrl] = useState<string>('');
     const [uploading, setUploading] = useState(false);
     const [gettingLocation, setGettingLocation] = useState(false); // State for geolocation
-    
+
     const [formData, setFormData] = useState({
         title: '',
         description: '',
@@ -50,7 +50,7 @@ export function CreateEventPage() {
         dressCode: '',
         thingsToBring: '',
         totalSlots: 50,
-        registrationDeadline: '1_day_before',
+        registrationDeadline: '', // Changed from '1_day_before'
         minimumAge: undefined as number | undefined,
     });
 
@@ -100,7 +100,33 @@ export function CreateEventPage() {
                 return;
             }
 
-            // Upload cover image if selected
+            // --- NEW: Validate registration deadline ---
+            if (!formData.registrationDeadline) {
+                alert('Please set a registration deadline');
+                return;
+            }
+
+            const eventDateTime = new Date(`${formData.eventDate}T${formData.startTime}:00`);
+            const regDeadline = new Date(formData.registrationDeadline);
+            const oneHourBefore = new Date(eventDateTime.getTime() - 60 * 60 * 1000);
+
+            if (regDeadline < new Date()) {
+                alert('Registration deadline cannot be in the past');
+                return;
+            }
+
+            if (regDeadline >= eventDateTime) {
+                alert('Registration deadline must be before event start time');
+                return;
+            }
+
+            if (regDeadline > oneHourBefore) {
+                alert('Registration deadline must be at least 1 hour before event start');
+                return;
+            }
+            // ---
+
+            // Upload cover image...
             let coverUrl = coverImageUrl;
             if (coverImage) {
                 setUploading(true);
@@ -113,6 +139,9 @@ export function CreateEventPage() {
                 }
                 setUploading(false);
             }
+
+            // Convert to ISO string with India timezone
+            const deadlineISO = new Date(formData.registrationDeadline).toISOString();
 
             // Create event
             await api.createEvent({
@@ -128,7 +157,7 @@ export function CreateEventPage() {
                 dressCode: formData.dressCode,
                 thingsToBring: formData.thingsToBring,
                 totalSlots: formData.totalSlots,
-                registrationDeadline: formData.registrationDeadline,
+                registrationDeadline: deadlineISO, // Send ISO string
                 minimumAge: formData.minimumAge,
             });
 
@@ -433,7 +462,7 @@ export function CreateEventPage() {
                                 <MapPin className="w-4 h-4 inline mr-2 text-emerald-500" />
                                 Exact Location
                             </label>
-                            
+
                             <div className="flex gap-2 mb-3">
                                 <div className="relative flex-1">
                                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -445,7 +474,7 @@ export function CreateEventPage() {
                                         className="w-full h-12 px-4 pl-10 bg-[#f5f5f7] rounded-xl border-0 text-[#1d1d1f] placeholder:text-[#86868b] focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all text-sm"
                                     />
                                 </div>
-                                <button 
+                                <button
                                     onClick={handleGetCurrentLocation}
                                     disabled={gettingLocation}
                                     className="h-12 px-4 bg-white border border-[#e5e5e7] hover:bg-[#f5f5f7] rounded-xl flex items-center gap-2 transition-colors disabled:opacity-50"
@@ -530,29 +559,22 @@ export function CreateEventPage() {
                             />
                         </div>
 
-                        {/* Registration Deadline */}
+                        {/* Registration Deadline - NEW DATETIME PICKER */}
                         <div>
-                            <label className="block text-sm font-semibold text-[#1d1d1f] mb-3">Registration Deadline</label>
-                            <div className="grid grid-cols-3 gap-3">
-                                {[
-                                    { label: "1 hour before", value: "1 hour before" },
-                                    { label: "1 day before", value: "1 day before" },
-                                    { label: "1 week before", value: "1 week before" }
-                                ].map((option) => (
-                                    <button
-                                        key={option.value}
-                                        onClick={() => setFormData({ ...formData, registrationDeadline: option.value })}
-                                        className={cn(
-                                            "p-3 md:p-4 rounded-xl border-2 transition-all text-xs md:text-sm font-medium text-center",
-                                            formData.registrationDeadline === option.value
-                                                ? "border-emerald-500 bg-emerald-50 text-[#1d1d1f]"
-                                                : "border-[#e5e5e7] bg-white hover:border-emerald-500 hover:bg-emerald-50 text-[#1d1d1f]"
-                                        )}
-                                    >
-                                        {option.label}
-                                    </button>
-                                ))}
-                            </div>
+                            <label className="block text-sm font-semibold text-[#1d1d1f] mb-3">
+                                <Clock className="w-4 h-4 inline mr-2 text-emerald-500" />
+                                Registration Deadline
+                            </label>
+                            <input
+                                type="datetime-local"
+                                value={formData.registrationDeadline}
+                                onChange={(e) => setFormData({ ...formData, registrationDeadline: e.target.value })}
+                                min={new Date(new Date().getTime() + 60 * 60 * 1000).toISOString().slice(0, 16)}
+                                className="w-full h-12 md:h-14 px-4 bg-[#f5f5f7] rounded-xl border-0 text-[#1d1d1f] focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all text-sm md:text-base"
+                            />
+                            <p className="text-xs text-[#86868b] mt-2">
+                                Must be at least 1 hour before event start time
+                            </p>
                         </div>
 
                         {/* Minimum Age */}

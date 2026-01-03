@@ -63,7 +63,7 @@ export function EventsDiscoveryPage() {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [searchQuery, setSearchQuery] = useState("")
-    
+
     // Filters
     const [selectedDate, setSelectedDate] = useState<string | null>(null)
     const [selectedCauses, setSelectedCauses] = useState<string[]>([])
@@ -71,7 +71,7 @@ export function EventsDiscoveryPage() {
     const [selectedDuration, setSelectedDuration] = useState<string | null>(null)
     const [locationFilter, setLocationFilter] = useState("") // State for input value
     const [showFilledEvents, setShowFilledEvents] = useState(true)
-    
+
     const [sortBy, setSortBy] = useState("newest")
     const [isFilterOpen, setIsFilterOpen] = useState(false)
     const [visibleEvents, setVisibleEvents] = useState(6)
@@ -114,6 +114,10 @@ export function EventsDiscoveryPage() {
     const loadMore = () => {
         setVisibleEvents((prev) => Math.min(prev + 6, filteredEvents.length))
     }
+
+    const isRegistrationOpen = (deadline: string) => {
+        return new Date(deadline) > new Date();
+    };
 
     const FilterContent = ({ isMobile = false }: { isMobile?: boolean }) => (
         <div className={cn("space-y-4", isMobile ? "space-y-3" : "space-y-5")}>
@@ -372,8 +376,8 @@ export function EventsDiscoveryPage() {
         if (selectedDate) {
             const eventDate = new Date(event.event_date)
             const today = new Date()
-            today.setHours(0,0,0,0)
-            
+            today.setHours(0, 0, 0, 0)
+
             const tomorrow = new Date(today)
             tomorrow.setDate(today.getDate() + 1)
 
@@ -406,7 +410,7 @@ export function EventsDiscoveryPage() {
             const startHour = parseInt(event.start_time.split(':')[0]) + (parseInt(event.start_time.split(':')[1] || '0') / 60)
             const endHour = parseInt(event.end_time.split(':')[0]) + (parseInt(event.end_time.split(':')[1] || '0') / 60)
             const duration = endHour - startHour
-            
+
             if (selectedDuration === '1-2' && (duration < 1 || duration > 2)) return false
             if (selectedDuration === '2-4' && (duration <= 2 || duration > 4)) return false
             if (selectedDuration === '4-8' && (duration <= 4 || duration > 8)) return false
@@ -708,18 +712,29 @@ export function EventsDiscoveryPage() {
                                                             <Users className="w-2.5 h-2.5 md:w-4 md:h-4" />
                                                             <span className="text-[9px] md:text-[12px] font-bold">{event.registered_count}</span>
                                                         </div>
-                                                        {spotsLeft > 0 && (
+                                                        {isRegistrationOpen(event.registration_deadline) && spotsLeft > 0 && (
                                                             <span className="text-[8px] md:text-[11px] font-semibold text-[#ff6b6b] hidden md:inline">
                                                                 {spotsLeft} left
                                                             </span>
                                                         )}
                                                     </div>
-                                                    <Link
-                                                        href={`/events/${event.id}`}
-                                                        className="px-2 py-1 md:px-5 md:py-2 bg-linear-to-r from-[#1d1d1f] to-[#3d3d3f] hover:from-[#ff6b6b] hover:to-[#ff8e53] rounded-full text-[9px] md:text-[12px] font-bold text-white transition-all shadow-md hover:shadow-lg"
-                                                    >
-                                                        Book
-                                                    </Link>
+
+                                                    {!isRegistrationOpen(event.registration_deadline) ? (
+                                                        <span className="px-2 md:px-3 py-1 md:py-1.5 bg-gray-100 text-gray-600 rounded-full text-[9px] md:text-[11px] font-semibold">
+                                                            Closed
+                                                        </span>
+                                                    ) : spotsLeft <= 0 ? (
+                                                        <span className="px-2 md:px-3 py-1 md:py-1.5 bg-amber-100 text-amber-700 rounded-full text-[9px] md:text-[11px] font-semibold">
+                                                            Full
+                                                        </span>
+                                                    ) : (
+                                                        <Link
+                                                            href={`/events/${event.id}`}
+                                                            className="px-2 py-1 md:px-5 md:py-2 bg-linear-to-r from-[#1d1d1f] to-[#3d3d3f] hover:from-[#ff6b6b] hover:to-[#ff8e53] rounded-full text-[9px] md:text-[12px] font-bold text-white transition-all shadow-md hover:shadow-lg"
+                                                        >
+                                                            Book
+                                                        </Link>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>

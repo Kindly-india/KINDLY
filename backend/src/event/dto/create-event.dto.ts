@@ -49,8 +49,8 @@ export class CreateEventDto {
   totalSlots: number;
 
   @IsString()
-  @IsIn(['1 hour before', '1 day before', '1 week before'])
-  registrationDeadline: string;
+  @IsNotEmpty()
+  registrationDeadline: string; // Will be ISO string from frontend
 
   @IsOptional()
   @IsInt()

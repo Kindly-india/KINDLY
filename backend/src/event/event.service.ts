@@ -6,57 +6,6 @@ import { CreateEventDto } from './dto/create-event.dto';
 export class EventService {
   constructor(private supabaseService: SupabaseService) { }
 
-  async createEvent(userId: string, dto: CreateEventDto) {
-    const supabase = this.supabaseService.getClient();
-
-    // Get organization profile for this user
-    const { data: orgProfile, error: orgError } = await supabase
-      .from('organization_profiles')
-      .select('id, approval_status')
-      .eq('user_id', userId)
-      .single();
-
-    if (orgError || !orgProfile) {
-      throw new NotFoundException('Organization profile not found');
-    }
-
-    // Check if organization is approved
-    if (orgProfile.approval_status !== 'approved') {
-      throw new ForbiddenException('Your organization must be approved before creating events');
-    }
-
-    // Create event
-    const { data: event, error: eventError } = await supabase
-      .from('events')
-      .insert({
-        organization_id: orgProfile.id,
-        title: dto.title,
-        description: dto.description,
-        cover_image_url: dto.coverImageUrl,
-        category: dto.category,
-        is_urgent: dto.isUrgent,
-        event_date: dto.eventDate,
-        start_time: dto.startTime,
-        end_time: dto.endTime,
-        location: dto.location,
-        dress_code: dto.dressCode,
-        things_to_bring: dto.thingsToBring,
-        total_slots: dto.totalSlots,
-        registration_deadline: dto.registrationDeadline,
-        minimum_age: dto.minimumAge,
-        status: 'published',
-      })
-      .select()
-      .single();
-
-    if (eventError) throw eventError;
-
-    return {
-      message: 'Event created successfully',
-      event,
-    };
-  }
-
   // --- REPLACED: This is the SMART version (Calculates Counts) ---
   async getOrganizationEvents(userId: string) {
     const supabase = this.supabaseService.getClient();
@@ -90,12 +39,12 @@ export class EventService {
     // 3. Calculate Counts (The "Smart" Part)
     const eventsWithCounts = events.map((event: any) => {
       const registrations = event.event_registrations || [];
-      
+
       return {
         ...event,
         registered_count: registrations.length,
         checked_in_count: registrations.filter((r: any) => r.status === 'checked_in').length,
-        event_registrations: undefined 
+        event_registrations: undefined
       };
     });
 
@@ -181,67 +130,6 @@ export class EventService {
     }
 
     return { event };
-  }
-
-  async registerForEvent(userId: string, eventId: string) {
-    const supabase = this.supabaseService.getClient();
-
-    // Get volunteer profile
-    const { data: volunteerProfile, error: profileError } = await supabase
-      .from('volunteer_profiles')
-      .select('id')
-      .eq('user_id', userId)
-      .single();
-
-    if (profileError || !volunteerProfile) {
-      throw new NotFoundException('Volunteer profile not found');
-    }
-
-    // Get event details
-    const { data: event, error: eventError } = await supabase
-      .from('events')
-      .select('*')
-      .eq('id', eventId)
-      .eq('status', 'published')
-      .single();
-
-    if (eventError || !event) {
-      throw new NotFoundException('Event not found');
-    }
-
-    // Check if event is full
-    if (event.registered_count >= event.total_slots) {
-      throw new BadRequestException('Event is already full');
-    }
-
-    // Check if already registered
-    const { data: existing } = await supabase
-      .from('event_registrations')
-      .select('id')
-      .eq('event_id', eventId)
-      .eq('volunteer_id', volunteerProfile.id)
-      .single();
-
-    if (existing) {
-      throw new BadRequestException('Already registered for this event');
-    }
-
-    // Register
-    const { data: registration, error: regError } = await supabase
-      .from('event_registrations')
-      .insert({
-        event_id: eventId,
-        volunteer_id: volunteerProfile.id,
-      })
-      .select()
-      .single();
-
-    if (regError) throw regError;
-
-    return {
-      message: 'Successfully registered for event',
-      registration,
-    };
   }
 
   // Get event registrations with volunteer details
@@ -552,7 +440,7 @@ export class EventService {
   // Add to EventService
   async getEventBroadcasts(eventId: string) {
     const supabase = this.supabaseService.getClient();
-    
+
     const { data: broadcasts, error } = await supabase
       .from('event_broadcasts')
       .select('*')
@@ -591,7 +479,7 @@ export class EventService {
     return { message: 'Event marked as completed', event };
   }
 
-async getTopEvents() {
+  async getTopEvents() {
     const supabase = this.supabaseService.getClient();
 
     const { data: events, error } = await supabase
@@ -611,5 +499,138 @@ async getTopEvents() {
     if (error) throw error;
 
     return { events };
+  }
+
+  async createEvent(userId: string, dto: CreateEventDto) {
+    const supabase = this.supabaseService.getClient();
+
+    // Get organization profile
+    const { data: orgProfile, error: orgError } = await supabase
+      .from('organization_profiles')
+      .select('id, approval_status')
+      .eq('user_id', userId)
+      .single();
+
+    if (orgError || !orgProfile) {
+      throw new NotFoundException('Organization profile not found');
+    }
+
+    if (orgProfile.approval_status !== 'approved') {
+      throw new ForbiddenException('Your organization must be approved before creating events');
+    }
+
+    // --- NEW: Validate registration deadline ---
+    const eventDateTime = new Date(`${dto.eventDate}T${dto.startTime}:00+05:30`);
+    const registrationDeadline = new Date(dto.registrationDeadline);
+
+    const oneHourBefore = new Date(eventDateTime.getTime() - 60 * 60 * 1000);
+
+    if (registrationDeadline < new Date()) {
+      throw new BadRequestException('Registration deadline cannot be in the past');
+    }
+
+    if (registrationDeadline >= eventDateTime) {
+      throw new BadRequestException('Registration deadline must be before event start time');
+    }
+
+    if (registrationDeadline > oneHourBefore) {
+      throw new BadRequestException('Registration deadline must be at least 1 hour before event start');
+    }
+    // ---
+
+    // Create event
+    const { data: event, error: eventError } = await supabase
+      .from('events')
+      .insert({
+        organization_id: orgProfile.id,
+        title: dto.title,
+        description: dto.description,
+        cover_image_url: dto.coverImageUrl,
+        category: dto.category,
+        is_urgent: dto.isUrgent,
+        event_date: dto.eventDate,
+        start_time: dto.startTime,
+        end_time: dto.endTime,
+        location: dto.location,
+        dress_code: dto.dressCode,
+        things_to_bring: dto.thingsToBring,
+        total_slots: dto.totalSlots,
+        registration_deadline: dto.registrationDeadline, // Now timestamp
+        minimum_age: dto.minimumAge,
+        status: 'published',
+      })
+      .select()
+      .single();
+
+    if (eventError) throw eventError;
+
+    return { message: 'Event created successfully', event };
+  }
+
+  async registerForEvent(userId: string, eventId: string) {
+    const supabase = this.supabaseService.getClient();
+
+    // Get volunteer profile
+    const { data: volunteerProfile, error: profileError } = await supabase
+      .from('volunteer_profiles')
+      .select('id')
+      .eq('user_id', userId)
+      .single();
+
+    if (profileError || !volunteerProfile) {
+      throw new NotFoundException('Volunteer profile not found');
+    }
+
+    // Get event details
+    const { data: event, error: eventError } = await supabase
+      .from('events')
+      .select('*')
+      .eq('id', eventId)
+      .eq('status', 'published')
+      .single();
+
+    if (eventError || !event) {
+      throw new NotFoundException('Event not found');
+    }
+
+    // --- NEW: Check registration deadline ---
+    if (new Date(event.registration_deadline) < new Date()) {
+      throw new BadRequestException('Registration deadline has passed');
+    }
+    // ---
+
+    // Check if event is full
+    if (event.registered_count >= event.total_slots) {
+      throw new BadRequestException('Event is already full');
+    }
+
+    // Check if already registered
+    const { data: existing } = await supabase
+      .from('event_registrations')
+      .select('id')
+      .eq('event_id', eventId)
+      .eq('volunteer_id', volunteerProfile.id)
+      .single();
+
+    if (existing) {
+      throw new BadRequestException('Already registered for this event');
+    }
+
+    // Register
+    const { data: registration, error: regError } = await supabase
+      .from('event_registrations')
+      .insert({
+        event_id: eventId,
+        volunteer_id: volunteerProfile.id,
+      })
+      .select()
+      .single();
+
+    if (regError) throw regError;
+
+    return {
+      message: 'Successfully registered for event',
+      registration,
+    };
   }
 }

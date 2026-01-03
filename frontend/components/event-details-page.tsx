@@ -57,7 +57,7 @@ export default function EventDetailsPage() {
   const handleBookSlot = async () => {
     try {
       setIsRegistering(true)
-      
+
       // Check if user is logged in
       const user = await api.getCurrentUser()
       if (!user) {
@@ -67,14 +67,14 @@ export default function EventDetailsPage() {
       }
 
       await api.registerForEvent(eventId)
-      
+
       // Update local state
       setIsRegistered(true)
       setEvent((prev: any) => ({
         ...prev,
         registered_count: prev.registered_count + 1
       }))
-      
+
       alert('Successfully registered for the event! 🎉')
     } catch (err: any) {
       if (err.message.includes('login')) {
@@ -125,12 +125,16 @@ export default function EventDetailsPage() {
     )
   }
 
-  const shortDescription = event.description?.length > 150 
-    ? event.description.slice(0, 150) + "..." 
-    : event.description
 
+  const isRegistrationOpen = event?.registration_deadline ? new Date(event.registration_deadline) > new Date() : true // ADD THIS LINE
   const slotsLeft = event.total_slots - event.registered_count
   const isFull = slotsLeft <= 0
+  const canRegister = isRegistrationOpen && !isFull && !isRegistered // ADD THIS LINE
+
+  const shortDescription = event.description?.length > 150
+    ? event.description.slice(0, 150) + "..."
+    : event.description
+
 
   return (
     <div className="min-h-screen bg-white pb-24 md:pb-8">
@@ -142,8 +146,8 @@ export default function EventDetailsPage() {
           <div className="relative">
             <div className="relative h-70 md:h-100 md:rounded-2xl md:overflow-hidden">
               {event.cover_image_url ? (
-                <img 
-                  src={event.cover_image_url} 
+                <img
+                  src={event.cover_image_url}
                   alt={event.title}
                   className="w-full h-full object-cover"
                 />
@@ -288,8 +292,8 @@ export default function EventDetailsPage() {
                   ></iframe>
                   <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent pointer-events-none group-hover:bg-transparent transition-colors" />
                   <div className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-lg text-xs font-medium text-gray-700 shadow-sm flex items-center gap-1.5 hover:bg-white transition-colors">
-                      <Navigation className="w-3 h-3 text-blue-600" />
-                      Get Directions
+                    <Navigation className="w-3 h-3 text-blue-600" />
+                    Get Directions
                   </div>
                 </a>
               </div>
@@ -361,17 +365,30 @@ export default function EventDetailsPage() {
 
             {/* Card Body */}
             <div className="p-5">
-              <Button 
+              <Button
                 onClick={handleBookSlot}
-                disabled={isRegistering || isFull || isRegistered}
+                disabled={isRegistering || !canRegister}
                 className="w-full h-12 bg-linear-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold rounded-full text-base shadow-lg shadow-blue-500/25 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isRegistering ? 'Booking...' : isRegistered ? 'Registered ✓' : isFull ? 'Event Full' : 'Book Your Slot'}
+                {isRegistering ? 'Booking...'
+                  : isRegistered ? 'Registered ✓'
+                    : !isRegistrationOpen ? 'Registration Closed'
+                      : isFull ? 'Event Full'
+                        : 'Book Your Slot'}
               </Button>
 
               <p className="text-center text-xs text-gray-500 mt-3">
                 {isFull ? 'No slots available' : 'Free to join • Instant confirmation'}
               </p>
+
+              {!isRegistrationOpen && (
+                <p className="text-center text-xs text-red-600 mt-2">
+                  Registration closed on {new Date(event.registration_deadline).toLocaleString('en-IN', {
+                    dateStyle: 'medium',
+                    timeStyle: 'short'
+                  })}
+                </p>
+              )}
             </div>
 
             {/* Card Footer */}
@@ -397,12 +414,16 @@ export default function EventDetailsPage() {
             )}
             <p className="text-base font-bold text-gray-900">{formatDate(event.event_date)}</p>
           </div>
-          <Button 
+          <Button
             onClick={handleBookSlot}
-            disabled={isRegistering || isFull || isRegistered}
+            disabled={isRegistering || !canRegister}
             className="h-11 px-8 bg-linear-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold rounded-full text-sm shadow-lg shadow-blue-500/25 disabled:opacity-50"
           >
-            {isRegistering ? 'Booking...' : isRegistered ? 'Registered ✓' : isFull ? 'Full' : 'Book Slot'}
+            {isRegistering ? 'Booking...'
+              : isRegistered ? 'Registered ✓'
+                : !isRegistrationOpen ? 'Closed'
+                  : isFull ? 'Full'
+                    : 'Book Slot'}
           </Button>
         </div>
       </div>
