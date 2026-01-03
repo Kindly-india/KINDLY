@@ -18,7 +18,6 @@ import {
     Sunset,
     Moon,
     TrendingUp,
-    Star,
     Filter,
     Sparkles,
     ChevronDown,
@@ -52,12 +51,6 @@ const datePills = [
     { id: "week", label: "This Week" },
 ]
 
-const difficultyLevels = [
-    { id: "easy", label: "Easy", description: "For beginners" },
-    { id: "moderate", label: "Moderate", description: "Some experience" },
-    { id: "challenging", label: "Hard", description: "Experienced" },
-]
-
 const durationOptions = [
     { id: "1-2", label: "1-2 hrs" },
     { id: "2-4", label: "2-4 hrs" },
@@ -70,12 +63,15 @@ export function EventsDiscoveryPage() {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [searchQuery, setSearchQuery] = useState("")
+    
+    // Filters
     const [selectedDate, setSelectedDate] = useState<string | null>(null)
     const [selectedCauses, setSelectedCauses] = useState<string[]>([])
     const [selectedTime, setSelectedTime] = useState<string | null>(null)
-    const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(null)
     const [selectedDuration, setSelectedDuration] = useState<string | null>(null)
+    const [locationFilter, setLocationFilter] = useState("") // State for input value
     const [showFilledEvents, setShowFilledEvents] = useState(true)
+    
     const [sortBy, setSortBy] = useState("newest")
     const [isFilterOpen, setIsFilterOpen] = useState(false)
     const [visibleEvents, setVisibleEvents] = useState(6)
@@ -106,19 +102,18 @@ export function EventsDiscoveryPage() {
         setSelectedDate(null)
         setSelectedCauses([])
         setSelectedTime(null)
-        setSelectedDifficulty(null)
         setSelectedDuration(null)
+        setLocationFilter("")
         setShowFilledEvents(true)
         setSearchQuery("")
     }
 
     const hasActiveFilters =
-        selectedDate || selectedCauses.length > 0 || selectedTime || selectedDifficulty || selectedDuration
+        selectedDate || selectedCauses.length > 0 || selectedTime || selectedDuration || locationFilter
 
     const loadMore = () => {
         setVisibleEvents((prev) => Math.min(prev + 6, filteredEvents.length))
     }
-
 
     const FilterContent = ({ isMobile = false }: { isMobile?: boolean }) => (
         <div className={cn("space-y-4", isMobile ? "space-y-3" : "space-y-5")}>
@@ -272,56 +267,6 @@ export function EventsDiscoveryPage() {
                 </div>
             </div>
 
-            {/* Difficulty Level */}
-            <div>
-                <h3
-                    className={cn(
-                        "font-semibold text-[#1d1d1f] uppercase tracking-wide",
-                        isMobile ? "text-[10px] mb-2" : "text-[12px] mb-3",
-                    )}
-                >
-                    Difficulty
-                </h3>
-                <div className="space-y-1.5">
-                    {difficultyLevels.map((level) => (
-                        <button
-                            key={level.id}
-                            onClick={() => setSelectedDifficulty(selectedDifficulty === level.id ? null : level.id)}
-                            className={cn(
-                                "w-full flex items-center justify-between rounded-lg text-left transition-all border",
-                                isMobile ? "p-2" : "p-2.5",
-                                selectedDifficulty === level.id
-                                    ? "bg-linear-to-br from-[#ddd6fe] to-[#c4b5fd] border-purple-300"
-                                    : "bg-white border-[#e8e8ed] hover:border-[#d1d1d6]",
-                            )}
-                        >
-                            <div>
-                                <div
-                                    className={cn(
-                                        "font-medium",
-                                        selectedDifficulty === level.id ? "text-purple-900" : "text-[#1d1d1f]",
-                                        isMobile ? "text-[10px]" : "text-[12px]",
-                                    )}
-                                >
-                                    {level.label}
-                                </div>
-                                <div
-                                    className={cn(
-                                        selectedDifficulty === level.id ? "text-purple-700" : "text-[#86868b]",
-                                        isMobile ? "text-[8px]" : "text-[10px]",
-                                    )}
-                                >
-                                    {level.description}
-                                </div>
-                            </div>
-                            {selectedDifficulty === level.id && (
-                                <Star className={cn("text-purple-600", isMobile ? "w-3 h-3" : "w-4 h-4")} fill="currentColor" />
-                            )}
-                        </button>
-                    ))}
-                </div>
-            </div>
-
             {/* Location */}
             <div>
                 <h3
@@ -341,8 +286,9 @@ export function EventsDiscoveryPage() {
                     />
                     <input
                         type="text"
-                        placeholder="Enter location..."
-                        defaultValue="Nashik, Maharashtra"
+                        placeholder="Enter specific location..."
+                        value={locationFilter}
+                        onChange={(e) => setLocationFilter(e.target.value)}
                         className={cn(
                             "w-full bg-white border border-[#e8e8ed] rounded-lg text-[#1d1d1f] placeholder:text-[#86868b] focus:outline-none focus:border-[#06b6d4] transition-colors",
                             isMobile ? "pl-7 pr-3 py-2 text-[10px]" : "pl-9 pr-4 py-2.5 text-[12px]",
@@ -403,15 +349,68 @@ export function EventsDiscoveryPage() {
 
     // Filter events
     const filteredEvents = events.filter(event => {
-        // Search filter
-        if (searchQuery && !event.title.toLowerCase().includes(searchQuery.toLowerCase()) &&
-            !event.location.toLowerCase().includes(searchQuery.toLowerCase())) {
+        // Search filter (Title or Location or Org)
+        if (searchQuery) {
+            const query = searchQuery.toLowerCase()
+            const matchTitle = event.title?.toLowerCase().includes(query)
+            const matchLocation = event.location?.toLowerCase().includes(query)
+            const matchOrg = event.org_name?.toLowerCase().includes(query) // Assuming API returns org_name
+            if (!matchTitle && !matchLocation && !matchOrg) return false
+        }
+
+        // Sidebar Location Filter - Fixed: Simple string includes check
+        if (locationFilter && !event.location?.toLowerCase().includes(locationFilter.toLowerCase())) {
             return false
         }
 
         // Category filter
         if (selectedCauses.length > 0 && !selectedCauses.includes(event.category)) {
             return false
+        }
+
+        // Date Filter Logic
+        if (selectedDate) {
+            const eventDate = new Date(event.event_date)
+            const today = new Date()
+            today.setHours(0,0,0,0)
+            
+            const tomorrow = new Date(today)
+            tomorrow.setDate(today.getDate() + 1)
+
+            if (selectedDate === 'today') {
+                if (eventDate.toDateString() !== today.toDateString()) return false
+            } else if (selectedDate === 'tomorrow') {
+                if (eventDate.toDateString() !== tomorrow.toDateString()) return false
+            } else if (selectedDate === 'weekend') {
+                const day = eventDate.getDay()
+                if (day !== 0 && day !== 6) return false
+            } else if (selectedDate === 'week') {
+                const nextWeek = new Date(today)
+                nextWeek.setDate(today.getDate() + 7)
+                if (eventDate < today || eventDate > nextWeek) return false
+            }
+        }
+
+        // Time of Day Filter
+        if (selectedTime) {
+            if (!event.start_time) return false
+            const hour = parseInt(event.start_time.split(':')[0])
+            if (selectedTime === 'morning' && (hour < 6 || hour >= 12)) return false
+            if (selectedTime === 'afternoon' && (hour < 12 || hour >= 17)) return false
+            if (selectedTime === 'evening' && (hour < 17 || hour >= 21)) return false
+        }
+
+        // Duration Filter
+        if (selectedDuration) {
+            if (!event.start_time || !event.end_time) return false
+            const startHour = parseInt(event.start_time.split(':')[0]) + (parseInt(event.start_time.split(':')[1] || '0') / 60)
+            const endHour = parseInt(event.end_time.split(':')[0]) + (parseInt(event.end_time.split(':')[1] || '0') / 60)
+            const duration = endHour - startHour
+            
+            if (selectedDuration === '1-2' && (duration < 1 || duration > 2)) return false
+            if (selectedDuration === '2-4' && (duration <= 2 || duration > 4)) return false
+            if (selectedDuration === '4-8' && (duration <= 4 || duration > 8)) return false
+            if (selectedDuration === 'full-day' && duration <= 8) return false
         }
 
         // Show filled events filter
@@ -542,7 +541,7 @@ export function EventsDiscoveryPage() {
                                                     onClick={() => setIsFilterOpen(false)}
                                                     className="w-full bg-linear-to-r from-[#ff6b6b] to-[#ff8e53] hover:from-[#ff5252] hover:to-[#ff7a3a] text-white rounded-full py-5 text-[12px] font-semibold shadow-lg"
                                                 >
-                                                    Show {events.length} Events
+                                                    Show {filteredEvents.length} Events
                                                 </Button>
                                             </div>
                                         </SheetContent>
@@ -551,7 +550,7 @@ export function EventsDiscoveryPage() {
                                     <div className="flex items-center gap-1.5">
                                         <TrendingUp className="w-3 h-3 md:w-4 md:h-4 text-[#10b981]" />
                                         <p className="text-[10px] md:text-[13px] text-[#1d1d1f]">
-                                            <span className="font-bold text-[#ff6b6b]">{events.length}</span> events
+                                            <span className="font-bold text-[#ff6b6b]">{filteredEvents.length}</span> events
                                         </p>
                                     </div>
                                 </div>
@@ -605,9 +604,9 @@ export function EventsDiscoveryPage() {
                                         {durationOptions.find((d) => d.id === selectedDuration)?.label}
                                     </span>
                                 )}
-                                {selectedDifficulty && (
+                                {locationFilter && (
                                     <span className="px-2 py-0.5 bg-white rounded-full text-[9px] md:text-[11px] font-medium text-[#1d1d1f] shadow-sm border border-[#e8e8ed]">
-                                        {difficultyLevels.find((d) => d.id === selectedDifficulty)?.label}
+                                        📍 {locationFilter}
                                     </span>
                                 )}
                             </div>

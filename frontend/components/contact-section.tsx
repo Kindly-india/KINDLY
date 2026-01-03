@@ -107,11 +107,11 @@ export function ContactSection() {
             <ul className="space-y-1.5 md:space-y-3">
               <li className="flex items-center gap-1.5 md:gap-2 text-[11px] md:text-sm text-[#d2d2d7]">
                 <Mail className="w-3 h-3 md:w-4 md:h-4 shrink-0" />
-                <span className="truncate">hello@kindly.org</span>
+                <span className="truncate">service@kindly.co.in</span>
               </li>
               <li className="flex items-center gap-1.5 md:gap-2 text-[11px] md:text-sm text-[#d2d2d7]">
                 <Phone className="w-3 h-3 md:w-4 md:h-4 shrink-0" />
-                +91 98765 43210
+                +91 7517018954
               </li>
               <li className="flex items-center gap-1.5 md:gap-2 text-[11px] md:text-sm text-[#d2d2d7]">
                 <MapPin className="w-3 h-3 md:w-4 md:h-4 shrink-0" />

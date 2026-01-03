@@ -218,7 +218,7 @@ export default function EventDetailsPage() {
           <div className="px-4 md:px-0 pb-5">
             <div className="bg-[#F5F5F7] rounded-xl p-4">
               <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Know Before You Go</h3>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-3 mb-4">
                 {/* Date & Time */}
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-sm">
@@ -239,7 +239,7 @@ export default function EventDetailsPage() {
                   </div>
                   <div>
                     <p className="text-xs text-gray-500">Where</p>
-                    <p className="text-sm font-medium text-gray-900">{event.location}</p>
+                    <p className="text-sm font-medium text-gray-900 truncate max-w-[120px]">{event.location}</p>
                   </div>
                 </div>
 
@@ -269,6 +269,31 @@ export default function EventDetailsPage() {
                   </div>
                 )}
               </div>
+
+              {/* --- ADDED MAP PREVIEW --- */}
+              <div className="rounded-lg overflow-hidden h-32 relative group border border-gray-200">
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full h-full"
+                >
+                  <iframe
+                    width="100%"
+                    height="100%"
+                    frameBorder="0"
+                    style={{ border: 0 }}
+                    src={`https://maps.google.com/maps?q=${encodeURIComponent(event.location)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+                    className="absolute inset-0 w-full h-full pointer-events-none opacity-90 group-hover:opacity-100 transition-opacity"
+                  ></iframe>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent pointer-events-none group-hover:bg-transparent transition-colors" />
+                  <div className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-lg text-xs font-medium text-gray-700 shadow-sm flex items-center gap-1.5 hover:bg-white transition-colors">
+                      <Navigation className="w-3 h-3 text-blue-600" />
+                      Get Directions
+                  </div>
+                </a>
+              </div>
+
             </div>
           </div>
 

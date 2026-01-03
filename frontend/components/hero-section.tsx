@@ -30,57 +30,60 @@ export function HeroSection() {
 
   if (selectedType === "volunteer") {
     return (
-      <section className="min-h-screen bg-linear-to-b from-[#fef7f0] via-white to-[#f0fdf4] relative overflow-x-hidden">
+      <section id="hero" className="min-h-screen bg-gradient-to-b from-orange-50 via-white to-green-50 relative overflow-x-hidden">
         {/* Header */}
         <header className="md:hidden pt-4 pb-3 text-center px-4">
           <Link href="/" className="inline-flex items-center gap-1.5">
-            <div className="w-7 h-7 rounded-lg bg-linear-to-br from-[#ff6b6b] to-[#ee5a5a] flex items-center justify-center">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-red-400 to-red-500 flex items-center justify-center">
               <Heart className="w-3.5 h-3.5 text-white fill-white" />
             </div>
-            <span className="text-base font-semibold text-[#1d1d1f] tracking-tight">KINDLY</span>
+            <span className="text-base font-semibold text-gray-900 tracking-tight">KINDLY</span>
           </Link>
         </header>
 
         <div className="absolute top-20 left-4 md:top-28 md:left-20 w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-white shadow-lg flex items-center justify-center z-10">
-          <Heart className="w-5 h-5 md:w-7 md:h-7 text-[#ff6b6b]" />
+          <Heart className="w-5 h-5 md:w-7 md:h-7 text-red-400" />
         </div>
         <div className="absolute top-32 right-4 md:top-40 md:right-24 w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-white shadow-lg flex items-center justify-center z-10">
-          <Sparkles className="w-5 h-5 md:w-7 md:h-7 text-[#f59e0b]" />
+          <Sparkles className="w-5 h-5 md:w-7 md:h-7 text-amber-500" />
         </div>
         <div className="hidden md:flex absolute bottom-40 left-32 w-14 h-14 rounded-2xl bg-white shadow-lg items-center justify-center z-10">
-          <Users className="w-7 h-7 text-[#3b82f6]" />
+          <Users className="w-7 h-7 text-blue-500" />
         </div>
         <div className="hidden md:flex absolute bottom-32 right-40 w-14 h-14 rounded-2xl bg-white shadow-lg items-center justify-center z-10">
-          <Star className="w-7 h-7 text-[#10b981]" />
+          <Star className="w-7 h-7 text-emerald-500" />
         </div>
 
         <div className="flex items-start md:items-center justify-center px-4 md:px-6 pt-2 md:pt-24 pb-8 md:pb-20">
-          <div className="w-full max-w-90 md:max-w-110 relative">
+          <div className="w-full max-w-lg md:max-w-xl relative">
             {/* Decorative blur elements */}
-            <div className="absolute -top-8 -left-8 md:-top-10 md:-left-10 w-16 h-16 md:w-24 md:h-24 bg-linear-to-br from-[#ffecd2]/40 to-[#fcb69f]/40 rounded-full blur-2xl" />
-            <div className="absolute -bottom-8 -right-8 md:-bottom-10 md:-right-10 w-20 h-20 md:w-28 md:h-28 bg-linear-to-br from-[#a8edea]/40 to-[#fed6e3]/40 rounded-full blur-2xl" />
+            <div className="absolute -top-8 -left-8 md:-top-10 md:-left-10 w-16 h-16 md:w-24 md:h-24 bg-gradient-to-br from-orange-200/40 to-red-200/40 rounded-full blur-2xl" />
+            <div className="absolute -bottom-8 -right-8 md:-bottom-10 md:-right-10 w-20 h-20 md:w-28 md:h-28 bg-gradient-to-br from-emerald-200/40 to-pink-200/40 rounded-full blur-2xl" />
 
-            <div className="relative bg-white/80 backdrop-blur-sm rounded-2xl md:rounded-3xl p-5 md:p-10 shadow-[0_2px_40px_-12px_rgba(0,0,0,0.1)]">
+            <div className="relative bg-white/80 backdrop-blur-sm rounded-2xl md:rounded-3xl p-5 md:p-10 shadow-xl">
               {/* Back button */}
               <button
                 onClick={() => setSelectedType(null)}
-                className="absolute top-4 left-4 md:top-6 md:left-6 text-[#86868b] hover:text-[#1d1d1f] transition-colors text-[12px] md:text-[13px] flex items-center gap-1"
+                className="absolute top-4 left-4 md:top-6 md:left-6 text-gray-500 hover:text-gray-900 transition-colors text-xs md:text-sm flex items-center gap-1"
               >
                 <ChevronRight className="w-3 h-3 md:w-4 md:h-4 rotate-180" />
                 Back
               </button>
 
-              <h1 className="text-[22px] md:text-[32px] font-semibold text-[#1d1d1f] tracking-tight text-center mt-4 md:mt-0">
+              <h1 className="text-2xl md:text-3xl font-semibold text-gray-900 tracking-tight text-center mt-4 md:mt-0">
                 Join as a Volunteer
               </h1>
-              <p className="text-[12px] md:text-[17px] text-[#86868b] text-center mt-1 md:mt-3 mb-4 md:mb-10">
+              <p className="text-xs md:text-base text-gray-500 text-center mt-1 md:mt-3 mb-4 md:mb-10">
                 Find opportunities that match your passion.
               </p>
 
               <form
                 onSubmit={async (e) => {
                   e.preventDefault();
-                  if (!agreedToTerms) return;
+                  if (!agreedToTerms) {
+                    alert('Please agree to the terms and conditions');
+                    return;
+                  }
 
                   const formData = new FormData(e.currentTarget);
 
@@ -94,9 +97,8 @@ export function HeroSection() {
                       interests: selectedInterests,
                     });
 
-                    // Success - redirect or show success message
                     alert('Account created successfully! You can now log in.');
-                    window.location.href = '/login'; // Or redirect to login/dashboard
+                    window.location.href = '/volunteer-home';
                   } catch (error: any) {
                     alert(error.message || 'Signup failed. Please try again.');
                   }
@@ -105,7 +107,7 @@ export function HeroSection() {
               >
                 {/* Full Name */}
                 <div className="space-y-0.5 md:space-y-2">
-                  <Label htmlFor="name" className="text-[10px] md:text-xs text-[#86868b] font-normal">
+                  <Label htmlFor="name" className="text-xs text-gray-500 font-normal">
                     Full Name
                   </Label>
                   <Input
@@ -114,13 +116,13 @@ export function HeroSection() {
                     type="text"
                     placeholder="John Doe"
                     required
-                    className="h-9 md:h-12 bg-[#f5f5f7] border-0 rounded-lg md:rounded-xl text-[13px] md:text-[17px] text-[#1d1d1f] placeholder:text-[#86868b] focus-visible:ring-2 focus-visible:ring-[#ff6b6b]"
+                    className="h-9 md:h-12 bg-gray-100 border-0 rounded-lg md:rounded-xl text-sm md:text-base text-gray-900 placeholder:text-gray-400 focus-visible:ring-2 focus-visible:ring-red-400"
                   />
                 </div>
 
                 {/* Email */}
                 <div className="space-y-0.5 md:space-y-2">
-                  <Label htmlFor="email" className="text-[10px] md:text-xs text-[#86868b] font-normal">
+                  <Label htmlFor="email" className="text-xs text-gray-500 font-normal">
                     Email
                   </Label>
                   <Input
@@ -129,17 +131,17 @@ export function HeroSection() {
                     type="email"
                     placeholder="name@example.com"
                     required
-                    className="h-9 md:h-12 bg-[#f5f5f7] border-0 rounded-lg md:rounded-xl text-[13px] md:text-[17px] text-[#1d1d1f] placeholder:text-[#86868b] focus-visible:ring-2 focus-visible:ring-[#ff6b6b]"
+                    className="h-9 md:h-12 bg-gray-100 border-0 rounded-lg md:rounded-xl text-sm md:text-base text-gray-900 placeholder:text-gray-400 focus-visible:ring-2 focus-visible:ring-red-400"
                   />
                 </div>
 
                 {/* Phone Number with +91 */}
                 <div className="space-y-0.5 md:space-y-2">
-                  <Label htmlFor="phone" className="text-[10px] md:text-xs text-[#86868b] font-normal">
+                  <Label htmlFor="phone" className="text-xs text-gray-500 font-normal">
                     Phone Number
                   </Label>
                   <div className="flex gap-1.5 md:gap-2">
-                    <div className="h-9 md:h-12 px-2.5 md:px-4 bg-[#f5f5f7] rounded-lg md:rounded-xl flex items-center text-[#86868b] text-[11px] md:text-[15px] font-medium shrink-0">
+                    <div className="h-9 md:h-12 px-2.5 md:px-4 bg-gray-100 rounded-lg md:rounded-xl flex items-center text-gray-500 text-xs md:text-base font-medium shrink-0">
                       +91
                     </div>
                     <Input
@@ -149,14 +151,14 @@ export function HeroSection() {
                       placeholder="9876543210"
                       required
                       pattern="[0-9]{10}"
-                      className="flex-1 h-9 md:h-12 bg-[#f5f5f7] border-0 rounded-lg md:rounded-xl text-[13px] md:text-[17px] text-[#1d1d1f] placeholder:text-[#86868b] focus-visible:ring-2 focus-visible:ring-[#ff6b6b]"
+                      className="flex-1 h-9 md:h-12 bg-gray-100 border-0 rounded-lg md:rounded-xl text-sm md:text-base text-gray-900 placeholder:text-gray-400 focus-visible:ring-2 focus-visible:ring-red-400"
                     />
                   </div>
                 </div>
 
                 {/* Password */}
                 <div className="space-y-0.5 md:space-y-2">
-                  <Label htmlFor="password" className="text-[10px] md:text-xs text-[#86868b] font-normal">
+                  <Label htmlFor="password" className="text-xs text-gray-500 font-normal">
                     Password
                   </Label>
                   <div className="relative">
@@ -167,12 +169,12 @@ export function HeroSection() {
                       placeholder="Create a password"
                       required
                       minLength={6}
-                      className="h-9 md:h-12 bg-[#f5f5f7] border-0 rounded-lg md:rounded-xl text-[13px] md:text-[17px] text-[#1d1d1f] placeholder:text-[#86868b] pr-9 md:pr-12 focus-visible:ring-2 focus-visible:ring-[#ff6b6b]"
+                      className="h-9 md:h-12 bg-gray-100 border-0 rounded-lg md:rounded-xl text-sm md:text-base text-gray-900 placeholder:text-gray-400 pr-9 md:pr-12 focus-visible:ring-2 focus-visible:ring-red-400"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-2.5 md:right-4 top-1/2 -translate-y-1/2 text-[#86868b] hover:text-[#1d1d1f]"
+                      className="absolute right-2.5 md:right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-900"
                     >
                       {showPassword ? (
                         <EyeOff className="w-3.5 h-3.5 md:w-5 md:h-5" />
@@ -185,16 +187,16 @@ export function HeroSection() {
 
                 {/* City Dropdown */}
                 <div className="space-y-0.5 md:space-y-2">
-                  <Label htmlFor="city" className="text-[10px] md:text-xs text-[#86868b] font-normal">
+                  <Label htmlFor="city" className="text-xs text-gray-500 font-normal">
                     City
                   </Label>
                   <Select value={city} onValueChange={setCity}>
-                    <SelectTrigger className="h-9 md:h-12 bg-[#f5f5f7] border-0 rounded-lg md:rounded-xl text-[13px] md:text-[17px] text-[#1d1d1f] focus:ring-2 focus:ring-[#ff6b6b]">
+                    <SelectTrigger className="h-9 md:h-12 bg-gray-100 border-0 rounded-lg md:rounded-xl text-sm md:text-base text-gray-900 focus:ring-2 focus:ring-red-400">
                       <SelectValue placeholder="Select your city" />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
                       {cities.map((c) => (
-                        <SelectItem key={c} value={c} className="text-[13px] md:text-[15px] rounded-lg">
+                        <SelectItem key={c} value={c} className="text-sm md:text-base rounded-lg">
                           {c}
                         </SelectItem>
                       ))}
@@ -203,7 +205,7 @@ export function HeroSection() {
                 </div>
 
                 <div className="space-y-1.5 md:space-y-3 pt-0.5 md:pt-2">
-                  <Label className="text-[10px] md:text-xs text-[#86868b] font-normal">Causes I care about</Label>
+                  <Label className="text-xs text-gray-500 font-normal">Causes I care about</Label>
                   <div className="flex flex-wrap gap-1 md:gap-2">
                     {interests.map((interest) => {
                       const isSelected = selectedInterests.includes(interest)
@@ -213,10 +215,10 @@ export function HeroSection() {
                           type="button"
                           onClick={() => toggleInterest(interest)}
                           className={cn(
-                            "px-2 md:px-4 py-0.5 md:py-2 rounded-full text-[10px] md:text-[15px] font-medium transition-all duration-200",
+                            "px-2 md:px-4 py-0.5 md:py-2 rounded-full text-xs md:text-base font-medium transition-all duration-200",
                             isSelected
-                              ? "bg-linear-to-r from-[#ff6b6b] to-[#ee5a5a] text-white shadow-md shadow-[#ff6b6b]/25"
-                              : "bg-transparent border border-[#d2d2d7] text-[#86868b] hover:border-[#ff6b6b] hover:text-[#ff6b6b]",
+                              ? "bg-gradient-to-r from-red-400 to-red-500 text-white shadow-md shadow-red-400/25"
+                              : "bg-transparent border border-gray-300 text-gray-500 hover:border-red-400 hover:text-red-400",
                           )}
                         >
                           {interest}
@@ -232,14 +234,14 @@ export function HeroSection() {
                     id="terms"
                     checked={agreedToTerms}
                     onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
-                    className="mt-0.5 rounded border-[#d2d2d7] data-[state=checked]:bg-[#ff6b6b] data-[state=checked]:border-[#ff6b6b] w-3.5 h-3.5 md:w-4.5 md:h-4.5"
+                    className="mt-0.5 rounded border-gray-300 data-[state=checked]:bg-red-400 data-[state=checked]:border-red-400 w-3.5 h-3.5 md:w-4.5 md:h-4.5"
                   />
                   <Label
                     htmlFor="terms"
-                    className="text-[10px] md:text-[13px] text-[#86868b] leading-relaxed cursor-pointer"
+                    className="text-xs md:text-sm text-gray-500 leading-relaxed cursor-pointer"
                   >
                     I agree to the{" "}
-                    <a href="#" className="text-[#ff6b6b] hover:underline">
+                    <a href="#" className="text-red-400 hover:underline">
                       Terms & Liability Waiver
                     </a>
                   </Label>
@@ -248,7 +250,7 @@ export function HeroSection() {
                 <Button
                   type="submit"
                   disabled={!agreedToTerms}
-                  className="w-full h-9 md:h-12 bg-linear-to-r from-[#ff6b6b] to-[#ee5a5a] hover:from-[#ff5252] hover:to-[#e04848] text-white text-[13px] md:text-[17px] font-medium rounded-full mt-2 md:mt-4 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[#ff6b6b]/25"
+                  className="w-full h-9 md:h-12 bg-gradient-to-r from-red-400 to-red-500 hover:from-red-500 hover:to-red-600 text-white text-sm md:text-base font-medium rounded-full mt-2 md:mt-4 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-red-400/25"
                 >
                   Create Account
                 </Button>
@@ -258,10 +260,10 @@ export function HeroSection() {
               <div className="mt-4 md:mt-8">
                 <div className="relative">
                   <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-[#e8e8ed]"></div>
+                    <div className="w-full border-t border-gray-200"></div>
                   </div>
                   <div className="relative flex justify-center text-sm">
-                    <span className="bg-white/80 px-3 md:px-4 text-[#86868b] text-[10px] md:text-[13px]">
+                    <span className="bg-white/80 px-3 md:px-4 text-gray-500 text-xs md:text-sm">
                       Or continue with
                     </span>
                   </div>
@@ -270,7 +272,7 @@ export function HeroSection() {
                 <div className="flex justify-center gap-2 md:gap-4 mt-3 md:mt-6">
                   <button
                     type="button"
-                    className="h-8 md:h-11 px-3 md:px-5 rounded-full bg-white border border-[#e8e8ed] hover:border-[#d2d2d7] hover:shadow-md flex items-center justify-center gap-1.5 md:gap-2 transition-all"
+                    className="h-8 md:h-11 px-3 md:px-5 rounded-full bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md flex items-center justify-center gap-1.5 md:gap-2 transition-all"
                   >
                     <svg className="w-3.5 h-3.5 md:w-4.5 md:h-4.5" viewBox="0 0 24 24">
                       <path
@@ -290,27 +292,27 @@ export function HeroSection() {
                         d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                       />
                     </svg>
-                    <span className="text-[11px] md:text-[14px] text-[#1d1d1f] font-medium">Google</span>
+                    <span className="text-xs md:text-sm text-gray-900 font-medium">Google</span>
                   </button>
                   <button
                     type="button"
-                    className="h-8 md:h-11 px-3 md:px-5 rounded-full bg-white border border-[#e8e8ed] hover:border-[#d2d2d7] hover:shadow-md flex items-center justify-center gap-1.5 md:gap-2 transition-all"
+                    className="h-8 md:h-11 px-3 md:px-5 rounded-full bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md flex items-center justify-center gap-1.5 md:gap-2 transition-all"
                   >
                     <svg
-                      className="w-3.5 h-3.5 md:w-4.5 md:h-4.5 text-[#1d1d1f]"
+                      className="w-3.5 h-3.5 md:w-4.5 md:h-4.5 text-gray-900"
                       fill="currentColor"
                       viewBox="0 0 24 24"
                     >
                       <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
                     </svg>
-                    <span className="text-[11px] md:text-[14px] text-[#1d1d1f] font-medium">Apple</span>
+                    <span className="text-xs md:text-sm text-gray-900 font-medium">Apple</span>
                   </button>
                 </div>
               </div>
 
-              <p className="text-center mt-4 md:mt-8 text-[10px] md:text-[13px] text-[#86868b]">
+              <p className="text-center mt-4 md:mt-8 text-xs md:text-sm text-gray-500">
                 Already a member?{" "}
-                <Link href="/login" className="text-[#ff6b6b] hover:underline font-medium">
+                <Link href="/login" className="text-red-400 hover:underline font-medium">
                   Log in
                 </Link>
               </p>
@@ -330,46 +332,46 @@ export function HeroSection() {
   return (
     <section
       id="hero"
-      className="min-h-screen bg-linear-to-b from-[#fef7f0] via-white to-[#f0fdf4] flex flex-col items-center justify-center px-4 md:px-6 py-8 md:py-20 relative overflow-x-hidden"
+      className="min-h-screen bg-gradient-to-b from-orange-50 via-white to-green-50 flex flex-col items-center justify-center px-4 md:px-6 py-8 md:py-20 relative overflow-x-hidden"
     >
       <div className="absolute top-16 left-4 md:top-24 md:left-24 w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-white shadow-lg flex items-center justify-center z-10">
-        <Heart className="w-5 h-5 md:w-7 md:h-7 text-[#ff6b6b]" />
+        <Heart className="w-5 h-5 md:w-7 md:h-7 text-red-400" />
       </div>
       <div className="absolute top-24 right-4 md:top-32 md:right-28 w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-white shadow-lg flex items-center justify-center z-10">
-        <Sparkles className="w-5 h-5 md:w-7 md:h-7 text-[#f59e0b]" />
+        <Sparkles className="w-5 h-5 md:w-7 md:h-7 text-amber-500" />
       </div>
       <div className="hidden md:flex absolute bottom-32 left-36 w-14 h-14 rounded-2xl bg-white shadow-lg items-center justify-center z-10">
-        <Users className="w-7 h-7 text-[#3b82f6]" />
+        <Users className="w-7 h-7 text-blue-500" />
       </div>
       <div className="hidden md:flex absolute bottom-40 right-32 w-14 h-14 rounded-2xl bg-white shadow-lg items-center justify-center z-10">
-        <Star className="w-7 h-7 text-[#10b981]" />
+        <Star className="w-7 h-7 text-emerald-500" />
       </div>
 
-      <h1 className="text-[28px] md:text-[56px] font-semibold text-[#1d1d1f] tracking-tight text-center leading-tight">
+      <h1 className="text-3xl md:text-6xl font-semibold text-gray-900 tracking-tight text-center leading-tight">
         Make a difference.
         <br />
-        <span className="bg-linear-to-r from-[#ff6b6b] to-[#ee5a5a] bg-clip-text text-transparent">Start today.</span>
+        <span className="bg-gradient-to-r from-red-400 to-red-500 bg-clip-text text-transparent">Start today.</span>
       </h1>
 
-      <p className="text-[14px] md:text-[21px] text-[#86868b] text-center mt-3 md:mt-6 mb-6 md:mb-12 max-w-[320px] md:max-w-150">
+      <p className="text-sm md:text-xl text-gray-500 text-center mt-3 md:mt-6 mb-6 md:mb-12 max-w-sm md:max-w-2xl">
         Join 10,000+ volunteers making an impact in their communities.
       </p>
 
       {/* User Type Cards */}
-      <div className="grid grid-cols-2 gap-3 md:gap-6 w-full max-w-85 md:max-w-160">
+      <div className="grid grid-cols-2 gap-3 md:gap-6 w-full max-w-lg md:max-w-4xl">
         {/* Volunteer Card */}
         <button
           onClick={() => setSelectedType("volunteer")}
-          className="group relative bg-white rounded-xl md:rounded-3xl p-4 md:p-8 shadow-[0_2px_20px_-8px_rgba(0,0,0,0.1)] hover:shadow-[0_8px_40px_-12px_rgba(255,107,107,0.3)] transition-all duration-300 text-left border border-transparent hover:border-[#ff6b6b]/20"
+          className="group relative bg-white rounded-xl md:rounded-3xl p-4 md:p-8 shadow-lg hover:shadow-2xl hover:shadow-red-400/20 transition-all duration-300 text-left border border-transparent hover:border-red-400/20"
         >
-          <div className="w-10 h-10 md:w-14 md:h-14 rounded-lg md:rounded-2xl bg-linear-to-br from-[#fff5f5] to-[#ffe5e5] flex items-center justify-center mb-3 md:mb-6 group-hover:scale-110 transition-transform">
-            <Heart className="w-5 h-5 md:w-7 md:h-7 text-[#ff6b6b]" />
+          <div className="w-10 h-10 md:w-14 md:h-14 rounded-lg md:rounded-2xl bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center mb-3 md:mb-6 group-hover:scale-110 transition-transform">
+            <Heart className="w-5 h-5 md:w-7 md:h-7 text-red-400" />
           </div>
-          <h3 className="text-[14px] md:text-[21px] font-semibold text-[#1d1d1f] mb-1 md:mb-2">I'm a Volunteer</h3>
-          <p className="text-[10px] md:text-[15px] text-[#86868b] leading-relaxed line-clamp-2">
+          <h3 className="text-sm md:text-xl font-semibold text-gray-900 mb-1 md:mb-2">I'm a Volunteer</h3>
+          <p className="text-xs md:text-base text-gray-500 leading-relaxed line-clamp-2">
             Find meaningful opportunities to give back.
           </p>
-          <div className="flex items-center gap-1 mt-2 md:mt-4 text-[#ff6b6b] text-[11px] md:text-[15px] font-medium">
+          <div className="flex items-center gap-1 mt-2 md:mt-4 text-red-400 text-xs md:text-base font-medium">
             Get started <ChevronRight className="w-3 h-3 md:w-4 md:h-4" />
           </div>
         </button>
@@ -377,24 +379,24 @@ export function HeroSection() {
         {/* Organisation Card */}
         <button
           onClick={() => setSelectedType("organisation")}
-          className="group relative bg-white rounded-xl md:rounded-3xl p-4 md:p-8 shadow-[0_2px_20px_-8px_rgba(0,0,0,0.1)] hover:shadow-[0_8px_40px_-12px_rgba(16,185,129,0.3)] transition-all duration-300 text-left border border-transparent hover:border-[#10b981]/20"
+          className="group relative bg-white rounded-xl md:rounded-3xl p-4 md:p-8 shadow-lg hover:shadow-2xl hover:shadow-emerald-500/20 transition-all duration-300 text-left border border-transparent hover:border-emerald-500/20"
         >
-          <div className="w-10 h-10 md:w-14 md:h-14 rounded-lg md:rounded-2xl bg-linear-to-br from-[#f0fdf4] to-[#dcfce7] flex items-center justify-center mb-3 md:mb-6 group-hover:scale-110 transition-transform">
-            <Building2 className="w-5 h-5 md:w-7 md:h-7 text-[#10b981]" />
+          <div className="w-10 h-10 md:w-14 md:h-14 rounded-lg md:rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100 flex items-center justify-center mb-3 md:mb-6 group-hover:scale-110 transition-transform">
+            <Building2 className="w-5 h-5 md:w-7 md:h-7 text-emerald-500" />
           </div>
-          <h3 className="text-[14px] md:text-[21px] font-semibold text-[#1d1d1f] mb-1 md:mb-2">I'm an Organisation</h3>
-          <p className="text-[10px] md:text-[15px] text-[#86868b] leading-relaxed line-clamp-2">
+          <h3 className="text-sm md:text-xl font-semibold text-gray-900 mb-1 md:mb-2">I'm an Organisation</h3>
+          <p className="text-xs md:text-base text-gray-500 leading-relaxed line-clamp-2">
             Connect with passionate volunteers.
           </p>
-          <div className="flex items-center gap-1 mt-2 md:mt-4 text-[#10b981] text-[11px] md:text-[15px] font-medium">
+          <div className="flex items-center gap-1 mt-2 md:mt-4 text-emerald-500 text-xs md:text-base font-medium">
             Get started <ChevronRight className="w-3 h-3 md:w-4 md:h-4" />
           </div>
         </button>
       </div>
 
-      <p className="text-center mt-6 md:mt-10 text-[12px] md:text-[15px] text-[#86868b]">
+      <p className="text-center mt-6 md:mt-10 text-xs md:text-base text-gray-500">
         Already have an account?{" "}
-        <Link href="/login" className="text-[#ff6b6b] hover:underline font-medium">
+        <Link href="/login" className="text-red-400 hover:underline font-medium">
           Log in
         </Link>
       </p>

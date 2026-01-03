@@ -20,6 +20,7 @@ import {
   Calendar,
   Building2,
   AlertTriangle,
+  Loader2
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { api } from "@/lib/api"
@@ -31,31 +32,83 @@ const recentActivity = [
   { id: 4, text: "New volunteer application received.", time: "12h ago", type: "register" },
 ]
 
+// --- CHANGED: Removed 'default' here to allow named import ---
 export function OrgHomePage() {
   const [menuOpen, setMenuOpen] = useState(false)
   const eventsRef = useRef<HTMLDivElement>(null)
 
-  // Add these new states
-  const [events, setEvents] = useState<any[]>([])
+  // --- Real-Time Data State ---
   const [loading, setLoading] = useState(true)
+  const [profile, setProfile] = useState<any>(null)
+  const [events, setEvents] = useState<any[]>([])
+  const [stats, setStats] = useState({
+    totalHours: 0,
+    activeVolunteers: 0,
+    eventsHosted: 0,
+    upcomingEventsCount: 0
+  })
   const [error, setError] = useState<string | null>(null)
 
-  // Fetch events on mount
+  // --- Fetch Data on Mount ---
   useEffect(() => {
-    const fetchEvents = async () => {
+    const fetchDashboardData = async () => {
       try {
         setLoading(true)
-        const response = await api.getMyEvents()
-        setEvents(response.events || [])
+        
+        // 1. Fetch Profile & Events in parallel
+        const [profileRes, eventsRes] = await Promise.all([
+          api.getUserProfile(),
+          api.getMyEvents()
+        ])
+
+        const orgProfile = profileRes?.profile || {}
+        const fetchedEvents = eventsRes.events || []
+
+        setProfile(orgProfile)
+        setEvents(fetchedEvents)
+
+        // 2. Calculate Real-Time Stats
+        const calculatedStats = fetchedEvents.reduce((acc: any, event: any) => {
+          // A. Count Hosted Events
+          acc.eventsHosted += 1
+
+          // B. Calculate Hours (Duration * Volunteers)
+          const start = new Date(`1970-01-01T${event.start_time}`)
+          const end = new Date(`1970-01-01T${event.end_time}`)
+          let durationHours = (end.getTime() - start.getTime()) / (1000 * 60 * 60)
+          if (durationHours < 0) durationHours = 0; // Safety check
+
+          // Use checked_in if available, otherwise 0 for pending events
+          const volunteerCount = event.checked_in_count || 0 
+          acc.totalHours += Math.round(durationHours * volunteerCount)
+
+          // C. Active Volunteers (Total Registered)
+          acc.activeVolunteers += (event.registered_count || 0)
+
+          // D. Upcoming Count
+          const eventDate = new Date(event.event_date)
+          const today = new Date()
+          // Set time to midnight for accurate date comparison
+          today.setHours(0,0,0,0)
+          
+          if (eventDate >= today) {
+            acc.upcomingEventsCount += 1
+          }
+
+          return acc
+        }, { totalHours: 0, activeVolunteers: 0, eventsHosted: 0, upcomingEventsCount: 0 })
+
+        setStats(calculatedStats)
+
       } catch (err: any) {
-        setError(err.message || 'Failed to load events')
-        console.error('Error fetching events:', err)
+        setError(err.message || 'Failed to load dashboard data')
+        console.error('Error fetching dashboard:', err)
       } finally {
         setLoading(false)
       }
     }
 
-    fetchEvents()
+    fetchDashboardData()
   }, [])
 
   const scrollEvents = (direction: "left" | "right") => {
@@ -75,22 +128,35 @@ export function OrgHomePage() {
       elderly: "bg-purple-500",
       community: "bg-cyan-500",
     }
-    return colors[category] || "bg-gray-500"
+    return colors[category?.toLowerCase()] || "bg-gray-500"
   }
 
   // Helper function to format date
   const formatDate = (dateString: string) => {
+    if (!dateString) return ""
     const date = new Date(dateString)
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
   }
 
   // Helper function to format time
   const formatTime = (timeString: string) => {
+    if (!timeString) return ""
     const [hours, minutes] = timeString.split(':')
     const hour = parseInt(hours)
     const ampm = hour >= 12 ? 'PM' : 'AM'
     const displayHour = hour % 12 || 12
     return `${displayHour} ${ampm}`
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+         <div className="flex flex-col items-center gap-3">
+           <Loader2 className="w-8 h-8 text-[#0066cc] animate-spin" />
+           <p className="text-sm text-[#86868b]">Loading dashboard...</p>
+         </div>
+      </div>
+    )
   }
 
   return (
@@ -119,14 +185,17 @@ export function OrgHomePage() {
 
           {/* Desktop - Org Avatar */}
           <Link href="/org-profile" className="hidden md:block">
-            <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-[#f5f5f7] hover:ring-[#0066cc] transition-all">
-              <img
-                src="/green-earth-ngo-logo.jpg"
-                alt="Green Earth Foundation"
-                width={40}
-                height={40}
-                className="w-full h-full object-cover"
-              />
+            <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-[#f5f5f7] hover:ring-[#0066cc] transition-all bg-gray-100 flex items-center justify-center text-[#0066cc] font-bold">
+              {/* Show Initials if no logo, or use Logo URL from profile */}
+              {profile?.logo_url ? (
+                <img
+                  src={profile.logo_url}
+                  alt={profile.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span>{profile?.name?.charAt(0) || "O"}</span>
+              )}
             </div>
           </Link>
 
@@ -149,14 +218,8 @@ export function OrgHomePage() {
                     onClick={() => setMenuOpen(false)}
                     className="flex items-center gap-3 px-4 py-3 hover:bg-[#f5f5f7] transition-colors border-b border-[#f5f5f7]"
                   >
-                    <div className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-[#f5f5f7]">
-                      <img
-                        src="/green-earth-ngo-logo.jpg"
-                        alt="Organization"
-                        width={32}
-                        height={32}
-                        className="w-full h-full object-cover"
-                      />
+                    <div className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-[#f5f5f7] bg-gray-100 flex items-center justify-center">
+                        <span className="text-xs font-bold">{profile?.name?.charAt(0)}</span>
                     </div>
                     <span className="text-[13px] font-medium text-[#1d1d1f]">Profile</span>
                   </Link>
@@ -187,7 +250,7 @@ export function OrgHomePage() {
         </div>
       </nav>
 
-      {/* Hero Section - Same aesthetic as volunteer home */}
+      {/* Hero Section - DYNAMIC DATA */}
       <section className="relative bg-linear-to-br from-[#f0f7ff] via-[#f5faff] to-[#f0fdf4] py-8 md:py-16 overflow-hidden">
         {/* Floating decorative icons */}
         <div className="absolute top-4 left-4 md:top-8 md:left-20 w-8 h-8 md:w-12 md:h-12 bg-white rounded-xl shadow-lg flex items-center justify-center">
@@ -207,32 +270,40 @@ export function OrgHomePage() {
           {/* Active badge */}
           <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white rounded-full shadow-sm mb-4 md:mb-6">
             <span className="w-1.5 h-1.5 md:w-2 md:h-2 bg-emerald-500 rounded-full animate-pulse" />
-            <span className="text-[11px] md:text-[13px] text-[#1d1d1f] font-medium">3 events happening this week</span>
+            <span className="text-[11px] md:text-[13px] text-[#1d1d1f] font-medium">
+              {stats.upcomingEventsCount} events upcoming
+            </span>
           </div>
 
           <h1 className="text-[24px] md:text-[56px] font-bold text-[#1d1d1f] tracking-tight leading-tight">
             Welcome back,{" "}
             <span className="bg-linear-to-r from-[#0066cc] via-[#10b981] to-[#f59e0b] bg-clip-text text-transparent">
-              Green Earth
+              {profile?.name || "Partner"}
             </span>
             .
           </h1>
           <p className="text-[14px] md:text-[19px] text-[#86868b] mt-2 md:mt-3">
-            Ready to make an impact in <span className="text-[#1d1d1f] font-semibold">Nashik</span>?
+            Ready to make an impact in <span className="text-[#1d1d1f] font-semibold">{profile?.city || "your city"}</span>?
           </p>
 
-          {/* Quick stats cards */}
+          {/* Quick stats cards - REAL DATA */}
           <div className="flex justify-center gap-2 md:gap-4 mt-6 md:mt-8">
             <div className="bg-white rounded-xl px-3 md:px-6 py-3 md:py-4 shadow-sm border border-[#f5f5f7]">
-              <p className="text-[18px] md:text-[28px] font-bold text-[#0066cc]">1,250</p>
+              <p className="text-[18px] md:text-[28px] font-bold text-[#0066cc]">
+                {stats.totalHours.toLocaleString()}
+              </p>
               <p className="text-[10px] md:text-[12px] text-[#86868b]">Total Hours</p>
             </div>
             <div className="bg-white rounded-xl px-3 md:px-6 py-3 md:py-4 shadow-sm border border-[#f5f5f7]">
-              <p className="text-[18px] md:text-[28px] font-bold text-[#10b981]">450</p>
+              <p className="text-[18px] md:text-[28px] font-bold text-[#10b981]">
+                {stats.activeVolunteers.toLocaleString()}
+              </p>
               <p className="text-[10px] md:text-[12px] text-[#86868b]">Active Volunteers</p>
             </div>
             <div className="bg-white rounded-xl px-3 md:px-6 py-3 md:py-4 shadow-sm border border-[#f5f5f7]">
-              <p className="text-[18px] md:text-[28px] font-bold text-[#f59e0b]">12</p>
+              <p className="text-[18px] md:text-[28px] font-bold text-[#f59e0b]">
+                {stats.eventsHosted}
+              </p>
               <p className="text-[10px] md:text-[12px] text-[#86868b]">Events Hosted</p>
             </div>
           </div>
@@ -285,16 +356,7 @@ export function OrgHomePage() {
             </Link>
           </div>
 
-          {loading ? (
-            <div className="text-center py-12">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#0066cc]"></div>
-              <p className="text-sm text-[#86868b] mt-3">Loading events...</p>
-            </div>
-          ) : error ? (
-            <div className="text-center py-12">
-              <p className="text-sm text-red-600">{error}</p>
-            </div>
-          ) : events.length === 0 ? (
+          {events.length === 0 ? (
             <div className="text-center py-12 bg-white rounded-xl">
               <Calendar className="w-12 h-12 text-[#86868b] mx-auto mb-3" />
               <p className="text-sm text-[#86868b]">No events yet. Create your first event!</p>
@@ -316,7 +378,7 @@ export function OrgHomePage() {
                   <Link
                     key={event.id}
                     href={`/org-events/${event.id}`}
-                    className="shrink-0 w-50 md:w-auto snap-start group bg-white rounded-xl md:rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300"
+                    className="shrink-0 w-64 md:w-auto snap-start group bg-white rounded-xl md:rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300"
                   >
                     <div className="relative aspect-4/3 overflow-hidden">
                       {event.cover_image_url ? (
@@ -376,7 +438,7 @@ export function OrgHomePage() {
                             {event.registered_count}/{event.total_slots} registered
                           </span>
                           <span className="font-medium text-[#10b981]">
-                            {Math.round((event.registered_count / event.total_slots) * 100)}%
+                            {Math.round((event.registered_count / event.total_slots) * 100) || 0}%
                           </span>
                         </div>
                         <div className="h-1.5 bg-[#f5f5f7] rounded-full overflow-hidden">
@@ -459,3 +521,6 @@ export function OrgHomePage() {
     </div>
   )
 }
+
+
+export default OrgHomePage;

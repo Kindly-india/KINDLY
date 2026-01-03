@@ -1,9 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import Image from "next/image"
 import Link from "next/link"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import {
   ChevronLeft,
   Users,
@@ -18,30 +17,61 @@ import {
   QrCode,
   Sparkles,
   Heart,
+  CheckCircle2,
+  Navigation, // Added Navigation icon for the map button
 } from "lucide-react"
 import { api } from "@/lib/api"
 
 type MissionTab = "roster" | "broadcast" | "settings"
 
+interface Volunteer {
+  id: string
+  full_name: string
+  phone: string
+  city: string
+  interests: string[]
+}
+
+interface Registration {
+  id: string
+  status: string
+  registered_at: string
+  checked_in_at: string | null
+  volunteer_profiles: Volunteer
+}
+
 export function OrgEventDetail() {
   const params = useParams()
+  const router = useRouter()
   const eventId = params?.id as string
 
   const [event, setEvent] = useState<any>(null)
+  const [registrations, setRegistrations] = useState<Registration[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [missionTab, setMissionTab] = useState<MissionTab>("roster")
   const [volunteerSearch, setVolunteerSearch] = useState("")
   const [broadcastMessage, setBroadcastMessage] = useState("")
-  const [checkedInVolunteers, setCheckedInVolunteers] = useState<number[]>([])
+  const [checkInLoading, setCheckInLoading] = useState<string | null>(null)
+  const [cancelLoading, setCancelLoading] = useState(false)
+  const [completeLoading, setCompleteLoading] = useState(false)
 
-  // Fetch event data
   useEffect(() => {
-    const fetchEvent = async () => {
+    const fetchEventData = async () => {
       try {
         setLoading(true)
-        const response = await api.getEventById(eventId)
-        setEvent(response.event)
+        const [eventResponse, registrationsResponse] = await Promise.all([
+          api.getEventById(eventId),
+          api.getEventRegistrations(eventId),
+        ])
+
+        if (eventResponse.event?.status === 'completed') {
+          router.replace(`/org-events/${eventId}/report`)
+          return
+        }
+
+        setEvent(eventResponse.event)
+        setRegistrations(registrationsResponse.registrations || [])
       } catch (err: any) {
         setError(err.message || 'Failed to load event')
         console.error('Error fetching event:', err)
@@ -51,23 +81,65 @@ export function OrgEventDetail() {
     }
 
     if (eventId) {
-      fetchEvent()
+      fetchEventData()
     }
-  }, [eventId])
+  }, [eventId, router])
 
-  const toggleCheckIn = (volunteerId: number) => {
-    setCheckedInVolunteers((prev) =>
-      prev.includes(volunteerId) ? prev.filter((id) => id !== volunteerId) : [...prev, volunteerId],
-    )
+  const handleCompleteEvent = async () => {
+    if (!confirm("Are you sure you want to mark this event as completed? This will generate the impact report.")) return;
+    
+    try {
+      setCompleteLoading(true);
+      await api.completeEvent(eventId);
+      router.push(`/org-events/${eventId}/report`); 
+    } catch (err: any) {
+      alert(err.message || "Failed to complete event");
+    } finally {
+      setCompleteLoading(false);
+    }
+  };
+
+  const handleCancelEvent = async () => {
+    if (!confirm('Are you sure you want to cancel this event? This action cannot be undone.')) {
+      return
+    }
+
+    try {
+      setCancelLoading(true)
+      await api.cancelEvent(eventId)
+      alert('Event cancelled successfully')
+      router.push('/org-events')
+    } catch (err: any) {
+      alert(err.message || 'Failed to cancel event')
+    } finally {
+      setCancelLoading(false)
+    }
   }
 
-  // Format date helper
+  const handleCheckIn = async (registrationId: string, currentStatus: string) => {
+    try {
+      setCheckInLoading(registrationId)
+      
+      if (currentStatus === 'checked_in') {
+        await api.undoCheckIn(eventId, registrationId)
+      } else {
+        await api.checkInVolunteer(eventId, registrationId)
+      }
+
+      const registrationsResponse = await api.getEventRegistrations(eventId)
+      setRegistrations(registrationsResponse.registrations || [])
+    } catch (err: any) {
+      alert(err.message || 'Failed to update check-in status')
+    } finally {
+      setCheckInLoading(null)
+    }
+  }
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
   }
 
-  // Format time helper
   const formatTime = (timeString: string) => {
     const [hours, minutes] = timeString.split(':')
     const hour = parseInt(hours)
@@ -92,10 +164,7 @@ export function OrgEventDetail() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <p className="text-sm text-red-600 mb-4">{error || 'Event not found'}</p>
-          <Link
-            href="/org-events"
-            className="text-sm text-teal-600 hover:underline"
-          >
+          <Link href="/org-events" className="text-sm text-teal-600 hover:underline">
             Back to Events
           </Link>
         </div>
@@ -103,29 +172,24 @@ export function OrgEventDetail() {
     )
   }
 
-  // Placeholder volunteers (since we don't have registrations table yet)
-  const volunteers: any[] = []
-  const filteredRoster = volunteers.filter((v: any) =>
-    v.name.toLowerCase().includes(volunteerSearch.toLowerCase()),
+  const filteredRoster = registrations.filter((reg) =>
+    reg.volunteer_profiles.full_name.toLowerCase().includes(volunteerSearch.toLowerCase())
   )
 
+  const checkedInCount = registrations.filter(reg => reg.status === 'checked_in').length
+
   return (
-    <div className="min-h-screen bg-linear-to-br from-[#f0f7ff] via-white to-[#f0fdf4] overflow-x-hidden">
-      {/* Floating decorative icons */}
-      <div className="fixed top-20 left-8 w-12 h-12 bg-white rounded-xl shadow-lg flex items-center justify-center pointer-events-none md:flex">
-        <Heart className="w-5 h-5 text-[#ff6b6b]" />
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
+      <div className="fixed top-20 left-8 w-12 h-12 bg-white rounded-xl shadow-lg hidden md:flex items-center justify-center pointer-events-none">
+        <Heart className="w-5 h-5 text-red-400" />
       </div>
-      <div className="fixed top-32 right-16 w-12 h-12 bg-white rounded-xl shadow-lg flex items-center justify-center pointer-events-none md:flex">
-        <Sparkles className="w-5 h-5 text-[#f59e0b]" />
+      <div className="fixed top-32 right-16 w-12 h-12 bg-white rounded-xl shadow-lg hidden md:flex items-center justify-center pointer-events-none">
+        <Sparkles className="w-5 h-5 text-amber-500" />
       </div>
 
-      {/* Header */}
       <div className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-100">
         <div className="max-w-5xl mx-auto px-4 md:px-8 py-3 md:py-4">
-          <Link
-            href="/org-events"
-            className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors mb-3"
-          >
+          <Link href="/org-events" className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors mb-3">
             <ChevronLeft className="w-4 h-4" />
             Back to Events
           </Link>
@@ -133,52 +197,59 @@ export function OrgEventDetail() {
         </div>
       </div>
 
-      {/* Stats Row */}
-      <div className="px-4 md:px-8 py-4 bg-linear-to-b from-teal-50/50 to-transparent">
+      <div className="px-4 md:px-8 py-4 bg-gradient-to-b from-teal-50/50 to-transparent">
         <div className="max-w-5xl mx-auto flex flex-wrap gap-2 md:gap-3">
           <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white rounded-full shadow-sm border border-gray-100 text-xs md:text-sm">
             <Users className="w-3.5 h-3.5 text-teal-500" />
-            <span className="font-medium text-gray-700">{event.registered_count} Registered</span>
+            <span className="font-medium text-gray-700">{registrations.length} Registered</span>
           </div>
           <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white rounded-full shadow-sm border border-gray-100 text-xs md:text-sm">
             <Check className="w-3.5 h-3.5 text-emerald-500" />
-            <span className="font-medium text-gray-700">{event.checked_in_count} Checked In</span>
+            <span className="font-medium text-gray-700">{checkedInCount} Checked In</span>
           </div>
           <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white rounded-full shadow-sm border border-gray-100 text-xs md:text-sm">
             <Clock className="w-3.5 h-3.5 text-amber-500" />
-            <span className="font-medium text-gray-700">{event.total_slots - event.registered_count} Slots Left</span>
+            <span className="font-medium text-gray-700">{event.total_slots - registrations.length} Slots Left</span>
           </div>
         </div>
       </div>
 
-      {/* Tabs */}
       <div className="px-4 md:px-8 py-3">
         <div className="max-w-5xl mx-auto">
           <div className="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit">
-            {[
-              { key: "roster", label: "Roster", icon: Users },
-              { key: "broadcast", label: "Broadcast", icon: MessageSquare },
-              { key: "settings", label: "Settings", icon: Calendar },
-            ].map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setMissionTab(tab.key as MissionTab)}
-                className={`flex items-center gap-1.5 px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-all ${
-                  missionTab === tab.key ? "bg-white text-teal-600 shadow-sm" : "text-gray-600 hover:text-gray-900"
-                }`}
-              >
-                <tab.icon className="w-4 h-4" />
-                {tab.label}
-              </button>
-            ))}
+            <button
+              onClick={() => setMissionTab("roster")}
+              className={`flex items-center gap-1.5 px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-all ${
+                missionTab === "roster" ? "bg-white text-teal-600 shadow-sm" : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              <Users className="w-4 h-4" />
+              Roster
+            </button>
+            <button
+              onClick={() => setMissionTab("broadcast")}
+              className={`flex items-center gap-1.5 px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-all ${
+                missionTab === "broadcast" ? "bg-white text-teal-600 shadow-sm" : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              <MessageSquare className="w-4 h-4" />
+              Broadcast
+            </button>
+            <button
+              onClick={() => setMissionTab("settings")}
+              className={`flex items-center gap-1.5 px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-all ${
+                missionTab === "settings" ? "bg-white text-teal-600 shadow-sm" : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              <Calendar className="w-4 h-4" />
+              Settings
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Content */}
       <div className="px-4 md:px-8 pb-32">
         <div className="max-w-5xl mx-auto">
-          {/* Roster Tab */}
           {missionTab === "roster" && (
             <div className="py-4 space-y-4">
               <div className="relative">
@@ -192,44 +263,56 @@ export function OrgEventDetail() {
                 />
               </div>
 
-              {volunteers.length === 0 ? (
+              {registrations.length === 0 ? (
                 <div className="text-center py-12 bg-white rounded-xl">
                   <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                   <p className="text-gray-500 text-sm">No volunteers registered yet</p>
                   <p className="text-gray-400 text-xs mt-1">Volunteers will appear here once they register</p>
                 </div>
+              ) : filteredRoster.length === 0 ? (
+                <div className="text-center py-12 bg-white rounded-xl">
+                  <Search className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-500 text-sm">No volunteers found</p>
+                  <p className="text-gray-400 text-xs mt-1">Try a different search term</p>
+                </div>
               ) : (
                 <div className="space-y-2">
-                  {filteredRoster.map((volunteer: any) => (
-                    <div
-                      key={volunteer.id}
-                      className="flex items-center justify-between p-3 md:p-4 bg-white rounded-xl shadow-sm border border-gray-100"
-                    >
+                  {filteredRoster.map((registration) => (
+                    <div key={registration.id} className="flex items-center justify-between p-3 md:p-4 bg-white rounded-xl shadow-sm border border-gray-100">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 md:w-12 md:h-12 rounded-full overflow-hidden shrink-0 bg-linear-to-br from-teal-400 to-emerald-400 flex items-center justify-center text-white font-semibold">
-                          {volunteer.name.charAt(0)}
+                        <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-teal-400 to-emerald-400 flex items-center justify-center text-white font-semibold">
+                          {registration.volunteer_profiles.full_name.charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <p className="font-medium text-gray-900 text-sm md:text-base">{volunteer.name}</p>
+                          <p className="font-medium text-gray-900 text-sm md:text-base">
+                            {registration.volunteer_profiles.full_name}
+                          </p>
+                          <p className="text-xs text-gray-500">{registration.volunteer_profiles.city}</p>
                           <div className="flex items-center gap-1.5 mt-1">
-                            <button className="w-6 h-6 md:w-7 md:h-7 rounded-full bg-teal-50 flex items-center justify-center hover:bg-teal-100 transition-colors">
+                            <a 
+                              href={`tel:${registration.volunteer_profiles.phone}`}
+                              className="w-6 h-6 md:w-7 md:h-7 rounded-full bg-teal-50 flex items-center justify-center hover:bg-teal-100 transition-colors"
+                            >
                               <Phone className="w-3 h-3 md:w-3.5 md:h-3.5 text-teal-600" />
-                            </button>
-                            <button className="w-6 h-6 md:w-7 md:h-7 rounded-full bg-blue-50 flex items-center justify-center hover:bg-blue-100 transition-colors">
+                            </a>
+                            
+                            <a 
+                              href={`sms:${registration.volunteer_profiles.phone}`}
+                              className="w-6 h-6 md:w-7 md:h-7 rounded-full bg-blue-50 flex items-center justify-center hover:bg-blue-100 transition-colors"
+                            >
                               <MessageSquare className="w-3 h-3 md:w-3.5 md:h-3.5 text-blue-600" />
-                            </button>
+                            </a>
                           </div>
                         </div>
                       </div>
                       <button
-                        onClick={() => toggleCheckIn(volunteer.id)}
-                        className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-medium transition-all ${
-                          checkedInVolunteers.includes(volunteer.id)
-                            ? "bg-emerald-100 text-emerald-700"
-                            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                        onClick={() => handleCheckIn(registration.id, registration.status)}
+                        disabled={checkInLoading === registration.id}
+                        className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-medium transition-all disabled:opacity-50 ${
+                          registration.status === 'checked_in' ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                         }`}
                       >
-                        {checkedInVolunteers.includes(volunteer.id) ? "Checked In" : "Check In"}
+                        {checkInLoading === registration.id ? "Loading..." : registration.status === 'checked_in' ? "Checked In" : "Check In"}
                       </button>
                     </div>
                   ))}
@@ -238,7 +321,6 @@ export function OrgEventDetail() {
             </div>
           )}
 
-          {/* Broadcast Tab */}
           {missionTab === "broadcast" && (
             <div className="py-4 space-y-4">
               <div className="bg-white rounded-xl p-4 md:p-5 shadow-sm border border-gray-100">
@@ -250,12 +332,17 @@ export function OrgEventDetail() {
                   rows={4}
                   className="w-full bg-gray-50 rounded-lg px-3 py-2 text-sm border border-gray-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
                 />
-                <button className="mt-3 w-full h-11 bg-linear-to-r from-teal-500 to-emerald-500 text-white rounded-xl font-medium text-sm flex items-center justify-center gap-2 hover:shadow-md transition-shadow">
+                <button
+                  disabled={!broadcastMessage.trim() || registrations.length === 0}
+                  className="mt-3 w-full h-11 bg-gradient-to-r from-teal-500 to-emerald-500 text-white rounded-xl font-medium text-sm flex items-center justify-center gap-2 hover:shadow-md transition-shadow disabled:opacity-50"
+                >
                   <Send className="w-4 h-4" />
                   Send Broadcast
                 </button>
+                {registrations.length === 0 && (
+                  <p className="text-xs text-gray-500 mt-2 text-center">No volunteers registered yet</p>
+                )}
               </div>
-
               <div>
                 <p className="text-xs font-medium text-gray-500 mb-3 px-1">Previous Messages</p>
                 <div className="text-center py-8 bg-white rounded-xl">
@@ -295,24 +382,92 @@ export function OrgEventDetail() {
                       <p className="text-gray-900 font-medium">{event.total_slots} volunteer slots</p>
                     </div>
                   </div>
+                  <div className="flex items-start gap-3">
+                    <Calendar className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-gray-500 text-xs mb-0.5">Status</p>
+                      <p className="text-gray-900 font-medium capitalize">{event.status}</p>
+                    </div>
+                  </div>
                 </div>
+
+                {/* --- ADDED MAP PREVIEW --- */}
+                <div className="mt-4 rounded-xl overflow-hidden h-40 relative group border border-gray-100 bg-gray-50">
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block w-full h-full"
+                  >
+                    <iframe
+                      width="100%"
+                      height="100%"
+                      frameBorder="0"
+                      style={{ border: 0 }}
+                      src={`https://maps.google.com/maps?q=${encodeURIComponent(event.location)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+                      className="absolute inset-0 w-full h-full pointer-events-none opacity-90 group-hover:opacity-100 transition-opacity"
+                    ></iframe>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent pointer-events-none group-hover:bg-transparent transition-colors" />
+                    <div className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-lg text-xs font-medium text-gray-700 shadow-sm flex items-center gap-1.5 hover:bg-white transition-colors">
+                       <Navigation className="w-3 h-3 text-blue-600" />
+                       Open in Maps
+                    </div>
+                  </a>
+                </div>
+
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-3">
-                <button className="flex-1 h-11 bg-blue-50 text-blue-600 rounded-xl text-sm font-medium hover:bg-blue-100 transition-colors">
-                  Edit Event
-                </button>
-                <button className="flex-1 h-11 bg-red-50 text-red-600 rounded-xl text-sm font-medium hover:bg-red-100 transition-colors">
-                  Cancel Event
-                </button>
-              </div>
+              {event.status !== 'cancelled' && event.status !== 'completed' && (
+                <div className="flex flex-col gap-3">
+                  {/* Mark as Completed Button */}
+                  <button
+                    onClick={handleCompleteEvent}
+                    disabled={completeLoading}
+                    className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium transition-colors flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20"
+                  >
+                    <CheckCircle2 className="w-5 h-5" />
+                    {completeLoading ? "Completing..." : "Mark as Completed"}
+                  </button>
+
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <Link
+                      href={`/edit-event/${eventId}`}
+                      className="flex-1 h-11 bg-blue-50 text-blue-600 rounded-xl text-sm font-medium hover:bg-blue-100 transition-colors flex items-center justify-center"
+                    >
+                      Edit Event
+                    </Link>
+                    <button
+                      onClick={handleCancelEvent}
+                      disabled={cancelLoading}
+                      className="flex-1 h-11 bg-red-50 text-red-600 rounded-xl text-sm font-medium hover:bg-red-100 transition-colors disabled:opacity-50"
+                    >
+                      {cancelLoading ? 'Cancelling...' : 'Cancel Event'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {(event.status === 'cancelled' || event.status === 'completed') && (
+                <div className="text-center py-4 bg-gray-50 rounded-xl">
+                  <p className="text-gray-500 text-sm">
+                    This event has been {event.status}
+                  </p>
+                  {event.status === 'completed' && (
+                    <Link 
+                      href={`/org-events/${eventId}/report`}
+                      className="inline-block mt-2 text-emerald-600 font-medium hover:underline text-sm"
+                    >
+                      View Report
+                    </Link>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>
       </div>
 
-      {/* Floating Scan QR Button */}
-      <button className="fixed bottom-6 right-6 md:bottom-8 md:right-8 w-14 h-14 md:w-16 md:h-16 bg-linear-to-br from-emerald-500 to-teal-500 text-white rounded-full shadow-xl flex items-center justify-center hover:shadow-2xl hover:scale-105 transition-all z-40">
+      <button className="fixed bottom-6 right-6 md:bottom-8 md:right-8 w-14 h-14 md:w-16 md:h-16 bg-gradient-to-br from-emerald-500 to-teal-500 text-white rounded-full shadow-xl flex items-center justify-center hover:shadow-2xl hover:scale-105 transition-all z-40">
         <QrCode className="w-6 h-6 md:w-7 md:h-7" />
       </button>
     </div>

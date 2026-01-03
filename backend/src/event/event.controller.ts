@@ -7,13 +7,6 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 export class EventController {
   constructor(private eventService: EventService) {}
 
-  // --- 1. PUBLIC & STATIC ROUTES FIRST ---
-  
-  @Get('top') // Specific path 'top'
-  async getTopEvents() {
-    // Public route - No Guard
-    return this.eventService.getTopEvents();
-  }
 
   @Get('public') // Specific path 'public'
   async getPublicEvents() {
@@ -49,6 +42,11 @@ export class EventController {
   @Get(':id/public')
   async getPublicEventById(@Param('id') id: string) {
     return this.eventService.getPublicEventById(id);
+  }
+
+   @Get('top')
+  async getTopEvents() {
+    return this.eventService.getTopEvents();
   }
 
   @Get(':id')

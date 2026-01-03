@@ -591,43 +591,25 @@ export class EventService {
     return { message: 'Event marked as completed', event };
   }
 
-  // src/events/events.service.ts
-
-// src/events/events.service.ts
-
 async getTopEvents() {
-  const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.getClient();
 
-  const { data: events, error } = await supabase
-    .from('events')
-    .select(`
-      id,
-      title,
-      event_date,
-      start_time,
-      location,
-      cover_image_url,
-      registrations (count)
-    `)
-    .eq('status', 'published')
-    //.gte('event_date', new Date().toISOString()) // Optional: Uncomment to only show future events
-    .order('event_date', { ascending: true }) // Fallback sort
-    .limit(20); // Fetch a batch to sort in memory
+    const { data: events, error } = await supabase
+      .from('events')
+      .select(`
+        *,
+        organization_profiles (
+          name,
+          org_type
+        )
+      `)
+      .eq('status', 'published')
+      .gte('event_date', new Date().toISOString().split('T')[0])
+      .order('registered_count', { ascending: false })
+      .limit(4);
 
-  if (error) {
-    console.error('Error fetching top events:', error);
-    return { events: [] };
+    if (error) throw error;
+
+    return { events };
   }
-
-  // Sort by registration count (descending) and take top 4
-  const topEvents = events
-    .sort((a: any, b: any) => {
-      const countA = a.registrations?.[0]?.count || 0;
-      const countB = b.registrations?.[0]?.count || 0;
-      return countB - countA;
-    })
-    .slice(0, 4);
-
-  return { events: topEvents };
-}
 }
