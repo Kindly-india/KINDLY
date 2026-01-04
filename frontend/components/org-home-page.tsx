@@ -33,7 +33,7 @@ export function OrgHomePage() {
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState<any>(null)
   const [events, setEvents] = useState<any[]>([])
-  
+
   // ✅ NEW: Dynamic Activity State
   const [recentActivity, setRecentActivity] = useState<any[]>([])
 
@@ -50,7 +50,7 @@ export function OrgHomePage() {
     const fetchDashboardData = async () => {
       try {
         setLoading(true)
-        
+
         // 1. Fetch All Data in Parallel
         const [profileRes, eventsRes, activityRes] = await Promise.all([
           api.getUserProfile(),
@@ -60,7 +60,7 @@ export function OrgHomePage() {
 
         const orgProfile = profileRes?.profile || {}
         const fetchedEvents = eventsRes.events || []
-        
+
         setProfile(orgProfile)
         setEvents(fetchedEvents)
         setRecentActivity(activityRes.activities || [])
@@ -82,12 +82,12 @@ export function OrgHomePage() {
           let durationHours = (end.getTime() - start.getTime()) / (1000 * 60 * 60)
           if (durationHours < 0) durationHours = 0;
 
-          const volunteerCount = event.checked_in_count || 0 
+          const volunteerCount = event.checked_in_count || 0
           calculatedStats.totalHours += Math.round(durationHours * volunteerCount)
 
           const eventDate = new Date(event.event_date)
           const today = new Date()
-          today.setHours(0,0,0,0)
+          today.setHours(0, 0, 0, 0)
           if (eventDate >= today) {
             calculatedStats.upcomingEventsCount += 1
           }
@@ -98,17 +98,17 @@ export function OrgHomePage() {
         const activeEvents = fetchedEvents.filter((e: any) => (e.registered_count || 0) > 0);
 
         await Promise.all(activeEvents.map(async (ev: any) => {
-            try {
-                const regRes = await api.getEventRegistrations(ev.id);
-                if (regRes.registrations && Array.isArray(regRes.registrations)) {
-                    regRes.registrations.forEach((reg: any) => {
-                        const vId = reg.volunteer_id || reg.volunteer_profiles?.id;
-                        if (vId) uniqueVolunteerIds.add(vId);
-                    });
-                }
-            } catch (err) {
-                console.warn(`Could not fetch roster for event ${ev.id}`, err);
+          try {
+            const regRes = await api.getEventRegistrations(ev.id);
+            if (regRes.registrations && Array.isArray(regRes.registrations)) {
+              regRes.registrations.forEach((reg: any) => {
+                const vId = reg.volunteer_id || reg.volunteer_profiles?.id;
+                if (vId) uniqueVolunteerIds.add(vId);
+              });
             }
+          } catch (err) {
+            console.warn(`Could not fetch roster for event ${ev.id}`, err);
+          }
         }));
 
         calculatedStats.activeVolunteers = uniqueVolunteerIds.size;
@@ -136,7 +136,7 @@ export function OrgHomePage() {
     const date = new Date(dateString);
     const now = new Date();
     const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-    
+
     let interval = seconds / 31536000;
     if (interval > 1) return Math.floor(interval) + "y ago";
     interval = seconds / 2592000;
@@ -180,10 +180,10 @@ export function OrgHomePage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
-         <div className="flex flex-col items-center gap-3">
-           <Loader2 className="w-8 h-8 text-[#0066cc] animate-spin" />
-           <p className="text-sm text-[#86868b]">Loading dashboard...</p>
-         </div>
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="w-8 h-8 text-[#0066cc] animate-spin" />
+          <p className="text-sm text-[#86868b]">Loading dashboard...</p>
+        </div>
       </div>
     )
   }
@@ -206,7 +206,7 @@ export function OrgHomePage() {
             </Link>
           </div>
 
-          <Link href="/org-profile" className="hidden md:block">
+          <Link href={`/organizations/${profile?.id}`} className="hidden md:block">
             <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-[#f5f5f7] hover:ring-[#0066cc] transition-all bg-gray-100 flex items-center justify-center text-[#0066cc] font-bold">
               {profile?.logo_url ? (
                 <img src={profile.logo_url} alt={profile.name} className="w-full h-full object-cover" />
@@ -224,11 +224,11 @@ export function OrgHomePage() {
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
                 <div className="absolute right-0 top-12 z-50 w-48 bg-white rounded-xl shadow-xl border border-[#e5e5e7] overflow-hidden">
-                  <Link href="/org-profile" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-[#f5f5f7] transition-colors border-b border-[#f5f5f7]">
+                  <Link href={`/organizations/${profile?.id}`} onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-[#f5f5f7] transition-colors border-b border-[#f5f5f7]">
                     <div className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-[#f5f5f7] bg-gray-100 flex items-center justify-center">
-                        <span className="text-xs font-bold">{profile?.name?.charAt(0)}</span>
+                      <span className="text-xs font-bold">{profile?.name?.charAt(0)}</span>
                     </div>
-                    <span className="text-[13px] font-medium text-[#1d1d1f]">Profile</span>
+                    <span className="text-[13px] font-medium text-[#1d1d1f]">View Profile</span>
                   </Link>
                   <Link href="/org-events" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-[#f5f5f7] transition-colors border-b border-[#f5f5f7]">
                     <div className="w-8 h-8 rounded-full bg-linear-to-br from-[#e0f2fe] to-[#bae6fd] flex items-center justify-center">
@@ -408,35 +408,35 @@ export function OrgHomePage() {
       <section className="bg-white py-6 md:py-10">
         <div className="max-w-300 mx-auto px-4 md:px-8">
           <h2 className="text-[18px] md:text-[24px] font-bold text-[#1d1d1f] mb-4">Recent Activity</h2>
-          
+
           {recentActivity.length === 0 ? (
-             <div className="bg-[#f5f5f7] rounded-xl p-6 text-center text-[#86868b] text-sm">
-                No recent activity yet.
-             </div>
+            <div className="bg-[#f5f5f7] rounded-xl p-6 text-center text-[#86868b] text-sm">
+              No recent activity yet.
+            </div>
           ) : (
             <div className="bg-[#f5f5f7] rounded-xl md:rounded-2xl overflow-hidden divide-y divide-white">
-                {recentActivity.map((activity) => (
+              {recentActivity.map((activity) => (
                 <div key={activity.id} className="flex items-start gap-3 p-3.5 md:p-4 bg-white">
-                    <div
+                  <div
                     className={cn(
-                        "w-8 h-8 md:w-10 md:h-10 rounded-full shrink-0 flex items-center justify-center",
-                        activity.type === "publish"
+                      "w-8 h-8 md:w-10 md:h-10 rounded-full shrink-0 flex items-center justify-center",
+                      activity.type === "publish"
                         ? "bg-linear-to-br from-[#e0f2fe] to-[#bae6fd]"
                         : activity.type === "checkin"
-                            ? "bg-linear-to-br from-[#dcfce7] to-[#bbf7d0]"
-                            : "bg-linear-to-br from-[#f3e8ff] to-[#e9d5ff]",
+                          ? "bg-linear-to-br from-[#dcfce7] to-[#bbf7d0]"
+                          : "bg-linear-to-br from-[#f3e8ff] to-[#e9d5ff]",
                     )}
-                    >
+                  >
                     {activity.type === "publish" && <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-[#0284c7]" />}
                     {activity.type === "checkin" && <UserCheck className="w-4 h-4 md:w-5 md:h-5 text-[#16a34a]" />}
                     {activity.type === "register" && <User className="w-4 h-4 md:w-5 md:h-5 text-[#9333ea]" />}
-                    </div>
-                    <div className="flex-1 min-w-0">
+                  </div>
+                  <div className="flex-1 min-w-0">
                     <p className="text-[13px] md:text-[15px] text-[#1d1d1f] leading-snug">{activity.text}</p>
                     <p className="text-[11px] md:text-[13px] text-[#86868b] mt-0.5">{timeAgo(activity.timestamp)}</p>
-                    </div>
+                  </div>
                 </div>
-                ))}
+              ))}
             </div>
           )}
         </div>

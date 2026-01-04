@@ -243,7 +243,7 @@ export default function EventDetailsPage() {
                   </div>
                   <div>
                     <p className="text-xs text-gray-500">Where</p>
-                    <p className="text-sm font-medium text-gray-900 truncate max-w-[120px]">{event.location}</p>
+                    <p className="text-sm font-medium text-gray-900 truncate max-w-30">{event.location}</p>
                   </div>
                 </div>
 
@@ -290,7 +290,7 @@ export default function EventDetailsPage() {
                     src={`https://maps.google.com/maps?q=${encodeURIComponent(event.location)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
                     className="absolute inset-0 w-full h-full pointer-events-none opacity-90 group-hover:opacity-100 transition-opacity"
                   ></iframe>
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent pointer-events-none group-hover:bg-transparent transition-colors" />
+                  <div className="absolute inset-0 bg-linear-to-t from-black/10 to-transparent pointer-events-none group-hover:bg-transparent transition-colors" />
                   <div className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-lg text-xs font-medium text-gray-700 shadow-sm flex items-center gap-1.5 hover:bg-white transition-colors">
                     <Navigation className="w-3 h-3 text-blue-600" />
                     Get Directions

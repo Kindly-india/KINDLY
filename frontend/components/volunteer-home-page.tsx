@@ -90,27 +90,27 @@ export function VolunteerHomePage() {
   // --- Dynamic State ---
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState<any>(null)
-  const [myEvents, setMyEvents] = useState<any[]>([]) 
-  
+  const [myEvents, setMyEvents] = useState<any[]>([])
+
   const [stats, setStats] = useState({
     eventsThisWeek: 0,
     impactScore: 0,
     hoursContributed: 0,
     supportedCauses: [] as string[],
-    completedEvents: 0, 
-    upcomingEvents: 0,  
-    attendance: 0       
+    completedEvents: 0,
+    upcomingEvents: 0,
+    attendance: 0
   })
 
   // --- Helper to Calculate Exact Hours (with minutes) ---
   const calculateExactHours = (start: string, end: string) => {
-    if(!start || !end) return 0;
+    if (!start || !end) return 0;
     const [startH, startM] = start.split(':').map(Number);
     const [endH, endM] = end.split(':').map(Number);
-    
+
     const startTotalMins = (startH * 60) + startM;
     const endTotalMins = (endH * 60) + endM;
-    
+
     const diffMins = Math.max(0, endTotalMins - startTotalMins);
     return diffMins / 60; // Returns float (e.g. 1.5 for 1hr 30m)
   }
@@ -132,18 +132,18 @@ export function VolunteerHomePage() {
 
         // Only show 'registered' events in the carousel
         const displayList = allEvents.filter((ev: any) => ev.registration_status === 'registered');
-        setMyEvents(displayList) 
+        setMyEvents(displayList)
 
         // --- STATS CALCULATION ---
         let totalHours = 0
         let completed = 0
         let upcomingCount = 0
-        let missed = 0 
+        let missed = 0
         let thisWeek = 0
         const categoriesSet = new Set<string>()
-        
+
         const now = new Date()
-        now.setHours(0, 0, 0, 0) 
+        now.setHours(0, 0, 0, 0)
 
         const nextWeek = new Date(now)
         nextWeek.setDate(now.getDate() + 7)
@@ -151,10 +151,10 @@ export function VolunteerHomePage() {
 
         allEvents.forEach((ev: any) => {
           if (ev.category) categoriesSet.add(ev.category)
-          
+
           const evDate = new Date(ev.event_date)
           evDate.setHours(0, 0, 0, 0)
-          
+
           const status = ev.registration_status;
           const isCompleted = status === 'completed';
           const isCheckedIn = status === 'checked_in';
@@ -164,7 +164,7 @@ export function VolunteerHomePage() {
           if (isCompleted || isCheckedIn) {
             const eventHours = calculateExactHours(ev.start_time, ev.end_time);
             // Default to 1 hour if calculation fails or is 0, otherwise use exact float
-            totalHours += (eventHours > 0 ? eventHours : 1); 
+            totalHours += (eventHours > 0 ? eventHours : 1);
             completed += 1
           }
 
@@ -172,7 +172,7 @@ export function VolunteerHomePage() {
           if (evDate >= now && status === 'registered') {
             upcomingCount += 1
           }
-          
+
           // 3. Calculate Missed
           if (isMissed) {
             missed += 1;
@@ -186,8 +186,8 @@ export function VolunteerHomePage() {
 
         // 5. Calculate Attendance %
         const totalScorable = completed + missed;
-        const attendanceRate = totalScorable > 0 
-          ? Math.round((completed / totalScorable) * 100) 
+        const attendanceRate = totalScorable > 0
+          ? Math.round((completed / totalScorable) * 100)
           : 100;
 
         setStats({
@@ -224,12 +224,12 @@ export function VolunteerHomePage() {
   }
 
   const formatDate = (dateStr: string) => {
-    if(!dateStr) return "TBD"
+    if (!dateStr) return "TBD"
     return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
   }
 
   const formatTime = (timeStr: string) => {
-    if(!timeStr) return ""
+    if (!timeStr) return ""
     const [h, m] = timeStr.split(':')
     const hour = parseInt(h)
     const ampm = hour >= 12 ? 'PM' : 'AM'
@@ -242,6 +242,11 @@ export function VolunteerHomePage() {
       storiesRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" })
     }
   }
+
+  // --- PREPARE PROFILE DATA FOR DISPLAY (MOVED HERE) ---
+  const displayImage = profile?.avatar_url || profile?.logo_url
+  const displayName = profile?.full_name || profile?.name || "User"
+  const displayInitial = displayName ? displayName.charAt(0).toUpperCase() : "U"
 
   if (loading) {
     return (
@@ -260,20 +265,36 @@ export function VolunteerHomePage() {
             <span className="text-[15px] md:text-[17px] font-bold text-[#1d1d1f] tracking-tight">KINDLY</span>
           </Link>
 
-          <div className="hidden md:flex gap-4">
-            <Link href="/events" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors">
-              Events
-            </Link>
-            <Link href="/history" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors">
-              History
+          <div className="flex items-center gap-4">
+            <div className="hidden md:flex gap-4">
+              <Link href="/events" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors">
+                Events
+              </Link>
+              <Link href="/history" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors">
+                History
+              </Link>
+            </div>
+
+            {/* Profile Avatar */}
+            <Link
+              href={profile?.id ? `/volunteers/${profile.id}` : '#'}
+              className="hidden md:block group"
+            >
+              <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-200 group-hover:border-gray-400 group-active:scale-95 transition-all bg-gray-50 flex items-center justify-center shadow-sm">
+                {displayImage ? (
+                  <img
+                    src={displayImage}
+                    alt="Profile"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="font-bold text-gray-500 group-hover:text-gray-900 transition-colors">
+                    {displayInitial}
+                  </span>
+                )}
+              </div>
             </Link>
           </div>
-
-          <Link href="/profile" className="hidden md:block">
-            <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-[#f5f5f7] hover:ring-[#0066cc] transition-all bg-gray-100 flex items-center justify-center font-bold text-[#0066cc]">
-               {profile?.full_name?.charAt(0) || "V"}
-            </div>
-          </Link>
 
           <div className="relative md:hidden">
             <button onClick={() => setMenuOpen(!menuOpen)} className="w-9 h-9 rounded-full bg-[#f5f5f7] flex items-center justify-center hover:bg-[#e5e5e7]">
@@ -281,8 +302,8 @@ export function VolunteerHomePage() {
             </button>
             {menuOpen && (
               <div className="absolute right-0 top-12 z-50 w-48 bg-white rounded-xl shadow-xl border border-[#e5e5e7] overflow-hidden">
-                  <Link href="/profile" className="flex items-center gap-3 px-4 py-3 border-b border-[#f5f5f7]">Profile</Link>
-                  <Link href="/events" className="flex items-center gap-3 px-4 py-3 border-b border-[#f5f5f7]">Events</Link>
+                <Link href="/profile" className="flex items-center gap-3 px-4 py-3 border-b border-[#f5f5f7]">Profile</Link>
+                <Link href="/events" className="flex items-center gap-3 px-4 py-3 border-b border-[#f5f5f7]">Events</Link>
               </div>
             )}
           </div>
@@ -306,11 +327,11 @@ export function VolunteerHomePage() {
         </div>
 
         <div className="max-w-300 mx-auto px-4 md:px-8 text-center relative">
-          
+
           <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white rounded-full shadow-sm mb-4 md:mb-6 max-w-full">
             <span className="w-1.5 h-1.5 md:w-2 md:h-2 bg-emerald-500 rounded-full animate-pulse shrink-0" />
             <span className="text-[11px] md:text-[13px] text-[#1d1d1f] font-medium truncate">
-              {stats.supportedCauses.length > 0 
+              {stats.supportedCauses.length > 0
                 ? `Supporting ${stats.supportedCauses.slice(0, 2).join(', ')}${stats.supportedCauses.length > 2 ? '...' : ''}`
                 : "Start your journey today!"}
             </span>
@@ -334,13 +355,13 @@ export function VolunteerHomePage() {
               </p>
               <p className="text-[10px] md:text-[12px] text-[#86868b]">Events This Week</p>
             </div>
-            
+
             <div className="bg-white rounded-xl px-3 md:px-6 py-3 md:py-4 shadow-sm border border-[#f5f5f7]">
               <div className="flex items-center justify-center gap-1">
-                 <p className="text-[18px] md:text-[28px] font-bold text-[#f59e0b]">
-                    {stats.impactScore}
-                 </p>
-                 <Zap className="w-4 h-4 md:w-5 md:h-5 text-[#f59e0b] fill-current" />
+                <p className="text-[18px] md:text-[28px] font-bold text-[#f59e0b]">
+                  {stats.impactScore}
+                </p>
+                <Zap className="w-4 h-4 md:w-5 md:h-5 text-[#f59e0b] fill-current" />
               </div>
               <p className="text-[10px] md:text-[12px] text-[#86868b]">Impact Score</p>
             </div>
@@ -366,13 +387,13 @@ export function VolunteerHomePage() {
           </div>
 
           {myEvents.length === 0 ? (
-             <div className="text-center py-12 bg-white rounded-2xl">
-                <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500">You don't have any active registrations.</p>
-                <Link href="/events" className="mt-4 inline-block px-6 py-2 bg-[#0066cc] text-white rounded-full font-medium text-sm">
-                  Browse Events
-                </Link>
-             </div>
+            <div className="text-center py-12 bg-white rounded-2xl">
+              <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-500">You don't have any active registrations.</p>
+              <Link href="/events" className="mt-4 inline-block px-6 py-2 bg-[#0066cc] text-white rounded-full font-medium text-sm">
+                Browse Events
+              </Link>
+            </div>
           ) : (
             <div
               ref={eventsRef}
@@ -396,7 +417,7 @@ export function VolunteerHomePage() {
                         <Sparkles className="w-10 h-10" />
                       </div>
                     )}
-                    
+
                     <div className={cn("absolute top-2 left-2 px-2 py-0.5 rounded text-[9px] md:text-[11px] font-semibold text-white capitalize", getCategoryColor(event.category))}>
                       {event.category}
                     </div>
@@ -451,7 +472,7 @@ export function VolunteerHomePage() {
 
           {/* 4-Card Stats Grid */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mt-8 md:mt-12">
-            
+
             <div className="bg-white rounded-xl p-3 md:p-4 shadow-sm">
               <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-[#ff6b6b]/10 flex items-center justify-center mb-2">
                 <TrendingUp className="w-4 h-4 md:w-5 md:h-5 text-[#ff6b6b]" />
@@ -459,7 +480,7 @@ export function VolunteerHomePage() {
               <p className="text-[20px] md:text-[28px] font-bold text-[#1d1d1f]">{stats.completedEvents}</p>
               <p className="text-[10px] md:text-[12px] text-[#86868b]">Events Completed</p>
             </div>
-            
+
             <div className="bg-white rounded-xl p-3 md:p-4 shadow-sm">
               <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-[#0066cc]/10 flex items-center justify-center mb-2">
                 <Calendar className="w-4 h-4 md:w-5 md:h-5 text-[#0066cc]" />
@@ -491,38 +512,38 @@ export function VolunteerHomePage() {
       {/* Stories Section */}
       <section className="bg-linear-to-br from-[#fef7f0] via-[#fef5f0] to-[#fdf2f8] py-8 md:py-16 overflow-hidden">
         <div className="max-w-300 mx-auto px-4 md:px-8">
-           <div className="flex items-center justify-between mb-8">
-             <h2 className="text-[20px] md:text-[36px] font-bold text-[#1d1d1f]">Stories from Nashik.</h2>
-             <div className="flex gap-2">
-                <button onClick={() => scrollStories('left')} className="w-10 h-10 rounded-full bg-white border flex items-center justify-center hover:bg-gray-50"><ChevronLeft className="w-5 h-5"/></button>
-                <button onClick={() => scrollStories('right')} className="w-10 h-10 rounded-full bg-white border flex items-center justify-center hover:bg-gray-50"><ChevronRight className="w-5 h-5"/></button>
-             </div>
-           </div>
-           
-           <div ref={storiesRef} className="flex gap-6 overflow-x-auto pb-8 scrollbar-hide scroll-smooth snap-x">
-              {stories.map(story => (
-                 <div key={story.id} className="min-w-[320px] md:min-w-[400px] snap-center bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
-                    <div className="h-64 md:h-80 relative shrink-0">
-                       <img src={story.image} alt={story.author} className="w-full h-full object-cover"/>
-                       <div className={`absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-bold text-white ${story.categoryColor}`}>
-                         {story.category}
-                       </div>
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-[20px] md:text-[36px] font-bold text-[#1d1d1f]">Stories from Nashik.</h2>
+            <div className="flex gap-2">
+              <button onClick={() => scrollStories('left')} className="w-10 h-10 rounded-full bg-white border flex items-center justify-center hover:bg-gray-50"><ChevronLeft className="w-5 h-5" /></button>
+              <button onClick={() => scrollStories('right')} className="w-10 h-10 rounded-full bg-white border flex items-center justify-center hover:bg-gray-50"><ChevronRight className="w-5 h-5" /></button>
+            </div>
+          </div>
+
+          <div ref={storiesRef} className="flex gap-6 overflow-x-auto pb-8 scrollbar-hide scroll-smooth snap-x">
+            {stories.map(story => (
+              <div key={story.id} className="min-w-[320px] md:min-w-100 snap-center bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
+                <div className="h-64 md:h-80 relative shrink-0">
+                  <img src={story.image} alt={story.author} className="w-full h-full object-cover" />
+                  <div className={`absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-bold text-white ${story.categoryColor}`}>
+                    {story.category}
+                  </div>
+                </div>
+                <div className="p-6 flex flex-col flex-1">
+                  <Quote className="w-6 h-6 text-gray-300 mb-4" />
+                  <p className="text-gray-700 italic mb-6">"{story.quote}"</p>
+
+                  <div className="flex items-center gap-3 mt-auto">
+                    <div className={`w-2 h-10 rounded-full ${story.categoryColor}`}></div>
+                    <div>
+                      <p className="font-bold text-gray-900">{story.author}</p>
+                      <p className="text-xs text-gray-500">{story.role}</p>
                     </div>
-                    <div className="p-6 flex flex-col flex-1">
-                        <Quote className="w-6 h-6 text-gray-300 mb-4" />
-                        <p className="text-gray-700 italic mb-6">"{story.quote}"</p>
-                        
-                        <div className="flex items-center gap-3 mt-auto">
-                           <div className={`w-2 h-10 rounded-full ${story.categoryColor}`}></div>
-                           <div>
-                              <p className="font-bold text-gray-900">{story.author}</p>
-                              <p className="text-xs text-gray-500">{story.role}</p>
-                           </div>
-                        </div>
-                    </div>
-                 </div>
-              ))}
-           </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
     </div>

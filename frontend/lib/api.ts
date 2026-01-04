@@ -48,6 +48,39 @@ export interface CreateEventData {
   minimumAge?: number;
 }
 
+export interface UpdateVolunteerProfileDto {
+  full_name?: string;
+  headline?: string;
+  bio?: string;
+  city?: string;
+  phone?: string;
+  skills?: string[];
+  interests?: string[];
+  availability_status?: string;
+  avatar_url?: string;
+  cover_url?: string;
+}
+
+export interface UpdateOrganizationProfileDto {
+  name?: string;
+  org_type?: string;
+  email?: string;
+  phone?: string;
+  tagline?: string;
+  mission_statement?: string;
+  intent_description?: string;
+  area_locality?: string;
+  website?: string;
+  years_active?: number;
+  registration_number?: string;
+  representative_name?: string;
+  designation?: string;
+  parent_institution?: string;
+  coordinator_name?: string;
+  logo_url?: string;
+  cover_url?: string;
+}
+
 export const api = {
   // Volunteer signup
   signupVolunteer: async (data: VolunteerSignupData) => {
@@ -195,7 +228,7 @@ export const api = {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${session.access_token}`,
       },
-      body: JSON.stringify(data), 
+      body: JSON.stringify(data),
     });
 
     if (!response.ok) {
@@ -247,7 +280,7 @@ export const api = {
 
     // If no session, fallback to public endpoint
     if (!session) {
-        return api.getPublicEventById(eventId);
+      return api.getPublicEventById(eventId);
     }
 
     const response = await fetch(`${API_URL}/events/${eventId}`, {
@@ -467,7 +500,7 @@ export const api = {
     if (!response.ok) {
       throw new Error(data.message || 'Failed to fetch registrations');
     }
-    
+
     // Returns: { events: [...] }
     return data;
   },
@@ -505,7 +538,7 @@ export const api = {
       },
       body: JSON.stringify(data),
     })
-    
+
     const resData = await response.json()
     if (!response.ok) {
       throw new Error(resData.message || 'Check-in failed')
@@ -513,7 +546,7 @@ export const api = {
     return resData
   },
 
-sendBroadcast: async (eventId: string, message: string) => {
+  sendBroadcast: async (eventId: string, message: string) => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error('Not authenticated');
 
@@ -536,19 +569,19 @@ sendBroadcast: async (eventId: string, message: string) => {
   getEventBroadcasts: async (eventId: string) => {
     const { data: { session } } = await supabase.auth.getSession();
     const token = session?.access_token || localStorage.getItem('token');
-    
+
     const headers: any = {};
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
     try {
-        const response = await fetch(`${API_URL}/events/${eventId}/broadcasts`, { headers });
-        if (!response.ok) return { broadcasts: [] };
-        return response.json();
+      const response = await fetch(`${API_URL}/events/${eventId}/broadcasts`, { headers });
+      if (!response.ok) return { broadcasts: [] };
+      return response.json();
     } catch (e) {
-        return { broadcasts: [] };
+      return { broadcasts: [] };
     }
   },
-// ✅ THIS WAS MISSING - DELETE FUNCTION
+  // ✅ THIS WAS MISSING - DELETE FUNCTION
   deleteBroadcast: async (eventId: string, broadcastId: string) => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error('Not authenticated');
@@ -566,7 +599,7 @@ sendBroadcast: async (eventId: string, message: string) => {
     }
     return response.json();
   },
-// ✅ NEW: Activity Feed
+  // ✅ NEW: Activity Feed
   getRecentActivity: async () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error('Not authenticated');
@@ -626,5 +659,174 @@ sendBroadcast: async (eventId: string, message: string) => {
       throw new Error(error.message || 'Failed to issue certificates');
     }
     return response.json();
+  },
+
+  // ============ VOLUNTEER PROFILE ============
+  getVolunteerPublicProfile: async (volunteerId: string) => {
+    const response = await fetch(`${API_URL}/volunteers/${volunteerId}/profile`);
+    if (!response.ok) throw new Error('Failed to fetch profile');
+    return response.json();
+  },
+
+  getVolunteerJourney: async (volunteerId: string) => {
+    const response = await fetch(`${API_URL}/volunteers/${volunteerId}/journey`);
+    if (!response.ok) throw new Error('Failed to fetch journey');
+    return response.json();
+  },
+
+  updateVolunteerProfile: async (data: UpdateVolunteerProfileDto) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const res = await fetch(`${API_URL}/volunteers/profile`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify(data)
+    });
+    if (!res.ok) throw new Error('Failed to update profile');
+    return res.json();
+  },
+
+  // ============ ORGANIZATION PROFILE ============
+  getOrgPublicProfile: async (orgId: string) => {
+    const response = await fetch(`${API_URL}/organizations/${orgId}/profile`);
+    if (!response.ok) throw new Error('Failed to fetch organization profile');
+    return response.json();
+  },
+
+  getOrgEvents: async (orgId: string) => {
+    const response = await fetch(`${API_URL}/organizations/${orgId}/events`);
+    if (!response.ok) throw new Error('Failed to fetch organization events');
+    return response.json();
+  },
+
+  getOrgVolunteers: async (orgId: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const response = await fetch(`${API_URL}/organizations/${orgId}/volunteers`, {
+      headers: { 'Authorization': `Bearer ${session.access_token}` },
+    });
+    if (!response.ok) throw new Error('Failed to fetch volunteers');
+    return response.json();
+  },
+
+  getOrgReviews: async (orgId: string) => {
+    const response = await fetch(`${API_URL}/organizations/${orgId}/reviews`);
+    if (!response.ok) return { reviews: [] };
+    return response.json();
+  },
+
+  updateOrgProfile: async (data: UpdateOrganizationProfileDto) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const res = await fetch(`${API_URL}/organizations/profile`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify(data)
+    });
+    if (!res.ok) throw new Error('Failed to update org profile');
+    return res.json();
+  },
+
+  // ============ FOLLOW/UNFOLLOW ============
+  toggleFollowOrg: async (orgId: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Please login to follow');
+
+    const res = await fetch(`${API_URL}/organizations/${orgId}/follow`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${session.access_token}` }
+    });
+    if (!res.ok) throw new Error('Failed to toggle follow');
+    return res.json();
+  },
+
+  checkFollowStatus: async (orgId: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return { isFollowing: false };
+
+    const response = await fetch(`${API_URL}/organizations/${orgId}/follow-status`, {
+      headers: { 'Authorization': `Bearer ${session.access_token}` },
+    });
+
+    if (!response.ok) return { isFollowing: false };
+    return response.json();
+  },
+
+  // ============ ENDORSEMENTS & REVIEWS ============
+  addVolunteerEndorsement: async (data: {
+    volunteer_id: string;
+    event_id: string;
+    skills: string[];
+    comment?: string;
+  }) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const response = await fetch(`${API_URL}/volunteers/endorsements`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) throw new Error('Failed to add endorsement');
+    return response.json();
+  },
+
+  addOrgReview: async (data: {
+    organization_id: string;
+    event_id?: string;
+    rating: number;
+    comment: string;
+  }) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Please login to leave a review');
+
+    const response = await fetch(`${API_URL}/organizations/reviews`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) throw new Error('Failed to add review');
+    return response.json();
+  },
+
+  // ============ IMAGE UPLOADS ============
+  uploadProfileImage: async (file: File, type: 'avatar' | 'cover') => {
+    if (file.size > 5 * 1024 * 1024) throw new Error('File must be less than 5MB');
+
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+    if (!allowedTypes.includes(file.type)) throw new Error('Only JPG/PNG allowed');
+
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${type}-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+    const filePath = `profiles/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('profile-images')
+      .upload(filePath, file);
+
+    if (uploadError) throw uploadError;
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('profile-images')
+      .getPublicUrl(filePath);
+
+    return publicUrl;
   },
 };
