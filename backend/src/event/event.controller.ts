@@ -1,73 +1,134 @@
-import { Controller, Post, Get, Body, ValidationPipe, Request, UseGuards, Param, Patch } from '@nestjs/common';
+import { Controller, Post, Get, Body, Delete, ValidationPipe, Request, UseGuards, Param, Patch } from '@nestjs/common';
 import { EventService } from './event.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { UploadedFile, UseInterceptors } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 
+// 🔴 NOTE: @UseGuards is REMOVED from here. 
+// We apply it only to specific methods below.
 @Controller('events')
 export class EventController {
   constructor(private eventService: EventService) {}
 
+  // ==========================================
+  // 🟢 PUBLIC ROUTES (No Token Needed)
+  // ==========================================
 
-  @Get('public') // Specific path 'public'
+  @Get('public')
   async getPublicEvents() {
     return this.eventService.getPublicEvents();
   }
 
-  // --- 2. PROTECTED STATIC ROUTES SECOND ---
-
-  @Get('my-events') // Specific path 'my-events'
-  @UseGuards(JwtAuthGuard)
-  async getMyEvents(@Request() req: any) {
-    const userId = req.user.id;
-    return this.eventService.getOrganizationEvents(userId);
-  }
-
-  @Get('volunteer/my-registrations') // Specific path
-  @UseGuards(JwtAuthGuard)
-  async getVolunteerRegistrations(@Request() req: any) {
-    const userId = req.user.id;
-    return this.eventService.getVolunteerRegistrations(userId);
-  }
-
-  // --- 3. DYNAMIC ROUTES LAST ( :id ) ---
-  // These act as "catch-all" for anything not matched above
-
-  @Post()
-  @UseGuards(JwtAuthGuard)
-  async createEvent(@Request() req: any, @Body(ValidationPipe) dto: CreateEventDto) {
-    const userId = req.user.id;
-    return this.eventService.createEvent(userId, dto);
-  }
-
-  @Get(':id/public')
-  async getPublicEventById(@Param('id') id: string) {
-    return this.eventService.getPublicEventById(id);
-  }
-
-   @Get('top')
+  @Get('top')
   async getTopEvents() {
     return this.eventService.getTopEvents();
   }
 
-  @Get(':id')
+  // This matches the error URL you saw: /events/:id/public
+@Get('details/:id')
+  async getPublicEventById(@Param('id') id: string) {
+    return this.eventService.getPublicEventById(id);
+  }
+
+@Get(':id/broadcasts')
+  async getBroadcasts(@Param('id') id: string) {
+    return this.eventService.getEventBroadcasts(id);
+  }
+
+  // ==========================================
+  // 🔒 PROTECTED ROUTES (Token Required)
+  // ==========================================
+
+  // 1. Volunteer Routes
+  @Get('my-registrations') 
   @UseGuards(JwtAuthGuard)
-  async getEventById(@Request() req: any, @Param('id') id: string) {
-    const userId = req.user.id;
-    return this.eventService.getEventById(id, userId);
+  async getMyRegistrations(@Request() req: any) {
+    // This fetches the volunteer's history and active events
+    return this.eventService.getVolunteerRegistrations(req.user.id);
+  }
+
+  // ✅ NEW: Send Broadcast (Protected for Org)
+  @Post(':id/broadcast')
+  @UseGuards(JwtAuthGuard)
+  async sendBroadcast(@Request() req: any, @Param('id') id: string, @Body() body: { message: string }) {
+    return this.eventService.sendBroadcast(req.user.id, id, body.message);
+  }
+
+// ✅ NEW: Recent Activity Route
+  @Get('recent-activity')
+  @UseGuards(JwtAuthGuard)
+  async getRecentActivity(@Request() req: any) {
+    return this.eventService.getRecentActivity(req.user.id);
+  }
+
+  // ✅ NEW: Upload Org Signature
+  @Post('org/signature')
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadSignature(@Request() req: any, @UploadedFile() file: Express.Multer.File) {
+    return this.eventService.uploadOrgSignature(req.user.id, file);
+  }
+
+  // ✅ NEW: Issue Certificates for an Event
+  @Patch(':id/issue-certificates')
+  @UseGuards(JwtAuthGuard)
+  async issueCertificates(@Request() req: any, @Param('id') id: string) {
+    return this.eventService.issueCertificates(req.user.id, id);
+  }
+
+  // This is the duplicate path some parts of your app might still use
+  @Get('volunteer/my-registrations') 
+  @UseGuards(JwtAuthGuard)
+  async getVolunteerRegistrationsAlt(@Request() req: any) {
+    return this.eventService.getVolunteerRegistrations(req.user.id);
   }
 
   @Post(':id/register')
   @UseGuards(JwtAuthGuard)
   async registerForEvent(@Request() req: any, @Param('id') id: string) {
-    const userId = req.user.id;
-    return this.eventService.registerForEvent(userId, id);
+    return this.eventService.registerForEvent(req.user.id, id);
   }
 
-  @Get(':id/registrations')
+  @Post('self-check-in')
   @UseGuards(JwtAuthGuard)
-  async getEventRegistrations(@Request() req: any, @Param('id') id: string) {
-    const userId = req.user.id;
-    return this.eventService.getEventRegistrations(userId, id);
+  async selfCheckIn(@Request() req: any, @Body() body: { eventId: string; code: string; latitude: number; longitude: number }) {
+    return this.eventService.selfCheckIn(req.user.id, body);
+  }
+
+  // 2. Organization Routes
+  @Get('my-events')
+  @UseGuards(JwtAuthGuard)
+  async getMyEvents(@Request() req: any) {
+    return this.eventService.getOrganizationEvents(req.user.id);
+  }
+
+  @Post()
+  @UseGuards(JwtAuthGuard)
+  async createEvent(@Request() req: any, @Body(ValidationPipe) dto: CreateEventDto) {
+    return this.eventService.createEvent(req.user.id, dto);
+  }
+
+@Delete(':id/broadcast/:broadcastId')
+  @UseGuards(JwtAuthGuard)
+  async deleteBroadcast(
+    @Request() req: any, 
+    @Param('id') eventId: string, 
+    @Param('broadcastId') broadcastId: string
+  ) {
+    return this.eventService.deleteBroadcast(req.user.id, eventId, broadcastId);
+  }
+
+  @Patch(':id/cancel')
+  @UseGuards(JwtAuthGuard)
+  async cancelEvent(@Request() req: any, @Param('id') id: string) {
+    return this.eventService.cancelEvent(req.user.id, id);
+  }
+
+  @Patch(':id/complete')
+  @UseGuards(JwtAuthGuard)
+  async completeEvent(@Request() req: any, @Param('id') id: string) {
+    return this.eventService.completeEvent(req.user.id, id);
   }
 
   @Patch(':id/registrations/:registrationId/check-in')
@@ -77,8 +138,7 @@ export class EventController {
     @Param('id') eventId: string,
     @Param('registrationId') registrationId: string,
   ) {
-    const userId = req.user.id;
-    return this.eventService.checkInVolunteer(userId, eventId, registrationId);
+    return this.eventService.checkInVolunteer(req.user.id, eventId, registrationId);
   }
 
   @Patch(':id/registrations/:registrationId/undo-check-in')
@@ -88,22 +148,7 @@ export class EventController {
     @Param('id') eventId: string,
     @Param('registrationId') registrationId: string,
   ) {
-    const userId = req.user.id;
-    return this.eventService.undoCheckIn(userId, eventId, registrationId);
-  }
-
-  @Patch(':id/cancel')
-  @UseGuards(JwtAuthGuard)
-  async cancelEvent(@Request() req: any, @Param('id') id: string) {
-    const userId = req.user.id;
-    return this.eventService.cancelEvent(userId, id);
-  }
-
-  @Patch(':id/complete')
-  @UseGuards(JwtAuthGuard)
-  async completeEvent(@Request() req: any, @Param('id') id: string) {
-    const userId = req.user.id;
-    return this.eventService.completeEvent(userId, id);
+    return this.eventService.undoCheckIn(req.user.id, eventId, registrationId);
   }
 
   @Patch(':id')
@@ -113,7 +158,20 @@ export class EventController {
     @Param('id') id: string,
     @Body(ValidationPipe) dto: CreateEventDto
   ) {
-    const userId = req.user.id;
-    return this.eventService.updateEvent(userId, id, dto);
+    return this.eventService.updateEvent(req.user.id, id, dto);
+  }
+
+  // 3. Dynamic Routes (MUST BE LAST)
+  // This handles /events/:id calls for Org Dashboard
+  @Get(':id')
+  @UseGuards(JwtAuthGuard)
+  async getEventById(@Request() req: any, @Param('id') id: string) {
+    return this.eventService.getEventById(id, req.user.id);
+  }
+
+  @Get(':id/registrations')
+  @UseGuards(JwtAuthGuard)
+  async getEventRegistrations(@Request() req: any, @Param('id') id: string) {
+    return this.eventService.getEventRegistrations(req.user.id, id);
   }
 }

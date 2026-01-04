@@ -195,7 +195,7 @@ export const api = {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${session.access_token}`,
       },
-      body: JSON.stringify(data), // Remove userId from here
+      body: JSON.stringify(data), 
     });
 
     if (!response.ok) {
@@ -241,12 +241,13 @@ export const api = {
     return response.json();
   },
 
-  // Get single event by ID
+  // Get single event by ID (Authenticated)
   getEventById: async (eventId: string) => {
     const { data: { session } } = await supabase.auth.getSession();
 
+    // If no session, fallback to public endpoint
     if (!session) {
-      throw new Error('Not authenticated');
+        return api.getPublicEventById(eventId);
     }
 
     const response = await fetch(`${API_URL}/events/${eventId}`, {
@@ -266,7 +267,8 @@ export const api = {
 
   // Get public event by ID (no auth needed)
   getPublicEventById: async (eventId: string) => {
-    const response = await fetch(`${API_URL}/events/${eventId}/public`);
+    // Note: Updated path to match controller 'details/:id'
+    const response = await fetch(`${API_URL}/events/details/${eventId}`);
 
     if (!response.ok) {
       const error = await response.json();
@@ -416,32 +418,7 @@ export const api = {
     return response.json();
   },
 
-  // Add this to your api object in lib/api.ts
-  getMyRegistrations: async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-
-    if (!session) {
-      throw new Error('Not authenticated');
-    }
-
-    const response = await fetch(`${API_URL}/events/volunteer/my-registrations`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${session.access_token}`,
-      },
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to fetch registrations');
-    }
-
-    return response.json();
-  },
-
-  // Add inside your api object in lib/api.ts
-
-  // Get specific registered event details (reuse existing getEventById or specific one)
+  // Get Specific Details
   getEventDetails: async (eventId: string) => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error('Not authenticated');
@@ -453,23 +430,7 @@ export const api = {
     return response.json();
   },
 
-  // Get Broadcasts
-  getEventBroadcasts: async (eventId: string) => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return { broadcasts: [] }; // Return empty if not auth/implemented
-
-    try {
-        const response = await fetch(`${API_URL}/events/${eventId}/broadcasts`, {
-        headers: { 'Authorization': `Bearer ${session.access_token}` },
-        });
-        if (!response.ok) return { broadcasts: [] };
-        return response.json();
-    } catch (e) {
-        return { broadcasts: [] }; // Fallback
-    }
-  },
-
-  // Add to api object
+  // Complete Event
   completeEvent: async (eventId: string) => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error('Not authenticated');
@@ -489,20 +450,39 @@ export const api = {
     return response.json();
   },
 
-// Add to your api object in lib/api.ts
-getEventHistory: async () => {
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) return { history: [] }
+  // --- FIXED: This function name now matches your frontend call ---
+  getMyRegistrations: async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
 
-  const response = await fetch(`${API_URL}/volunteer/history`, {
-    headers: { Authorization: `Bearer ${session.access_token}` },
-  })
-  
-  if (!response.ok) throw new Error('Failed to fetch history')
-  return response.json()
-},
+    const response = await fetch(`${API_URL}/events/my-registrations`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+    });
 
-// Get top events (most registered)
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to fetch registrations');
+    }
+    
+    // Returns: { events: [...] }
+    return data;
+  },
+
+  // Keep this alias for the History page
+  getVolunteerRegistrations: async () => {
+    return api.getMyRegistrations();
+  },
+
+  // Helper alias for backward compatibility
+  getEventHistory: async () => {
+    return api.getMyRegistrations();
+  },
+
+  // Get top events
   getTopEvents: async () => {
     const response = await fetch(`${API_URL}/events/top`);
 
@@ -511,6 +491,140 @@ getEventHistory: async () => {
       throw new Error(error.message || 'Failed to fetch top events');
     }
 
+    return response.json();
+  },
+
+  // Self Check-in
+  selfCheckIn: async (data: { eventId: string; code: string; latitude: number; longitude: number }) => {
+    const token = localStorage.getItem('token')
+    const response = await fetch(`${API_URL}/events/self-check-in`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    })
+    
+    const resData = await response.json()
+    if (!response.ok) {
+      throw new Error(resData.message || 'Check-in failed')
+    }
+    return resData
+  },
+
+sendBroadcast: async (eventId: string, message: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const response = await fetch(`${API_URL}/events/${eventId}/broadcast`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ message }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to send broadcast');
+    }
+    return response.json();
+  },
+
+  getEventBroadcasts: async (eventId: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token || localStorage.getItem('token');
+    
+    const headers: any = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    try {
+        const response = await fetch(`${API_URL}/events/${eventId}/broadcasts`, { headers });
+        if (!response.ok) return { broadcasts: [] };
+        return response.json();
+    } catch (e) {
+        return { broadcasts: [] };
+    }
+  },
+// ✅ THIS WAS MISSING - DELETE FUNCTION
+  deleteBroadcast: async (eventId: string, broadcastId: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const response = await fetch(`${API_URL}/events/${eventId}/broadcast/${broadcastId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to delete broadcast');
+    }
+    return response.json();
+  },
+// ✅ NEW: Activity Feed
+  getRecentActivity: async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const response = await fetch(`${API_URL}/events/recent-activity`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+    });
+
+    if (!response.ok) {
+      // Return empty array on error to prevent page crash
+      return { activities: [] };
+    }
+    return response.json();
+  },
+
+  // ✅ NEW: Upload Signature
+  uploadOrgSignature: async (file: File) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(`${API_URL}/events/org/signature`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to upload signature');
+    }
+    return response.json();
+  },
+
+  // ✅ NEW: Issue Certificates
+  issueCertificates: async (eventId: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const response = await fetch(`${API_URL}/events/${eventId}/issue-certificates`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to issue certificates');
+    }
     return response.json();
   },
 };

@@ -6,11 +6,9 @@ import { CreateEventDto } from './dto/create-event.dto';
 export class EventService {
   constructor(private supabaseService: SupabaseService) { }
 
-  // --- REPLACED: This is the SMART version (Calculates Counts) ---
   async getOrganizationEvents(userId: string) {
     const supabase = this.supabaseService.getClient();
 
-    // 1. Get organization profile
     const { data: orgProfile, error: orgError } = await supabase
       .from('organization_profiles')
       .select('id')
@@ -21,7 +19,6 @@ export class EventService {
       throw new NotFoundException('Organization profile not found');
     }
 
-    // 2. Get events WITH registrations (Joined Query)
     const { data: events, error: eventsError } = await supabase
       .from('events')
       .select(`
@@ -36,7 +33,6 @@ export class EventService {
 
     if (eventsError) throw eventsError;
 
-    // 3. Calculate Counts (The "Smart" Part)
     const eventsWithCounts = events.map((event: any) => {
       const registrations = event.event_registrations || [];
 
@@ -72,6 +68,28 @@ export class EventService {
     return { events };
   }
 
+  async getTopEvents() {
+    const supabase = this.supabaseService.getClient();
+
+    const { data: events, error } = await supabase
+      .from('events')
+      .select(`
+        *,
+        organization_profiles (
+          name,
+          org_type
+        )
+      `)
+      .eq('status', 'published')
+      .gte('event_date', new Date().toISOString().split('T')[0])
+      .order('registered_count', { ascending: false })
+      .limit(4);
+
+    if (error) throw error;
+
+    return { events };
+  }
+
   async getEventById(eventId: string, userId?: string) {
     const supabase = this.supabaseService.getClient();
 
@@ -91,7 +109,6 @@ export class EventService {
       throw new NotFoundException('Event not found');
     }
 
-    // If userId provided, verify they own this event
     if (userId) {
       const { data: orgProfile } = await supabase
         .from('organization_profiles')
@@ -132,11 +149,9 @@ export class EventService {
     return { event };
   }
 
-  // Get event registrations with volunteer details
   async getEventRegistrations(userId: string, eventId: string) {
     const supabase = this.supabaseService.getClient();
 
-    // Verify the organization owns this event
     const { data: orgProfile, error: orgError } = await supabase
       .from('organization_profiles')
       .select('id')
@@ -161,7 +176,6 @@ export class EventService {
       throw new ForbiddenException('You do not have access to this event');
     }
 
-    // Get all registrations with volunteer details
     const { data: registrations, error: regError } = await supabase
       .from('event_registrations')
       .select(`
@@ -185,11 +199,57 @@ export class EventService {
     return { registrations };
   }
 
-  // Check in a volunteer
+  async getVolunteerRegistrations(userId: string) {
+    const supabase = this.supabaseService.getClient();
+    
+    // 1. Get Volunteer Profile
+    const { data: volProfile, error: volError } = await supabase
+        .from('volunteer_profiles')
+        .select('id')
+        .eq('user_id', userId)
+        .single();
+        
+    if (volError || !volProfile) throw new NotFoundException('Volunteer profile not found');
+
+    // 2. Fetch Registrations AND the 'certificates_issued' flag
+    const { data: registrations, error: regError } = await supabase.from('event_registrations')
+      .select(`
+        id, 
+        status, 
+        registered_at, 
+        events (
+          id, 
+          title, 
+          category, 
+          event_date, 
+          start_time, 
+          end_time, 
+          location, 
+          cover_image_url, 
+          total_slots, 
+          status, 
+          certificates_issued,  
+          organization_profiles(name)
+        )
+      `)
+      .eq('volunteer_id', volProfile.id)
+      .order('events(event_date)', { ascending: true });
+
+    if (regError) throw regError;
+
+    // 3. Format Response
+    const formattedEvents = registrations.map((reg: any) => ({ 
+        ...reg.events, 
+        registration_status: reg.status, 
+        registration_id: reg.id 
+    }));
+    
+    return { events: formattedEvents };
+  }
+
   async checkInVolunteer(userId: string, eventId: string, registrationId: string) {
     const supabase = this.supabaseService.getClient();
 
-    // Verify the organization owns this event
     const { data: orgProfile, error: orgError } = await supabase
       .from('organization_profiles')
       .select('id')
@@ -202,7 +262,7 @@ export class EventService {
 
     const { data: event, error: eventError } = await supabase
       .from('events')
-      .select('organization_id')
+      .select('organization_id, event_date, start_time')
       .eq('id', eventId)
       .single();
 
@@ -214,7 +274,11 @@ export class EventService {
       throw new ForbiddenException('You do not have access to this event');
     }
 
-    // Update registration status
+    const eventStart = new Date(`${event.event_date}T${event.start_time}:00+05:30`);
+    if (new Date() < eventStart) {
+      throw new BadRequestException('Cannot check in volunteers before the event has started');
+    }
+
     const { data: registration, error: updateError } = await supabase
       .from('event_registrations')
       .update({
@@ -234,11 +298,77 @@ export class EventService {
     };
   }
 
-  // Undo check-in
+  async selfCheckIn(userId: string, data: { eventId: string; code: string; latitude: number; longitude: number }) {
+    const supabase = this.supabaseService.getClient();
+
+    const { data: volProfile } = await supabase
+      .from('volunteer_profiles')
+      .select('id')
+      .eq('user_id', userId)
+      .single();
+
+    if (!volProfile) throw new NotFoundException('Volunteer profile not found');
+
+    const { data: event } = await supabase
+      .from('events')
+      .select('id, latitude, longitude, check_in_code, event_date, start_time')
+      .eq('id', data.eventId)
+      .single();
+
+    if (!event) throw new NotFoundException('Event not found');
+
+    if (event.check_in_code !== data.code) {
+      throw new BadRequestException('Invalid QR Code. Please scan the official event code.');
+    }
+
+    const eventStart = new Date(`${event.event_date}T${event.start_time}:00+05:30`);
+    if (new Date() < eventStart) {
+      throw new BadRequestException('Check-in not open yet. Please wait for event start.');
+    }
+
+    if (event.latitude && event.longitude) {
+      const distance = this.calculateDistance(
+        event.latitude, 
+        event.longitude, 
+        data.latitude, 
+        data.longitude
+      );
+      
+      if (distance > 0.2) { 
+        throw new BadRequestException(`You are too far from the venue (${(distance * 1000).toFixed(0)}m away). Please get closer.`);
+      }
+    }
+
+    const { error } = await supabase
+      .from('event_registrations')
+      .update({ status: 'checked_in', checked_in_at: new Date().toISOString() })
+      .eq('event_id', data.eventId)
+      .eq('volunteer_id', volProfile.id);
+
+    if (error) throw new BadRequestException('Failed to check in. Are you registered?');
+
+    return { message: 'Checked in successfully' };
+  }
+
+  private calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+    const R = 6371; 
+    const dLat = this.deg2rad(lat2 - lat1);
+    const dLon = this.deg2rad(lon2 - lon1);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(this.deg2rad(lat1)) * Math.cos(this.deg2rad(lat2)) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c; 
+  }
+
+  private deg2rad(deg: number): number {
+    return deg * (Math.PI / 180);
+  }
+
   async undoCheckIn(userId: string, eventId: string, registrationId: string) {
     const supabase = this.supabaseService.getClient();
 
-    // Verify the organization owns this event
     const { data: orgProfile, error: orgError } = await supabase
       .from('organization_profiles')
       .select('id')
@@ -263,7 +393,6 @@ export class EventService {
       throw new ForbiddenException('You do not have access to this event');
     }
 
-    // Update registration status
     const { data: registration, error: updateError } = await supabase
       .from('event_registrations')
       .update({
@@ -283,11 +412,9 @@ export class EventService {
     };
   }
 
-  // Cancel event
   async cancelEvent(userId: string, eventId: string) {
     const supabase = this.supabaseService.getClient();
 
-    // Verify the organization owns this event
     const { data: orgProfile, error: orgError } = await supabase
       .from('organization_profiles')
       .select('id')
@@ -312,7 +439,6 @@ export class EventService {
       throw new ForbiddenException('You do not have access to this event');
     }
 
-    // Update event status to cancelled
     const { data: updatedEvent, error: updateError } = await supabase
       .from('events')
       .update({ status: 'cancelled' })
@@ -331,7 +457,6 @@ export class EventService {
   async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
     const supabase = this.supabaseService.getClient();
 
-    // Verify the organization owns this event
     const { data: orgProfile, error: orgError } = await supabase
       .from('organization_profiles')
       .select('id')
@@ -356,7 +481,17 @@ export class EventService {
       throw new ForbiddenException('You do not have access to this event');
     }
 
-    // Update event
+    const eventDateTime = new Date(`${dto.eventDate}T${dto.startTime}:00+05:30`);
+    const registrationDeadline = new Date(dto.registrationDeadline);
+    const oneHourBefore = new Date(eventDateTime.getTime() - 60 * 60 * 1000);
+
+    if (registrationDeadline >= eventDateTime) {
+      throw new BadRequestException('Registration deadline must be before event start time');
+    }
+    if (registrationDeadline > oneHourBefore) {
+      throw new BadRequestException('Registration deadline must be at least 1 hour before event start');
+    }
+
     const { data: updatedEvent, error: updateError } = await supabase
       .from('events')
       .update({
@@ -387,76 +522,10 @@ export class EventService {
       event: updatedEvent,
     };
   }
-  // Add this to EventService
-  async getVolunteerRegistrations(userId: string) {
-    const supabase = this.supabaseService.getClient();
-
-    // 1. Get volunteer profile
-    const { data: volProfile, error: volError } = await supabase
-      .from('volunteer_profiles')
-      .select('id')
-      .eq('user_id', userId)
-      .single();
-
-    if (volError || !volProfile) {
-      throw new NotFoundException('Volunteer profile not found');
-    }
-
-    // 2. Get registrations AND the related event details
-    const { data: registrations, error: regError } = await supabase
-      .from('event_registrations')
-      .select(`
-        id,
-        status,
-        registered_at,
-        events (
-          id,
-          title,
-          category,
-          event_date,
-          start_time,
-          end_time,
-          location,
-          cover_image_url,
-          total_slots,
-          registered_count
-        )
-      `)
-      .eq('volunteer_id', volProfile.id)
-      .order('events(event_date)', { ascending: true }); // Show nearest events first
-
-    if (regError) throw regError;
-
-    // 3. Flatten the structure for easier frontend use
-    const formattedEvents = registrations.map((reg: any) => ({
-      ...reg.events, // Spread the event details
-      registration_status: reg.status, // Keep track if they are registered or checked_in
-      registration_id: reg.id
-    }));
-
-    return { events: formattedEvents };
-  }
-
-  // Add to EventService
-  async getEventBroadcasts(eventId: string) {
-    const supabase = this.supabaseService.getClient();
-
-    const { data: broadcasts, error } = await supabase
-      .from('event_broadcasts')
-      .select('*')
-      .eq('event_id', eventId)
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-    return { broadcasts };
-  }
-
-  // Add inside EventService class
 
   async completeEvent(userId: string, eventId: string) {
     const supabase = this.supabaseService.getClient();
 
-    // 1. Verify ownership
     const { data: orgProfile } = await supabase
       .from('organization_profiles')
       .select('id')
@@ -465,7 +534,20 @@ export class EventService {
 
     if (!orgProfile) throw new NotFoundException('Organization not found');
 
-    // 2. Update event status
+    const { data: eventData, error: fetchError } = await supabase
+      .from('events')
+      .select('event_date, start_time')
+      .eq('id', eventId)
+      .eq('organization_id', orgProfile.id)
+      .single();
+
+    if (fetchError || !eventData) throw new NotFoundException('Event not found');
+
+    const eventStart = new Date(`${eventData.event_date}T${eventData.start_time}:00+05:30`);
+    if (new Date() < eventStart) {
+      throw new BadRequestException('Cannot mark event as completed before it has started');
+    }
+
     const { data: event, error } = await supabase
       .from('events')
       .update({ status: 'completed' })
@@ -476,35 +558,24 @@ export class EventService {
 
     if (error) throw error;
 
+    await supabase
+      .from('event_registrations')
+      .update({ status: 'completed' })
+      .eq('event_id', eventId)
+      .eq('status', 'checked_in');
+
+    await supabase
+      .from('event_registrations')
+      .update({ status: 'missed' })
+      .eq('event_id', eventId)
+      .eq('status', 'registered');
+
     return { message: 'Event marked as completed', event };
-  }
-
-  async getTopEvents() {
-    const supabase = this.supabaseService.getClient();
-
-    const { data: events, error } = await supabase
-      .from('events')
-      .select(`
-        *,
-        organization_profiles (
-          name,
-          org_type
-        )
-      `)
-      .eq('status', 'published')
-      .gte('event_date', new Date().toISOString().split('T')[0])
-      .order('registered_count', { ascending: false })
-      .limit(4);
-
-    if (error) throw error;
-
-    return { events };
   }
 
   async createEvent(userId: string, dto: CreateEventDto) {
     const supabase = this.supabaseService.getClient();
 
-    // Get organization profile
     const { data: orgProfile, error: orgError } = await supabase
       .from('organization_profiles')
       .select('id, approval_status')
@@ -519,7 +590,6 @@ export class EventService {
       throw new ForbiddenException('Your organization must be approved before creating events');
     }
 
-    // --- NEW: Validate registration deadline ---
     const eventDateTime = new Date(`${dto.eventDate}T${dto.startTime}:00+05:30`);
     const registrationDeadline = new Date(dto.registrationDeadline);
 
@@ -536,9 +606,7 @@ export class EventService {
     if (registrationDeadline > oneHourBefore) {
       throw new BadRequestException('Registration deadline must be at least 1 hour before event start');
     }
-    // ---
 
-    // Create event
     const { data: event, error: eventError } = await supabase
       .from('events')
       .insert({
@@ -555,7 +623,7 @@ export class EventService {
         dress_code: dto.dressCode,
         things_to_bring: dto.thingsToBring,
         total_slots: dto.totalSlots,
-        registration_deadline: dto.registrationDeadline, // Now timestamp
+        registration_deadline: dto.registrationDeadline,
         minimum_age: dto.minimumAge,
         status: 'published',
       })
@@ -570,7 +638,6 @@ export class EventService {
   async registerForEvent(userId: string, eventId: string) {
     const supabase = this.supabaseService.getClient();
 
-    // Get volunteer profile
     const { data: volunteerProfile, error: profileError } = await supabase
       .from('volunteer_profiles')
       .select('id')
@@ -581,7 +648,6 @@ export class EventService {
       throw new NotFoundException('Volunteer profile not found');
     }
 
-    // Get event details
     const { data: event, error: eventError } = await supabase
       .from('events')
       .select('*')
@@ -593,18 +659,14 @@ export class EventService {
       throw new NotFoundException('Event not found');
     }
 
-    // --- NEW: Check registration deadline ---
     if (new Date(event.registration_deadline) < new Date()) {
       throw new BadRequestException('Registration deadline has passed');
     }
-    // ---
 
-    // Check if event is full
     if (event.registered_count >= event.total_slots) {
       throw new BadRequestException('Event is already full');
     }
 
-    // Check if already registered
     const { data: existing } = await supabase
       .from('event_registrations')
       .select('id')
@@ -616,7 +678,6 @@ export class EventService {
       throw new BadRequestException('Already registered for this event');
     }
 
-    // Register
     const { data: registration, error: regError } = await supabase
       .from('event_registrations')
       .insert({
@@ -632,5 +693,201 @@ export class EventService {
       message: 'Successfully registered for event',
       registration,
     };
+  }
+
+  // ✅ NEW: Send Broadcast Logic
+  async sendBroadcast(userId: string, eventId: string, message: string) {
+    // Cast to 'any' to bypass missing type definition for event_broadcasts
+    const supabase = this.supabaseService.getClient() as any;
+
+    const { data: orgProfile } = await supabase
+      .from('organization_profiles')
+      .select('id')
+      .eq('user_id', userId)
+      .single();
+
+    if (!orgProfile) throw new NotFoundException('Organization not found');
+
+    const { data: event } = await supabase
+      .from('events')
+      .select('id')
+      .eq('id', eventId)
+      .eq('organization_id', orgProfile.id)
+      .single();
+
+    if (!event) throw new ForbiddenException('You can only broadcast to your own events');
+
+    const { data, error } = await supabase
+      .from('event_broadcasts')
+      .insert({
+        event_id: eventId,
+        organization_id: orgProfile.id,
+        message: message,
+        is_important: true
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return { message: 'Broadcast sent successfully', broadcast: data };
+  }
+
+  // ✅ NEW: Get Broadcasts Logic (Fixed duplicate)
+  async getEventBroadcasts(eventId: string) {
+    // Cast to 'any' to bypass missing type definition for event_broadcasts
+    const supabase = this.supabaseService.getClient() as any;
+
+    const { data: broadcasts, error } = await supabase
+      .from('event_broadcasts')
+      .select('*')
+      .eq('event_id', eventId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return { broadcasts };
+  }
+async deleteBroadcast(userId: string, eventId: string, broadcastId: string) {
+    const supabase = this.supabaseService.getClient() as any;
+    const { data: orgProfile } = await supabase.from('organization_profiles').select('id').eq('user_id', userId).single();
+    if (!orgProfile) throw new NotFoundException('Organization not found');
+
+    const { error } = await supabase.from('event_broadcasts').delete().eq('id', broadcastId).eq('organization_id', orgProfile.id); 
+    if (error) throw error;
+    return { message: 'Broadcast deleted successfully' };
+  }
+
+  // ✅ NEW: Recent Activity Logic
+  async getRecentActivity(userId: string) {
+    const supabase = this.supabaseService.getClient();
+
+    // 1. Get Org ID
+    const { data: orgProfile } = await supabase.from('organization_profiles').select('id').eq('user_id', userId).single();
+    if (!orgProfile) throw new NotFoundException('Organization not found');
+
+    // 2. Fetch recent events created by Org (Limit 5)
+    const { data: events } = await supabase
+      .from('events')
+      .select('title, created_at')
+      .eq('organization_id', orgProfile.id)
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    // 3. Fetch recent registrations for Org's events (Limit 10 to ensure coverage)
+    // We join events to filter by org_id
+    const { data: registrations } = await supabase
+      .from('event_registrations')
+      .select(`
+        status, 
+        registered_at, 
+        checked_in_at,
+        volunteer_profiles(full_name),
+        events!inner(title, organization_id) 
+      `)
+      .eq('events.organization_id', orgProfile.id)
+      .order('registered_at', { ascending: false })
+      .limit(10);
+
+    // 4. Process & Merge Data
+    const activities: any[] = [];
+
+    // Add "Published" activities
+    events?.forEach((ev: any) => {
+      activities.push({
+        id: `pub-${ev.created_at}`,
+        type: 'publish',
+        text: `You published '${ev.title}'.`,
+        timestamp: new Date(ev.created_at),
+      });
+    });
+
+    // Add "Registered" & "Checked In" activities
+    registrations?.forEach((reg: any) => {
+      const volName = reg.volunteer_profiles?.full_name || 'A volunteer';
+      const eventTitle = reg.events?.title || 'an event';
+
+      // Always add registration
+      activities.push({
+        id: `reg-${reg.registered_at}`,
+        type: 'register',
+        text: `${volName} registered for ${eventTitle}.`,
+        timestamp: new Date(reg.registered_at),
+      });
+
+      // If checked in, add check-in activity
+      if (reg.checked_in_at) {
+        activities.push({
+          id: `chk-${reg.checked_in_at}`,
+          type: 'checkin',
+          text: `${volName} checked in at ${eventTitle}.`,
+          timestamp: new Date(reg.checked_in_at),
+        });
+      }
+    });
+
+    // 5. Sort by newest first and limit to 5
+    activities.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+    return { activities: activities.slice(0, 5) };
+  }
+
+  // ✅ NEW: Upload Signature Logic
+  async uploadOrgSignature(userId: string, file: Express.Multer.File) {
+    const supabase = this.supabaseService.getClient();
+    
+    // 1. Get Org Profile
+    const { data: orgProfile } = await supabase.from('organization_profiles').select('id').eq('user_id', userId).single();
+    if (!orgProfile) throw new NotFoundException('Organization not found');
+
+    // 2. Upload to Supabase Storage
+    const fileExt = file.originalname.split('.').pop();
+    const fileName = `${orgProfile.id}-${Date.now()}.${fileExt}`;
+    const filePath = `signatures/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('org-signatures')
+      .upload(filePath, file.buffer, { contentType: file.mimetype });
+
+    if (uploadError) throw new BadRequestException('Failed to upload signature');
+
+    // 3. Get Public URL
+    const { data: { publicUrl } } = supabase.storage.from('org-signatures').getPublicUrl(filePath);
+
+    // 4. Save URL to Profile
+    const { error: dbError } = await supabase
+      .from('organization_profiles')
+      .update({ signature_url: publicUrl })
+      .eq('id', orgProfile.id);
+
+    if (dbError) throw dbError;
+
+    return { message: 'Signature uploaded successfully', signatureUrl: publicUrl };
+  }
+
+  // ✅ NEW: Issue Certificates Logic
+  async issueCertificates(userId: string, eventId: string) {
+    const supabase = this.supabaseService.getClient();
+
+    // 1. Verify Org
+    const { data: orgProfile } = await supabase.from('organization_profiles').select('id, signature_url').eq('user_id', userId).single();
+    if (!orgProfile) throw new NotFoundException('Organization not found');
+
+    // 2. Check if Signature exists
+    if (!orgProfile.signature_url) {
+        throw new BadRequestException('You must upload your organization signature/stamp before issuing certificates.');
+    }
+
+    // 3. Verify Event Ownership & Completion
+    const { data: event } = await supabase.from('events').select('status').eq('id', eventId).eq('organization_id', orgProfile.id).single();
+    if (!event) throw new ForbiddenException('Event not found or access denied');
+    if (event.status !== 'completed') throw new BadRequestException('Event must be marked as completed before issuing certificates.');
+
+    // 4. Update Event Flag
+    const { error } = await supabase
+      .from('events')
+      .update({ certificates_issued: true })
+      .eq('id', eventId);
+
+    if (error) throw error;
+
+    return { message: 'Certificates issued successfully' };
   }
 }

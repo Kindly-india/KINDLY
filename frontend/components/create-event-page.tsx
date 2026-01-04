@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import {
     ChevronLeft,
@@ -15,8 +15,8 @@ import {
     AlertTriangle,
     CheckCircle,
     Info,
-    Navigation, // Added for the 'Current Location' button
-    Search // Added for the map search visual
+    Navigation,
+    Search
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { api } from "@/lib/api"
@@ -37,7 +37,7 @@ export function CreateEventPage() {
     const [coverImage, setCoverImage] = useState<File | null>(null);
     const [coverImageUrl, setCoverImageUrl] = useState<string>('');
     const [uploading, setUploading] = useState(false);
-    const [gettingLocation, setGettingLocation] = useState(false); // State for geolocation
+    const [gettingLocation, setGettingLocation] = useState(false); 
 
     const [formData, setFormData] = useState({
         title: '',
@@ -50,11 +50,10 @@ export function CreateEventPage() {
         dressCode: '',
         thingsToBring: '',
         totalSlots: 50,
-        registrationDeadline: '', // Changed from '1_day_before'
+        registrationDeadline: '', 
         minimumAge: undefined as number | undefined,
     });
 
-    // Function to get current browser location
     const handleGetCurrentLocation = () => {
         if (!navigator.geolocation) {
             alert("Geolocation is not supported by your browser");
@@ -64,14 +63,7 @@ export function CreateEventPage() {
         setGettingLocation(true);
         navigator.geolocation.getCurrentPosition(
             (position) => {
-                // In a real app with API Key, we would Reverse Geocode here (Coords -> Address).
-                // For now, we will simply alert the user to type the address, but we could store coords if backend supported it.
-                // We will simulate a precise location fill for UX.
                 const { latitude, longitude } = position.coords;
-                // For this UI, we still rely on the text input for the "Address", 
-                // but this button implies precision to the user.
-                // Since we can't reverse geocode without an API key in this snippet, 
-                // we will focus the input and ask them to confirm the specific building.
                 setGettingLocation(false);
                 alert(`Location detected (${latitude.toFixed(4)}, ${longitude.toFixed(4)}). Please type the specific building name or street address to confirm on the map.`);
             },
@@ -100,33 +92,38 @@ export function CreateEventPage() {
                 return;
             }
 
-            // --- NEW: Validate registration deadline ---
+            // --- Validate Registration Deadline Logic ---
             if (!formData.registrationDeadline) {
                 alert('Please set a registration deadline');
                 return;
             }
 
-            const eventDateTime = new Date(`${formData.eventDate}T${formData.startTime}:00`);
+            const eventStartDateTime = new Date(`${formData.eventDate}T${formData.startTime}`);
+            const eventEndDateTime = new Date(`${formData.eventDate}T${formData.endTime}`);
             const regDeadline = new Date(formData.registrationDeadline);
-            const oneHourBefore = new Date(eventDateTime.getTime() - 60 * 60 * 1000);
+            
+            // Check: End time after Start time
+            if (eventEndDateTime <= eventStartDateTime) {
+                alert('Event end time must be after start time');
+                return;
+            }
 
+            // Check: Deadline in the past
             if (regDeadline < new Date()) {
                 alert('Registration deadline cannot be in the past');
                 return;
             }
 
-            if (regDeadline >= eventDateTime) {
-                alert('Registration deadline must be before event start time');
-                return;
-            }
-
-            if (regDeadline > oneHourBefore) {
-                alert('Registration deadline must be at least 1 hour before event start');
+            // Check: Deadline after Event Start (Strict Logic)
+            // We enforce at least 1 hour buffer
+            const oneHourBeforeStart = new Date(eventStartDateTime.getTime() - 60 * 60 * 1000);
+            
+            if (regDeadline > oneHourBeforeStart) {
+                alert('Registration deadline must be at least 1 hour before the event starts.');
                 return;
             }
             // ---
 
-            // Upload cover image...
             let coverUrl = coverImageUrl;
             if (coverImage) {
                 setUploading(true);
@@ -140,10 +137,8 @@ export function CreateEventPage() {
                 setUploading(false);
             }
 
-            // Convert to ISO string with India timezone
             const deadlineISO = new Date(formData.registrationDeadline).toISOString();
 
-            // Create event
             await api.createEvent({
                 title: formData.title,
                 description: formData.description,
@@ -157,7 +152,7 @@ export function CreateEventPage() {
                 dressCode: formData.dressCode,
                 thingsToBring: formData.thingsToBring,
                 totalSlots: formData.totalSlots,
-                registrationDeadline: deadlineISO, // Send ISO string
+                registrationDeadline: deadlineISO,
                 minimumAge: formData.minimumAge,
             });
 
@@ -170,7 +165,6 @@ export function CreateEventPage() {
     if (showSuccess) {
         return (
             <div className="min-h-screen bg-linear-to-br from-[#f0fdf4] via-white to-[#f0f7ff] flex items-center justify-center p-4 overflow-hidden relative">
-                {/* Floating icons */}
                 <div className="absolute top-8 left-8 md:top-16 md:left-24 w-10 h-10 md:w-14 md:h-14 bg-white rounded-2xl shadow-lg flex items-center justify-center">
                     <Sparkles className="w-5 h-5 md:w-6 md:h-6 text-amber-500" />
                 </div>
@@ -213,7 +207,6 @@ export function CreateEventPage() {
 
     return (
         <div className="min-h-screen bg-linear-to-br from-[#fef7f0] via-white to-[#f0fdf4] overflow-x-hidden">
-            {/* Floating decorative icons */}
             <div className="fixed top-20 left-4 md:left-12 w-10 h-10 md:w-12 md:h-12 bg-white rounded-2xl shadow-lg flex items-center justify-center z-10 opacity-60">
                 <Heart className="w-5 h-5 text-rose-400" />
             </div>
@@ -227,7 +220,6 @@ export function CreateEventPage() {
                 <Users className="w-5 h-5 text-emerald-400" />
             </div>
 
-            {/* Header */}
             <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-[#f5f5f7]">
                 <div className="max-w-3xl mx-auto px-4 h-14 md:h-16 flex items-center justify-between">
                     <Link
@@ -242,7 +234,6 @@ export function CreateEventPage() {
                 </div>
             </header>
 
-            {/* Progress Steps */}
             <div className="bg-white border-b border-[#f5f5f7]">
                 <div className="max-w-3xl mx-auto px-4 py-4">
                     <div className="flex items-center gap-2">
@@ -286,11 +277,9 @@ export function CreateEventPage() {
                 </div>
             </div>
 
-            {/* Form Content */}
             <main className="max-w-3xl mx-auto px-4 py-6 md:py-10">
                 {step === 1 && (
                     <div className="space-y-6 md:space-y-8">
-                        {/* Cover Image */}
                         <div>
                             <label className="block text-sm font-semibold text-[#1d1d1f] mb-3">Cover Image</label>
                             <div className="aspect-video bg-linear-to-br from-[#f0fdf4] to-[#e0f2fe] rounded-2xl border-2 border-dashed border-[#d2d2d7] hover:border-emerald-400 transition-colors cursor-pointer flex flex-col items-center justify-center group">
@@ -301,15 +290,12 @@ export function CreateEventPage() {
                                     onChange={(e) => {
                                         const file = e.target.files?.[0];
                                         if (file) {
-                                            // --- ADDED FILE SIZE RESTRICTION ---
-                                            if (file.size > 2 * 1024 * 1024) { // 2MB limit
+                                            // 2MB Size Limit
+                                            if (file.size > 2 * 1024 * 1024) { 
                                                 alert("File size exceeds 2MB limit. Please upload a smaller image.");
                                                 return;
                                             }
-                                            // ------------------------------------
-
                                             setCoverImage(file);
-                                            // Show preview
                                             const reader = new FileReader();
                                             reader.onloadend = () => {
                                                 setCoverImageUrl(reader.result as string);
@@ -331,14 +317,13 @@ export function CreateEventPage() {
                                             <p className="text-[#1d1d1f] font-medium">
                                                 {uploading ? 'Uploading...' : 'Click to upload cover image'}
                                             </p>
-                                            <p className="text-xs text-[#86868b] mt-1">16:9 ratio recommended • PNG, JPG up to 5MB</p>
+                                            <p className="text-xs text-[#86868b] mt-1">16:9 ratio recommended • PNG, JPG up to 2MB</p>
                                         </>
                                     )}
                                 </label>
                             </div>
                         </div>
 
-                        {/* Event Title */}
                         <div>
                             <label className="block text-sm font-semibold text-[#1d1d1f] mb-3">Event Title</label>
                             <input
@@ -350,7 +335,6 @@ export function CreateEventPage() {
                             />
                         </div>
 
-                        {/* Category Selection */}
                         <div>
                             <label className="block text-sm font-semibold text-[#1d1d1f] mb-3">Category</label>
                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -372,7 +356,6 @@ export function CreateEventPage() {
                             </div>
                         </div>
 
-                        {/* Urgent Toggle */}
                         <div className="flex items-center justify-between p-4 bg-linear-to-r from-amber-50 to-orange-50 rounded-xl border border-amber-200">
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center">
@@ -399,7 +382,6 @@ export function CreateEventPage() {
                             </button>
                         </div>
 
-                        {/* Description */}
                         <div>
                             <label className="block text-sm font-semibold text-[#1d1d1f] mb-3">Description</label>
                             <textarea
@@ -415,7 +397,6 @@ export function CreateEventPage() {
 
                 {step === 2 && (
                     <div className="space-y-6 md:space-y-8">
-                        {/* Date & Time */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-sm font-semibold text-[#1d1d1f] mb-3">
@@ -462,7 +443,7 @@ export function CreateEventPage() {
                                 <MapPin className="w-4 h-4 inline mr-2 text-emerald-500" />
                                 Exact Location
                             </label>
-
+                            
                             <div className="flex gap-2 mb-3">
                                 <div className="relative flex-1">
                                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -474,7 +455,7 @@ export function CreateEventPage() {
                                         className="w-full h-12 px-4 pl-10 bg-[#f5f5f7] rounded-xl border-0 text-[#1d1d1f] placeholder:text-[#86868b] focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all text-sm"
                                     />
                                 </div>
-                                <button
+                                <button 
                                     onClick={handleGetCurrentLocation}
                                     disabled={gettingLocation}
                                     className="h-12 px-4 bg-white border border-[#e5e5e7] hover:bg-[#f5f5f7] rounded-xl flex items-center gap-2 transition-colors disabled:opacity-50"
@@ -510,7 +491,6 @@ export function CreateEventPage() {
                             </div>
                         </div>
 
-                        {/* Optional Fields */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-sm font-semibold text-[#1d1d1f] mb-3">
@@ -544,7 +524,6 @@ export function CreateEventPage() {
 
                 {step === 3 && (
                     <div className="space-y-6 md:space-y-8">
-                        {/* Volunteer Slots */}
                         <div>
                             <label className="block text-sm font-semibold text-[#1d1d1f] mb-3">
                                 <Users className="w-4 h-4 inline mr-2 text-emerald-500" />
@@ -559,7 +538,7 @@ export function CreateEventPage() {
                             />
                         </div>
 
-                        {/* Registration Deadline - NEW DATETIME PICKER */}
+                        {/* --- NEW REGISTRATION DEADLINE SECTION --- */}
                         <div>
                             <label className="block text-sm font-semibold text-[#1d1d1f] mb-3">
                                 <Clock className="w-4 h-4 inline mr-2 text-emerald-500" />
@@ -570,14 +549,16 @@ export function CreateEventPage() {
                                 value={formData.registrationDeadline}
                                 onChange={(e) => setFormData({ ...formData, registrationDeadline: e.target.value })}
                                 min={new Date(new Date().getTime() + 60 * 60 * 1000).toISOString().slice(0, 16)}
+                                // Add max attribute if date and start time are set
+                                max={formData.eventDate && formData.startTime ? `${formData.eventDate}T${formData.startTime}` : undefined}
                                 className="w-full h-12 md:h-14 px-4 bg-[#f5f5f7] rounded-xl border-0 text-[#1d1d1f] focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all text-sm md:text-base"
                             />
                             <p className="text-xs text-[#86868b] mt-2">
                                 Must be at least 1 hour before event start time
                             </p>
                         </div>
+                        {/* -------------------------------------- */}
 
-                        {/* Minimum Age */}
                         <div>
                             <label className="block text-sm font-semibold text-[#1d1d1f] mb-3">
                                 Minimum Age
@@ -592,14 +573,12 @@ export function CreateEventPage() {
                             />
                         </div>
 
-                        {/* Preview Card */}
                         <div className="p-4 md:p-6 bg-linear-to-br from-emerald-50 to-teal-50 rounded-2xl border border-emerald-200">
                             <div className="flex items-center gap-2 mb-4">
                                 <Info className="w-4 h-4 text-emerald-600" />
                                 <p className="text-sm font-semibold text-emerald-700">Event Preview</p>
                             </div>
                             <div className="bg-white rounded-xl p-4 shadow-sm">
-                                {/* Cover Image Preview */}
                                 {coverImageUrl ? (
                                     <div className="aspect-video rounded-lg mb-3 overflow-hidden">
                                         <img src={coverImageUrl} alt="Event cover" className="w-full h-full object-cover" />
@@ -610,12 +589,10 @@ export function CreateEventPage() {
                                     </div>
                                 )}
 
-                                {/* Title */}
                                 <h3 className="font-semibold text-gray-900 text-sm mb-2 line-clamp-2">
                                     {formData.title || 'Event Title'}
                                 </h3>
 
-                                {/* Category Badge */}
                                 {formData.category && (
                                     <div className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-100 rounded-full mb-3">
                                         <span className="text-xs">
@@ -627,7 +604,6 @@ export function CreateEventPage() {
                                     </div>
                                 )}
 
-                                {/* Date & Location */}
                                 <div className="space-y-1.5 mb-3">
                                     {formData.eventDate && (
                                         <div className="flex items-center gap-2 text-xs text-gray-600">
@@ -650,7 +626,6 @@ export function CreateEventPage() {
                                     )}
                                 </div>
 
-                                {/* Slots Progress */}
                                 {formData.totalSlots > 0 && (
                                     <div>
                                         <div className="flex items-center justify-between text-xs text-gray-600 mb-1.5">
@@ -666,7 +641,6 @@ export function CreateEventPage() {
                                     </div>
                                 )}
 
-                                {/* Urgent Badge */}
                                 {isUrgent && (
                                     <div className="mt-3 flex items-center gap-1.5 px-2 py-1 bg-amber-100 rounded-lg w-fit">
                                         <AlertTriangle className="w-3 h-3 text-amber-600" />
@@ -679,7 +653,6 @@ export function CreateEventPage() {
                 )}
             </main>
 
-            {/* Footer Actions */}
             <footer className="sticky bottom-0 bg-white/80 backdrop-blur-xl border-t border-[#f5f5f7]">
                 <div className="max-w-3xl mx-auto px-4 py-4 flex gap-3">
                     {step > 1 && (

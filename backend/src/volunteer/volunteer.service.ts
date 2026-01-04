@@ -5,80 +5,92 @@ import { SupabaseService } from '../supabase/supabase.service';
 export class VolunteerService {
   constructor(private readonly supabase: SupabaseService) {}
 
-  // Replace the method in src/volunteer/volunteer.service.ts
+  // --- CRITICAL: This is needed to show "Hello Manas" ---
+  async getProfile(userId: string) {
+    const client = this.supabase.getClient();
+    const { data, error } = await client
+      .from('volunteer_profiles')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+
+    if (error) return null;
+    return { profile: data };
+  }
+
+  // --- Profile Creation (Needed for new users) ---
+  async createProfile(userId: string, dto: any) {
+    const client = this.supabase.getClient();
+    const { data, error } = await client
+      .from('volunteer_profiles')
+      .insert({ ...dto, user_id: userId })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return { message: 'Profile created', profile: data };
+  }
+
+  // --- Profile Update ---
+  async updateProfile(userId: string, dto: any) {
+    const client = this.supabase.getClient();
+    const { data, error } = await client
+      .from('volunteer_profiles')
+      .update(dto)
+      .eq('user_id', userId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return { message: 'Profile updated', profile: data };
+  }
+
+  // --- HISTORY (Your old code, fixed table name) ---
   async getVolunteerHistory(userId: string) {
     const client = this.supabase.getClient();
 
-    // 1. Get Volunteer Profile ID
     const { data: profile } = await client
       .from('volunteer_profiles')
       .select('id')
       .eq('user_id', userId)
-      .maybeSingle(); // Use maybeSingle() instead of single() to avoid crash if profile missing
+      .maybeSingle();
 
-    if (!profile) {
-      return { history: [] }; // Return empty list instead of throwing error
-    }
+    if (!profile) return { history: [] };
 
-    // 2. Fetch Registrations
+    // Fixed table: 'event_registrations' (not 'registrations')
     const { data: registrations, error } = await client
-      .from('registrations')
+      .from('event_registrations') 
       .select(`
-        id,
-        status,
-        check_in_time,
+        id, status, checked_in_at,
         events (
-          id,
-          title,
-          event_date,
-          start_time,
-          end_time,
-          location,
-          cover_image_url,
+          id, title, event_date, start_time, end_time, location, cover_image_url,
           organization_profiles (name)
         )
       `)
       .eq('volunteer_id', profile.id)
       .order('created_at', { ascending: false });
 
-    if (error || !registrations) {
-      return { history: [] }; // Return empty if error or null
-    }
+    if (error || !registrations) return { history: [] };
 
-    // 3. Format Data
     const history = registrations
-      .filter((reg: any) => reg.events) // Filter out any broken records
+      .filter((reg: any) => reg.events)
       .map((reg: any) => {
         const event = reg.events;
-        const eventDate = new Date(event.event_date);
-        const isAttended = reg.status === 'checked_in';
-        const isPast = eventDate < new Date();
-
-        let displayStatus = 'pending';
-        if (isAttended) displayStatus = 'attended';
-        else if (isPast) displayStatus = 'missed';
-
-        let hours = 0;
-        if (isAttended && event.start_time && event.end_time) {
-           const start = parseInt(event.start_time.split(':')[0]);
-           const end = parseInt(event.end_time.split(':')[0]);
-           hours = Math.max(0, end - start);
-        }
+        const isAttended = reg.status === 'checked_in' || reg.status === 'completed';
+        const displayStatus = isAttended ? 'attended' : 'pending';
 
         return {
           id: event.id,
           title: event.title,
-          date: eventDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
+          date: event.event_date,
           image: event.cover_image_url,
           status: displayStatus,
-          hours: hours,
           org: event.organization_profiles?.name || 'Organization',
           location: event.location,
           hasCertificate: isAttended,
-          gallery: []
         };
       });
 
     return { history };
-    }
+  }
 }

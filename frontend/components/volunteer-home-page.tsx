@@ -24,12 +24,11 @@ import {
 } from "lucide-react"
 import { api } from "@/lib/api"
 
-// --- STATIC STORIES (With Images) ---
+// --- STATIC STORIES ---
 const stories = [
   {
     id: 1,
-    quote:
-      "Kindly began from simply showing up and working alongside people who care.",
+    quote: "Kindly began from simply showing up and working alongside people who care.",
     author: "Manas Dhivare",
     role: "Founder - Kindly",
     category: "Environment",
@@ -38,8 +37,7 @@ const stories = [
   },
   {
     id: 2,
-    quote:
-      "Helping build Kindly was mostly about solving problems and making the platform usable for everyone.",
+    quote: "Helping build Kindly was mostly about solving problems and making the platform usable for everyone.",
     author: "Aditya Dhongade",
     role: "Co-Founder - Kindly",
     category: "Education",
@@ -48,8 +46,7 @@ const stories = [
   },
   {
     id: 3,
-    quote:
-      "Spending weekends at the shelter has been therapy for me. These dogs just want love, and they give back so much more.",
+    quote: "Spending weekends at the shelter has been therapy for me. These dogs just want love, and they give back so much more.",
     author: "Sarah Jenkins",
     role: "Animal Shelter Volunteer",
     category: "Animals",
@@ -58,8 +55,7 @@ const stories = [
   },
   {
     id: 4,
-    quote:
-      "Organizing the food drive in Panchavati showed me the real power of community. Small acts really do add up.",
+    quote: "Organizing the food drive in Panchavati showed me the real power of community. Small acts really do add up.",
     author: "Rahul Verma",
     role: "Community Leader",
     category: "Community",
@@ -68,8 +64,7 @@ const stories = [
   },
   {
     id: 5,
-    quote:
-      "Helping the elderly with their daily technology struggles is surprisingly fun. Their stories from the past are a treasure.",
+    quote: "Helping the elderly with their daily technology struggles is surprisingly fun. Their stories from the past are a treasure.",
     author: "Neha Gupta",
     role: "Elderly Care Assistant",
     category: "Elderly Care",
@@ -78,8 +73,7 @@ const stories = [
   },
   {
     id: 6,
-    quote:
-      "I never realized how critical blood donation was until I met the patients. It takes 15 minutes to save a life.",
+    quote: "I never realized how critical blood donation was until I met the patients. It takes 15 minutes to save a life.",
     author: "Dr. Arjun K.",
     role: "Medical Volunteer",
     category: "Health",
@@ -96,9 +90,8 @@ export function VolunteerHomePage() {
   // --- Dynamic State ---
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState<any>(null)
-  const [myEvents, setMyEvents] = useState<any[]>([])
+  const [myEvents, setMyEvents] = useState<any[]>([]) 
   
-  // --- UPDATED STATS (Added Upcoming & Attendance) ---
   const [stats, setStats] = useState({
     eventsThisWeek: 0,
     impactScore: 0,
@@ -109,7 +102,20 @@ export function VolunteerHomePage() {
     attendance: 0       
   })
 
-// --- Fetch Data ---
+  // --- Helper to Calculate Exact Hours (with minutes) ---
+  const calculateExactHours = (start: string, end: string) => {
+    if(!start || !end) return 0;
+    const [startH, startM] = start.split(':').map(Number);
+    const [endH, endM] = end.split(':').map(Number);
+    
+    const startTotalMins = (startH * 60) + startM;
+    const endTotalMins = (endH * 60) + endM;
+    
+    const diffMins = Math.max(0, endTotalMins - startTotalMins);
+    return diffMins / 60; // Returns float (e.g. 1.5 for 1hr 30m)
+  }
+
+  // --- Fetch Data ---
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -120,50 +126,55 @@ export function VolunteerHomePage() {
         ])
 
         const userProfile = profileRes?.profile || {}
-        const registeredEvents = eventsRes.events || []
+        const allEvents = eventsRes.events || []
 
         setProfile(userProfile)
-        setMyEvents(registeredEvents)
 
-        // --- Calculate Stats ---
-        let hours = 0
+        // Only show 'registered' events in the carousel
+        const displayList = allEvents.filter((ev: any) => ev.registration_status === 'registered');
+        setMyEvents(displayList) 
+
+        // --- STATS CALCULATION ---
+        let totalHours = 0
         let completed = 0
-        let upcoming = 0
-        let missed = 0 // Track missed events explicitly
+        let upcomingCount = 0
+        let missed = 0 
         let thisWeek = 0
         const categoriesSet = new Set<string>()
         
-        // FIX: Reset 'now' to Local Midnight to include events happening TODAY
         const now = new Date()
         now.setHours(0, 0, 0, 0) 
 
-        // Define Next Week (Today + 7 days, inclusive of the last day)
         const nextWeek = new Date(now)
         nextWeek.setDate(now.getDate() + 7)
         nextWeek.setHours(23, 59, 59, 999)
 
-        registeredEvents.forEach((ev: any) => {
+        allEvents.forEach((ev: any) => {
           if (ev.category) categoriesSet.add(ev.category)
           
-          // Parse event date and normalize to midnight
           const evDate = new Date(ev.event_date)
           evDate.setHours(0, 0, 0, 0)
           
-          const isCheckedIn = ev.registration_status === 'checked_in';
+          const status = ev.registration_status;
+          const isCompleted = status === 'completed';
+          const isCheckedIn = status === 'checked_in';
+          const isMissed = status === 'missed';
 
           // 1. Calculate Hours & Completed
-          if (isCheckedIn) {
-            hours += 3 
+          if (isCompleted || isCheckedIn) {
+            const eventHours = calculateExactHours(ev.start_time, ev.end_time);
+            // Default to 1 hour if calculation fails or is 0, otherwise use exact float
+            totalHours += (eventHours > 0 ? eventHours : 1); 
             completed += 1
           }
 
           // 2. Calculate Upcoming
-          if (evDate >= now) {
-            upcoming += 1
+          if (evDate >= now && status === 'registered') {
+            upcomingCount += 1
           }
           
-          // 3. Calculate Missed (It was in the past AND you didn't check in)
-          if (evDate < now && !isCheckedIn) {
+          // 3. Calculate Missed
+          if (isMissed) {
             missed += 1;
           }
 
@@ -174,19 +185,19 @@ export function VolunteerHomePage() {
         })
 
         // 5. Calculate Attendance %
-        // Logic: Success / (Success + Failure)
         const totalScorable = completed + missed;
         const attendanceRate = totalScorable > 0 
           ? Math.round((completed / totalScorable) * 100) 
           : 100;
 
         setStats({
-          hoursContributed: hours,
+          // Round hours to 1 decimal place for display
+          hoursContributed: parseFloat(totalHours.toFixed(1)),
           eventsThisWeek: thisWeek,
-          impactScore: (hours * 10) + (completed * 50),
+          impactScore: Math.round((totalHours * 10) + (completed * 50)),
           supportedCauses: Array.from(categoriesSet),
           completedEvents: completed,
-          upcomingEvents: upcoming,
+          upcomingEvents: upcomingCount,
           attendance: attendanceRate
         })
 
@@ -199,7 +210,6 @@ export function VolunteerHomePage() {
     loadData()
   }, [])
 
-  // Helper: Get Category Color
   const getCategoryColor = (category: string) => {
     const map: Record<string, string> = {
       environment: "bg-emerald-500",
@@ -213,13 +223,11 @@ export function VolunteerHomePage() {
     return map[category?.toLowerCase()] || "bg-gray-500"
   }
 
-  // Helper: Format Date
   const formatDate = (dateStr: string) => {
     if(!dateStr) return "TBD"
     return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
   }
 
-  // Helper: Format Time
   const formatTime = (timeStr: string) => {
     if(!timeStr) return ""
     const [h, m] = timeStr.split(':')
@@ -232,13 +240,6 @@ export function VolunteerHomePage() {
     if (storiesRef.current) {
       const scrollAmount = direction === "left" ? -400 : 400
       storiesRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" })
-    }
-  }
-
-  const scrollEvents = (direction: "left" | "right") => {
-    if (eventsRef.current) {
-      const scrollAmount = direction === "left" ? -300 : 300
-      eventsRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" })
     }
   }
 
@@ -367,7 +368,7 @@ export function VolunteerHomePage() {
           {myEvents.length === 0 ? (
              <div className="text-center py-12 bg-white rounded-2xl">
                 <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500">You haven't registered for any events yet.</p>
+                <p className="text-gray-500">You don't have any active registrations.</p>
                 <Link href="/events" className="mt-4 inline-block px-6 py-2 bg-[#0066cc] text-white rounded-full font-medium text-sm">
                   Browse Events
                 </Link>
@@ -413,8 +414,8 @@ export function VolunteerHomePage() {
                       </div>
                     </div>
                     <div className="flex items-center justify-between mt-2 pt-2 border-t border-[#f5f5f7]">
-                      <div className={cn("text-[10px] md:text-[11px] font-medium px-2 py-1 rounded-full", event.registration_status === 'checked_in' ? "bg-emerald-100 text-emerald-700" : "bg-blue-100 text-blue-700")}>
-                        {event.registration_status === 'checked_in' ? "Checked In" : "Registered"}
+                      <div className={cn("text-[10px] md:text-[11px] font-medium px-2 py-1 rounded-full", "bg-blue-100 text-blue-700")}>
+                        Registered
                       </div>
                     </div>
                   </div>
@@ -501,19 +502,16 @@ export function VolunteerHomePage() {
            <div ref={storiesRef} className="flex gap-6 overflow-x-auto pb-8 scrollbar-hide scroll-smooth snap-x">
               {stories.map(story => (
                  <div key={story.id} className="min-w-[320px] md:min-w-[400px] snap-center bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
-                    {/* --- INCREASED HEIGHT HERE --- */}
                     <div className="h-64 md:h-80 relative shrink-0">
                        <img src={story.image} alt={story.author} className="w-full h-full object-cover"/>
                        <div className={`absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-bold text-white ${story.categoryColor}`}>
                          {story.category}
                        </div>
                     </div>
-                    {/* --- UPDATED CONTENT SECTION FOR FLEXBOX --- */}
                     <div className="p-6 flex flex-col flex-1">
                         <Quote className="w-6 h-6 text-gray-300 mb-4" />
                         <p className="text-gray-700 italic mb-6">"{story.quote}"</p>
                         
-                        {/* --- PUSH TO BOTTOM WITH MT-AUTO --- */}
                         <div className="flex items-center gap-3 mt-auto">
                            <div className={`w-2 h-10 rounded-full ${story.categoryColor}`}></div>
                            <div>

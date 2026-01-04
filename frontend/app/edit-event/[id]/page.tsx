@@ -14,8 +14,8 @@ import {
   X,
   Type,
   AlertTriangle,
-  Search,      // Added
-  Navigation   // Added
+  Search,
+  Navigation
 } from "lucide-react"
 import { api } from "@/lib/api"
 
@@ -53,7 +53,7 @@ export default function EditEventPage() {
     dressCode: "",
     thingsToBring: "",
     totalSlots: "",
-    registrationDeadline: "1 day before",
+    registrationDeadline: "", // Updated default
     minimumAge: "",
     coverImageUrl: "",
   })
@@ -70,6 +70,18 @@ export default function EditEventPage() {
         const response = await api.getEventById(eventId)
         const event = response.event
 
+        // Helper to safely format datetime for input
+        let formattedDeadline = ""
+        if (event.registration_deadline) {
+            const dateVal = new Date(event.registration_deadline)
+            if (!isNaN(dateVal.getTime())) {
+                // Adjust to local ISO string for input value
+                const offset = dateVal.getTimezoneOffset()
+                const localDate = new Date(dateVal.getTime() - (offset*60*1000))
+                formattedDeadline = localDate.toISOString().slice(0, 16)
+            }
+        }
+
         setFormData({
           title: event.title || "",
           description: event.description || "",
@@ -82,7 +94,7 @@ export default function EditEventPage() {
           dressCode: event.dress_code || "",
           thingsToBring: event.things_to_bring || "",
           totalSlots: event.total_slots?.toString() || "",
-          registrationDeadline: event.registration_deadline || "1 day before",
+          registrationDeadline: formattedDeadline,
           minimumAge: event.minimum_age?.toString() || "",
           coverImageUrl: event.cover_image_url || "",
         })
@@ -147,6 +159,25 @@ export default function EditEventPage() {
       setSubmitting(true)
       setError(null)
 
+      // --- LOGIC CHECKS ---
+      const eventStartDateTime = new Date(`${formData.eventDate}T${formData.startTime}`);
+      const eventEndDateTime = new Date(`${formData.eventDate}T${formData.endTime}`);
+      const deadlineDateTime = new Date(formData.registrationDeadline);
+
+      // 1. Check if End Time is before Start Time
+      if (eventEndDateTime <= eventStartDateTime) {
+        throw new Error("Event End Time must be after Start Time.");
+      }
+
+      // 2. Check if Registration Deadline is AFTER Event Start
+      // Allow a small buffer or enforce 1 hour rule strictly
+      const oneHourBeforeStart = new Date(eventStartDateTime.getTime() - 60 * 60 * 1000);
+      
+      if (deadlineDateTime > oneHourBeforeStart) {
+         throw new Error("Registration Deadline must be at least 1 hour before the event starts.");
+      }
+      // --------------------
+
       let coverImageUrl = formData.coverImageUrl
 
       if (imageFile) {
@@ -166,7 +197,7 @@ export default function EditEventPage() {
         dressCode: formData.dressCode || undefined,
         thingsToBring: formData.thingsToBring || undefined,
         totalSlots: parseInt(formData.totalSlots),
-        registrationDeadline: formData.registrationDeadline,
+        registrationDeadline: formData.registrationDeadline, 
         minimumAge: formData.minimumAge ? parseInt(formData.minimumAge) : undefined,
       })
 
@@ -174,6 +205,7 @@ export default function EditEventPage() {
       router.push(`/org-events/${eventId}`)
     } catch (err: any) {
       setError(err.message || "Failed to update event")
+      window.scrollTo(0, 0); // Scroll to top to show error
     } finally {
       setSubmitting(false)
     }
@@ -210,7 +242,7 @@ export default function EditEventPage() {
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
-            <p className="text-sm text-red-700">{error}</p>
+            <p className="text-sm text-red-700 font-medium">{error}</p>
           </div>
         )}
 
@@ -482,20 +514,26 @@ export default function EditEventPage() {
               </div>
             </div>
 
+            {/* Registration Deadline - UPDATED with MAX DATE Logic */}
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide">
+                <Clock className="w-3 h-3 inline mr-1 text-teal-500" />
                 Registration Deadline
               </label>
-              <select
+              <input
+                type="datetime-local"
                 required
                 value={formData.registrationDeadline}
                 onChange={(e) => setFormData({ ...formData, registrationDeadline: e.target.value })}
+                // Min time: current time
+                min={new Date().toISOString().slice(0, 16)}
+                // Max time: The selected Event Start Time (prevents selecting a date AFTER event)
+                max={formData.eventDate && formData.startTime ? `${formData.eventDate}T${formData.startTime}` : undefined}
                 className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-              >
-                <option value="1 hour before">1 hour before event</option>
-                <option value="1 day before">1 day before event</option>
-                <option value="1 week before">1 week before event</option>
-              </select>
+              />
+              <p className="text-xs text-gray-400 mt-2">
+                Must be at least 1 hour before event start time
+              </p>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

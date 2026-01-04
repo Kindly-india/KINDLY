@@ -1,9 +1,10 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
+import { Scanner } from '@yudiel/react-qr-scanner'
 import {
   ArrowLeft,
   Share2,
@@ -19,10 +20,14 @@ import {
   Loader2,
   Calendar as CalendarIcon,
   QrCode,
-  X
+  X,
+  Camera
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { api } from "@/lib/api"
+
+// Define formats outside to prevent re-renders
+const QR_FORMATS: any = ['qr_code']
 
 export default function RegisteredEventDetailPage() {
   const params = useParams()
@@ -34,9 +39,10 @@ export default function RegisteredEventDetailPage() {
   const [broadcasts, setBroadcasts] = useState<any[]>([])
   const [isSaved, setIsSaved] = useState(false)
   const [showFullDescription, setShowFullDescription] = useState(false)
-  const [showQR, setShowQR] = useState(false)
+  
+  const [showScanner, setShowScanner] = useState(false)
+  const [checkingIn, setCheckingIn] = useState(false)
 
-  // --- Fetch Data ---
   useEffect(() => {
     const loadData = async () => {
       if (!eventId) return
@@ -59,6 +65,62 @@ export default function RegisteredEventDetailPage() {
   }, [eventId])
 
   // --- Handlers ---
+  const handleScan = useCallback(async (results: any[]) => {
+    // 1. Safety Checks
+    if (!results || results.length === 0 || checkingIn) return;
+    const rawText = results[0]?.rawValue;
+    if (!rawText) return;
+
+    setCheckingIn(true) // Lock scanning
+      
+    try {
+      // 2. Parse Code
+      let qrData;
+      try {
+          qrData = JSON.parse(rawText);
+      } catch (e) {
+          throw new Error("Invalid QR Code. Please scan the official event code.");
+      }
+
+      if (qrData.eventId !== eventId) {
+          throw new Error("This QR code is for a different event.");
+      }
+
+      // 3. Get Location
+      if (!navigator.geolocation) throw new Error("Geolocation is required to verify you are at the venue.");
+      
+      navigator.geolocation.getCurrentPosition(
+          async (position) => {
+              try {
+                  // 4. Send to Backend
+                  await api.selfCheckIn({
+                      eventId: eventId,
+                      code: qrData.code,
+                      latitude: position.coords.latitude,
+                      longitude: position.coords.longitude
+                  });
+                  
+                  alert("Check-in Successful! Welcome to the event.");
+                  setShowScanner(false);
+                  window.location.reload(); 
+              } catch (apiError: any) {
+                  alert(apiError.message || "Check-in failed.");
+                  setTimeout(() => setCheckingIn(false), 3000); // Wait 3s before retry
+              }
+          },
+          (geoError) => {
+              alert("Location access denied. We need your location to verify you are at the venue.");
+              setCheckingIn(false);
+          },
+          { enableHighAccuracy: true }
+      );
+
+    } catch (err: any) {
+      alert(err.message);
+      setTimeout(() => setCheckingIn(false), 3000);
+    }
+  }, [checkingIn, eventId]);
+
   const handleAddToCalendar = () => {
     if (!event) return
     const title = encodeURIComponent(event.title)
@@ -87,7 +149,6 @@ export default function RegisteredEventDetailPage() {
     }
   }
 
-  // --- Helpers ---
   const formatDate = (dateStr: string) => {
     if (!dateStr) return ""
     return new Date(dateStr).toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' })
@@ -116,27 +177,56 @@ export default function RegisteredEventDetailPage() {
   return (
     <div className="min-h-screen bg-white pb-24 md:pb-8 relative">
       
-      {/* QR Code Modal Overlay */}
-      {showQR && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-sm text-center shadow-2xl relative animate-in fade-in zoom-in duration-200">
+      {/* --- SCANNER MODAL --- */}
+      {showScanner && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4">
+          <div className="w-full max-w-sm relative">
             <button 
-              onClick={() => setShowQR(false)}
-              className="absolute top-4 right-4 p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
+              onClick={() => { setShowScanner(false); setCheckingIn(false); }}
+              className="absolute -top-12 right-0 p-2 text-white hover:text-gray-300"
             >
-              <X className="w-4 h-4 text-gray-600" />
+              <X className="w-8 h-8" />
             </button>
             
-            <h3 className="text-lg font-bold text-gray-900 mb-1">Your Entry Pass</h3>
-            <p className="text-sm text-gray-500 mb-6">Show this to the organizer at the venue</p>
-            
-            <div className="bg-white border-2 border-dashed border-gray-200 rounded-xl p-4 mb-4 inline-block">
-               <QrCode className="w-48 h-48 text-gray-900" />
-            </div>
-            
-            <div className="bg-emerald-50 rounded-lg p-3">
-              <p className="text-xs text-emerald-700 font-medium uppercase tracking-wide">Booking ID</p>
-              <p className="text-lg font-mono font-bold text-emerald-800">{event.id.substring(0, 8).toUpperCase()}</p>
+            <div className="bg-white rounded-2xl overflow-hidden shadow-2xl relative">
+                <div className="p-4 bg-emerald-600 text-white text-center">
+                    <h3 className="font-bold text-lg">Scan Event QR</h3>
+                    <p className="text-xs opacity-90">Find the QR code on the Organizer's screen</p>
+                </div>
+                
+                <div className="h-[300px] relative bg-black">
+                    {/* Scanner Component - Props Fixed */}
+                    <Scanner
+                        onScan={handleScan}
+                        formats={QR_FORMATS}
+                        styles={{
+                            container: { height: 300, width: '100%' },
+                            video: { objectFit: 'cover' }
+                        }}
+                    />
+                    
+                    {/* Loading Overlay when checking in */}
+                    {checkingIn && (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-20">
+                            <Loader2 className="w-12 h-12 text-emerald-500 animate-spin mb-4" />
+                            <p className="text-white text-sm">Verifying Location...</p>
+                        </div>
+                    )}
+                    
+                    {/* Visual Frame */}
+                    <div className="absolute inset-0 border-[40px] border-black/50 pointer-events-none flex items-center justify-center z-10">
+                        <div className="w-48 h-48 border-2 border-emerald-500/50 rounded-lg animate-pulse relative">
+                            <div className="absolute top-0 left-0 w-4 h-4 border-t-4 border-l-4 border-emerald-500 -mt-1 -ml-1"></div>
+                            <div className="absolute top-0 right-0 w-4 h-4 border-t-4 border-r-4 border-emerald-500 -mt-1 -mr-1"></div>
+                            <div className="absolute bottom-0 left-0 w-4 h-4 border-b-4 border-l-4 border-emerald-500 -mb-1 -ml-1"></div>
+                            <div className="absolute bottom-0 right-0 w-4 h-4 border-b-4 border-r-4 border-emerald-500 -mb-1 -mr-1"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="p-4 text-center text-xs text-gray-500">
+                    Ensure your GPS is enabled. You must be within 200m of the venue.
+                </div>
             </div>
           </div>
         </div>
@@ -339,7 +429,7 @@ export default function RegisteredEventDetailPage() {
             </div>
           </div>
 
-          {/* --- UPDATED LOCATION SECTION WITH MAP LINK --- */}
+          {/* Location Map */}
           <div className="px-4 md:px-0 pb-5">
             <h3 className="text-sm font-semibold text-gray-900 mb-2">Location</h3>
             
@@ -349,7 +439,6 @@ export default function RegisteredEventDetailPage() {
               rel="noopener noreferrer"
               className="block relative rounded-xl overflow-hidden h-[160px] md:h-[200px] group transition-all hover:shadow-lg border border-gray-100"
             >
-              {/* Embed Iframe for Visual */}
               <iframe
                 width="100%"
                 height="100%"
@@ -361,7 +450,6 @@ export default function RegisteredEventDetailPage() {
                 className="absolute inset-0 w-full h-full pointer-events-none opacity-90 group-hover:opacity-100 transition-opacity"
               ></iframe>
 
-              {/* Overlay Content */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
               
               <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-5 py-2.5 bg-white rounded-full shadow-lg group-hover:scale-105 transition-transform z-10">
@@ -406,15 +494,14 @@ export default function RegisteredEventDetailPage() {
               </Button>
 
               <Button
-                onClick={() => setShowQR(true)}
-                variant="outline"
-                className="w-full h-11 border-2 border-gray-200 hover:bg-gray-50 text-gray-900 font-semibold rounded-full text-sm bg-transparent"
+                onClick={() => setShowScanner(true)}
+                className="w-full h-11 bg-[#1d1d1f] hover:bg-[#323235] text-white font-semibold rounded-full text-sm shadow-md flex items-center justify-center"
               >
-                <QrCode className="w-4 h-4 mr-2" />
-                View QR Code
+                <Camera className="w-4 h-4 mr-2" />
+                Scan to Check In
               </Button>
 
-              <p className="text-center text-xs text-gray-500 pt-2">Show your QR code during check-in at the event</p>
+              <p className="text-center text-xs text-gray-500 pt-2">Scan the Organizer's QR code when you arrive</p>
             </div>
 
             <div className="px-5 pb-5">
@@ -437,8 +524,9 @@ export default function RegisteredEventDetailPage() {
               <p className="text-sm font-bold text-white">{formatDate(event.event_date)}</p>
             </div>
           </div>
-          <Button onClick={() => setShowQR(true)} className="h-10 px-6 bg-white hover:bg-gray-50 text-emerald-600 font-semibold rounded-full text-sm shadow-lg">
-            View QR
+          <Button onClick={() => setShowScanner(true)} className="h-10 px-4 bg-white hover:bg-gray-50 text-emerald-600 font-semibold rounded-full text-sm shadow-lg flex items-center">
+            <Camera className="w-4 h-4 mr-1.5" />
+            Scan Check In
           </Button>
         </div>
       </div>
