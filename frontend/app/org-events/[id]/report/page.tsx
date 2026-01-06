@@ -32,7 +32,7 @@ export default function EventReportPage() {
     absentCount: 0
   })
 
-useEffect(() => {
+  useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true)
@@ -50,15 +50,15 @@ useEffect(() => {
         // Calculate Stats
         const present = regs.filter((r: any) => r.status === 'checked_in')
         const presentCount = present.length
-        
+
         // FIX: Use actual length for counts, handle 0 separately for percentage
-        const totalRegs = regs.length 
-        
+        const totalRegs = regs.length
+
         // Calculate Duration (Hours)
         const start = new Date(`1970-01-01T${evt.start_time}`)
         const end = new Date(`1970-01-01T${evt.end_time}`)
         const duration = (end.getTime() - start.getTime()) / (1000 * 60 * 60)
-        
+
         setStats({
           // If totalRegs is 0, return 0%, otherwise calculate percentage
           turnoutRate: totalRegs > 0 ? Math.round((presentCount / totalRegs) * 100) : 0,
@@ -97,15 +97,15 @@ useEffect(() => {
             <p className="text-xs text-gray-500">Post-Event Report</p>
           </div>
           <div className="ml-auto">
-             <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-full">
-                COMPLETED
-             </span>
+            <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-full">
+              COMPLETED
+            </span>
           </div>
         </div>
       </div>
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-8">
-        
+
         {/* Top Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Turnout */}
@@ -151,7 +151,7 @@ useEffect(() => {
               </span>
             </div>
           </div>
-          
+
           <div className="divide-y divide-gray-50 max-h-96 overflow-y-auto">
             {registrations.map((reg) => (
               <div key={reg.id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
@@ -160,11 +160,16 @@ useEffect(() => {
                     {reg.volunteer_profiles?.full_name?.charAt(0) || "V"}
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-gray-900">{reg.volunteer_profiles?.full_name || "Volunteer"}</p>
+                    <Link
+                      href={`/volunteers/${reg.volunteer_profiles?.id}`}
+                      className="text-sm font-semibold text-gray-900 hover:text-teal-600 hover:underline transition-colors block"
+                    >
+                      {reg.volunteer_profiles?.full_name || "Volunteer"}
+                    </Link>
                     <p className="text-xs text-gray-500">{reg.volunteer_profiles?.city || "Nashik"}</p>
                   </div>
                 </div>
-                
+
                 {reg.status === 'checked_in' ? (
                   <div className="flex items-center gap-2 text-emerald-600 text-sm font-medium">
                     <CheckCircle2 className="w-4 h-4" />
@@ -182,7 +187,7 @@ useEffect(() => {
         </div>
 
         {/* Certificates Section */}
-        <div className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-2xl border border-orange-100 p-6">
+        <div className="bg-linear-to-r from-orange-50 to-amber-50 rounded-2xl border border-orange-100 p-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-4">
               <div className="p-3 bg-white rounded-xl shadow-sm text-orange-500">
@@ -193,10 +198,10 @@ useEffect(() => {
                 <p className="text-sm text-gray-600">Issue participation certificates to {stats.presentCount} attendees.</p>
               </div>
             </div>
-            
-            <button 
+
+            <button
               onClick={() => alert("Certificates generated and sent to volunteers!")}
-              className="w-full md:w-auto h-12 px-8 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white rounded-xl font-bold shadow-lg shadow-orange-500/20 transition-all active:scale-95"
+              className="w-full md:w-auto h-12 px-8 bg-linear-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white rounded-xl font-bold shadow-lg shadow-orange-500/20 transition-all active:scale-95"
             >
               Design & Issue
             </button>

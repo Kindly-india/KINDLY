@@ -123,7 +123,7 @@ export function OrgEventManagement() {
   const displayEvents = activeTab === "active" ? activeEvents : completedEvents
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
+    <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-green-50">
       <div className="fixed top-20 left-8 w-12 h-12 bg-white rounded-xl shadow-lg hidden md:flex items-center justify-center pointer-events-none">
         <Heart className="w-5 h-5 text-red-400" />
       </div>
@@ -185,7 +185,7 @@ export function OrgEventManagement() {
             {activeTab === "active" && (
               <Link
                 href="/create-event"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-teal-500 to-emerald-500 text-white rounded-xl font-medium hover:shadow-lg transition-shadow"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-linear-to-r from-teal-500 to-emerald-500 text-white rounded-xl font-medium hover:shadow-lg transition-shadow"
               >
                 Create Event
               </Link>
@@ -199,7 +199,7 @@ export function OrgEventManagement() {
                 className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow"
               >
                 <div className="flex flex-col md:flex-row">
-                  <div className="w-full md:w-48 h-48 md:h-auto bg-gradient-to-br from-teal-400 to-emerald-400 flex items-center justify-center shrink-0">
+                  <div className="w-full md:w-48 h-48 md:h-auto bg-linear-to-br from-teal-400 to-emerald-400 flex items-center justify-center shrink-0">
                     {event.cover_image_url ? (
                       <img
                         src={event.cover_image_url}
@@ -242,7 +242,7 @@ export function OrgEventManagement() {
                       </div>
                       <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-gradient-to-r from-teal-500 to-emerald-500 transition-all"
+                          className="h-full bg-linear-to-r from-teal-500 to-emerald-500 transition-all"
                           style={{ width: `${getRegistrationPercentage(event)}%` }}
                         />
                       </div>
@@ -250,7 +250,9 @@ export function OrgEventManagement() {
 
                     <div className="flex flex-wrap gap-2">
                       <Link
-                        href={`/org-events/${event.id}`}
+                        href={activeTab === "completed" 
+                          ? `/org-events/${event.id}/report` 
+                          : `/org-events/${event.id}`}
                         className="px-4 py-2 bg-teal-50 text-teal-600 rounded-lg text-sm font-medium hover:bg-teal-100 transition-colors inline-flex items-center gap-2"
                       >
                         <Eye className="w-4 h-4" />
