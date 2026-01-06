@@ -54,6 +54,12 @@ export interface UpdateVolunteerProfileDto {
   bio?: string;
   city?: string;
   phone?: string;
+  email?: string;
+  address?: string;
+  linkedin?: string;
+  instagram?: string;
+  twitter?: string;
+  website?: string;
   skills?: string[];
   interests?: string[];
   availability_status?: string;
@@ -483,7 +489,6 @@ export const api = {
     return response.json();
   },
 
-  // --- FIXED: This function name now matches your frontend call ---
   getMyRegistrations: async () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error('Not authenticated');
@@ -501,16 +506,13 @@ export const api = {
       throw new Error(data.message || 'Failed to fetch registrations');
     }
 
-    // Returns: { events: [...] }
     return data;
   },
 
-  // Keep this alias for the History page
   getVolunteerRegistrations: async () => {
     return api.getMyRegistrations();
   },
 
-  // Helper alias for backward compatibility
   getEventHistory: async () => {
     return api.getMyRegistrations();
   },
@@ -581,7 +583,7 @@ export const api = {
       return { broadcasts: [] };
     }
   },
-  // ✅ THIS WAS MISSING - DELETE FUNCTION
+
   deleteBroadcast: async (eventId: string, broadcastId: string) => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error('Not authenticated');
@@ -599,7 +601,7 @@ export const api = {
     }
     return response.json();
   },
-  // ✅ NEW: Activity Feed
+
   getRecentActivity: async () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error('Not authenticated');
@@ -612,13 +614,11 @@ export const api = {
     });
 
     if (!response.ok) {
-      // Return empty array on error to prevent page crash
       return { activities: [] };
     }
     return response.json();
   },
 
-  // ✅ NEW: Upload Signature
   uploadOrgSignature: async (file: File) => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error('Not authenticated');
@@ -641,7 +641,6 @@ export const api = {
     return response.json();
   },
 
-  // ✅ NEW: Issue Certificates
   issueCertificates: async (eventId: string) => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error('Not authenticated');
@@ -663,8 +662,17 @@ export const api = {
 
   // ============ VOLUNTEER PROFILE ============
   getVolunteerPublicProfile: async (volunteerId: string) => {
-    const response = await fetch(`${API_URL}/volunteers/${volunteerId}/profile`);
-    if (!response.ok) throw new Error('Failed to fetch profile');
+    const token = localStorage.getItem('token');
+    const headers: any = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const response = await fetch(`${API_URL}/volunteers/${volunteerId}/profile`, {
+      headers 
+    });
+    
+    if (!response.ok) {
+        throw new Error('Failed to fetch profile');
+    }
     return response.json();
   },
 
@@ -690,9 +698,64 @@ export const api = {
     return res.json();
   },
 
+  // ✅ NEW: GALLERY FUNCTIONS
+  getVolunteerGallery: async (userId: string) => {
+    try {
+      const response = await fetch(`${API_URL}/volunteers/${userId}/gallery`);
+      if (!response.ok) return [];
+      return await response.json();
+    } catch (err) {
+      return [];
+    }
+  },
+
+  uploadGalleryPhoto: async (file: File) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(`${API_URL}/volunteers/gallery`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`
+      },
+      body: formData
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.message || 'Upload failed');
+    }
+    return await response.json();
+  },
+
+  deleteGalleryPhoto: async (photoId: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const response = await fetch(`${API_URL}/volunteers/gallery/${photoId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`
+      }
+    });
+
+    if (!response.ok) throw new Error('Delete failed');
+    return true;
+  },
+
   // ============ ORGANIZATION PROFILE ============
   getOrgPublicProfile: async (orgId: string) => {
-    const response = await fetch(`${API_URL}/organizations/${orgId}/profile`);
+    const token = localStorage.getItem('token');
+    const headers: any = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const response = await fetch(`${API_URL}/organizations/${orgId}/profile`, {
+      headers
+    });
+
     if (!response.ok) throw new Error('Failed to fetch organization profile');
     return response.json();
   },
@@ -829,4 +892,54 @@ export const api = {
 
     return publicUrl;
   },
+
+  // --- SOCIAL SEARCH & FOLLOW ---
+  globalSearch: async (query: string) => {
+    const response = await fetch(`${API_URL}/social/search?q=${encodeURIComponent(query)}`);
+    if (!response.ok) return [];
+    return response.json();
+  },
+
+  followUser: async (targetUserId: string) => {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_URL}/social/follow/${targetUserId}`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!response.ok) throw new Error('Failed to follow');
+    return response.json();
+  },
+
+  unfollowUser: async (targetUserId: string) => {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_URL}/social/follow/${targetUserId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!response.ok) throw new Error('Failed to unfollow');
+    return response.json();
+  },
+
+  getFollowStatus: async (targetUserId: string) => {
+    const token = localStorage.getItem('token');
+    const headers: any = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    
+    if (!token) return { isFollowing: false };
+
+    const response = await fetch(`${API_URL}/social/follow/status/${targetUserId}`, { headers });
+    if (!response.ok) return { isFollowing: false };
+    return response.json();
+  },
+
+  getVolunteerImpact: async () => {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`${API_URL}/analytics/volunteer`, { headers: { Authorization: `Bearer ${token}` }});
+    return res.json();
+  },
+  getOrgAnalytics: async () => {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`${API_URL}/analytics/org`, { headers: { Authorization: `Bearer ${token}` }});
+    return res.json();
+  }
 };

@@ -19,7 +19,27 @@ export class UpdateVolunteerProfileDto {
 
   @IsOptional()
   @IsString()
-  phone?: string;
+  address?: string; // ✅ NEW
+
+  @IsOptional()
+  @IsString()
+  phone?: string;   // ✅ NEW
+
+  @IsOptional()
+  @IsString()
+  email?: string;   // ✅ NEW
+
+  @IsOptional()
+  @IsString()
+  linkedin?: string; // ✅ NEW
+
+  @IsOptional()
+  @IsString()
+  instagram?: string;  // ✅ NEW
+
+  @IsOptional()
+  @IsString()
+  website?: string;  // ✅ NEW
 
   @IsOptional()
   @IsArray()

@@ -20,7 +20,8 @@ import {
   Calendar,
   Building2,
   AlertTriangle,
-  Loader2
+  Loader2,
+  BarChart3 // ✅ Added Icon for Analytics
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { api } from "@/lib/api"
@@ -33,8 +34,6 @@ export function OrgHomePage() {
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState<any>(null)
   const [events, setEvents] = useState<any[]>([])
-
-  // ✅ NEW: Dynamic Activity State
   const [recentActivity, setRecentActivity] = useState<any[]>([])
 
   const [stats, setStats] = useState({
@@ -51,11 +50,10 @@ export function OrgHomePage() {
       try {
         setLoading(true)
 
-        // 1. Fetch All Data in Parallel
         const [profileRes, eventsRes, activityRes] = await Promise.all([
           api.getUserProfile(),
           api.getMyEvents(),
-          api.getRecentActivity() // ✅ Fetch Activities
+          api.getRecentActivity()
         ])
 
         const orgProfile = profileRes?.profile || {}
@@ -65,7 +63,7 @@ export function OrgHomePage() {
         setEvents(fetchedEvents)
         setRecentActivity(activityRes.activities || [])
 
-        // 2. Initialize Stats
+        // Initialize Stats
         const calculatedStats = {
           totalHours: 0,
           activeVolunteers: 0,
@@ -73,7 +71,7 @@ export function OrgHomePage() {
           upcomingEventsCount: 0
         }
 
-        // 3. Process Events Basic Stats
+        // Process Events Basic Stats
         fetchedEvents.forEach((event: any) => {
           calculatedStats.eventsHosted += 1
 
@@ -93,7 +91,7 @@ export function OrgHomePage() {
           }
         });
 
-        // 4. Calculate UNIQUE Active Volunteers
+        // Calculate UNIQUE Active Volunteers
         const uniqueVolunteerIds = new Set<string>();
         const activeEvents = fetchedEvents.filter((e: any) => (e.registered_count || 0) > 0);
 
@@ -131,7 +129,6 @@ export function OrgHomePage() {
     }
   }
 
-  // ✅ Helper: Convert ISO date to "2h ago" format
   const timeAgo = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -202,7 +199,11 @@ export function OrgHomePage() {
               My Events
             </Link>
             <Link href="/org-volunteers" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors">
-              Volunteers
+              Social
+            </Link>
+            {/* ✅ ADDED ANALYTICS LINK DESKTOP */}
+            <Link href="/org-analytics" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors">
+              Analytics
             </Link>
           </div>
 
@@ -236,11 +237,18 @@ export function OrgHomePage() {
                     </div>
                     <span className="text-[13px] font-medium text-[#1d1d1f]">My Events</span>
                   </Link>
-                  <Link href="/org-volunteers" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-[#f5f5f7] transition-colors">
+                  <Link href="/org-volunteers" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-[#f5f5f7] transition-colors border-b border-[#f5f5f7]">
                     <div className="w-8 h-8 rounded-full bg-linear-to-br from-[#e8f5e9] to-[#c8e6c9] flex items-center justify-center">
                       <Users className="w-4 h-4 text-[#2e7d32]" />
                     </div>
                     <span className="text-[13px] font-medium text-[#1d1d1f]">Volunteers</span>
+                  </Link>
+                  {/* ✅ ADDED ANALYTICS LINK MOBILE */}
+                  <Link href="/org-analytics" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-[#f5f5f7] transition-colors">
+                    <div className="w-8 h-8 rounded-full bg-linear-to-br from-[#f3e8ff] to-[#d8b4fe] flex items-center justify-center">
+                      <BarChart3 className="w-4 h-4 text-[#9333ea]" />
+                    </div>
+                    <span className="text-[13px] font-medium text-[#1d1d1f]">Analytics</span>
                   </Link>
                 </div>
               </>
@@ -249,7 +257,7 @@ export function OrgHomePage() {
         </div>
       </nav>
 
-      {/* Hero Section */}
+      {/* Hero Section (Unchanged) */}
       <section className="relative bg-linear-to-br from-[#f0f7ff] via-[#f5faff] to-[#f0fdf4] py-8 md:py-16 overflow-hidden">
         <div className="absolute top-4 left-4 md:top-8 md:left-20 w-8 h-8 md:w-12 md:h-12 bg-white rounded-xl shadow-lg flex items-center justify-center">
           <Building2 className="w-4 h-4 md:w-5 md:h-5 text-[#0066cc]" />
@@ -306,7 +314,7 @@ export function OrgHomePage() {
         </div>
       </section>
 
-      {/* Quick Actions */}
+      {/* Quick Actions (Unchanged) */}
       <section className="bg-white py-6 md:py-10 border-b border-[#f5f5f7]">
         <div className="max-w-300 mx-auto px-4 md:px-8">
           <h2 className="text-[18px] md:text-[24px] font-bold text-[#1d1d1f] mb-4">Quick Actions</h2>
@@ -329,7 +337,7 @@ export function OrgHomePage() {
         </div>
       </section>
 
-      {/* Your Events Section */}
+      {/* Your Events Section (Unchanged) */}
       <section className="bg-[#f5f5f7] py-6 md:py-12">
         <div className="max-w-300 mx-auto px-4 md:px-8">
           <div className="flex items-center justify-between mb-4 md:mb-6">
@@ -404,7 +412,7 @@ export function OrgHomePage() {
         </div>
       </section>
 
-      {/* Recent Activity Section - DYNAMIC */}
+      {/* Recent Activity Section (Unchanged) */}
       <section className="bg-white py-6 md:py-10">
         <div className="max-w-300 mx-auto px-4 md:px-8">
           <h2 className="text-[18px] md:text-[24px] font-bold text-[#1d1d1f] mb-4">Recent Activity</h2>

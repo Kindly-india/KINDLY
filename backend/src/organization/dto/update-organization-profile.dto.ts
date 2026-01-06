@@ -1,9 +1,21 @@
-import { IsOptional, IsString, IsUrl, IsInt, IsEmail } from 'class-validator';
+import { IsOptional, IsString, IsNumber, IsArray, IsEmail, IsUrl } from 'class-validator'; // ✅ Make sure IsArray is imported
 
 export class UpdateOrganizationProfileDto {
   @IsOptional()
   @IsString()
   name?: string;
+
+  @IsOptional()
+  @IsString()
+  org_type?: string;
+
+  @IsOptional()
+  @IsEmail()
+  email?: string;
+
+  @IsOptional()
+  @IsString()
+  phone?: string;
 
   @IsOptional()
   @IsString()
@@ -22,27 +34,19 @@ export class UpdateOrganizationProfileDto {
   area_locality?: string;
 
   @IsOptional()
-  @IsEmail()
-  email?: string;
-
-  @IsOptional()
   @IsString()
-  phone?: string;
-
-  @IsOptional()
-  @IsUrl()
   website?: string;
 
   @IsOptional()
-  @IsUrl()
-  logo_url?: string;
+  @IsString()
+  linkedin?: string;
 
   @IsOptional()
-  @IsUrl()
-  cover_url?: string;
+  @IsString()
+  instagram?: string;
 
   @IsOptional()
-  @IsInt()
+  @IsNumber()
   years_active?: number;
 
   @IsOptional()
@@ -65,7 +69,20 @@ export class UpdateOrganizationProfileDto {
   @IsString()
   coordinator_name?: string;
 
-  // ⚠️ IMPORTANT: org_type should NOT be updatable
-  // But we need to accept it to avoid validation errors
-  // The service will ignore it
+  @IsOptional()
+  @IsString()
+  logo_url?: string;
+
+  @IsOptional()
+  @IsString()
+  cover_url?: string;
+
+  // ✅ THESE ARE THE MISSING FIELDS CAUSING THE 400 ERROR
+  @IsOptional()
+  @IsArray()
+  team_members?: any[];
+
+  @IsOptional()
+  @IsArray()
+  achievements?: any[];
 }

@@ -3,22 +3,10 @@
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import {
-  ChevronLeft,
-  Camera,
-  Loader2,
-  X,
-  Plus,
-  MapPin,
-  User,
-  Briefcase,
-  FileText,
-  Globe,
-  Building2,
-  Phone,
-  Mail,
-  Hash,
-  CalendarDays,
-  BadgeCheck
+  ChevronLeft, Camera, Loader2, X, Plus, MapPin, User,
+  Briefcase, FileText, Globe, Building2, Phone, Mail, Hash,
+  CalendarDays, BadgeCheck, Linkedin, Instagram, Home, UserCheck,
+  Users2, Trophy, Trash2, Link as LinkIcon
 } from "lucide-react"
 import { api } from "@/lib/api"
 
@@ -28,12 +16,21 @@ export default function EditProfile() {
   const [saving, setSaving] = useState(false)
   const [userType, setUserType] = useState<'volunteer' | 'organization' | null>(null)
 
-  // Form states
   const [formData, setFormData] = useState<any>({})
-
-  // Tag Inputs State
+  
+  // Volunteer State
   const [newSkill, setNewSkill] = useState("")
   const [newInterest, setNewInterest] = useState("")
+
+  // ✅ ORG: Team Member Local State
+  const [teamName, setTeamName] = useState("")
+  const [teamRole, setTeamRole] = useState("")
+
+  // ✅ ORG: Achievement Local State
+  const [achTitle, setAchTitle] = useState("")
+  const [achDate, setAchDate] = useState("")
+  const [achDesc, setAchDesc] = useState("")
+  const [achLink, setAchLink] = useState("")
 
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const [uploadingCover, setUploadingCover] = useState(false)
@@ -52,37 +49,48 @@ export default function EditProfile() {
         const p = profileData.profile
 
         if (profileData.userType === 'volunteer') {
+          // Volunteer Mapping
           setFormData({
             full_name: p.full_name || '',
             headline: p.headline || '',
             bio: p.bio || '',
             city: p.city || '',
+            address: p.address || '',
+            email: p.email || '',
             phone: p.phone || '',
+            linkedin: p.linkedin || '',
+            instagram: p.instagram || '',
+            website: p.website || '',
             skills: p.skills || [],
-            interests: p.interests || [], // Added from Schema
+            interests: p.interests || [],
             availability_status: p.availability_status || '',
             avatar_url: p.avatar_url || '',
             cover_url: p.cover_url || ''
           })
         } else if (profileData.userType === 'organization') {
+          // Organization Mapping
           setFormData({
             name: p.name || '',
-            org_type: p.org_type || 'registered', // Read-only usually
-            email: p.email || '', // Added from Schema
+            org_type: p.org_type || 'registered',
+            email: p.email || '',
             phone: p.phone || '',
             tagline: p.tagline || '',
             mission_statement: p.mission_statement || '',
-            intent_description: p.intent_description || '', // Added from Schema
+            intent_description: p.intent_description || '',
             area_locality: p.area_locality || '',
             website: p.website || '',
-            years_active: p.years_active || '', // Added from Schema
-            registration_number: p.registration_number || '', // Added from Schema
-            representative_name: p.representative_name || '', // Added from Schema
-            designation: p.designation || '', // Added from Schema
-            parent_institution: p.parent_institution || '', // Added from Schema (for clubs)
-            coordinator_name: p.coordinator_name || '', // Added from Schema (for informal)
+            linkedin: p.linkedin || '',
+            instagram: p.instagram || '',
+            years_active: p.years_active || '',
+            registration_number: p.registration_number || '',
+            representative_name: p.representative_name || '',
+            designation: p.designation || '',
             logo_url: p.logo_url || '',
-            cover_url: p.cover_url || ''
+            cover_url: p.cover_url || '',
+            
+            // ✅ Load Existing Arrays
+            team_members: p.team_members || [],
+            achievements: p.achievements || []
           })
         }
       } catch (err) {
@@ -98,9 +106,7 @@ export default function EditProfile() {
     try {
       if (type === 'avatar') setUploadingAvatar(true)
       else setUploadingCover(true)
-
       const url = await api.uploadProfileImage(file, type)
-
       setFormData((prev: any) => ({
         ...prev,
         [type === 'avatar' ? (userType === 'volunteer' ? 'avatar_url' : 'logo_url') : 'cover_url']: url
@@ -113,22 +119,57 @@ export default function EditProfile() {
     }
   }
 
-  // Generic Handler for Arrays (Skills/Interests)
+  // --- HELPER FUNCTIONS ---
   const handleAddItem = (field: 'skills' | 'interests', value: string, setValue: (s: string) => void) => {
     if (value.trim() && !formData[field]?.includes(value.trim())) {
-      setFormData((prev: any) => ({
-        ...prev,
-        [field]: [...(prev[field] || []), value.trim()]
-      }))
+      setFormData((prev: any) => ({ ...prev, [field]: [...(prev[field] || []), value.trim()] }))
       setValue("")
     }
   }
-
   const handleRemoveItem = (field: 'skills' | 'interests', itemToRemove: string) => {
+    setFormData((prev: any) => ({ ...prev, [field]: prev[field]?.filter((item: string) => item !== itemToRemove) || [] }))
+  }
+
+  // ✅ TEAM LOGIC
+  const addTeamMember = () => {
+    if (!teamName || !teamRole) return;
+    const newMember = { name: teamName, role: teamRole };
+    setFormData((prev: any) => ({ 
+        ...prev, 
+        team_members: [...(prev.team_members || []), newMember] 
+    }));
+    setTeamName(""); setTeamRole("");
+  }
+
+  const removeTeamMember = (index: number) => {
     setFormData((prev: any) => ({
-      ...prev,
-      [field]: prev[field]?.filter((item: string) => item !== itemToRemove) || []
-    }))
+        ...prev,
+        team_members: prev.team_members.filter((_: any, i: number) => i !== index)
+    }));
+  }
+
+  // ✅ ACHIEVEMENT LOGIC
+  const addAchievement = () => {
+    if (!achTitle) return;
+    // Simple object structure
+    const newAch = { 
+        title: achTitle, 
+        date: achDate, 
+        description: achDesc,
+        image_url: achLink // Using link field for image URL or external link
+    };
+    setFormData((prev: any) => ({ 
+        ...prev, 
+        achievements: [...(prev.achievements || []), newAch] 
+    }));
+    setAchTitle(""); setAchDate(""); setAchDesc(""); setAchLink("");
+  }
+
+  const removeAchievement = (index: number) => {
+    setFormData((prev: any) => ({
+        ...prev,
+        achievements: prev.achievements.filter((_: any, i: number) => i !== index)
+    }));
   }
 
   const handleSave = async () => {
@@ -136,13 +177,17 @@ export default function EditProfile() {
       setSaving(true)
 
       if (userType === 'volunteer') {
-        // ✅ Volunteer Payload
-        const volunteerPayload = {
+        const volunteerPayload: any = {
           full_name: formData.full_name,
           headline: formData.headline,
           bio: formData.bio,
           city: formData.city,
+          address: formData.address,
+          email: formData.email,
           phone: formData.phone,
+          linkedin: formData.linkedin,
+          instagram: formData.instagram,
+          website: formData.website,
           skills: formData.skills || [],
           interests: formData.interests || [],
           availability_status: formData.availability_status,
@@ -150,21 +195,19 @@ export default function EditProfile() {
           cover_url: formData.cover_url
         }
 
-        // Remove undefined/empty fields
+        // Clean Payload
         Object.keys(volunteerPayload).forEach(key => {
-          // Cast to 'any' to allow dynamic access by string key
-          const k = key as keyof typeof volunteerPayload;
-          if (volunteerPayload[k] === undefined || volunteerPayload[k] === '') {
-            delete volunteerPayload[k]
+          if (volunteerPayload[key] === undefined || volunteerPayload[key] === null) {
+            delete volunteerPayload[key]
           }
         })
 
-        console.log('🔍 Sending volunteer payload:', volunteerPayload)
         await api.updateVolunteerProfile(volunteerPayload)
 
       } else if (userType === 'organization') {
-        // ✅ Organization Payload
-        const orgPayload = {
+        
+        // ✅ ROBUST ORG PAYLOAD
+        const orgPayload: any = {
           name: formData.name,
           tagline: formData.tagline,
           mission_statement: formData.mission_statement,
@@ -173,52 +216,51 @@ export default function EditProfile() {
           email: formData.email,
           phone: formData.phone,
           website: formData.website,
-          logo_url: formData.logo_url,
-          cover_url: formData.cover_url,
+          linkedin: formData.linkedin,
+          instagram: formData.instagram,
           registration_number: formData.registration_number,
           representative_name: formData.representative_name,
           designation: formData.designation,
-          parent_institution: formData.parent_institution,
-          coordinator_name: formData.coordinator_name,
-          years_active: formData.years_active ? parseInt(formData.years_active) : undefined
+          
+          // ✅ Safe Number Parsing
+          years_active: (formData.years_active && !isNaN(Number(formData.years_active))) 
+            ? Number(formData.years_active) 
+            : undefined,
+            
+          logo_url: formData.logo_url,
+          cover_url: formData.cover_url,
+          
+          // ✅ Ensure Arrays exist
+          team_members: Array.isArray(formData.team_members) ? formData.team_members : [],
+          achievements: Array.isArray(formData.achievements) ? formData.achievements : []
         }
 
-        // Remove undefined/empty fields
+        // Clean Payload (Remove undefined/empty strings that shouldn't be there)
         Object.keys(orgPayload).forEach(key => {
-          // Cast to 'any' to allow dynamic access by string key
-          const k = key as keyof typeof orgPayload;
-          if (orgPayload[k] === undefined || orgPayload[k] === '') {
-            delete orgPayload[k]
-          }
+          if (orgPayload[key] === undefined) delete orgPayload[key]
         })
 
-        console.log('🔍 Sending organization payload:', orgPayload)
+        console.log("🚀 Sending Payload:", orgPayload); // Check console to see exactly what is sent
         await api.updateOrgProfile(orgPayload)
       }
 
       router.back()
     } catch (err: any) {
       console.error('❌ Update error:', err)
-      alert(err.message || 'Failed to update profile')
+      // Specific error alert
+      alert(`Update Failed: ${err.message || "Check fields"}`)
     } finally {
       setSaving(false)
     }
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-black animate-spin" />
-      </div>
-    )
-  }
+  if (loading) return <div className="min-h-screen bg-white flex items-center justify-center"><Loader2 className="w-8 h-8 text-black animate-spin" /></div>
 
   const currentAvatarUrl = userType === 'volunteer' ? formData.avatar_url : formData.logo_url
   const currentName = userType === 'volunteer' ? formData.full_name : formData.name
 
   return (
     <div className="min-h-screen bg-[#f5f5f7] pb-20">
-      {/* Navbar */}
       <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200">
         <div className="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
           <button onClick={() => router.back()} className="text-gray-500 hover:text-gray-900 flex items-center gap-1">
@@ -238,18 +280,13 @@ export default function EditProfile() {
       </div>
 
       <div className="max-w-3xl mx-auto px-4 pt-6">
-
-        {/* VISUAL EDITOR SECTION */}
         <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-200 mb-6">
-
-          {/* Cover Image Editor */}
           <div className="relative h-48 bg-linear-to-r from-blue-50 to-slate-100 group">
             {formData.cover_url ? (
               <img src={formData.cover_url} alt="Cover" className="w-full h-full object-cover" />
             ) : (
               <div className="absolute inset-0 opacity-[0.05] bg-[radial-gradient(#000_1px,transparent_1px)] bg-size-[16px_16px]" />
             )}
-
             <div className="absolute inset-0 bg-black/10 group-hover:bg-black/30 transition-colors flex items-center justify-center cursor-pointer"
               onClick={() => coverInputRef.current?.click()}>
               <div className="bg-white/90 backdrop-blur px-4 py-2 rounded-full flex items-center gap-2 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity transform translate-y-2 group-hover:translate-y-0">
@@ -260,11 +297,8 @@ export default function EditProfile() {
             <input ref={coverInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'cover')} />
           </div>
 
-          {/* Avatar/Details Editor Section */}
           <div className="px-6 pb-8">
             <div className="flex flex-col md:flex-row items-center md:items-end -mt-12 mb-6 gap-6 relative z-10">
-
-              {/* Avatar Editor */}
               <div className="relative group cursor-pointer" onClick={() => avatarInputRef.current?.click()}>
                 <div className="w-28 h-28 rounded-full border-4 border-white bg-white shadow-md overflow-hidden relative">
                   {currentAvatarUrl ? (
@@ -293,41 +327,30 @@ export default function EditProfile() {
               {userType === 'volunteer' && (
                 <>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <InputField
-                      label="Full Name"
-                      icon={<User className="w-4 h-4" />}
-                      value={formData.full_name}
-                      onChange={(v: any) => setFormData({ ...formData, full_name: v })}
-                    />
-                    <InputField
-                      label="Headline"
-                      icon={<Briefcase className="w-4 h-4" />}
-                      value={formData.headline}
-                      onChange={(v: any) => setFormData({ ...formData, headline: v })}
-                      placeholder="e.g. Student at XYZ University"
-                    />
+                    <InputField label="Full Name" icon={<User className="w-4 h-4" />} value={formData.full_name} onChange={(v: any) => setFormData({ ...formData, full_name: v })} />
+                    <InputField label="Headline" icon={<Briefcase className="w-4 h-4" />} value={formData.headline} onChange={(v: any) => setFormData({ ...formData, headline: v })} placeholder="e.g. Student at XYZ University" />
+                  </div>
+                  <TextAreaField label="Bio" value={formData.bio} onChange={(v: any) => setFormData({ ...formData, bio: v })} placeholder="Tell organizations a bit about yourself..." />
+                  
+                  <div className="pt-4 border-t border-gray-100">
+                    <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2"><MapPin className="w-4 h-4 text-blue-600" /> Contact & Location</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+                        <InputField label="Email (Display)" icon={<Mail className="w-4 h-4" />} value={formData.email} onChange={(v: any) => setFormData({ ...formData, email: v })} />
+                        <InputField label="Phone Number" icon={<Phone className="w-4 h-4" />} value={formData.phone} onChange={(v: any) => setFormData({ ...formData, phone: v })} />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <InputField label="City / Location" icon={<MapPin className="w-4 h-4" />} value={formData.city} onChange={(v: any) => setFormData({ ...formData, city: v })} />
+                        <InputField label="Full Address (Private)" icon={<Home className="w-4 h-4" />} value={formData.address} onChange={(v: any) => setFormData({ ...formData, address: v })} />
+                    </div>
                   </div>
 
-                  <TextAreaField
-                    label="Bio"
-                    value={formData.bio}
-                    onChange={(v: any) => setFormData({ ...formData, bio: v })}
-                    placeholder="Tell organizations a bit about yourself..."
-                  />
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <InputField
-                      label="City / Location"
-                      icon={<MapPin className="w-4 h-4" />}
-                      value={formData.city}
-                      onChange={(v: any) => setFormData({ ...formData, city: v })}
-                    />
-                    <InputField
-                      label="Phone Number"
-                      icon={<Phone className="w-4 h-4" />}
-                      value={formData.phone}
-                      onChange={(v: any) => setFormData({ ...formData, phone: v })}
-                    />
+                  <div className="pt-4 border-t border-gray-100">
+                    <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2"><Globe className="w-4 h-4 text-purple-600" /> Social Presence</h3>
+                    <div className="space-y-4">
+                        <InputField label="LinkedIn URL" icon={<Linkedin className="w-4 h-4" />} value={formData.linkedin} onChange={(v: any) => setFormData({ ...formData, linkedin: v })} placeholder="https://linkedin.com/in/..." />
+                        <InputField label="Instagram URL" icon={<Instagram className="w-4 h-4" />} value={formData.instagram} onChange={(v: any) => setFormData({ ...formData, instagram: v })} placeholder="https://instagram.com/..." />
+                        <InputField label="Portfolio / Website" icon={<Globe className="w-4 h-4" />} value={formData.website} onChange={(v: any) => setFormData({ ...formData, website: v })} placeholder="https://myportfolio.com" />
+                    </div>
                   </div>
 
                   <div>
@@ -344,28 +367,7 @@ export default function EditProfile() {
                       <option value="flexible">Flexible</option>
                     </select>
                   </div>
-
-                  {/* Skills Array */}
-                  <TagInput
-                    label="Skills"
-                    items={formData.skills}
-                    newItem={newSkill}
-                    setNewItem={setNewSkill}
-                    onAdd={() => handleAddItem('skills', newSkill, setNewSkill)}
-                    onRemove={(item: string) => handleRemoveItem('skills', item)}
-                    placeholder="Add a skill (e.g. Teaching)"
-                  />
-
-                  {/* Interests Array */}
-                  <TagInput
-                    label="Causes & Interests"
-                    items={formData.interests}
-                    newItem={newInterest}
-                    setNewItem={setNewInterest}
-                    onAdd={() => handleAddItem('interests', newInterest, setNewInterest)}
-                    onRemove={(item: string) => handleRemoveItem('interests', item)}
-                    placeholder="Add an interest (e.g. Environment)"
-                  />
+                  <TagInput label="Skills" items={formData.skills} newItem={newSkill} setNewItem={setNewSkill} onAdd={() => handleAddItem('skills', newSkill, setNewSkill)} onRemove={(item: string) => handleRemoveItem('skills', item)} placeholder="Add a skill (e.g. Teaching)" />
                 </>
               )}
 
@@ -373,114 +375,104 @@ export default function EditProfile() {
               {userType === 'organization' && (
                 <>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <InputField
-                      label="Organization Name"
-                      icon={<Building2 className="w-4 h-4" />}
-                      value={formData.name}
-                      onChange={(v: any) => setFormData({ ...formData, name: v })}
-                    />
-                    <InputField
-                      label="Tagline"
-                      value={formData.tagline}
-                      onChange={(v: any) => setFormData({ ...formData, tagline: v })}
-                      placeholder="Short slogan"
-                    />
+                    <InputField label="Organization Name" icon={<Building2 className="w-4 h-4" />} value={formData.name} onChange={(v: any) => setFormData({ ...formData, name: v })} />
+                    <InputField label="Tagline" value={formData.tagline} onChange={(v: any) => setFormData({ ...formData, tagline: v })} placeholder="Short slogan (e.g. Making a difference)" />
                   </div>
 
-                  <TextAreaField
-                    label="Mission Statement"
-                    value={formData.mission_statement}
-                    onChange={(v: any) => setFormData({ ...formData, mission_statement: v })}
-                  />
+                  <TextAreaField label="Mission Statement" value={formData.mission_statement} onChange={(v: any) => setFormData({ ...formData, mission_statement: v })} placeholder="What drives your organization?" />
+                  <TextAreaField label="About Us (Description)" value={formData.intent_description} onChange={(v: any) => setFormData({ ...formData, intent_description: v })} placeholder="Detailed description of your organization..." />
 
-                  <TextAreaField
-                    label="Intent / Description (Internal)"
-                    value={formData.intent_description}
-                    onChange={(v: any) => setFormData({ ...formData, intent_description: v })}
-                    placeholder="Detailed description of your intent..."
-                  />
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <InputField
-                      label="Location / Area"
-                      icon={<MapPin className="w-4 h-4" />}
-                      value={formData.area_locality}
-                      onChange={(v: any) => setFormData({ ...formData, area_locality: v })}
-                    />
-                    <InputField
-                      label="Website"
-                      icon={<Globe className="w-4 h-4" />}
-                      value={formData.website}
-                      onChange={(v: any) => setFormData({ ...formData, website: v })}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <InputField
-                      label="Email (Public)"
-                      icon={<Mail className="w-4 h-4" />}
-                      value={formData.email}
-                      onChange={(v: any) => setFormData({ ...formData, email: v })}
-                    />
-                    <InputField
-                      label="Phone (Public)"
-                      icon={<Phone className="w-4 h-4" />}
-                      value={formData.phone}
-                      onChange={(v: any) => setFormData({ ...formData, phone: v })}
-                    />
-                  </div>
-
-                  {/* Legal / Admin Details */}
+                  {/* Contact Info */}
                   <div className="pt-4 border-t border-gray-100">
-                    <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
-                      <BadgeCheck className="w-4 h-4 text-blue-600" /> Administrative Details
-                    </h3>
-
+                    <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2"><MapPin className="w-4 h-4 text-blue-600" /> Location & Contact</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
-                      <InputField
-                        label="Registration Number"
-                        icon={<Hash className="w-4 h-4" />}
-                        value={formData.registration_number}
-                        onChange={(v: any) => setFormData({ ...formData, registration_number: v })}
-                      />
-                      <InputField
-                        label="Years Active"
-                        type="number"
-                        icon={<CalendarDays className="w-4 h-4" />}
-                        value={formData.years_active}
-                        onChange={(v: any) => setFormData({ ...formData, years_active: v })}
-                      />
+                      <InputField label="City / Locality" icon={<MapPin className="w-4 h-4" />} value={formData.area_locality} onChange={(v: any) => setFormData({ ...formData, area_locality: v })} />
+                      <InputField label="Website" icon={<Globe className="w-4 h-4" />} value={formData.website} onChange={(v: any) => setFormData({ ...formData, website: v })} placeholder="https://..." />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                      <InputField label="Public Email" icon={<Mail className="w-4 h-4" />} value={formData.email} onChange={(v: any) => setFormData({ ...formData, email: v })} />
+                      <InputField label="Public Phone" icon={<Phone className="w-4 h-4" />} value={formData.phone} onChange={(v: any) => setFormData({ ...formData, phone: v })} />
+                    </div>
+                  </div>
+
+                  {/* Social Links */}
+                  <div className="pt-4 border-t border-gray-100">
+                    <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2"><Globe className="w-4 h-4 text-purple-600" /> Social Links</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <InputField label="LinkedIn URL" icon={<Linkedin className="w-4 h-4" />} value={formData.linkedin} onChange={(v: any) => setFormData({ ...formData, linkedin: v })} placeholder="https://linkedin.com/company/..." />
+                        <InputField label="Instagram URL" icon={<Instagram className="w-4 h-4" />} value={formData.instagram} onChange={(v: any) => setFormData({ ...formData, instagram: v })} placeholder="https://instagram.com/..." />
+                    </div>
+                  </div>
+
+                  {/* ✅ KEY PEOPLE (TEAM) */}
+                  <div className="pt-4 border-t border-gray-100">
+                    <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2"><Users2 className="w-4 h-4 text-indigo-600" /> Key People</h3>
+                    
+                    {/* Input Row */}
+                    <div className="flex flex-col md:flex-row gap-3 mb-3 bg-gray-50 p-3 rounded-xl border border-gray-200">
+                        <input type="text" placeholder="Name (e.g. Rahul Verma)" value={teamName} onChange={e => setTeamName(e.target.value)} className="flex-1 bg-white border border-gray-200 px-3 py-2 rounded-lg text-sm outline-none focus:ring-2 focus:ring-black/5" />
+                        <input type="text" placeholder="Role (e.g. Director)" value={teamRole} onChange={e => setTeamRole(e.target.value)} className="flex-1 bg-white border border-gray-200 px-3 py-2 rounded-lg text-sm outline-none focus:ring-2 focus:ring-black/5" />
+                        <button onClick={addTeamMember} className="bg-black text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-gray-800">Add</button>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
-                      <InputField
-                        label="Representative Name"
-                        value={formData.representative_name}
-                        onChange={(v: any) => setFormData({ ...formData, representative_name: v })}
-                      />
-                      <InputField
-                        label="Designation"
-                        value={formData.designation}
-                        onChange={(v: any) => setFormData({ ...formData, designation: v })}
-                      />
+                    {/* List */}
+                    <div className="space-y-2">
+                        {formData.team_members?.map((m: any, i: number) => (
+                            <div key={i} className="flex items-center justify-between p-3 bg-white border border-gray-100 rounded-lg shadow-xs">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-xs">{m.name.charAt(0)}</div>
+                                    <div><p className="text-sm font-bold text-gray-900">{m.name}</p><p className="text-xs text-gray-500">{m.role}</p></div>
+                                </div>
+                                <button onClick={() => removeTeamMember(i)} className="text-gray-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
+                            </div>
+                        ))}
+                        {formData.team_members?.length === 0 && <p className="text-xs text-gray-400 italic">No team members added yet.</p>}
+                    </div>
+                  </div>
+
+                  {/* ✅ ACHIEVEMENTS / WALL OF FAME */}
+                  <div className="pt-4 border-t border-gray-100">
+                    <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2"><Trophy className="w-4 h-4 text-amber-500" /> Wall of Fame (Achievements)</h3>
+                    
+                    {/* Input Row */}
+                    <div className="flex flex-col gap-3 mb-3 bg-gray-50 p-3 rounded-xl border border-gray-200">
+                        <div className="grid grid-cols-2 gap-3">
+                            <input type="text" placeholder="Title (e.g. Best NGO)" value={achTitle} onChange={e => setAchTitle(e.target.value)} className="bg-white border border-gray-200 px-3 py-2 rounded-lg text-sm outline-none" />
+                            <input type="text" placeholder="Date (e.g. Jan 2024)" value={achDate} onChange={e => setAchDate(e.target.value)} className="bg-white border border-gray-200 px-3 py-2 rounded-lg text-sm outline-none" />
+                        </div>
+                        <input type="text" placeholder="Image URL / Link" value={achLink} onChange={e => setAchLink(e.target.value)} className="bg-white border border-gray-200 px-3 py-2 rounded-lg text-sm outline-none" />
+                        <textarea placeholder="Description" value={achDesc} onChange={e => setAchDesc(e.target.value)} className="bg-white border border-gray-200 px-3 py-2 rounded-lg text-sm outline-none resize-none" rows={2} />
+                        <button onClick={addAchievement} className="bg-black text-white w-full py-2 rounded-lg text-sm font-bold hover:bg-gray-800">Add Achievement</button>
                     </div>
 
-                    {/* Conditional fields based on Org Type */}
-                    {formData.org_type === 'supported' && (
-                      <InputField
-                        label="Parent Institution"
-                        value={formData.parent_institution}
-                        onChange={(v: any) => setFormData({ ...formData, parent_institution: v })}
-                        placeholder="e.g. University Name"
-                      />
-                    )}
-                    {formData.org_type === 'informal' && (
-                      <InputField
-                        label="Coordinator Name"
-                        value={formData.coordinator_name}
-                        onChange={(v: any) => setFormData({ ...formData, coordinator_name: v })}
-                      />
-                    )}
+                    {/* List */}
+                    <div className="space-y-2">
+                        {formData.achievements?.map((a: any, i: number) => (
+                            <div key={i} className="flex items-center justify-between p-3 bg-white border border-gray-100 rounded-lg shadow-xs">
+                                <div>
+                                    <p className="text-sm font-bold text-gray-900">{a.title} <span className="text-gray-400 font-normal text-xs">• {a.date}</span></p>
+                                    <p className="text-xs text-gray-500 truncate max-w-[200px]">{a.description}</p>
+                                </div>
+                                <button onClick={() => removeAchievement(i)} className="text-gray-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
+                            </div>
+                        ))}
+                        {formData.achievements?.length === 0 && <p className="text-xs text-gray-400 italic">No achievements added yet.</p>}
+                    </div>
+                  </div>
+
+                  {/* Admin Details */}
+                  <div className="pt-4 border-t border-gray-100">
+                    <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2"><BadgeCheck className="w-4 h-4 text-emerald-600" /> Administrative Details</h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+                      <InputField label="Registration Number" icon={<Hash className="w-4 h-4" />} value={formData.registration_number} onChange={(v: any) => setFormData({ ...formData, registration_number: v })} />
+                      <InputField label="Years Active" type="number" icon={<CalendarDays className="w-4 h-4" />} value={formData.years_active} onChange={(v: any) => setFormData({ ...formData, years_active: v })} />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                      <InputField label="Representative Name" icon={<UserCheck className="w-4 h-4" />} value={formData.representative_name} onChange={(v: any) => setFormData({ ...formData, representative_name: v })} />
+                      <InputField label="Designation" value={formData.designation} onChange={(v: any) => setFormData({ ...formData, designation: v })} placeholder="e.g. Director" />
+                    </div>
                   </div>
                 </>
               )}
@@ -492,8 +484,6 @@ export default function EditProfile() {
     </div>
   )
 }
-
-// --- UI Components ---
 
 function InputField({ label, value, onChange, icon, type = "text", placeholder }: any) {
   return (

@@ -4,26 +4,179 @@ import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import {
-  ArrowLeft,
-  Pencil,
-  MapPin,
-  Calendar,
-  ChevronLeft,
-  Loader2,
-  Globe,
-  Mail,
-  Phone,
-  CheckCircle2,
-  Share2,
-  MoreHorizontal,
-  FileText,
-  ExternalLink,
-  ShieldCheck,
-  History
+  MapPin, ChevronLeft, Loader2, CheckCircle2, Edit2,
+  Trophy, Mail, Phone, UserPlus,
+  Share2, Linkedin, Instagram, Globe,
+  Check, Quote, Building2, Users, CalendarDays,
+  Hash, FileBadge, Users2, Image as ImageIcon, Plus, ExternalLink, Award, Newspaper
 } from "lucide-react"
 import { api } from "@/lib/api"
 import { cn } from "@/lib/utils"
-import { Edit2 } from "lucide-react"
+import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from "recharts"
+
+// --- SUB-COMPONENTS ---
+
+// ✅ UPDATED: ACHIEVEMENTS (Real Data)
+function Achievements({ items }: { items: any[] }) {
+  if (!items || items.length === 0) return null;
+
+  return (
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
+       <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+             <Trophy className="w-5 h-5 text-amber-500" /> Wall of Fame
+          </h3>
+       </div>
+       
+       <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+          {items.map((item, idx) => (
+             <div key={idx} className="min-w-[280px] md:min-w-[300px] bg-white border border-gray-100 rounded-xl overflow-hidden hover:shadow-md transition-all group cursor-pointer">
+                {/* Image Area - Show placeholder if no image */}
+                <div className="h-40 w-full bg-gray-100 relative overflow-hidden flex items-center justify-center">
+                   {item.image_url ? (
+                     <img 
+                       src={item.image_url} 
+                       alt={item.title} 
+                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
+                     />
+                   ) : (
+                     <Trophy className="w-10 h-10 text-gray-300" />
+                   )}
+                </div>
+
+                {/* Description Area */}
+                <div className="p-4">
+                   <h4 className="font-bold text-gray-900 text-sm mb-1 line-clamp-1">{item.title}</h4>
+                   <p className="text-[10px] text-blue-600 font-semibold mb-2">{item.date}</p>
+                   <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">
+                     {item.description}
+                   </p>
+                </div>
+             </div>
+          ))}
+       </div>
+    </div>
+  )
+}
+
+// ✅ UPDATED: TEAM (Real Data)
+function OurTeam({ members }: { members: any[] }) {
+  if (!members || members.length === 0) return null;
+
+  return (
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
+       <h3 className="font-bold text-gray-900 mb-4 text-sm uppercase tracking-wide flex items-center gap-2">
+          <Users2 className="w-4 h-4 text-blue-600" /> Key People
+       </h3>
+       <div className="grid gap-4">
+          {members.map((member, i) => (
+             <div key={i} className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center overflow-hidden shrink-0">
+                   {/* Assuming member object has 'name', 'role' */}
+                   <span className="text-gray-500 text-xs font-bold uppercase">{member.name?.charAt(0)}</span>
+                </div>
+                <div>
+                   <p className="text-sm font-bold text-gray-900">{member.name}</p>
+                   <p className="text-xs text-gray-500">{member.role}</p>
+                </div>
+             </div>
+          ))}
+       </div>
+    </div>
+  )
+}
+
+function Reviews({ reviews }: { reviews: any[] }) {
+  if (!reviews || reviews.length === 0) return null;
+
+  return (
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
+      <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+        <Quote className="w-5 h-5 text-purple-500" /> What Volunteers Say
+      </h3>
+      <div className="grid gap-4">
+        {reviews.slice(0, 3).map((review, idx) => (
+          <div key={idx} className="bg-purple-50/50 p-4 rounded-xl border border-purple-100 relative">
+            <Quote className="w-8 h-8 text-purple-200 absolute top-2 right-2 rotate-180" />
+            <p className="text-gray-700 italic text-sm mb-3 relative z-10">"{review.comment}"</p>
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-white border border-purple-100 flex items-center justify-center font-bold text-xs text-purple-600">
+                {review.volunteer_name?.charAt(0)}
+              </div>
+              <div>
+                <p className="text-xs font-bold text-gray-900">{review.volunteer_name}</p>
+                <p className="text-[10px] text-gray-500">{review.event_title}</p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function OrgDetails({ profile }: { profile: any }) {
+  return (
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
+      <h3 className="font-bold text-gray-900 mb-4 text-sm uppercase tracking-wide">Organization Details</h3>
+
+      <div className="space-y-4">
+        {/* Org Type */}
+        <div className="flex items-start gap-3">
+          <div className="w-8 h-8 rounded bg-blue-50 flex items-center justify-center text-blue-600 border border-blue-100 shrink-0">
+            <Building2 className="w-4 h-4" />
+          </div>
+          <div>
+            <p className="text-xs font-bold text-gray-900">Type</p>
+            <p className="text-sm text-gray-600 capitalize">{profile.org_type || "Registered Organization"}</p>
+          </div>
+        </div>
+
+        {/* Registration */}
+        {profile.registration_number && (
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-100 shrink-0">
+              <Hash className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-gray-900">Registration No.</p>
+              <p className="text-sm text-gray-600">{profile.registration_number}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Years Active */}
+        {profile.years_active && (
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded bg-amber-50 flex items-center justify-center text-amber-600 border border-amber-100 shrink-0">
+              <FileBadge className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-gray-900">Years Active</p>
+              <p className="text-sm text-gray-600">{profile.years_active} Years</p>
+            </div>
+          </div>
+        )}
+        
+        {/* Representative */}
+        {profile.representative_name && (
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded bg-indigo-50 flex items-center justify-center text-indigo-600 border border-indigo-100 shrink-0">
+              <Users2 className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-gray-900">Rep. Name</p>
+              <p className="text-sm text-gray-600">{profile.representative_name}</p>
+              {profile.designation && <p className="text-xs text-gray-400">{profile.designation}</p>}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// --- MAIN PAGE COMPONENT ---
 
 export default function OrganizationProfile() {
   const { id } = useParams()
@@ -32,496 +185,367 @@ export default function OrganizationProfile() {
   const [profile, setProfile] = useState<any>(null)
   const [events, setEvents] = useState<any[]>([])
   const [reviews, setReviews] = useState<any[]>([])
-  const [volunteers, setVolunteers] = useState<any[]>([])
+
   const [isFollowing, setIsFollowing] = useState(false)
-  const [activeTab, setActiveTab] = useState<'events' | 'about'>('events')
   const [isOwnProfile, setIsOwnProfile] = useState(false)
+  const [activityData, setActivityData] = useState<any[]>([])
+
+  const [coverError, setCoverError] = useState(false)
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         setLoading(true)
-        // We add api.getCurrentUser() to the check
         const [profileRes, eventsRes, reviewsRes, currentUser] = await Promise.all([
-          api.getOrgPublicProfile(id as string),
-          api.getOrgEvents(id as string),
-          api.getOrgReviews(id as string),
-          api.getCurrentUser().catch(() => null) // Handle case where user isn't logged in
+           api.getOrgPublicProfile(id as string),
+           api.getOrgEvents(id as string),
+           api.getOrgReviews(id as string),
+           api.getCurrentUser().catch(() => null)
         ])
 
         setProfile(profileRes.profile)
-        // Check if logged-in user ID matches the profile's user_id
-        setIsOwnProfile(currentUser?.id === profileRes.profile.user_id)
-
-        setProfile(profileRes.profile)
-        setIsFollowing(profileRes.isFollowing)
-
-        // Sort events by date
-        const sortedEvents = (eventsRes.events || []).sort((a: any, b: any) =>
-          new Date(b.event_date).getTime() - new Date(a.event_date).getTime()
-        )
-        setEvents(sortedEvents)
-
+        
+        const fetchedEvents = eventsRes.events || [];
+        setEvents(fetchedEvents)
         setReviews(reviewsRes.reviews || [])
+        
+        // CALCULATE GRAPH DATA
+        const last6Months = Array(6).fill(0).map((_, i) => {
+            const d = new Date();
+            d.setMonth(d.getMonth() - (5 - i));
+            return { 
+                name: d.toLocaleString('default', { month: 'short' }), 
+                monthIdx: d.getMonth(), 
+                events: 0 
+            };
+        });
 
-        try {
-          const volRes = await api.getOrgVolunteers(id as string)
-          setVolunteers(volRes.volunteers || [])
-        } catch (err) {
-          // Not authorized - skip
+        fetchedEvents.forEach((ev: any) => {
+            const eventDate = new Date(ev.event_date);
+            const bucket = last6Months.find(m => m.monthIdx === eventDate.getMonth());
+            if (bucket) {
+                bucket.events += 1;
+            }
+        });
+
+        setActivityData(last6Months);
+
+        const isSelf = currentUser?.id === profileRes.profile.user_id;
+        setIsOwnProfile(isSelf);
+
+        if (!isSelf && currentUser) {
+          try {
+            const followRes = await api.checkFollowStatus(id as string)
+            setIsFollowing(followRes.isFollowing)
+          } catch (err) { }
         }
       } catch (err) {
-        console.error(err)
+        console.error("Fetch error:", err)
       } finally {
         setLoading(false)
       }
     }
-
     fetchProfile()
   }, [id])
 
   const handleFollow = async () => {
+    if (!profile?.id) return
     try {
-      await api.toggleFollowOrg(id as string)
+      await api.toggleFollowOrg(profile.id)
       setIsFollowing(!isFollowing)
       setProfile((prev: any) => ({
         ...prev,
         followers_count: isFollowing ? prev.followers_count - 1 : prev.followers_count + 1
       }))
     } catch (err: any) {
-      alert(err.message)
+      alert("Action failed")
     }
   }
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-  }
-
-  const formatTime = (timeString: string) => {
-    if (!timeString) return ""
-    const [hours, minutes] = timeString.split(':')
-    const hour = parseInt(hours)
-    const ampm = hour >= 12 ? 'PM' : 'AM'
-    const displayHour = hour % 12 || 12
-    return `${displayHour} ${ampm}`
-  }
-
-  const getCategoryColor = (category: string) => {
-    const colors: Record<string, string> = {
-      environment: "bg-[#10b981] text-white",
-      education: "bg-blue-500 text-white",
-      health: "bg-red-500 text-white",
-      animals: "bg-amber-500 text-white",
-      elderly: "bg-purple-500 text-white",
-      community: "bg-cyan-500 text-white",
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: profile.name, url: window.location.href })
+      } catch (err) { }
+    } else {
+      navigator.clipboard.writeText(window.location.href)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
     }
-    return colors[category?.toLowerCase()] || "bg-gray-500 text-white"
   }
 
-  const formatNumber = (num: number) => {
-    if (num >= 1000) {
-      return (num / 1000).toFixed(1) + 'K'
-    }
-    return num
+  const getExternalLink = (url: string) => {
+    if (!url) return "#";
+    return url.startsWith('http') ? url : `https://${url}`;
   }
 
-  const getOrgTypeLabel = (type: string) => {
-    const types: Record<string, string> = {
-      registered: "Non-Profit",
-      supported: "Supported Club",
-      informal: "Informal Group",
-      individual: "Individual"
-    }
-    return types[type?.toLowerCase()] || "Organization"
-  }
-
-  // Split events into Upcoming and Past
-  const now = new Date()
-  const upcomingEvents = events.filter(e => new Date(e.event_date) >= now).reverse() // Ascending order for upcoming
-  const pastEvents = events.filter(e => new Date(e.event_date) < now) // Descending order for past
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-gray-400 animate-spin" />
-      </div>
-    )
-  }
-
-  if (!profile) {
-    return (
-      <div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center">
-        <p className="text-gray-500">Organization not found</p>
-      </div>
-    )
-  }
-
-  // Helper component for Event Card to avoid repetition
-  const EventCard = ({ event, isPast = false }: { event: any, isPast?: boolean }) => {
-    const progress = Math.min(100, Math.round((event.registered_count / event.total_slots) * 100));
-
-    return (
-      <Link
-        href={`/events/${event.id}`}
-        className={cn(
-          "block bg-white p-4 rounded-2xl border transition-all",
-          isPast
-            ? "border-gray-100 opacity-80 hover:opacity-100 hover:shadow-sm"
-            : "border-gray-100 shadow-sm hover:shadow-md"
-        )}
-      >
-        <div className="flex gap-4">
-          <div className="w-24 h-24 shrink-0 rounded-xl overflow-hidden bg-gray-100 relative">
-            {event.cover_image_url ? (
-              <img src={event.cover_image_url} alt="" className={cn("w-full h-full object-cover", isPast && "grayscale")} />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-gray-300">
-                <Calendar className="w-8 h-8" />
-              </div>
-            )}
-            {!isPast && (
-              <div className={cn("absolute top-2 left-2 px-2 py-0.5 rounded text-[10px] font-semibold capitalize", getCategoryColor(event.category))}>
-                {event.category}
-              </div>
-            )}
-          </div>
-
-          <div className="flex-1 flex flex-col justify-between py-1">
-            <div>
-              <h3 className={cn("font-bold leading-tight mb-1", isPast ? "text-gray-600" : "text-gray-900")}>
-                {event.title}
-              </h3>
-              <div className="flex items-center gap-2 text-xs text-gray-500 mb-0.5">
-                <Calendar className="w-3.5 h-3.5" />
-                <span>{formatDate(event.event_date)} • {isPast ? 'Completed' : formatTime(event.start_time)}</span>
-              </div>
-              <div className="flex items-center gap-2 text-xs text-gray-500">
-                <MapPin className="w-3.5 h-3.5" />
-                <span className="line-clamp-1">{event.location}</span>
-              </div>
-            </div>
-
-            {!isPast ? (
-              <div className="mt-2">
-                <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-[#10b981] rounded-full transition-all duration-500"
-                    style={{ width: `${progress}%` }}
-                  />
-                </div>
-              </div>
-            ) : (
-              <div className="mt-2 text-xs font-medium text-gray-400 bg-gray-50 self-start px-2 py-1 rounded-md">
-                {event.registered_count} volunteers attended
-              </div>
-            )}
-          </div>
-        </div>
-      </Link>
-    )
-  }
+  if (loading) return <div className="min-h-screen bg-white flex items-center justify-center"><Loader2 className="w-8 h-8 text-gray-900 animate-spin" /></div>
+  if (!profile) return <div className="min-h-screen bg-white flex items-center justify-center text-gray-500">Organization not found</div>
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA]">
-      <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200/60 support-[backdrop-filter]:bg-white/60">
-        <div className="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
+    <div className="min-h-screen bg-[#F8F9FA] pb-20 font-sans">
 
-          {/* Left: Back Button */}
-          <button
-            onClick={() => router.back()}
-            className="w-10 h-10 flex items-center justify-center rounded-full text-gray-600 hover:bg-gray-100 transition-all active:scale-95"
-          >
-            <ArrowLeft className="w-5 h-5" />
+      {/* 1. TOP NAVIGATION */}
+      <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+          <button onClick={() => router.back()} className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
+            <ChevronLeft className="w-5 h-5" /> Back
           </button>
 
-          {/* Right: Actions Group */}
-          <div className="flex items-center gap-2">
-            {isOwnProfile && (
-              <Link
-                href="/settings/profile"
-                className="flex items-center gap-2 px-4 py-1.5 bg-white border border-gray-300 rounded-full text-xs font-bold text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-all shadow-sm active:scale-95 mr-1"
-              >
-                <Pencil className="w-3.5 h-3.5" />
-                <span>Edit</span>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleShare}
+              className="p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-all relative"
+            >
+              {copied ? <Check className="w-5 h-5 text-green-600" /> : <Share2 className="w-5 h-5" />}
+            </button>
+
+            {isOwnProfile ? (
+              <Link href="/settings/profile" className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-full hover:bg-gray-800 transition-colors flex items-center gap-2">
+                <Edit2 className="w-4 h-4" /> Edit Page
               </Link>
-            )}
-
-            <button className="w-10 h-10 flex items-center justify-center rounded-full text-gray-600 hover:bg-gray-100 transition-all active:scale-95">
-              <Share2 className="w-5 h-5" />
-            </button>
-
-            <button className="w-10 h-10 flex items-center justify-center rounded-full text-gray-600 hover:bg-gray-100 transition-all active:scale-95">
-              <MoreHorizontal className="w-5 h-5" />
-            </button>
-          </div>
-
-        </div>
-      </nav>
-
-      <main className="max-w-3xl mx-auto px-4 pb-20">
-
-        {/* Profile Header */}
-        <div className="bg-white rounded-3xl mt-4 overflow-hidden shadow-sm border border-gray-100">
-
-          {/* Cover Image (Banner) */}
-          <div className="h-40 md:h-48 bg-linear-to-r from-blue-50 to-slate-100 relative">
-            {profile.cover_url ? (
-              <img
-                src={profile.cover_url}
-                alt="Cover"
-                className="w-full h-full object-cover"
-              />
             ) : (
-              /* Fallback subtle pattern if no cover image */
-              <div className="absolute inset-0 opacity-[0.03] bg-[radial-gradient(#000_1px,transparent_1px)] bg-size-[16px_16px]" />
-            )}
-          </div>
-
-          <div className="px-6 pb-8">
-            <div className="flex flex-col items-center -mt-12 mb-4">
-
-              {/* Profile Pic / Logo Container */}
-              {/* z-10 ensures it stays above the banner, border-white creates the cutout effect */}
-              <div className="relative z-10 w-24 h-24 rounded-full border-4 border-white bg-white shadow-sm overflow-hidden mb-3">
-                {profile.logo_url ? (
-                  <img
-                    src={profile.logo_url}
-                    alt={profile.name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  /* Fallback Initials */
-                  <div className="w-full h-full flex items-center justify-center bg-gray-50 text-2xl font-bold text-gray-400 select-none">
-                    {profile.name?.charAt(0).toUpperCase()}
-                  </div>
-                )}
-              </div>
-
-              {/* Name & Verification Badge */}
-              <div className="flex items-center gap-2 mb-1">
-                <h1 className="text-2xl font-bold text-gray-900 text-center tracking-tight">
-                  {profile.name}
-                </h1>
-                {profile.is_verified && (
-                  <CheckCircle2 className="w-5 h-5 text-blue-500 fill-blue-50" />
-                )}
-              </div>
-
-              {/* Rest of the header content (Tagline, Stats, etc.) remains below... */}
-              <p className="text-gray-500 text-center mb-3 text-[15px]">
-                {profile.tagline || profile.area_locality}
-              </p>
-
-              <div className="flex items-center gap-3 text-xs text-gray-400 font-medium mb-6">
-                {profile.registration_number && (
-                  <span className="flex items-center gap-1">
-                    <span className="text-gray-300">Reg No:</span> {profile.registration_number}
-                  </span>
-                )}
-                {profile.registration_number && <span className="w-1 h-1 rounded-full bg-gray-300" />}
-                <span className="flex items-center gap-1">
-                  <div className="w-2 h-2 rounded-full border border-gray-300" />
-                  {getOrgTypeLabel(profile.org_type)}
-                </span>
-              </div>
-
-              <div className="flex items-center gap-12 mb-8">
-                <div className="text-center">
-                  <div className="text-lg font-bold text-gray-900">{profile.total_events || events.length}</div>
-                  <div className="text-xs text-gray-500 font-medium">Events</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-lg font-bold text-gray-900">{formatNumber(profile.followers_count || 0)}</div>
-                  <div className="text-xs text-gray-500 font-medium">Followers</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-lg font-bold text-gray-900">{formatNumber(profile.lives_touched || volunteers.length || 0)}</div>
-                  <div className="text-xs text-gray-500 font-medium">Volunteers</div>
-                </div>
-              </div>
-
               <button
                 onClick={handleFollow}
                 className={cn(
-                  "w-full max-w-sm py-3 rounded-xl font-semibold transition-all text-[15px]",
+                  "px-6 py-2 rounded-full text-sm font-bold transition-all shadow-sm active:scale-95 flex items-center gap-2",
                   isFollowing
-                    ? "bg-gray-100 text-gray-900 hover:bg-gray-200"
-                    : "bg-[#0F172A] text-white hover:bg-gray-800 shadow-lg shadow-gray-200"
+                    ? "bg-white text-gray-900 border border-gray-300 hover:bg-gray-50"
+                    : "bg-black text-white hover:bg-gray-800"
                 )}
               >
-                {isFollowing ? 'Following' : 'Follow'}
+                {isFollowing ? <><CheckCircle2 className="w-4 h-4" /> Following</> : <><UserPlus className="w-4 h-4" /> Follow</>}
               </button>
+            )}
+          </div>
+        </div>
+      </nav>
+
+      {/* 2. COVER IMAGE */}
+      <div className="h-48 md:h-64 bg-gray-200 w-full relative overflow-hidden group">
+        {!coverError && profile.cover_url ? (
+          <img
+            src={profile.cover_url}
+            alt="Cover"
+            className="w-full h-full object-cover"
+            onError={() => setCoverError(true)}
+          />
+        ) : (
+          <div className="w-full h-full bg-linear-to-r from-slate-800 to-slate-900 flex items-center justify-center">
+            <Building2 className="w-12 h-12 text-white/10" />
+          </div>
+        )}
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-20 relative z-10">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+          {/* 3. LEFT SIDEBAR */}
+          <div className="lg:col-span-4 space-y-6">
+            {/* Profile Card */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 relative">
+              <div className="w-32 h-32 rounded-full border-4 border-white shadow-md overflow-hidden bg-gray-100 -mt-20 mb-4">
+                {profile.logo_url ? (
+                  <img src={profile.logo_url} alt={profile.name} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-3xl font-bold text-gray-400">{profile.name?.charAt(0)}</div>
+                )}
+              </div>
+
+              <div className="mb-6">
+                <div className="flex items-center gap-2 mb-1">
+                  <h1 className="text-2xl font-bold text-gray-900 leading-tight">{profile.name}</h1>
+                  <CheckCircle2 className="w-5 h-5 text-blue-500 fill-blue-50 shrink-0" />
+                </div>
+                <p className="text-gray-600 font-medium">{profile.tagline || "Making a difference."}</p>
+                {profile.area_locality && (
+                  <div className="flex items-center gap-1 text-sm text-gray-500 mt-2">
+                    <MapPin className="w-4 h-4" /> {profile.area_locality}
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-3 gap-2 border-t border-b border-gray-100 py-4 mb-6">
+                <div className="text-center">
+                  <span className="block font-bold text-gray-900 text-lg">{profile.followers_count || 0}</span>
+                  <span className="text-xs text-gray-500 uppercase tracking-wide">Followers</span>
+                </div>
+                <div className="text-center border-l border-gray-100">
+                  <span className="block font-bold text-gray-900 text-lg">{events.length}</span>
+                  <span className="text-xs text-gray-500 uppercase tracking-wide">Events</span>
+                </div>
+                <div className="text-center border-l border-gray-100">
+                  <span className="block font-bold text-gray-900 text-lg">4.9</span>
+                  <span className="text-xs text-gray-500 uppercase tracking-wide">Rating</span>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-2 justify-center lg:justify-start">
+                {profile.linkedin && <a href={getExternalLink(profile.linkedin)} target="_blank" className="p-2 bg-gray-50 rounded-full hover:bg-blue-600 hover:text-white transition-colors"><Linkedin className="w-5 h-5" /></a>}
+                {profile.instagram && <a href={getExternalLink(profile.instagram)} target="_blank" className="p-2 bg-gray-50 rounded-full hover:bg-pink-600 hover:text-white transition-colors"><Instagram className="w-5 h-5" /></a>}
+                {profile.website && <a href={getExternalLink(profile.website)} target="_blank" className="p-2 bg-gray-50 rounded-full hover:bg-gray-200 hover:text-black transition-colors"><Globe className="w-5 h-5" /></a>}
+              </div>
+
+              <div className="mt-6 pt-6 border-t border-gray-100">
+                <button className="w-full py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
+                  <Mail className="w-4 h-4" /> Contact Organization
+                </button>
+              </div>
+            </div>
+
+            {/* CONTACT DETAILS */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+              <h3 className="font-bold text-gray-900 mb-4 text-sm uppercase tracking-wide">Contact Details</h3>
+              <div className="space-y-3">
+                {profile.email && (
+                  <div className="flex items-center gap-3 text-sm text-gray-600">
+                    <Mail className="w-4 h-4 text-gray-400" />
+                    <span className="truncate">{profile.email}</span>
+                  </div>
+                )}
+                {profile.phone && (
+                  <div className="flex items-center gap-3 text-sm text-gray-600">
+                    <Phone className="w-4 h-4 text-gray-400" />
+                    <span>{profile.phone}</span>
+                  </div>
+                )}
+                {profile.website && (
+                  <div className="flex items-start gap-3 text-sm text-gray-600">
+                    <Globe className="w-4 h-4 text-gray-400 mt-0.5" />
+                    <a href={getExternalLink(profile.website)} target="_blank" className="hover:underline truncate">{profile.website}</a>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* ✅ REAL TEAM DATA - USES profile.team_members */}
+            <OurTeam members={profile.team_members} />
+
+            {/* ORG SPECIFIC DETAILS */}
+            <OrgDetails profile={profile} />
+          </div>
+
+          {/* 4. MAIN CONTENT */}
+          <div className="lg:col-span-8 space-y-6">
+            {/* Mission Section */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-bold text-gray-900">Our Mission</h3>
+              </div>
+              <p className="text-gray-600 leading-relaxed text-sm md:text-base">
+                {profile.mission_statement || "No mission statement added yet."}
+              </p>
+              {profile.intent_description && (
+                <div className="mt-4 pt-4 border-t border-gray-100">
+                  <h4 className="text-sm font-bold text-gray-900 mb-2">About Us</h4>
+                  <p className="text-gray-600 text-sm">{profile.intent_description}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Impact Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-linear-to-br from-slate-900 to-slate-800 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-4 opacity-10"><Trophy className="w-24 h-24" /></div>
+                <h3 className="text-sm font-medium text-slate-300 uppercase tracking-wide mb-1">Total Impact</h3>
+                {/* ✅ DISPLAYS REAL HOURS */}
+                <div className="text-4xl font-bold mb-4">{profile.total_hours_generated || 0} Hrs</div>
+                <div className="flex gap-4">
+                  {/* ✅ DISPLAYS REAL EVENTS COUNT */}
+                  <div>
+                    <span className="text-xs text-slate-400 block">Events</span>
+                    <span className="font-semibold text-emerald-400">{profile.events_hosted || events.length} Hosted</span>
+                  </div>
+                  {/* ✅ DISPLAYS REAL VOLUNTEER COUNT */}
+                  <div>
+                    <span className="text-xs text-slate-400 block">Volunteers</span>
+                    <span className="font-semibold text-amber-400">{profile.volunteers_engaged || 0} Engaged</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+                <h3 className="text-sm font-bold text-gray-900 mb-4">Events Frequency</h3>
+                <div className="h-32">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={activityData}>
+                      <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} />
+                      <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '8px', fontSize: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+                      <Bar dataKey="events" radius={[4, 4, 0, 0]} barSize={20}>
+                        {activityData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.events > 0 ? '#3b82f6' : '#e5e7eb'} />)}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+
+            {/* ✅ REAL ACHIEVEMENTS DATA - USES profile.achievements */}
+            <Achievements items={profile.achievements} />
+
+            {/* Reviews */}
+            <Reviews reviews={reviews} />
+
+            {/* Events List (With Status and Click Logic) */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-bold text-gray-900">Events</h3>
+                {isOwnProfile && <Link href="/org-events/create" className="text-sm text-blue-600 hover:underline font-medium">Create New +</Link>}
+              </div>
+
+              {events.length === 0 ? (
+                <div className="text-center py-10"><CalendarDays className="w-10 h-10 text-gray-300 mx-auto mb-3" /><p className="text-gray-500 text-sm">No events hosted yet.</p></div>
+              ) : (
+                <div className="space-y-4">
+                  {events.map((event, idx) => {
+                    const isCompleted = event.status === 'completed';
+                    const linkHref = isCompleted
+                      ? `/org-events/${event.id}/report`
+                      : `/org-events/${event.id}`;
+
+                    let badgeClass = "bg-gray-100 text-gray-600";
+                    let badgeText = event.status || "Draft";
+
+                    if (isCompleted) {
+                      badgeClass = "bg-green-100 text-green-700";
+                      badgeText = "Completed";
+                    } else if (event.status === 'published') {
+                      badgeClass = "bg-blue-50 text-blue-700";
+                      badgeText = "Ongoing";
+                    }
+
+                    return (
+                      <Link key={idx} href={linkHref} className="block group">
+                        <div className="flex gap-4 p-4 border border-gray-100 rounded-xl hover:border-blue-200 hover:shadow-md transition-all bg-white relative">
+                          {/* Date Box */}
+                          <div className="w-14 shrink-0 flex flex-col items-center justify-center bg-gray-50 rounded-lg border border-gray-200 h-14">
+                            <span className="text-xs font-bold text-red-500 uppercase">{new Date(event.event_date).toLocaleString('default', { month: 'short' })}</span>
+                            <span className="text-xl font-bold text-gray-900">{new Date(event.event_date).getDate()}</span>
+                          </div>
+
+                          <div className="flex-1 min-w-0 pr-20">
+                            <h4 className="font-bold text-gray-900 truncate group-hover:text-blue-600 transition-colors">{event.title}</h4>
+                            <div className="flex items-center gap-4 text-xs text-gray-500 mt-1">
+                              <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {event.location}</span>
+                              <span className="flex items-center gap-1"><Users className="w-3 h-3" /> {event.registered_count || 0} Registered</span>
+                            </div>
+                          </div>
+
+                          {/* Status Badge */}
+                          <div className={cn("absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-medium capitalize", badgeClass)}>
+                            {badgeText}
+                          </div>
+                        </div>
+                      </Link>
+                    )
+                  })}
+                </div>
+              )}
             </div>
           </div>
         </div>
-
-        {/* Tabs */}
-        <div className="flex items-center gap-8 px-2 mt-8 mb-6 border-b border-gray-200">
-          <button
-            onClick={() => setActiveTab('events')}
-            className={cn(
-              "pb-3 text-[15px] font-medium transition-colors relative",
-              activeTab === 'events' ? "text-gray-900" : "text-gray-400 hover:text-gray-600"
-            )}
-          >
-            All Events
-            {activeTab === 'events' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-black rounded-full" />}
-          </button>
-          <button
-            onClick={() => setActiveTab('about')}
-            className={cn(
-              "pb-3 text-[15px] font-medium transition-colors relative",
-              activeTab === 'about' ? "text-gray-900" : "text-gray-400 hover:text-gray-600"
-            )}
-          >
-            About & Docs
-            {activeTab === 'about' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-black rounded-full" />}
-          </button>
-        </div>
-
-        {/* Content */}
-        <div>
-          {activeTab === 'events' && (
-            <div className="space-y-8">
-              {/* Upcoming Section */}
-              <div>
-                <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-blue-500" />
-                  Upcoming Events
-                </h3>
-                <div className="space-y-4">
-                  {upcomingEvents.length > 0 ? (
-                    upcomingEvents.map(event => <EventCard key={event.id} event={event} />)
-                  ) : (
-                    <p className="text-sm text-gray-400 italic">No upcoming events scheduled.</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Divider if we have both */}
-              {upcomingEvents.length > 0 && pastEvents.length > 0 && (
-                <div className="h-px bg-gray-100" />
-              )}
-
-              {/* Past Section */}
-              {pastEvents.length > 0 && (
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-500 mb-4 flex items-center gap-2">
-                    <History className="w-4 h-4" />
-                    Past Events
-                  </h3>
-                  <div className="space-y-4">
-                    {pastEvents.map(event => <EventCard key={event.id} event={event} isPast={true} />)}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {activeTab === 'about' && (
-            <div className="space-y-6">
-              {/* Mission */}
-              <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-                <h3 className="font-bold text-gray-900 mb-3">Our Mission</h3>
-                <p className="text-gray-600 text-[15px] leading-relaxed">
-                  {profile.mission_statement || profile.intent_description || "No description available."}
-                </p>
-              </div>
-
-              {/* Legal Documents Section */}
-              {(profile.registration_certificate_url || profile.pan_card_url || profile.proof_document_url) && (
-                <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-                  <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-                    <ShieldCheck className="w-5 h-5 text-emerald-500" />
-                    Legal & Documents
-                  </h3>
-                  <div className="space-y-3">
-                    {profile.registration_certificate_url && (
-                      <a
-                        href={profile.registration_certificate_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex items-center justify-between p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors group"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600">
-                            <FileText className="w-4 h-4" />
-                          </div>
-                          <span className="text-sm font-medium text-gray-700">Registration Certificate</span>
-                        </div>
-                        <ExternalLink className="w-4 h-4 text-gray-400 group-hover:text-blue-500" />
-                      </a>
-                    )}
-
-                    {profile.pan_card_url && (
-                      <a
-                        href={profile.pan_card_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex items-center justify-between p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors group"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600">
-                            <FileText className="w-4 h-4" />
-                          </div>
-                          <span className="text-sm font-medium text-gray-700">PAN Card</span>
-                        </div>
-                        <ExternalLink className="w-4 h-4 text-gray-400 group-hover:text-blue-500" />
-                      </a>
-                    )}
-
-                    {profile.proof_document_url && (
-                      <a
-                        href={profile.proof_document_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex items-center justify-between p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors group"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600">
-                            <FileText className="w-4 h-4" />
-                          </div>
-                          <span className="text-sm font-medium text-gray-700">Supporting Proof</span>
-                        </div>
-                        <ExternalLink className="w-4 h-4 text-gray-400 group-hover:text-blue-500" />
-                      </a>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Contact Grid */}
-              <div className="grid gap-3">
-                {profile.website && (
-                  <a href={profile.website} target="_blank" rel="noreferrer" className="flex items-center gap-3 bg-white p-4 rounded-xl border border-gray-100 text-gray-600 hover:text-blue-600 transition-colors">
-                    <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center">
-                      <Globe className="w-4 h-4 text-blue-600" />
-                    </div>
-                    <span className="text-sm font-medium truncate flex-1">{profile.website}</span>
-                  </a>
-                )}
-                {profile.email && (
-                  <a href={`mailto:${profile.email}`} className="flex items-center gap-3 bg-white p-4 rounded-xl border border-gray-100 text-gray-600 hover:text-blue-600 transition-colors">
-                    <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center">
-                      <Mail className="w-4 h-4 text-blue-600" />
-                    </div>
-                    <span className="text-sm font-medium truncate flex-1">{profile.email}</span>
-                  </a>
-                )}
-                {profile.phone && (
-                  <a href={`tel:${profile.phone}`} className="flex items-center gap-3 bg-white p-4 rounded-xl border border-gray-100 text-gray-600 hover:text-blue-600 transition-colors">
-                    <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center">
-                      <Phone className="w-4 h-4 text-blue-600" />
-                    </div>
-                    <span className="text-sm font-medium truncate flex-1">{profile.phone}</span>
-                  </a>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-      </main>
+      </div>
     </div>
   )
 }

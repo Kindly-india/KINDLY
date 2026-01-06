@@ -5,6 +5,7 @@ import { AuthModule } from './auth/auth.module';
 import { VolunteerModule } from './volunteer/volunteer.module';
 import { OrganizationModule } from './organization/organization.module';
 import { EventModule } from './event/event.module'; // Add this
+import { SocialModule } from './social/social.module';
 
 
 @Module({
@@ -15,6 +16,7 @@ import { EventModule } from './event/event.module'; // Add this
     SupabaseModule,
     AuthModule,
     VolunteerModule,
+    SocialModule,
     OrganizationModule,
     EventModule,
     VolunteerModule, 

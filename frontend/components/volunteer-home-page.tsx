@@ -20,11 +20,12 @@ import {
   Leaf,
   Menu,
   X,
-  Loader2
+  Loader2,
+  BarChart3 
 } from "lucide-react"
 import { api } from "@/lib/api"
 
-// --- STATIC STORIES ---
+// --- STATIC STORIES (Unchanged) ---
 const stories = [
   {
     id: 1,
@@ -243,7 +244,6 @@ export function VolunteerHomePage() {
     }
   }
 
-  // --- PREPARE PROFILE DATA FOR DISPLAY (MOVED HERE) ---
   const displayImage = profile?.avatar_url || profile?.logo_url
   const displayName = profile?.full_name || profile?.name || "User"
   const displayInitial = displayName ? displayName.charAt(0).toUpperCase() : "U"
@@ -260,21 +260,32 @@ export function VolunteerHomePage() {
     <div className="min-h-screen bg-white">
       {/* Sticky Top Navbar */}
       <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-[#f5f5f7]">
-        <div className="max-w-300 mx-auto px-4 md:px-8 h-12 md:h-14 flex items-center justify-between">
-          <Link href="/" className="flex items-center">
+        <div className="max-w-300 mx-auto px-4 md:px-8 h-12 md:h-14 flex items-center justify-between relative">
+          
+          {/* 1. Left: Logo */}
+          <Link href="/" className="flex items-center shrink-0">
             <span className="text-[15px] md:text-[17px] font-bold text-[#1d1d1f] tracking-tight">KINDLY</span>
           </Link>
 
-          <div className="flex items-center gap-4">
-            <div className="hidden md:flex gap-4">
-              <Link href="/events" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors">
-                Events
-              </Link>
-              <Link href="/history" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors">
-                History
-              </Link>
-            </div>
+          {/* 2. Center: Navigation Links (Absolutely Centered) */}
+          <div className="hidden md:flex items-center gap-8 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+            <Link href="/events" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors font-medium">
+              Events
+            </Link>
+            <Link href="/history" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors font-medium">
+              History
+            </Link>
+            <Link href="/social" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors font-medium">
+              Social
+            </Link>
+            {/* ✅ FIXED PATH: /volunteer-impact */}
+            <Link href="/volunteer-impact" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors font-medium flex items-center gap-1.5">
+              Impact
+            </Link>
+          </div>
 
+          {/* 3. Right: Profile & Mobile Menu */}
+          <div className="flex items-center gap-4 shrink-0">
             {/* Profile Avatar */}
             <Link
               href={profile?.id ? `/volunteers/${profile.id}` : '#'}
@@ -294,23 +305,27 @@ export function VolunteerHomePage() {
                 )}
               </div>
             </Link>
-          </div>
 
-          <div className="relative md:hidden">
-            <button onClick={() => setMenuOpen(!menuOpen)} className="w-9 h-9 rounded-full bg-[#f5f5f7] flex items-center justify-center hover:bg-[#e5e5e7]">
-              {menuOpen ? <X className="w-5 h-5 text-[#1d1d1f]" /> : <Menu className="w-5 h-5 text-[#1d1d1f]" />}
-            </button>
-            {menuOpen && (
-              <div className="absolute right-0 top-12 z-50 w-48 bg-white rounded-xl shadow-xl border border-[#e5e5e7] overflow-hidden">
-                <Link href="/profile" className="flex items-center gap-3 px-4 py-3 border-b border-[#f5f5f7]">Profile</Link>
-                <Link href="/events" className="flex items-center gap-3 px-4 py-3 border-b border-[#f5f5f7]">Events</Link>
-              </div>
-            )}
+            {/* Mobile Menu Toggle */}
+            <div className="relative md:hidden">
+              <button onClick={() => setMenuOpen(!menuOpen)} className="w-9 h-9 rounded-full bg-[#f5f5f7] flex items-center justify-center hover:bg-[#e5e5e7]">
+                {menuOpen ? <X className="w-5 h-5 text-[#1d1d1f]" /> : <Menu className="w-5 h-5 text-[#1d1d1f]" />}
+              </button>
+              {menuOpen && (
+                <div className="absolute right-0 top-12 z-50 w-48 bg-white rounded-xl shadow-xl border border-[#e5e5e7] overflow-hidden">
+                  <Link href="/profile" className="flex items-center gap-3 px-4 py-3 border-b border-[#f5f5f7]">Profile</Link>
+                  <Link href="/events" className="flex items-center gap-3 px-4 py-3 border-b border-[#f5f5f7]">Events</Link>
+                  <Link href="/social" className="flex items-center gap-3 px-4 py-3 border-b border-[#f5f5f7]">Social</Link>
+                  {/* ✅ FIXED PATH MOBILE: /volunteer-impact */}
+                  <Link href="/volunteer-impact" className="flex items-center gap-3 px-4 py-3 border-b border-[#f5f5f7]">Impact</Link>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </nav>
 
-      {/* Hero Section */}
+      {/* Hero Section & Rest of Body */}
       <section className="relative bg-linear-to-br from-[#fef5f0] via-[#fff8f5] to-[#f5fcf8] py-8 md:py-16 overflow-hidden">
         {/* Decorative Icons */}
         <div className="absolute top-4 left-4 md:top-8 md:left-20 w-8 h-8 md:w-12 md:h-12 bg-white rounded-xl shadow-lg flex items-center justify-center">
@@ -327,7 +342,6 @@ export function VolunteerHomePage() {
         </div>
 
         <div className="max-w-300 mx-auto px-4 md:px-8 text-center relative">
-
           <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white rounded-full shadow-sm mb-4 md:mb-6 max-w-full">
             <span className="w-1.5 h-1.5 md:w-2 md:h-2 bg-emerald-500 rounded-full animate-pulse shrink-0" />
             <span className="text-[11px] md:text-[13px] text-[#1d1d1f] font-medium truncate">
@@ -336,7 +350,6 @@ export function VolunteerHomePage() {
                 : "Start your journey today!"}
             </span>
           </div>
-
           <h1 className="text-[24px] md:text-[56px] font-bold text-[#1d1d1f] tracking-tight leading-tight">
             Welcome back,{" "}
             <span className="bg-linear-to-r from-[#ff6b6b] via-[#f59e0b] to-[#10b981] bg-clip-text text-transparent">
@@ -355,7 +368,6 @@ export function VolunteerHomePage() {
               </p>
               <p className="text-[10px] md:text-[12px] text-[#86868b]">Events This Week</p>
             </div>
-
             <div className="bg-white rounded-xl px-3 md:px-6 py-3 md:py-4 shadow-sm border border-[#f5f5f7]">
               <div className="flex items-center justify-center gap-1">
                 <p className="text-[18px] md:text-[28px] font-bold text-[#f59e0b]">
@@ -365,7 +377,6 @@ export function VolunteerHomePage() {
               </div>
               <p className="text-[10px] md:text-[12px] text-[#86868b]">Impact Score</p>
             </div>
-
             <div className="bg-white rounded-xl px-3 md:px-6 py-3 md:py-4 shadow-sm border border-[#f5f5f7]">
               <p className="text-[18px] md:text-[28px] font-bold text-[#10b981]">
                 {stats.hoursContributed}
@@ -467,12 +478,19 @@ export function VolunteerHomePage() {
               <h3 className="text-[18px] md:text-[28px] font-bold text-[#1d1d1f]">{stats.hoursContributed} Volunteer Hours</h3>
               <p className="text-[13px] md:text-[15px] text-[#86868b] mt-0.5">Total Contribution</p>
               <p className="text-[13px] md:text-[15px] text-[#1d1d1f] mt-3 max-w-md">You're making a real difference in {profile?.city || "Nashik"}. Keep up the amazing work!</p>
+              
+              {/* ✅ FIXED BUTTON LINK: /volunteer-impact */}
+              <Link 
+                href="/volunteer-impact" 
+                className="mt-6 inline-flex items-center gap-2 px-6 py-2.5 bg-[#10b981] text-white rounded-full font-semibold text-sm hover:bg-[#059669] transition-all shadow-sm shadow-emerald-200 hover:shadow-emerald-300 hover:-translate-y-0.5"
+              >
+                View Full Impact Report <ChevronRight className="w-4 h-4" />
+              </Link>
             </div>
           </div>
 
-          {/* 4-Card Stats Grid */}
+          {/* Stats Grid */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mt-8 md:mt-12">
-
             <div className="bg-white rounded-xl p-3 md:p-4 shadow-sm">
               <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-[#ff6b6b]/10 flex items-center justify-center mb-2">
                 <TrendingUp className="w-4 h-4 md:w-5 md:h-5 text-[#ff6b6b]" />

@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { OrganizationService } from './organization.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { OptionalAuthGuard } from '../auth/guards/optional-auth.guard';
+import { OptionalJwtAuthGuard } from '../auth/dto/optional-jwt-auth.guard'; // ✅ Use the custom guard you created
 import { UpdateOrganizationProfileDto } from './dto/update-organization-profile.dto';
 import { AddReviewDto } from './dto/add-review.dto';
 
@@ -18,10 +18,12 @@ import { AddReviewDto } from './dto/add-review.dto';
 export class OrganizationController {
   constructor(private readonly organizationService: OrganizationService) {}
 
-  // Public profile (with optional auth for follow status)
-  @UseGuards(OptionalAuthGuard)
+  // ✅ UPDATED: Public profile with Security Check
+  // Uses OptionalJwtAuthGuard to allow both Guests and Logged-in users
+  @UseGuards(OptionalJwtAuthGuard)
   @Get(':id/profile')
   async getPublicProfile(@Param('id') id: string, @Request() req: any) {
+    // req.user might be null if guest, or contain {id: ...} if logged in
     return this.organizationService.getPublicProfile(id, req.user?.id);
   }
 
