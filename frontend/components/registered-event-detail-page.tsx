@@ -309,7 +309,7 @@ export default function RegisteredEventDetailPage() {
                       event.organization_profiles?.name?.charAt(0) || "O"
                    )}
                 </div>
-                <Link href={`/org-profile/${event.organization_id}`} className="flex items-center gap-1.5 hover:opacity-70 transition-opacity">
+                <Link href={`/organizations/${event.organization_id}`} className="flex items-center gap-1.5 hover:opacity-70 transition-opacity">
                   <span className="text-sm font-medium text-gray-900">{event.organization_profiles?.name || "Organization"}</span>
                   <CheckCircle2 className="w-4 h-4 text-blue-500 fill-blue-500" />
                 </Link>
