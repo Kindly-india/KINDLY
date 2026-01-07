@@ -198,7 +198,7 @@ export function OrgHomePage() {
             <Link href="/org-events" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors">
               My Events
             </Link>
-            <Link href="/org-volunteers" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors">
+            <Link href="/social" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors">
               Social
             </Link>
             {/* ✅ ADDED ANALYTICS LINK DESKTOP */}

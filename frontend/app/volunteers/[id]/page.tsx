@@ -6,7 +6,7 @@ import Link from "next/link"
 import {
   MapPin, Calendar, ChevronLeft, Loader2, CheckCircle2, Edit2,
   Sparkles, Trophy, Mail, Phone, UserPlus,
-  UserCheck, Download, Share2, Linkedin, Instagram, Globe,
+  UserCheck, UserMinus, Download, Share2, Linkedin, Instagram, Globe,
   Home, Copy, Check, Quote, Building2, Languages, GraduationCap,
   Image as ImageIcon, Plus, Trash2
 } from "lucide-react"
@@ -175,41 +175,62 @@ export default function VolunteerProfile() {
   const [isFollowing, setIsFollowing] = useState(false)
   const [isOwnProfile, setIsOwnProfile] = useState(false)
   const [activityData, setActivityData] = useState<any[]>([])
+  const [isViewerOrg, setIsViewerOrg] = useState(false);
   
   const [coverError, setCoverError] = useState(false)
   const [copied, setCopied] = useState(false)
 
-  useEffect(() => {
+useEffect(() => {
+    let isMounted = true; // Prevent state updates if component unmounts
+
     const fetchProfile = async () => {
       try {
         setLoading(true)
+        
+        // 1. Fetch Profile & Journey
         const [profileRes, journeyRes, currentUser] = await Promise.all([
            api.getVolunteerPublicProfile(id as string),
            api.getVolunteerJourney(id as string),
            api.getCurrentUser().catch(() => null)
         ])
 
+        if (!isMounted) return;
+
         const fetchedProfile = profileRes.profile;
         setProfile(fetchedProfile)
         setActivityData(fetchedProfile.activity_graph || [])
         setJourney(journeyRes.journey || [])
 
+        // 2. Check Viewer Type
         const isSelf = currentUser?.id === fetchedProfile.user_id;
         setIsOwnProfile(isSelf);
 
-        if (!isSelf && currentUser && fetchedProfile.user_id) {
-          try {
-            const followRes = await api.getFollowStatus(fetchedProfile.user_id)
-            setIsFollowing(followRes.isFollowing)
-          } catch (err) { }
+        const hasToken = localStorage.getItem('token') || currentUser;
+        if (currentUser?.user_metadata?.user_type === 'organization') {
+            // (You might need to define this state if you haven't yet, derived from previous steps)
+            // setIsViewerOrg(true); 
         }
+
+        // 3. ✅ INDEPENDENT FOLLOW CHECK (Runs every time)
+        if (!isSelf && currentUser && fetchedProfile.user_id) {
+            // We verify the status again to ensure UI matches DB
+            api.getFollowStatus(fetchedProfile.user_id)
+               .then(res => {
+                   if (isMounted) setIsFollowing(res.isFollowing);
+               })
+               .catch(err => console.error("Follow check error:", err));
+        }
+
       } catch (err) {
         console.error("Profile fetch error:", err)
       } finally {
-        setLoading(false)
+        if (isMounted) setLoading(false)
       }
     }
+
     fetchProfile()
+
+    return () => { isMounted = false; }
   }, [id])
 
   const handleFollow = async () => {
@@ -277,22 +298,33 @@ export default function VolunteerProfile() {
                 {copied ? <Check className="w-5 h-5 text-green-600" /> : <Share2 className="w-5 h-5" />}
              </button>
 
-             {isOwnProfile ? (
+{isOwnProfile ? (
                 <Link href="/settings/profile" className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-full hover:bg-gray-800 transition-colors flex items-center gap-2">
                   <Edit2 className="w-4 h-4" /> Edit Profile
                 </Link>
              ) : (
-                <button 
-                  onClick={handleFollow}
-                  className={cn(
-                    "px-6 py-2 rounded-full text-sm font-bold transition-all shadow-sm active:scale-95 flex items-center gap-2",
-                    isFollowing 
-                      ? "bg-white text-gray-900 border border-gray-300 hover:bg-gray-50" 
-                      : "bg-black text-white hover:bg-gray-800"
-                  )}
-                >
-                  {isFollowing ? <><UserCheck className="w-4 h-4" /> Following</> : <><UserPlus className="w-4 h-4" /> Follow</>}
-                </button>
+                // ✅ LOGIC: Hide if Viewer is Org
+                !isViewerOrg && (
+                  <button 
+                    onClick={handleFollow}
+                    className={cn(
+                      "px-6 py-2 rounded-full text-sm font-bold transition-all shadow-sm active:scale-95 flex items-center gap-2",
+                      isFollowing 
+                        ? "bg-white text-red-600 border border-red-200 hover:bg-red-50 hover:border-red-300" // Unfollow Style
+                        : "bg-black text-white hover:bg-gray-800" // Follow Style
+                    )}
+                  >
+                    {isFollowing ? (
+                      <>
+                        <UserMinus className="w-4 h-4" /> Unfollow
+                      </>
+                    ) : (
+                      <>
+                        <UserPlus className="w-4 h-4" /> Follow
+                      </>
+                    )}
+                  </button>
+                )
              )}
           </div>
         </div>

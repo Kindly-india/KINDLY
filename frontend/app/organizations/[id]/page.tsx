@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import {
   MapPin, ChevronLeft, Loader2, CheckCircle2, Edit2,
-  Trophy, Mail, Phone, UserPlus,
+  Trophy, Mail, Phone, UserPlus, UserMinus,
   Share2, Linkedin, Instagram, Globe,
   Check, Quote, Building2, Users, CalendarDays,
   Hash, FileBadge, Users2, Image as ImageIcon, Plus, ExternalLink, Award, Newspaper
@@ -22,39 +22,39 @@ function Achievements({ items }: { items: any[] }) {
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
-       <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-             <Trophy className="w-5 h-5 text-amber-500" /> Wall of Fame
-          </h3>
-       </div>
-       
-       <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
-          {items.map((item, idx) => (
-             <div key={idx} className="min-w-[280px] md:min-w-[300px] bg-white border border-gray-100 rounded-xl overflow-hidden hover:shadow-md transition-all group cursor-pointer">
-                {/* Image Area - Show placeholder if no image */}
-                <div className="h-40 w-full bg-gray-100 relative overflow-hidden flex items-center justify-center">
-                   {item.image_url ? (
-                     <img 
-                       src={item.image_url} 
-                       alt={item.title} 
-                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
-                     />
-                   ) : (
-                     <Trophy className="w-10 h-10 text-gray-300" />
-                   )}
-                </div>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+          <Trophy className="w-5 h-5 text-amber-500" /> Wall of Fame
+        </h3>
+      </div>
 
-                {/* Description Area */}
-                <div className="p-4">
-                   <h4 className="font-bold text-gray-900 text-sm mb-1 line-clamp-1">{item.title}</h4>
-                   <p className="text-[10px] text-blue-600 font-semibold mb-2">{item.date}</p>
-                   <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">
-                     {item.description}
-                   </p>
-                </div>
-             </div>
-          ))}
-       </div>
+      <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+        {items.map((item, idx) => (
+          <div key={idx} className="min-w-[280px] md:min-w-[300px] bg-white border border-gray-100 rounded-xl overflow-hidden hover:shadow-md transition-all group cursor-pointer">
+            {/* Image Area - Show placeholder if no image */}
+            <div className="h-40 w-full bg-gray-100 relative overflow-hidden flex items-center justify-center">
+              {item.image_url ? (
+                <img
+                  src={item.image_url}
+                  alt={item.title}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+              ) : (
+                <Trophy className="w-10 h-10 text-gray-300" />
+              )}
+            </div>
+
+            {/* Description Area */}
+            <div className="p-4">
+              <h4 className="font-bold text-gray-900 text-sm mb-1 line-clamp-1">{item.title}</h4>
+              <p className="text-[10px] text-blue-600 font-semibold mb-2">{item.date}</p>
+              <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">
+                {item.description}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -65,23 +65,23 @@ function OurTeam({ members }: { members: any[] }) {
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
-       <h3 className="font-bold text-gray-900 mb-4 text-sm uppercase tracking-wide flex items-center gap-2">
-          <Users2 className="w-4 h-4 text-blue-600" /> Key People
-       </h3>
-       <div className="grid gap-4">
-          {members.map((member, i) => (
-             <div key={i} className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center overflow-hidden shrink-0">
-                   {/* Assuming member object has 'name', 'role' */}
-                   <span className="text-gray-500 text-xs font-bold uppercase">{member.name?.charAt(0)}</span>
-                </div>
-                <div>
-                   <p className="text-sm font-bold text-gray-900">{member.name}</p>
-                   <p className="text-xs text-gray-500">{member.role}</p>
-                </div>
-             </div>
-          ))}
-       </div>
+      <h3 className="font-bold text-gray-900 mb-4 text-sm uppercase tracking-wide flex items-center gap-2">
+        <Users2 className="w-4 h-4 text-blue-600" /> Key People
+      </h3>
+      <div className="grid gap-4">
+        {members.map((member, i) => (
+          <div key={i} className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center overflow-hidden shrink-0">
+              {/* Assuming member object has 'name', 'role' */}
+              <span className="text-gray-500 text-xs font-bold uppercase">{member.name?.charAt(0)}</span>
+            </div>
+            <div>
+              <p className="text-sm font-bold text-gray-900">{member.name}</p>
+              <p className="text-xs text-gray-500">{member.role}</p>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -157,7 +157,7 @@ function OrgDetails({ profile }: { profile: any }) {
             </div>
           </div>
         )}
-        
+
         {/* Representative */}
         {profile.representative_name && (
           <div className="flex items-start gap-3">
@@ -193,52 +193,62 @@ export default function OrganizationProfile() {
   const [coverError, setCoverError] = useState(false)
   const [copied, setCopied] = useState(false)
 
+  const [isViewerOrg, setIsViewerOrg] = useState(false);
+
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         setLoading(true)
+        // 1. Fetch all Organization Data (Profile, Events, Reviews, User)
         const [profileRes, eventsRes, reviewsRes, currentUser] = await Promise.all([
-           api.getOrgPublicProfile(id as string),
-           api.getOrgEvents(id as string),
-           api.getOrgReviews(id as string),
-           api.getCurrentUser().catch(() => null)
+          api.getOrgPublicProfile(id as string),
+          api.getOrgEvents(id as string),
+          api.getOrgReviews(id as string),
+          api.getCurrentUser().catch(() => null)
         ])
 
-        setProfile(profileRes.profile)
-        
+        // ✅ Define fetchedProfile here so we can use it immediately for logic
+        const fetchedProfile = profileRes.profile;
+
+        setProfile(fetchedProfile)
+
+        // 2. Set Events & Reviews
         const fetchedEvents = eventsRes.events || [];
         setEvents(fetchedEvents)
         setReviews(reviewsRes.reviews || [])
-        
-        // CALCULATE GRAPH DATA
+
+        // 3. Graph Data Logic
         const last6Months = Array(6).fill(0).map((_, i) => {
-            const d = new Date();
-            d.setMonth(d.getMonth() - (5 - i));
-            return { 
-                name: d.toLocaleString('default', { month: 'short' }), 
-                monthIdx: d.getMonth(), 
-                events: 0 
-            };
+          const d = new Date();
+          d.setMonth(d.getMonth() - (5 - i));
+          return {
+            name: d.toLocaleString('default', { month: 'short' }),
+            monthIdx: d.getMonth(),
+            events: 0
+          };
         });
 
         fetchedEvents.forEach((ev: any) => {
-            const eventDate = new Date(ev.event_date);
-            const bucket = last6Months.find(m => m.monthIdx === eventDate.getMonth());
-            if (bucket) {
-                bucket.events += 1;
-            }
+          const eventDate = new Date(ev.event_date);
+          const bucket = last6Months.find(m => m.monthIdx === eventDate.getMonth());
+          if (bucket) bucket.events += 1;
         });
-
         setActivityData(last6Months);
 
-        const isSelf = currentUser?.id === profileRes.profile.user_id;
+        // 4. Follow Button Logic
+        const isSelf = currentUser?.id === fetchedProfile.user_id;
         setIsOwnProfile(isSelf);
 
-        if (!isSelf && currentUser) {
+        const hasToken = localStorage.getItem('token') || currentUser;
+
+        // ✅ Check Status using the fetched profile (not state)
+        if (!isSelf && currentUser && fetchedProfile?.user_id) {
           try {
-            const followRes = await api.checkFollowStatus(id as string)
+            const followRes = await api.getFollowStatus(fetchedProfile.user_id)
             setIsFollowing(followRes.isFollowing)
-          } catch (err) { }
+          } catch (err) {
+            console.error("Follow check failed", err);
+          }
         }
       } catch (err) {
         console.error("Fetch error:", err)
@@ -250,16 +260,27 @@ export default function OrganizationProfile() {
   }, [id])
 
   const handleFollow = async () => {
-    if (!profile?.id) return
+    // ⚠️ Check for user_id, NOT id
+    if (!profile?.user_id) return
+
     try {
-      await api.toggleFollowOrg(profile.id)
-      setIsFollowing(!isFollowing)
-      setProfile((prev: any) => ({
-        ...prev,
-        followers_count: isFollowing ? prev.followers_count - 1 : prev.followers_count + 1
-      }))
+      if (isFollowing) {
+        await api.unfollowUser(profile.user_id)
+        setIsFollowing(false)
+        setProfile((prev: any) => ({
+          ...prev,
+          followers_count: Math.max(0, (prev.followers_count || 0) - 1)
+        }))
+      } else {
+        await api.followUser(profile.user_id)
+        setIsFollowing(true)
+        setProfile((prev: any) => ({
+          ...prev,
+          followers_count: (prev.followers_count || 0) + 1
+        }))
+      }
     } catch (err: any) {
-      alert("Action failed")
+      alert(err.message)
     }
   }
 
@@ -306,17 +327,28 @@ export default function OrganizationProfile() {
                 <Edit2 className="w-4 h-4" /> Edit Page
               </Link>
             ) : (
-              <button
-                onClick={handleFollow}
-                className={cn(
-                  "px-6 py-2 rounded-full text-sm font-bold transition-all shadow-sm active:scale-95 flex items-center gap-2",
-                  isFollowing
-                    ? "bg-white text-gray-900 border border-gray-300 hover:bg-gray-50"
-                    : "bg-black text-white hover:bg-gray-800"
-                )}
-              >
-                {isFollowing ? <><CheckCircle2 className="w-4 h-4" /> Following</> : <><UserPlus className="w-4 h-4" /> Follow</>}
-              </button>
+              // ✅ LOGIC: Hide if Viewer is Org
+              !isViewerOrg && (
+                <button
+                  onClick={handleFollow}
+                  className={cn(
+                    "px-6 py-2 rounded-full text-sm font-bold transition-all shadow-sm active:scale-95 flex items-center gap-2",
+                    isFollowing
+                      ? "bg-white text-red-600 border border-red-200 hover:bg-red-50 hover:border-red-300" // Unfollow Style
+                      : "bg-black text-white hover:bg-gray-800" // Follow Style
+                  )}
+                >
+                  {isFollowing ? (
+                    <>
+                      <UserMinus className="w-4 h-4" /> Unfollow
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus className="w-4 h-4" /> Follow
+                    </>
+                  )}
+                </button>
+              )
             )}
           </div>
         </div>

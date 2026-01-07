@@ -10,10 +10,11 @@ import {
   ChevronRight,
   Loader2,
   Clock,
-  User
+  User,
+  ArrowLeft // ✅ Import ArrowLeft for the back button
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { api } from "@/lib/api" // ✅ Import API
+import { api } from "@/lib/api"
 
 // --- MOCK IMPACT STORIES (Static Content) ---
 const IMPACT_STORIES = [
@@ -97,7 +98,6 @@ export default function SocialDiscoveryPage() {
     setResults([]) // Clear previous results
     
     try {
-      // ✅ REAL API CALL: Fetch Global Search Results
       const data = await api.globalSearch(searchQuery)
       setResults(data)
     } catch (err) {
@@ -107,7 +107,20 @@ export default function SocialDiscoveryPage() {
     }
   }
 
-  // ✅ FILTER RESULTS BASED ON ACTIVE TAB
+  // ✅ HANDLER: GO BACK TO HOME
+  const handleGoBack = () => {
+    // If user is searching, clear search first
+    if (isSearching) {
+        setIsSearching(false)
+        setSearchQuery("")
+        setResults([])
+    } else {
+        // Otherwise go to home
+        router.push('/home')
+    }
+  }
+
+  // Filter Results
   const displayedResults = results.filter(item => {
     if (activeTab === 'all') return true;
     if (activeTab === 'volunteers') return item.type === 'volunteer';
@@ -133,23 +146,35 @@ export default function SocialDiscoveryPage() {
       {/* --- HEADER & SEARCH --- */}
       <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-200">
         <div className="max-w-2xl mx-auto px-4 pt-4 pb-4">
-          <form onSubmit={handleSearch} className="relative group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-black transition-colors" />
-            <input 
-              type="text" 
-              placeholder="Search volunteers, organizations..." 
-              value={searchQuery}
-              onChange={(e) => {
-                  setSearchQuery(e.target.value)
-                  if(e.target.value === '') { setIsSearching(false); setResults([]); }
-              }}
-              className="w-full h-12 pl-12 pr-4 bg-[#f5f5f7] rounded-full text-[15px] outline-none border border-transparent focus:bg-white focus:border-gray-300 focus:shadow-sm transition-all placeholder:text-gray-500"
-            />
-          </form>
+          
+          <div className="flex items-center gap-3">
+            {/* ✅ ADDED: BACK BUTTON */}
+            <button 
+                onClick={handleGoBack}
+                className="p-2 -ml-2 rounded-full hover:bg-gray-100 text-gray-600 transition-colors"
+                aria-label="Go back"
+            >
+                <ArrowLeft className="w-5 h-5" />
+            </button>
+
+            <form onSubmit={handleSearch} className="relative group flex-1">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-black transition-colors" />
+                <input 
+                type="text" 
+                placeholder="Search volunteers, organizations..." 
+                value={searchQuery}
+                onChange={(e) => {
+                    setSearchQuery(e.target.value)
+                    if(e.target.value === '') { setIsSearching(false); setResults([]); }
+                }}
+                className="w-full h-12 pl-12 pr-4 bg-[#f5f5f7] rounded-full text-[15px] outline-none border border-transparent focus:bg-white focus:border-gray-300 focus:shadow-sm transition-all placeholder:text-gray-500"
+                />
+            </form>
+          </div>
 
           {/* Filters (Only visible when searching) */}
           {isSearching && (
-            <div className="flex gap-2 mt-3 animate-in fade-in slide-in-from-top-2">
+            <div className="flex gap-2 mt-3 animate-in fade-in slide-in-from-top-2 ml-10"> {/* Added ml-10 to align with input */}
               {['all', 'volunteers', 'orgs'].map((tab) => (
                 <button 
                   key={tab}
@@ -188,7 +213,9 @@ export default function SocialDiscoveryPage() {
                   {displayedResults.map((item, idx) => (
                       <Link 
                           key={idx} 
-                          href={item.type === 'volunteer' ? `/volunteer-profile/${item.id}` : `/org-profile/${item.id}`}
+                          // ✅ LOGIC: When clicking a profile, browser history stacks. 
+                          // Clicking 'Back' on that profile page will naturally return here.
+                          href={item.type === 'volunteer' ? `/volunteers/${item.id}` : `/organizations/${item.id}`}
                           className="flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0"
                       >
                           <div className="w-10 h-10 rounded-full bg-gray-100 overflow-hidden shrink-0 border border-gray-200 flex items-center justify-center">

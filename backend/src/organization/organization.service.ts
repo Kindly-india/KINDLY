@@ -138,17 +138,35 @@ export class OrganizationService {
     return { profile: data };
   }
 
-  async toggleFollow(orgId: string, userId: string) {
-    const client = this.supabase.getClient();
-    const { data: existing } = await client.from('follows').select('id').eq('following_id', orgId).eq('follower_id', userId).maybeSingle();
-    if (existing) {
-      await client.from('follows').delete().eq('id', existing.id);
-      return { message: 'Unfollowed', isFollowing: false };
-    } else {
-      await client.from('follows').insert({ following_id: orgId, follower_id: userId });
-      return { message: 'Following', isFollowing: true };
-    }
+  async toggleFollow(targetUserId: string, currentUserId: string) {
+  const client = this.supabase.getClient();
+
+  // 1. Check if already following in the Unified Table
+  const { data: existing } = await client
+    .from('follows')
+    .select('id')
+    .eq('follower_id', currentUserId)   // The Volunteer
+    .eq('following_id', targetUserId)   // The Target (Org or Vol)
+    .maybeSingle();
+
+  if (existing) {
+    // Unfollow
+    await client.from('follows').delete().eq('id', existing.id);
+    return { isFollowing: false };
+  } else {
+    // Follow
+    // The DB Trigger we just made will auto-reject this if currentUserId is an Org
+    const { error } = await client
+      .from('follows')
+      .insert({ 
+        follower_id: currentUserId, 
+        following_id: targetUserId 
+      });
+      
+    if (error) throw new Error(error.message); // Will catch "Operation Denied"
+    return { isFollowing: true };
   }
+}
 
   async checkFollowStatus(orgId: string, userId: string) {
     const client = this.supabase.getClient();

@@ -56,18 +56,21 @@ export class SocialService {
     
     const client = this.supabase.getClient();
     
+    // We use .select() to check if it worked, but rely on the DB constraint
     const { error } = await client
       .from('follows')
       .insert({ follower_id: followerId, following_id: targetId });
 
     if (error) {
-       // ✅ LOG THE ERROR TO TERMINAL
-       console.error("Follow Error:", error); 
+       // ✅ Handle Duplicate Error Code (Postgres Unique Violation)
+       if (error.code === '23505') {
+           return { message: 'Already following' }; // Success! Just don't add again.
+       }
        
-       if (error.code === '23505') return { message: 'Already following' };
-       // Return the actual error to frontend
+       console.error("Follow Error:", error); 
        throw new BadRequestException(error.message); 
     }
+    
     return { message: 'Followed successfully' };
   }
 
@@ -90,7 +93,7 @@ export class SocialService {
       .select('id')
       .eq('follower_id', followerId)
       .eq('following_id', targetId)
-      .single();
+      .maybeSingle();
 
     return { isFollowing: !!data };
   }

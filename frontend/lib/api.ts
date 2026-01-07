@@ -900,34 +900,59 @@ export const api = {
     return response.json();
   },
 
-  followUser: async (targetUserId: string) => {
-    const token = localStorage.getItem('token');
+followUser: async (targetUserId: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Please login to follow');
+
     const response = await fetch(`${API_URL}/social/follow/${targetUserId}`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${token}` }
+      headers: { 
+        'Authorization': `Bearer ${session.access_token}` 
+      }
     });
-    if (!response.ok) throw new Error('Failed to follow');
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.message || 'Failed to follow');
+    }
     return response.json();
   },
 
-  unfollowUser: async (targetUserId: string) => {
-    const token = localStorage.getItem('token');
+unfollowUser: async (targetUserId: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Please login to unfollow');
+
     const response = await fetch(`${API_URL}/social/follow/${targetUserId}`, {
       method: 'DELETE',
-      headers: { Authorization: `Bearer ${token}` }
+      headers: { 
+        'Authorization': `Bearer ${session.access_token}` 
+      }
     });
-    if (!response.ok) throw new Error('Failed to unfollow');
+
+    if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.message || 'Failed to unfollow');
+    }
     return response.json();
   },
 
-  getFollowStatus: async (targetUserId: string) => {
-    const token = localStorage.getItem('token');
+// ✅ FIX: Add cache-busting timestamp
+// In src/lib/api.ts
+getFollowStatus: async (targetUserId: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
     const headers: any = {};
+    
+    // Prefer Session token, fallback to localStorage if needed
+    const token = session?.access_token || localStorage.getItem('token');
     if (token) headers['Authorization'] = `Bearer ${token}`;
     
     if (!token) return { isFollowing: false };
 
-    const response = await fetch(`${API_URL}/social/follow/status/${targetUserId}`, { headers });
+    // ⚡ THE IMPORTANT PART: ?t=${Date.now()}
+    const response = await fetch(`${API_URL}/social/follow/status/${targetUserId}?t=${Date.now()}`, { 
+        headers 
+    });
+    
     if (!response.ok) return { isFollowing: false };
     return response.json();
   },
