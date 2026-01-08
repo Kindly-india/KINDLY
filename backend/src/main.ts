@@ -7,13 +7,14 @@ async function bootstrap() {
   
   // Enable CORS for frontend
   app.enableCors({
-    origin: 'http://localhost:3000',
+    origin: 'https://kindlyindia.vercel.app', // <- updated
     credentials: true,
   });
 
   app.useGlobalPipes(new ValidationPipe());
   
-  await app.listen(3001);
-  console.log('Backend running on http://localhost:3001');
+  const port = process.env.PORT || 3001;
+  await app.listen(port);
+  console.log(`Backend running on http://localhost:${port}`);
 }
 bootstrap();
