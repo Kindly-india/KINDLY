@@ -7,8 +7,24 @@ async function bootstrap() {
   
   // Enable CORS for frontend
   app.enableCors({
-    origin: 'https://kindlyindia.vercel.app', // <- updated
+    origin: (origin, callback) => {
+      const allowedOrigins = [
+        'https://kindlyin.vercel.app',
+      ];
+
+      // Allow server-to-server / Postman / Render health checks
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+    ],
   });
 
   app.useGlobalPipes(new ValidationPipe());
