@@ -46,6 +46,7 @@ export interface CreateEventData {
   totalSlots: number;
   registrationDeadline: string;
   minimumAge?: number;
+  gallery_images?: string[];
 }
 
 export interface UpdateVolunteerProfileDto {
@@ -280,28 +281,33 @@ export const api = {
     return response.json();
   },
 
-  // Get single event by ID (Authenticated)
+// Get single event by ID (Authenticated with Public Fallback)
   getEventById: async (eventId: string) => {
     const { data: { session } } = await supabase.auth.getSession();
 
-    // If no session, fallback to public endpoint
-    if (!session) {
-      return api.getPublicEventById(eventId);
+    // 1. If logged in, try the Authenticated Endpoint first
+    if (session) {
+      try {
+        const response = await fetch(`${API_URL}/events/${eventId}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+        });
+
+        if (response.ok) {
+          return await response.json();
+        }
+        // If response is NOT ok (e.g. 404 because event is completed/hidden), 
+        // just silently fall through to the public endpoint below.
+      } catch (e) {
+        // Ignore network errors here and try public
+      }
     }
 
-    const response = await fetch(`${API_URL}/events/${eventId}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${session.access_token}`,
-      },
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to fetch event');
-    }
-
-    return response.json();
+    // 2. Fallback: Use the Public Endpoint
+    // This endpoint usually allows viewing basic details of completed events
+    return api.getPublicEventById(eventId);
   },
 
   // Get public event by ID (no auth needed)

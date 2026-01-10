@@ -3,47 +3,68 @@
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Image from "next/image"
-import Link from "next/link" // ✅ Added Link import
+import Link from "next/link"
 import { 
   ArrowLeft, Calendar, MapPin, Users, Clock, 
-  Share2, Heart, CheckCircle2, Building2, Loader2, Download, Check
+  Share2, Heart, CheckCircle2, Building2, Loader2, 
+  Download, Check, Menu, X, Sparkles
 } from "lucide-react"
 import { api } from "@/lib/api"
+import { cn } from "@/lib/utils"
 
 export default function EventShowcasePage() {
   const { id } = useParams()
   const router = useRouter()
+  
   const [loading, setLoading] = useState(true)
   const [event, setEvent] = useState<any>(null)
-  
-  // Fake Gallery Data
-  const galleryImages = [
-    event?.cover_image_url,
-    "https://images.unsplash.com/photo-1593113598332-cd288d649433?w=800&auto=format&fit=crop&q=60",
-    "https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=800&auto=format&fit=crop&q=60",
-    "https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?w=800&auto=format&fit=crop&q=60",
-  ].filter(Boolean);
+  const [profile, setProfile] = useState<any>(null)
+  const [menuOpen, setMenuOpen] = useState(false)
 
+  // 1. Fetch Data
   useEffect(() => {
-    const fetchEvent = async () => {
+    const loadData = async () => {
       try {
         setLoading(true)
-        
-        // 🔴 CHANGE: Use 'getEventById' (Authenticated) instead of 'getPublicEventById'
-        // This ensures we can see 'Completed' events as long as we are logged in.
-        const res = await api.getEventById(id as string)
-        
-        setEvent(res.event)
-      } catch (err) {
-        console.error(err)
+        api.getUserProfile().then(res => {
+            if(res?.profile) setProfile(res.profile)
+        }).catch(() => {});
+
+        if (id) {
+            try {
+                const res = await api.getEventById(id as string);
+                setEvent(res.event);
+            } catch (authError) {
+                try {
+                    const publicRes = await api.getPublicEventById(id as string);
+                    setEvent(publicRes.event);
+                } catch (publicError) {
+                    console.error("Event fetch failed", publicError);
+                }
+            }
+        }
       } finally {
         setLoading(false)
       }
     }
-    if (id) {
-        fetchEvent()
-    }
+    loadData()
   }, [id])
+
+  // 2. Gallery Logic (Correctly placed BEFORE return)
+  const galleryImages = [
+    event?.cover_image_url,
+    ...(event?.gallery_images || []), // Fetch from DB
+  ].filter(Boolean); // Remove empty values
+
+  // If gallery is empty, use fallbacks
+  const displayImages = galleryImages.length > 0 ? galleryImages : [
+    "https://images.unsplash.com/photo-1593113598332-cd288d649433?w=800&auto=format&fit=crop&q=60",
+    "https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=800&auto=format&fit=crop&q=60"
+  ];
+
+  const displayImage = profile?.avatar_url || profile?.logo_url
+  const displayName = profile?.full_name || profile?.name || "User"
+  const displayInitial = displayName ? displayName.charAt(0).toUpperCase() : "U"
 
   if (loading) return <div className="h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-gray-900" /></div>
   if (!event) return <div className="h-screen flex items-center justify-center text-gray-500">Event not found</div>
@@ -51,26 +72,53 @@ export default function EventShowcasePage() {
   return (
     <div className="min-h-screen bg-white pb-20">
       
-      {/* HEADER */}
-      <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100">
-        <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
-          <button onClick={() => router.back()} className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-black transition-colors">
-            <ArrowLeft className="w-4 h-4" /> Back to Profile
-          </button>
-          <div className="flex items-center gap-3">
-            <button className="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors"><Share2 className="w-5 h-5" /></button>
-            <button className="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors"><Heart className="w-5 h-5" /></button>
+      {/* NAVBAR */}
+      <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-[#e5e5e7]">
+        <div className="max-w-[1200px] mx-auto px-4 md:px-8 h-11 md:h-14 flex items-center justify-between relative">
+          <Link href="/home" className="flex items-center shrink-0">
+            <Image src="/logo.png" alt="Kindly" width={120} height={40} className="h-8 md:h-10 w-auto" priority />
+          </Link>
+
+          <div className="hidden md:flex items-center gap-8 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+            <Link href="/events" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors font-medium">Events</Link>
+            <Link href="/history" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors font-medium">History</Link>
+            <Link href="/social" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors font-medium">Social</Link>
+            <Link href="/volunteer-impact" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors font-medium flex items-center gap-1.5">Impact</Link>
+          </div>
+
+          <div className="flex items-center gap-4 shrink-0">
+            <Link href={profile?.id ? `/volunteers/${profile.id}` : '#'} className="hidden md:block group">
+                <div className="w-9 h-9 md:w-10 md:h-10 rounded-full overflow-hidden border border-gray-200 group-hover:border-gray-400 transition-all bg-gray-50 flex items-center justify-center shadow-sm">
+                    {displayImage ? (
+                        <img src={displayImage} alt="Profile" className="w-full h-full object-cover" />
+                    ) : (
+                        <span className="font-bold text-gray-500 text-xs">{displayInitial}</span>
+                    )}
+                </div>
+            </Link>
+            <div className="relative md:hidden">
+              <button onClick={() => setMenuOpen(!menuOpen)} className="w-8 h-8 rounded-full bg-[#f5f5f7] flex items-center justify-center hover:bg-[#e5e5e7]">
+                {menuOpen ? <X className="w-4 h-4 text-[#1d1d1f]" /> : <Menu className="w-4 h-4 text-[#1d1d1f]" />}
+              </button>
+              {menuOpen && (
+                <div className="absolute right-0 top-10 z-50 w-48 bg-white rounded-xl shadow-xl border border-[#e5e5e7] overflow-hidden">
+                    <Link href="/profile" className="flex items-center gap-3 px-4 py-3 hover:bg-[#f5f5f7] border-b border-[#f5f5f7] text-sm">Profile</Link>
+                    <Link href="/home" className="flex items-center gap-3 px-4 py-3 hover:bg-[#f5f5f7] border-b border-[#f5f5f7] text-sm">Home</Link>
+                    <Link href="/events" className="flex items-center gap-3 px-4 py-3 hover:bg-[#f5f5f7] border-b border-[#f5f5f7] text-sm">Events</Link>
+                    <Link href="/history" className="flex items-center gap-3 px-4 py-3 hover:bg-[#f5f5f7] text-sm">History</Link>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </nav>
 
       {/* HERO SECTION */}
       <div className="relative h-[60vh] w-full bg-gray-900">
-        <Image 
+        <img 
           src={event.cover_image_url || "/placeholder-event.jpg"} 
           alt={event.title} 
-          fill 
-          className="object-cover opacity-60"
+          className="absolute inset-0 w-full h-full object-cover opacity-60"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
         
@@ -129,13 +177,21 @@ export default function EventShowcasePage() {
             {/* GALLERY GRID */}
             <div className="space-y-4">
               <h2 className="text-2xl font-bold text-gray-900">Event Gallery</h2>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {galleryImages.map((src, idx) => (
-                  <div key={idx} className={`relative rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer ${idx === 0 ? 'col-span-2 row-span-2 aspect-square md:aspect-auto' : 'aspect-square'}`}>
-                    <Image src={src} alt="Gallery" fill className="object-cover hover:scale-105 transition-transform duration-500" />
-                  </div>
-                ))}
-              </div>
+              {displayImages.length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {displayImages.map((src, idx) => (
+                    <div key={idx} className={`relative rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer ${idx === 0 ? 'col-span-2 row-span-2 aspect-square md:aspect-auto' : 'aspect-square'}`}>
+                        <img 
+                        src={src} 
+                        alt="Gallery" 
+                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" 
+                        />
+                    </div>
+                    ))}
+                </div>
+              ) : (
+                <p className="text-gray-500 italic">No gallery images available for this event.</p>
+              )}
             </div>
 
           </div>
@@ -145,10 +201,8 @@ export default function EventShowcasePage() {
             <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm sticky top-24">
               <h3 className="font-bold text-gray-900 mb-4">Organizer</h3>
               
-              {/* ✅ Link to Organization Profile */}
               <Link href={`/organizations/${event.organization_id || '#'}`} className="flex items-center gap-4 mb-6 group">
                 <div className="w-12 h-12 bg-gray-100 rounded-full overflow-hidden border border-gray-200 flex items-center justify-center">
-                   {/* Placeholder for Org Logo */}
                    <Building2 className="w-6 h-6 text-gray-400" />
                 </div>
                 <div>

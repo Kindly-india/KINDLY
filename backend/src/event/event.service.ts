@@ -124,7 +124,7 @@ export class EventService {
     return { event };
   }
 
-  async getPublicEventById(eventId: string) {
+async getPublicEventById(eventId: string) {
     const supabase = this.supabaseService.getClient();
 
     const { data: event, error } = await supabase
@@ -139,8 +139,7 @@ export class EventService {
       )
     `)
       .eq('id', eventId)
-      .eq('status', 'published')
-      .single();
+      .single(); // 🟢 REMOVED .eq('status', 'published')
 
     if (error || !event) {
       throw new NotFoundException('Event not found');
