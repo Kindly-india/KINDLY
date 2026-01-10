@@ -10,6 +10,7 @@ async function bootstrap() {
     origin: (origin, callback) => {
       const allowedOrigins = [
         'https://kindlyin.vercel.app',
+        'http://localhost:3000'
       ];
 
       // Allow server-to-server / Postman / Render health checks
