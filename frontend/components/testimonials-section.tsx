@@ -25,7 +25,7 @@ const testimonials = [
 
 export function TestimonialsSection() {
   return (
-    <section className="bg-linear-to-b from-[#fffbeb] to-[#fef3c7] py-8 md:py-24">
+    <section className="bg-gradient-to-b from-[#fffbeb] to-[#fef3c7] py-8 md:py-24">
       <div className="max-w-245 mx-auto px-4 md:px-6">
         <div className="text-center mb-4 md:mb-16">
           <p className="text-[#d97706] text-[9px] md:text-sm font-medium mb-1 md:mb-2">Testimonials</p>

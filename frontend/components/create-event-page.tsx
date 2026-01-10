@@ -164,7 +164,7 @@ export function CreateEventPage() {
 
     if (showSuccess) {
         return (
-            <div className="min-h-screen bg-linear-to-br from-[#f0fdf4] via-white to-[#f0f7ff] flex items-center justify-center p-4 overflow-hidden relative">
+            <div className="min-h-screen bg-gradient-to-br from-[#f0fdf4] via-white to-[#f0f7ff] flex items-center justify-center p-4 overflow-hidden relative">
                 <div className="absolute top-8 left-8 md:top-16 md:left-24 w-10 h-10 md:w-14 md:h-14 bg-white rounded-2xl shadow-lg flex items-center justify-center">
                     <Sparkles className="w-5 h-5 md:w-6 md:h-6 text-amber-500" />
                 </div>
@@ -179,7 +179,7 @@ export function CreateEventPage() {
                 </div>
 
                 <div className="text-center max-w-md">
-                    <div className="w-20 h-20 md:w-24 md:h-24 bg-linear-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
+                    <div className="w-20 h-20 md:w-24 md:h-24 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
                         <CheckCircle className="w-10 h-10 md:w-12 md:h-12 text-white" />
                     </div>
                     <h1 className="text-2xl md:text-4xl font-bold text-[#1d1d1f] mb-3">Event Published!</h1>
@@ -206,7 +206,7 @@ export function CreateEventPage() {
     }
 
     return (
-        <div className="min-h-screen bg-linear-to-br from-[#fef7f0] via-white to-[#f0fdf4] overflow-x-hidden">
+        <div className="min-h-screen bg-gradient-to-br from-[#fef7f0] via-white to-[#f0fdf4] overflow-x-hidden">
             <div className="fixed top-20 left-4 md:left-12 w-10 h-10 md:w-12 md:h-12 bg-white rounded-2xl shadow-lg flex items-center justify-center z-10 opacity-60">
                 <Heart className="w-5 h-5 text-rose-400" />
             </div>
@@ -248,7 +248,7 @@ export function CreateEventPage() {
                                         className={cn(
                                             "w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all",
                                             step >= s.num
-                                                ? "bg-linear-to-r from-emerald-500 to-teal-500 text-white shadow-md"
+                                                ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md"
                                                 : "bg-[#f5f5f7] text-[#86868b]",
                                         )}
                                     >
@@ -267,7 +267,7 @@ export function CreateEventPage() {
                                     <div
                                         className={cn(
                                             "h-0.5 flex-1 mx-2 rounded-full transition-all",
-                                            step > s.num ? "bg-linear-to-r from-emerald-500 to-teal-500" : "bg-[#e5e5e7]",
+                                            step > s.num ? "bg-gradient-to-r from-emerald-500 to-teal-500" : "bg-[#e5e5e7]",
                                         )}
                                     />
                                 )}
@@ -282,7 +282,7 @@ export function CreateEventPage() {
                     <div className="space-y-6 md:space-y-8">
                         <div>
                             <label className="block text-sm font-semibold text-[#1d1d1f] mb-3">Cover Image</label>
-                            <div className="aspect-video bg-linear-to-br from-[#f0fdf4] to-[#e0f2fe] rounded-2xl border-2 border-dashed border-[#d2d2d7] hover:border-emerald-400 transition-colors cursor-pointer flex flex-col items-center justify-center group">
+                            <div className="aspect-video bg-gradient-to-br from-[#f0fdf4] to-[#e0f2fe] rounded-2xl border-2 border-dashed border-[#d2d2d7] hover:border-emerald-400 transition-colors cursor-pointer flex flex-col items-center justify-center group">
                                 <input
                                     type="file"
                                     id="coverImage"
@@ -356,7 +356,7 @@ export function CreateEventPage() {
                             </div>
                         </div>
 
-                        <div className="flex items-center justify-between p-4 bg-linear-to-r from-amber-50 to-orange-50 rounded-xl border border-amber-200">
+                        <div className="flex items-center justify-between p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border border-amber-200">
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center">
                                     <AlertTriangle className="w-5 h-5 text-amber-500" />
@@ -480,7 +480,7 @@ export function CreateEventPage() {
                                         className="w-full h-full"
                                     ></iframe>
                                 ) : (
-                                    <div className="w-full h-full bg-linear-to-br from-[#f5f5f7] to-[#e5e5e7] flex flex-col items-center justify-center">
+                                    <div className="w-full h-full bg-gradient-to-br from-[#f5f5f7] to-[#e5e5e7] flex flex-col items-center justify-center">
                                         <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm mb-3">
                                             <MapPin className="w-6 h-6 text-gray-400" />
                                         </div>
@@ -573,7 +573,7 @@ export function CreateEventPage() {
                             />
                         </div>
 
-                        <div className="p-4 md:p-6 bg-linear-to-br from-emerald-50 to-teal-50 rounded-2xl border border-emerald-200">
+                        <div className="p-4 md:p-6 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl border border-emerald-200">
                             <div className="flex items-center gap-2 mb-4">
                                 <Info className="w-4 h-4 text-emerald-600" />
                                 <p className="text-sm font-semibold text-emerald-700">Event Preview</p>
@@ -584,7 +584,7 @@ export function CreateEventPage() {
                                         <img src={coverImageUrl} alt="Event cover" className="w-full h-full object-cover" />
                                     </div>
                                 ) : (
-                                    <div className="aspect-video bg-linear-to-br from-[#f5f5f7] to-[#e5e5e7] rounded-lg mb-3 flex items-center justify-center">
+                                    <div className="aspect-video bg-gradient-to-br from-[#f5f5f7] to-[#e5e5e7] rounded-lg mb-3 flex items-center justify-center">
                                         <ImageIcon className="w-8 h-8 text-gray-400" />
                                     </div>
                                 )}
@@ -636,7 +636,7 @@ export function CreateEventPage() {
                                             <span className="font-medium text-emerald-600">0%</span>
                                         </div>
                                         <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                                            <div className="h-full bg-linear-to-r from-emerald-400 to-teal-500 rounded-full" style={{ width: '0%' }} />
+                                            <div className="h-full bg-gradient-to-r from-emerald-400 to-teal-500 rounded-full" style={{ width: '0%' }} />
                                         </div>
                                     </div>
                                 )}
@@ -668,7 +668,7 @@ export function CreateEventPage() {
                             if (step < 3) setStep(step + 1)
                             else handlePublish()
                         }}
-                        className="flex-1 h-12 md:h-14 bg-linear-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-semibold hover:opacity-90 transition-opacity shadow-lg text-sm md:text-base"
+                        className="flex-1 h-12 md:h-14 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-semibold hover:opacity-90 transition-opacity shadow-lg text-sm md:text-base"
                     >
                         {step === 3 ? "Publish Event" : "Continue"}
                     </button>

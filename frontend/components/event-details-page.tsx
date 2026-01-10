@@ -152,7 +152,7 @@ export default function EventDetailsPage() {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <div className="w-full h-full bg-linear-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
                   <Calendar className="w-16 h-16 text-gray-400" />
                 </div>
               )}
@@ -205,7 +205,7 @@ export default function EventDetailsPage() {
             {/* Organizer Row */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-full overflow-hidden bg-linear-to-br from-orange-400 to-rose-500 flex items-center justify-center text-white font-semibold">
+                <div className="w-9 h-9 rounded-full overflow-hidden bg-gradient-to-br from-orange-400 to-rose-500 flex items-center justify-center text-white font-semibold">
                   {event.organization_profiles?.name?.charAt(0) || 'O'}
                 </div>
                 <div className="flex items-center gap-1.5">
@@ -290,7 +290,7 @@ export default function EventDetailsPage() {
                     src={`https://maps.google.com/maps?q=${encodeURIComponent(event.location)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
                     className="absolute inset-0 w-full h-full pointer-events-none opacity-90 group-hover:opacity-100 transition-opacity"
                   ></iframe>
-                  <div className="absolute inset-0 bg-linear-to-t from-black/10 to-transparent pointer-events-none group-hover:bg-transparent transition-colors" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent pointer-events-none group-hover:bg-transparent transition-colors" />
                   <div className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-lg text-xs font-medium text-gray-700 shadow-sm flex items-center gap-1.5 hover:bg-white transition-colors">
                     <Navigation className="w-3 h-3 text-blue-600" />
                     Get Directions
@@ -356,7 +356,7 @@ export default function EventDetailsPage() {
                 </div>
                 <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-linear-to-r from-teal-400 to-teal-500 rounded-full transition-all"
+                    className="h-full bg-gradient-to-r from-teal-400 to-teal-500 rounded-full transition-all"
                     style={{ width: `${(event.registered_count / event.total_slots) * 100}%` }}
                   />
                 </div>
@@ -368,7 +368,7 @@ export default function EventDetailsPage() {
               <Button
                 onClick={handleBookSlot}
                 disabled={isRegistering || !canRegister}
-                className="w-full h-12 bg-linear-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold rounded-full text-base shadow-lg shadow-blue-500/25 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full h-12 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold rounded-full text-base shadow-lg shadow-blue-500/25 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isRegistering ? 'Booking...'
                   : isRegistered ? 'Registered ✓'
@@ -417,7 +417,7 @@ export default function EventDetailsPage() {
           <Button
             onClick={handleBookSlot}
             disabled={isRegistering || !canRegister}
-            className="h-11 px-8 bg-linear-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold rounded-full text-sm shadow-lg shadow-blue-500/25 disabled:opacity-50"
+            className="h-11 px-8 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold rounded-full text-sm shadow-lg shadow-blue-500/25 disabled:opacity-50"
           >
             {isRegistering ? 'Booking...'
               : isRegistered ? 'Registered ✓'

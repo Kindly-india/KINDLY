@@ -39,14 +39,14 @@ function AnimatedCounter({ value, suffix }: { value: number; suffix: string }) {
 
 export function ImpactSection() {
   return (
-    <section className="bg-linear-to-b from-[#fff5f0] to-[#fff0e6] py-8 md:py-24">
+    <section className="bg-gradient-to-b from-[#fff5f0] to-[#fff0e6] py-8 md:py-24">
       <div className="max-w-245 mx-auto px-4 md:px-6">
         <div className="text-center mb-5 md:mb-16">
           <p className="text-[#e85d3b] text-[10px] md:text-sm font-medium mb-1 md:mb-2">Our Impact</p>
           <h2 className="text-[22px] md:text-[56px] font-semibold text-[#1d1d1f] tracking-tight leading-tight">
             Together, we're
             <br />
-            <span className="bg-linear-to-r from-[#e85d3b] to-[#f59e0b] bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-[#e85d3b] to-[#f59e0b] bg-clip-text text-transparent">
               making a difference.
             </span>
           </h2>

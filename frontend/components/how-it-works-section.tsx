@@ -2,7 +2,7 @@ import { UserPlus, Search, CalendarCheck } from "lucide-react"
 
 export function HowItWorksSection() {
   return (
-    <section className="bg-linear-to-b from-[#f0fdf4] to-[#ecfdf5] py-10 md:py-24">
+    <section className="bg-gradient-to-b from-[#f0fdf4] to-[#ecfdf5] py-10 md:py-24">
       <div className="max-w-245 mx-auto px-4 md:px-6">
         <div className="text-center mb-6 md:mb-16">
           <p className="text-[#059669] text-[10px] md:text-sm font-medium mb-1 md:mb-2">How It Works</p>

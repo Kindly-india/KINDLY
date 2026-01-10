@@ -232,20 +232,20 @@ export function OrgHomePage() {
                     <span className="text-[13px] font-medium text-[#1d1d1f]">View Profile</span>
                   </Link>
                   <Link href="/org-events" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-[#f5f5f7] transition-colors border-b border-[#f5f5f7]">
-                    <div className="w-8 h-8 rounded-full bg-linear-to-br from-[#e0f2fe] to-[#bae6fd] flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#e0f2fe] to-[#bae6fd] flex items-center justify-center">
                       <Calendar className="w-4 h-4 text-[#0284c7]" />
                     </div>
                     <span className="text-[13px] font-medium text-[#1d1d1f]">My Events</span>
                   </Link>
                   <Link href="/org-volunteers" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-[#f5f5f7] transition-colors border-b border-[#f5f5f7]">
-                    <div className="w-8 h-8 rounded-full bg-linear-to-br from-[#e8f5e9] to-[#c8e6c9] flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#e8f5e9] to-[#c8e6c9] flex items-center justify-center">
                       <Users className="w-4 h-4 text-[#2e7d32]" />
                     </div>
                     <span className="text-[13px] font-medium text-[#1d1d1f]">Volunteers</span>
                   </Link>
                   {/* ✅ ADDED ANALYTICS LINK MOBILE */}
                   <Link href="/org-analytics" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-[#f5f5f7] transition-colors">
-                    <div className="w-8 h-8 rounded-full bg-linear-to-br from-[#f3e8ff] to-[#d8b4fe] flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#f3e8ff] to-[#d8b4fe] flex items-center justify-center">
                       <BarChart3 className="w-4 h-4 text-[#9333ea]" />
                     </div>
                     <span className="text-[13px] font-medium text-[#1d1d1f]">Analytics</span>
@@ -258,7 +258,7 @@ export function OrgHomePage() {
       </nav>
 
       {/* Hero Section (Unchanged) */}
-      <section className="relative bg-linear-to-br from-[#f0f7ff] via-[#f5faff] to-[#f0fdf4] py-8 md:py-16 overflow-hidden">
+      <section className="relative bg-gradient-to-br from-[#f0f7ff] via-[#f5faff] to-[#f0fdf4] py-8 md:py-16 overflow-hidden">
         <div className="absolute top-4 left-4 md:top-8 md:left-20 w-8 h-8 md:w-12 md:h-12 bg-white rounded-xl shadow-lg flex items-center justify-center">
           <Building2 className="w-4 h-4 md:w-5 md:h-5 text-[#0066cc]" />
         </div>
@@ -282,7 +282,7 @@ export function OrgHomePage() {
 
           <h1 className="text-[24px] md:text-[56px] font-bold text-[#1d1d1f] tracking-tight leading-tight">
             Welcome back,{" "}
-            <span className="bg-linear-to-r from-[#0066cc] via-[#10b981] to-[#f59e0b] bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-[#0066cc] via-[#10b981] to-[#f59e0b] bg-clip-text text-transparent">
               {profile?.name || "Partner"}
             </span>
             .
@@ -319,14 +319,14 @@ export function OrgHomePage() {
         <div className="max-w-300 mx-auto px-4 md:px-8">
           <h2 className="text-[18px] md:text-[24px] font-bold text-[#1d1d1f] mb-4">Quick Actions</h2>
           <div className="grid grid-cols-2 gap-3 md:gap-4">
-            <Link href="/org-events/create" className="bg-linear-to-br from-[#f0fdf4] to-[#dcfce7] rounded-xl md:rounded-2xl p-4 md:p-6 hover:shadow-md transition-all group border border-[#bbf7d0]">
+            <Link href="/org-events/create" className="bg-gradient-to-br from-[#f0fdf4] to-[#dcfce7] rounded-xl md:rounded-2xl p-4 md:p-6 hover:shadow-md transition-all group border border-[#bbf7d0]">
               <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-white shadow-sm flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
                 <Plus className="w-5 h-5 md:w-6 md:h-6 text-emerald-600" />
               </div>
               <h3 className="text-[14px] md:text-[17px] font-semibold text-[#1d1d1f]">Create Event</h3>
               <p className="text-[11px] md:text-[13px] text-[#86868b] mt-0.5">Draft a new volunteer drive</p>
             </Link>
-            <Link href="/org-events?tab=active" className="bg-linear-to-br from-[#fff7ed] to-[#ffedd5] rounded-xl md:rounded-2xl p-4 md:p-6 hover:shadow-md transition-all group border border-[#fed7aa]">
+            <Link href="/org-events?tab=active" className="bg-gradient-to-br from-[#fff7ed] to-[#ffedd5] rounded-xl md:rounded-2xl p-4 md:p-6 hover:shadow-md transition-all group border border-[#fed7aa]">
               <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-white shadow-sm flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
                 <Megaphone className="w-5 h-5 md:w-6 md:h-6 text-[#f59e0b]" />
               </div>
@@ -354,7 +354,7 @@ export function OrgHomePage() {
             <div className="text-center py-12 bg-white rounded-xl">
               <Calendar className="w-12 h-12 text-[#86868b] mx-auto mb-3" />
               <p className="text-sm text-[#86868b]">No events yet. Create your first event!</p>
-              <Link href="/org-events/create" className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-linear-to-r from-emerald-500 to-teal-500 text-white rounded-full text-sm font-medium hover:opacity-90 transition-opacity">
+              <Link href="/org-events/create" className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-full text-sm font-medium hover:opacity-90 transition-opacity">
                 <Plus className="w-4 h-4" /> Create Event
               </Link>
             </div>
@@ -367,7 +367,7 @@ export function OrgHomePage() {
                       {event.cover_image_url ? (
                         <img src={event.cover_image_url} alt={event.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                       ) : (
-                        <div className="w-full h-full bg-linear-to-br from-gray-100 to-gray-200 flex items-center justify-center"><Calendar className="w-12 h-12 text-gray-400" /></div>
+                        <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center"><Calendar className="w-12 h-12 text-gray-400" /></div>
                       )}
                       <div className={cn("absolute top-2 left-2 px-2 py-0.5 rounded text-[9px] md:text-[11px] font-semibold text-white capitalize", getCategoryColor(event.category))}>
                         {event.category}
@@ -393,7 +393,7 @@ export function OrgHomePage() {
                           <span className="font-medium text-[#10b981]">{Math.round((event.registered_count / event.total_slots) * 100) || 0}%</span>
                         </div>
                         <div className="h-1.5 bg-[#f5f5f7] rounded-full overflow-hidden">
-                          <div className="h-full bg-linear-to-r from-[#10b981] to-[#34d399] rounded-full transition-all" style={{ width: `${(event.registered_count / event.total_slots) * 100}%` }} />
+                          <div className="h-full bg-gradient-to-r from-[#10b981] to-[#34d399] rounded-full transition-all" style={{ width: `${(event.registered_count / event.total_slots) * 100}%` }} />
                         </div>
                       </div>
                     </div>
@@ -429,10 +429,10 @@ export function OrgHomePage() {
                     className={cn(
                       "w-8 h-8 md:w-10 md:h-10 rounded-full shrink-0 flex items-center justify-center",
                       activity.type === "publish"
-                        ? "bg-linear-to-br from-[#e0f2fe] to-[#bae6fd]"
+                        ? "bg-gradient-to-br from-[#e0f2fe] to-[#bae6fd]"
                         : activity.type === "checkin"
-                          ? "bg-linear-to-br from-[#dcfce7] to-[#bbf7d0]"
-                          : "bg-linear-to-br from-[#f3e8ff] to-[#e9d5ff]",
+                          ? "bg-gradient-to-br from-[#dcfce7] to-[#bbf7d0]"
+                          : "bg-gradient-to-br from-[#f3e8ff] to-[#e9d5ff]",
                     )}
                   >
                     {activity.type === "publish" && <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-[#0284c7]" />}

@@ -22,7 +22,7 @@ export function AboutSection() {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
           <div className="text-center">
-            <div className="w-10 h-10 md:w-14 md:h-14 rounded-full bg-linear-to-br from-[#ff6b6b] to-[#ee5a5a] flex items-center justify-center mx-auto mb-2.5 md:mb-5 shadow-lg shadow-[#ff6b6b]/20">
+            <div className="w-10 h-10 md:w-14 md:h-14 rounded-full bg-gradient-to-br from-[#ff6b6b] to-[#ee5a5a] flex items-center justify-center mx-auto mb-2.5 md:mb-5 shadow-lg shadow-[#ff6b6b]/20">
               <Heart className="w-5 h-5 md:w-7 md:h-7 text-white" />
             </div>
             <h3 className="text-[13px] md:text-[21px] font-semibold text-[#1d1d1f] mb-1 md:mb-2">Impact First</h3>
@@ -32,7 +32,7 @@ export function AboutSection() {
           </div>
 
           <div className="text-center">
-            <div className="w-10 h-10 md:w-14 md:h-14 rounded-full bg-linear-to-br from-[#f59e0b] to-[#d97706] flex items-center justify-center mx-auto mb-2.5 md:mb-5 shadow-lg shadow-[#f59e0b]/20">
+            <div className="w-10 h-10 md:w-14 md:h-14 rounded-full bg-gradient-to-br from-[#f59e0b] to-[#d97706] flex items-center justify-center mx-auto mb-2.5 md:mb-5 shadow-lg shadow-[#f59e0b]/20">
               <Users className="w-5 h-5 md:w-7 md:h-7 text-white" />
             </div>
             <h3 className="text-[13px] md:text-[21px] font-semibold text-[#1d1d1f] mb-1 md:mb-2">Community Driven</h3>
@@ -42,7 +42,7 @@ export function AboutSection() {
           </div>
 
           <div className="text-center">
-            <div className="w-10 h-10 md:w-14 md:h-14 rounded-full bg-linear-to-br from-[#10b981] to-[#059669] flex items-center justify-center mx-auto mb-2.5 md:mb-5 shadow-lg shadow-[#10b981]/20">
+            <div className="w-10 h-10 md:w-14 md:h-14 rounded-full bg-gradient-to-br from-[#10b981] to-[#059669] flex items-center justify-center mx-auto mb-2.5 md:mb-5 shadow-lg shadow-[#10b981]/20">
               <Globe className="w-5 h-5 md:w-7 md:h-7 text-white" />
             </div>
             <h3 className="text-[13px] md:text-[21px] font-semibold text-[#1d1d1f] mb-1 md:mb-2">Global Reach</h3>
@@ -50,7 +50,7 @@ export function AboutSection() {
           </div>
 
           <div className="text-center">
-            <div className="w-10 h-10 md:w-14 md:h-14 rounded-full bg-linear-to-br from-[#8b5cf6] to-[#7c3aed] flex items-center justify-center mx-auto mb-2.5 md:mb-5 shadow-lg shadow-[#8b5cf6]/20">
+            <div className="w-10 h-10 md:w-14 md:h-14 rounded-full bg-gradient-to-br from-[#8b5cf6] to-[#7c3aed] flex items-center justify-center mx-auto mb-2.5 md:mb-5 shadow-lg shadow-[#8b5cf6]/20">
               <Sparkles className="w-5 h-5 md:w-7 md:h-7 text-white" />
             </div>
             <h3 className="text-[13px] md:text-[21px] font-semibold text-[#1d1d1f] mb-1 md:mb-2">Spark Joy</h3>

@@ -140,7 +140,7 @@ export function EventsDiscoveryPage() {
                                 "rounded-full font-medium transition-all",
                                 isMobile ? "px-2.5 py-1 text-[10px]" : "px-3 py-1.5 text-[11px]",
                                 selectedDate === pill.id
-                                    ? "bg-linear-to-r from-[#ff6b6b] to-[#ff8e53] text-white shadow-md"
+                                    ? "bg-gradient-to-r from-[#ff6b6b] to-[#ff8e53] text-white shadow-md"
                                     : "bg-[#f5f5f7] text-[#1d1d1f] hover:bg-[#e8e8ed]",
                             )}
                         >
@@ -168,7 +168,7 @@ export function EventsDiscoveryPage() {
                                 "flex items-center gap-1.5 rounded-lg cursor-pointer transition-all border",
                                 isMobile ? "p-2" : "p-2.5",
                                 selectedCauses.includes(cause.id)
-                                    ? "bg-linear-to-br from-white to-[#f5f5f7] border-[#1d1d1f] shadow-sm"
+                                    ? "bg-gradient-to-br from-white to-[#f5f5f7] border-[#1d1d1f] shadow-sm"
                                     : "bg-white border-[#e8e8ed] hover:border-[#d1d1d6]",
                             )}
                         >
@@ -208,7 +208,7 @@ export function EventsDiscoveryPage() {
                                 "rounded-lg font-medium transition-all border",
                                 isMobile ? "px-2 py-1.5 text-[9px]" : "px-3 py-2 text-[11px]",
                                 selectedDuration === duration.id
-                                    ? "bg-linear-to-br from-[#d4f4dd] to-[#b8f2c5] border-emerald-300 text-emerald-800"
+                                    ? "bg-gradient-to-br from-[#d4f4dd] to-[#b8f2c5] border-emerald-300 text-emerald-800"
                                     : "bg-white border-[#e8e8ed] text-[#1d1d1f] hover:border-[#d1d1d6]",
                             )}
                         >
@@ -237,7 +237,7 @@ export function EventsDiscoveryPage() {
                                 "w-full flex items-center gap-2 rounded-lg text-left transition-all border",
                                 isMobile ? "p-2" : "p-2.5",
                                 selectedTime === time.id
-                                    ? "bg-linear-to-br from-[#fef3c7] to-[#fde68a] border-amber-300"
+                                    ? "bg-gradient-to-br from-[#fef3c7] to-[#fde68a] border-amber-300"
                                     : "bg-white border-[#e8e8ed] hover:border-[#d1d1d6]",
                             )}
                         >
@@ -457,7 +457,7 @@ export function EventsDiscoveryPage() {
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 placeholder="Search by event name, location, or organization..."
-                                className="w-full pl-11 pr-10 py-3 bg-linear-to-r from-[#f5f5f7] to-[#fafafa] rounded-full text-[14px] text-[#1d1d1f] placeholder:text-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#ff6b6b]/20 border border-transparent focus:border-[#ff6b6b]/30 transition-all"
+                                className="w-full pl-11 pr-10 py-3 bg-gradient-to-r from-[#f5f5f7] to-[#fafafa] rounded-full text-[14px] text-[#1d1d1f] placeholder:text-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#ff6b6b]/20 border border-transparent focus:border-[#ff6b6b]/30 transition-all"
                             />
                             {searchQuery ? (
                                 <button onClick={() => setSearchQuery("")} className="absolute right-4 top-1/2 -translate-y-1/2">
@@ -493,7 +493,7 @@ export function EventsDiscoveryPage() {
 
             <div className="flex">
                 {/* Left Sidebar - Desktop Only */}
-                <aside className="hidden lg:block w-70 shrink-0 sticky top-16 h-[calc(100vh-64px)] overflow-y-auto border-r border-[#f5f5f7] bg-linear-to-b from-white to-[#fafafa]">
+                <aside className="hidden lg:block w-70 shrink-0 sticky top-16 h-[calc(100vh-64px)] overflow-y-auto border-r border-[#f5f5f7] bg-gradient-to-b from-white to-[#fafafa]">
                     <div className="p-5">
                         <div className="flex items-center justify-between mb-5">
                             <div className="flex items-center gap-2">
@@ -511,7 +511,7 @@ export function EventsDiscoveryPage() {
                 </aside>
 
                 {/* Right Content Area */}
-                <main className="flex-1 bg-linear-to-br from-[#fafafa] via-white to-[#f5f5f7] min-h-[calc(100vh-64px)]">
+                <main className="flex-1 bg-gradient-to-br from-[#fafafa] via-white to-[#f5f5f7] min-h-[calc(100vh-64px)]">
                     <div className="sticky top-12 md:top-16 z-40 bg-white/80 backdrop-blur-xl border-b border-[#e8e8ed] shadow-sm">
                         <div className="px-3 md:px-6 py-2 md:py-3">
                             <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -543,7 +543,7 @@ export function EventsDiscoveryPage() {
                                             <div className="absolute bottom-0 left-0 right-0 p-3 px-5 bg-white border-t border-[#f5f5f7]">
                                                 <Button
                                                     onClick={() => setIsFilterOpen(false)}
-                                                    className="w-full bg-linear-to-r from-[#ff6b6b] to-[#ff8e53] hover:from-[#ff5252] hover:to-[#ff7a3a] text-white rounded-full py-5 text-[12px] font-semibold shadow-lg"
+                                                    className="w-full bg-gradient-to-r from-[#ff6b6b] to-[#ff8e53] hover:from-[#ff5252] hover:to-[#ff7a3a] text-white rounded-full py-5 text-[12px] font-semibold shadow-lg"
                                                 >
                                                     Show {filteredEvents.length} Events
                                                 </Button>
@@ -580,7 +580,7 @@ export function EventsDiscoveryPage() {
 
                     {/* Active Filters Pills */}
                     {hasActiveFilters && (
-                        <div className="px-3 md:px-6 py-2 bg-linear-to-r from-[#fff5f5] to-[#fffbeb] border-b border-[#ffe8e8]">
+                        <div className="px-3 md:px-6 py-2 bg-gradient-to-r from-[#fff5f5] to-[#fffbeb] border-b border-[#ffe8e8]">
                             <div className="flex items-center gap-1.5 flex-wrap">
                                 <span className="text-[9px] md:text-[11px] font-semibold text-[#86868b] uppercase tracking-wide">
                                     Active:
@@ -662,7 +662,7 @@ export function EventsDiscoveryPage() {
                                                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                                                     />
                                                 ) : (
-                                                    <div className="w-full h-full bg-linear-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                                                    <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
                                                         <Calendar className="w-12 h-12 text-gray-400" />
                                                     </div>
                                                 )}
@@ -730,7 +730,7 @@ export function EventsDiscoveryPage() {
                                                     ) : (
                                                         <Link
                                                             href={`/events/${event.id}`}
-                                                            className="px-2 py-1 md:px-5 md:py-2 bg-linear-to-r from-[#1d1d1f] to-[#3d3d3f] hover:from-[#ff6b6b] hover:to-[#ff8e53] rounded-full text-[9px] md:text-[12px] font-bold text-white transition-all shadow-md hover:shadow-lg"
+                                                            className="px-2 py-1 md:px-5 md:py-2 bg-gradient-to-r from-[#1d1d1f] to-[#3d3d3f] hover:from-[#ff6b6b] hover:to-[#ff8e53] rounded-full text-[9px] md:text-[12px] font-bold text-white transition-all shadow-md hover:shadow-lg"
                                                         >
                                                             Book
                                                         </Link>
@@ -748,7 +748,7 @@ export function EventsDiscoveryPage() {
                             <div className="flex justify-center mt-4 md:mt-8">
                                 <Button
                                     onClick={loadMore}
-                                    className="px-6 py-4 md:px-8 md:py-6 bg-linear-to-r from-[#ff6b6b] to-[#ff8e53] hover:from-[#ff5252] hover:to-[#ff7a3a] text-white rounded-full text-[11px] md:text-[14px] font-bold shadow-lg hover:shadow-xl transition-all"
+                                    className="px-6 py-4 md:px-8 md:py-6 bg-gradient-to-r from-[#ff6b6b] to-[#ff8e53] hover:from-[#ff5252] hover:to-[#ff7a3a] text-white rounded-full text-[11px] md:text-[14px] font-bold shadow-lg hover:shadow-xl transition-all"
                                 >
                                     Load More
                                     <ChevronDown className="w-3 h-3 md:w-4 md:h-4 ml-1.5" />

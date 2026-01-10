@@ -279,7 +279,7 @@ export function OrgEventDetail() {
   const checkedInCount = registrations.filter(reg => reg.status === 'checked_in').length
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-green-50 relative">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 relative">
 
       {/* --- QR CODE MODAL --- */}
       {showQR && (
@@ -340,7 +340,7 @@ export function OrgEventDetail() {
         </div>
       </div>
 
-      <div className="px-4 md:px-8 py-4 bg-linear-to-b from-teal-50/50 to-transparent">
+      <div className="px-4 md:px-8 py-4 bg-gradient-to-b from-teal-50/50 to-transparent">
         <div className="max-w-5xl mx-auto flex flex-wrap gap-2 md:gap-3">
           <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white rounded-full shadow-sm border border-gray-100 text-xs md:text-sm">
             <Users className="w-3.5 h-3.5 text-teal-500" />
@@ -442,7 +442,7 @@ export function OrgEventDetail() {
                     <div key={registration.id} className="flex items-center justify-between p-3 md:p-4 bg-white rounded-xl shadow-sm border border-gray-100">
                       <div className="flex items-center gap-3">
                         {/* Avatar Circle */}
-                        <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-linear-to-br from-teal-400 to-emerald-400 flex items-center justify-center text-white font-semibold">
+                        <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-teal-400 to-emerald-400 flex items-center justify-center text-white font-semibold">
                           {registration.volunteer_profiles.full_name.charAt(0).toUpperCase()}
                         </div>
 
@@ -497,7 +497,7 @@ export function OrgEventDetail() {
                 <button
                   onClick={handleSendBroadcast}
                   disabled={!broadcastMessage.trim() || registrations.length === 0 || sendingBroadcast}
-                  className="mt-3 w-full h-11 bg-linear-to-r from-teal-500 to-emerald-500 text-white rounded-xl font-medium text-sm flex items-center justify-center gap-2 hover:shadow-md transition-shadow disabled:opacity-50"
+                  className="mt-3 w-full h-11 bg-gradient-to-r from-teal-500 to-emerald-500 text-white rounded-xl font-medium text-sm flex items-center justify-center gap-2 hover:shadow-md transition-shadow disabled:opacity-50"
                 >
                   <Send className="w-4 h-4" />
                   {sendingBroadcast ? "Sending..." : "Send Broadcast"}
@@ -601,7 +601,7 @@ export function OrgEventDetail() {
                       src={`http://googleusercontent.com/maps.google.com/6{encodeURIComponent(event.location)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
                       className="absolute inset-0 w-full h-full pointer-events-none opacity-90 group-hover:opacity-100 transition-opacity"
                     ></iframe>
-                    <div className="absolute inset-0 bg-linear-to-t from-black/10 to-transparent pointer-events-none group-hover:bg-transparent transition-colors" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent pointer-events-none group-hover:bg-transparent transition-colors" />
                     <div className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-lg text-xs font-medium text-gray-700 shadow-sm flex items-center gap-1.5 hover:bg-white transition-colors">
                       <Navigation className="w-3 h-3 text-blue-600" />
                       Open in Maps
@@ -612,7 +612,7 @@ export function OrgEventDetail() {
 
               {/* ✅ NEW: Certificate Management Section (Only if Completed) */}
               {event.status === 'completed' && (
-                <div className="bg-linear-to-br from-amber-50 to-orange-50 rounded-xl p-5 border border-amber-100">
+                <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-5 border border-amber-100">
                   <div className="flex items-center gap-3 mb-4">
                     <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
                       <FileText className="w-5 h-5 text-amber-600" />
@@ -684,7 +684,7 @@ export function OrgEventDetail() {
         </div>
       </div>
 
-      <button onClick={() => { if (eventStarted) setShowQR(true); else alert("Event has not started yet."); }} className="fixed bottom-6 right-6 md:bottom-8 md:right-8 w-14 h-14 md:w-16 md:h-16 bg-linear-to-br from-emerald-500 to-teal-500 text-white rounded-full shadow-xl flex items-center justify-center hover:shadow-2xl hover:scale-105 transition-all z-40"><QrCode className="w-6 h-6 md:w-7 md:h-7" /></button>
+      <button onClick={() => { if (eventStarted) setShowQR(true); else alert("Event has not started yet."); }} className="fixed bottom-6 right-6 md:bottom-8 md:right-8 w-14 h-14 md:w-16 md:h-16 bg-gradient-to-br from-emerald-500 to-teal-500 text-white rounded-full shadow-xl flex items-center justify-center hover:shadow-2xl hover:scale-105 transition-all z-40"><QrCode className="w-6 h-6 md:w-7 md:h-7" /></button>
     </div>
   )
 }

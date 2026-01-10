@@ -326,7 +326,7 @@ export function VolunteerHomePage() {
       </nav>
 
       {/* Hero Section & Rest of Body */}
-      <section className="relative bg-linear-to-br from-[#fef5f0] via-[#fff8f5] to-[#f5fcf8] py-8 md:py-16 overflow-hidden">
+      <section className="relative bg-gradient-to-br from-[#fef5f0] via-[#fff8f5] to-[#f5fcf8] py-8 md:py-16 overflow-hidden">
         {/* Decorative Icons */}
         <div className="absolute top-4 left-4 md:top-8 md:left-20 w-8 h-8 md:w-12 md:h-12 bg-white rounded-xl shadow-lg flex items-center justify-center">
           <Heart className="w-4 h-4 md:w-5 md:h-5 text-[#ff6b6b]" />
@@ -352,7 +352,7 @@ export function VolunteerHomePage() {
           </div>
           <h1 className="text-[24px] md:text-[56px] font-bold text-[#1d1d1f] tracking-tight leading-tight">
             Welcome back,{" "}
-            <span className="bg-linear-to-r from-[#ff6b6b] via-[#f59e0b] to-[#10b981] bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-[#ff6b6b] via-[#f59e0b] to-[#10b981] bg-clip-text text-transparent">
               {profile?.full_name?.split(' ')[0] || "Volunteer"}
             </span>
             .
@@ -459,7 +459,7 @@ export function VolunteerHomePage() {
       </section>
 
       {/* Impact Section */}
-      <section className="bg-linear-to-br from-[#f0fdf4] via-[#ecfdf5] to-[#d1fae5] py-8 md:py-16">
+      <section className="bg-gradient-to-br from-[#f0fdf4] via-[#ecfdf5] to-[#d1fae5] py-8 md:py-16">
         <div className="max-w-300 mx-auto px-4 md:px-8">
           <h2 className="text-[24px] md:text-[40px] font-bold text-[#1d1d1f] tracking-tight mb-6 md:mb-10">Your Impact.</h2>
 
@@ -528,7 +528,7 @@ export function VolunteerHomePage() {
       </section>
 
       {/* Stories Section */}
-      <section className="bg-linear-to-br from-[#fef7f0] via-[#fef5f0] to-[#fdf2f8] py-8 md:py-16 overflow-hidden">
+      <section className="bg-gradient-to-br from-[#fef7f0] via-[#fef5f0] to-[#fdf2f8] py-8 md:py-16 overflow-hidden">
         <div className="max-w-300 mx-auto px-4 md:px-8">
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-[20px] md:text-[36px] font-bold text-[#1d1d1f]">Stories from Nashik.</h2>

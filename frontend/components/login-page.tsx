@@ -12,10 +12,10 @@ export function LoginPage() {
     const [showPassword, setShowPassword] = useState(false)
 
     return (
-        <div className="min-h-screen bg-linear-to-b from-[#fef7f0] via-white to-[#f0fdf4] flex flex-col overflow-x-hidden">
+        <div className="min-h-screen bg-gradient-to-b from-[#fef7f0] via-white to-[#f0fdf4] flex flex-col overflow-x-hidden">
             <header className="pt-4 md:pt-12 pb-3 md:pb-6 text-center px-4">
                 <Link href="/" className="inline-flex items-center gap-1.5 md:gap-2">
-                    <div className="w-7 h-7 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-linear-to-br from-[#ff6b6b] to-[#ee5a5a] flex items-center justify-center">
+                    <div className="w-7 h-7 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-gradient-to-br from-[#ff6b6b] to-[#ee5a5a] flex items-center justify-center">
                         <Heart className="w-3.5 h-3.5 md:w-5 md:h-5 text-white fill-white" />
                     </div>
                     <span className="text-base md:text-[21px] font-semibold text-[#1d1d1f] tracking-tight">KINDLY</span>
@@ -38,8 +38,8 @@ export function LoginPage() {
 
                 <div className="w-full max-w-90 md:max-w-100 relative">
                     {/* Decorative blur elements */}
-                    <div className="absolute -top-8 -left-8 md:-top-10 md:-left-10 w-16 h-16 md:w-20 md:h-20 bg-linear-to-br from-[#ffecd2]/40 to-[#fcb69f]/40 rounded-full blur-2xl" />
-                    <div className="absolute -bottom-8 -right-8 md:-bottom-10 md:-right-10 w-20 h-20 md:w-24 md:h-24 bg-linear-to-br from-[#a8edea]/40 to-[#fed6e3]/40 rounded-full blur-2xl" />
+                    <div className="absolute -top-8 -left-8 md:-top-10 md:-left-10 w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-[#ffecd2]/40 to-[#fcb69f]/40 rounded-full blur-2xl" />
+                    <div className="absolute -bottom-8 -right-8 md:-bottom-10 md:-right-10 w-20 h-20 md:w-24 md:h-24 bg-gradient-to-br from-[#a8edea]/40 to-[#fed6e3]/40 rounded-full blur-2xl" />
 
                     <div className="relative bg-white/80 backdrop-blur-sm rounded-2xl md:rounded-3xl p-5 md:p-10 shadow-[0_2px_40px_-12px_rgba(0,0,0,0.1)]">
                         <h1 className="text-[24px] md:text-[40px] font-semibold text-[#1d1d1f] tracking-tight text-center leading-tight">
@@ -144,7 +144,7 @@ export function LoginPage() {
 
                             <Button
                                 type="submit"
-                                className="w-full h-10 md:h-14 bg-linear-to-r from-[#ff6b6b] to-[#ee5a5a] hover:from-[#ff5252] hover:to-[#e04848] text-white text-[14px] md:text-[17px] font-medium rounded-full mt-1 md:mt-2 shadow-lg shadow-[#ff6b6b]/25"
+                                className="w-full h-10 md:h-14 bg-gradient-to-r from-[#ff6b6b] to-[#ee5a5a] hover:from-[#ff5252] hover:to-[#e04848] text-white text-[14px] md:text-[17px] font-medium rounded-full mt-1 md:mt-2 shadow-lg shadow-[#ff6b6b]/25"
                             >
                                 Sign In
                             </Button>

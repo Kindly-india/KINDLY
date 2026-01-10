@@ -8,7 +8,7 @@ export function ContactSection() {
         {/* Top CTA - smaller on mobile */}
         <div className="text-center pb-6 md:pb-12 border-b border-[#424245]">
           <div className="flex justify-center mb-3 md:mb-6">
-            <div className="w-10 h-10 md:w-16 md:h-16 rounded-full bg-linear-to-br from-[#ff6b6b] to-[#f59e0b] flex items-center justify-center">
+            <div className="w-10 h-10 md:w-16 md:h-16 rounded-full bg-gradient-to-br from-[#ff6b6b] to-[#f59e0b] flex items-center justify-center">
               <Heart className="w-5 h-5 md:w-8 md:h-8 text-white" />
             </div>
           </div>
@@ -20,7 +20,7 @@ export function ContactSection() {
           </p>
           <Button
             asChild
-            className="h-9 md:h-11 px-4 md:px-6 bg-linear-to-r from-[#ff6b6b] to-[#f59e0b] hover:from-[#ff5252] hover:to-[#e68a00] text-white text-[12px] md:text-[15px] rounded-full border-0"
+            className="h-9 md:h-11 px-4 md:px-6 bg-gradient-to-r from-[#ff6b6b] to-[#f59e0b] hover:from-[#ff5252] hover:to-[#e68a00] text-white text-[12px] md:text-[15px] rounded-full border-0"
           >
             <a href="#hero">
               Get started
