@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import {
   Search,
   ArrowUpRight,
@@ -13,9 +13,12 @@ import {
   Clock,
   User,
   ArrowLeft,
-  Menu, // ✅ Added
-  X,    // ✅ Added
-  Sparkles // ✅ Added
+  Menu,
+  X,
+  Sparkles,
+  Calendar,
+  BarChart3,
+  Users
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { api } from "@/lib/api"
@@ -86,15 +89,17 @@ const IMPACT_STORIES = [
 
 export default function SocialDiscoveryPage() {
   const router = useRouter()
+  const pathname = usePathname()
   const [searchQuery, setSearchQuery] = useState("")
   const [activeTab, setActiveTab] = useState<'all' | 'volunteers' | 'orgs'>('all')
   const [loading, setLoading] = useState(false)
   const [results, setResults] = useState<any[]>([]) 
   const [isSearching, setIsSearching] = useState(false)
   
-  // ✅ Added for Navbar Consistency
+  // Navbar & User State
   const [menuOpen, setMenuOpen] = useState(false)
   const [profile, setProfile] = useState<any>(null)
+  const [userType, setUserType] = useState<'volunteer' | 'org' | null>(null)
 
   // --- HANDLERS ---
   const handleSearch = async (e: React.FormEvent) => {
@@ -115,11 +120,25 @@ export default function SocialDiscoveryPage() {
     }
   }
 
-  // Fetch Profile for Navbar
+  // Fetch Profile and Determine User Type
   useEffect(() => {
-    api.getUserProfile().then(res => {
-        if(res?.profile) setProfile(res.profile)
-    }).catch(() => {})
+    const fetchUser = async () => {
+      try {
+        const res = await api.getUserProfile()
+        if (res?.profile) {
+          setProfile(res.profile)
+          // Detect if Organization (has org_type) or Volunteer
+          if ('org_type' in res.profile) {
+            setUserType('org')
+          } else {
+            setUserType('volunteer')
+          }
+        }
+      } catch (e) {
+        console.error("Failed to fetch profile", e)
+      }
+    }
+    fetchUser()
   }, [])
 
   // Display Logic for Profile
@@ -147,49 +166,125 @@ export default function SocialDiscoveryPage() {
     return map[category] || "bg-gray-100 text-gray-700"
   }
 
+  // Helper for active links
+  const isActive = (path: string) => 
+    pathname === path ? "text-[#0066cc] font-medium" : "text-[#1d1d1f] hover:text-[#0066cc]"
+
   return (
     <div className="min-h-screen bg-[#f8f9fa] pb-20">
       
-      {/* ✅ NEW CONSISTENT NAVBAR */}
-      <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-[#e5e5e7]">
-        <div className="max-w-[1200px] mx-auto px-4 md:px-8 h-11 md:h-14 flex items-center justify-between relative">
-          
-          {/* 1. Logo */}
-          <Link href="/home" className="flex items-center shrink-0">
-            <Image 
-                src="/logo.png" 
-                alt="Kindly" 
-                width={120} 
-                height={40} 
-                className="h-8 md:h-10 w-auto" 
-                priority 
-            />
-          </Link>
+      {/* =========================================================
+          CONDITIONAL NAVBAR
+         ========================================================= */}
+      
+      {userType === 'org' ? (
+        /* --- ORGANIZATION NAVBAR --- */
+        <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-[#f5f5f7]">
+          <div className="max-w-[1400px] mx-auto px-4 md:px-8 h-12 md:h-14 flex items-center justify-between">
+            <Link href="/org-home" className="flex items-center">
+              <span className="text-[15px] md:text-[17px] font-bold text-[#1d1d1f] tracking-tight">KINDLY</span>
+            </Link>
 
-          {/* 2. Desktop Navigation (Centered) */}
-          <div className="hidden md:flex items-center gap-8 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-            <Link href="/events" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors font-medium">
-              Events
+            <div className="hidden md:flex gap-6">
+              <Link href="/org-events" className={`text-[13px] md:text-[15px] transition-colors ${isActive('/org-events')}`}>
+                My Events
+              </Link>
+              <Link href="/social" className={`text-[13px] md:text-[15px] transition-colors ${isActive('/social')}`}>
+                Social
+              </Link>
+              <Link href="/org-analytics" className={`text-[13px] md:text-[15px] transition-colors ${isActive('/org-analytics')}`}>
+                Analytics
+              </Link>
+            </div>
+
+            <Link href={`/organizations/${profile?.id}`} className="hidden md:block">
+              <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-[#f5f5f7] hover:ring-[#0066cc] transition-all bg-gray-100 flex items-center justify-center text-[#0066cc] font-bold">
+                {displayImage ? (
+                  <img src={displayImage} alt={displayName} className="w-full h-full object-cover" />
+                ) : (
+                  <span>{displayInitial}</span>
+                )}
+              </div>
             </Link>
-            <Link href="/history" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors font-medium">
-              History
-            </Link>
-            <Link href="/social" className="text-[13px] md:text-[15px] text-[#0066cc] font-semibold transition-colors">
-              Social
-            </Link>
-            <Link href="/volunteer-impact" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors font-medium flex items-center gap-1.5">
-              Impact
-            </Link>
+
+            <div className="relative md:hidden">
+              <button 
+                onClick={() => setMenuOpen(!menuOpen)} 
+                className="w-9 h-9 rounded-full bg-[#f5f5f7] flex items-center justify-center hover:bg-[#e5e5e7] transition-colors"
+              >
+                {menuOpen ? <X className="w-5 h-5 text-[#1d1d1f]" /> : <Menu className="w-5 h-5 text-[#1d1d1f]" />}
+              </button>
+              
+              {menuOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
+                  <div className="absolute right-0 top-12 z-50 w-56 bg-white rounded-xl shadow-xl border border-[#e5e5e7] overflow-hidden">
+                    <Link href={`/organizations/${profile?.id}`} onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-[#f5f5f7] transition-colors border-b border-[#f5f5f7]">
+                      <div className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-[#f5f5f7] bg-gray-100 flex items-center justify-center">
+                         {displayImage ? (
+                            <img src={displayImage} alt="Profile" className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-xs font-bold">{displayInitial}</span>
+                          )}
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[13px] font-medium text-[#1d1d1f]">View Profile</span>
+                        <span className="text-[10px] text-gray-500 truncate max-w-[120px]">{displayName}</span>
+                      </div>
+                    </Link>
+
+                    <Link href="/org-events" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-[#f5f5f7] transition-colors border-b border-[#f5f5f7]">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#e0f2fe] to-[#bae6fd] flex items-center justify-center">
+                        <Calendar className="w-4 h-4 text-[#0284c7]" />
+                      </div>
+                      <span className="text-[13px] font-medium text-[#1d1d1f]">My Events</span>
+                    </Link>
+                    <Link href="/org-volunteers" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-[#f5f5f7] transition-colors border-b border-[#f5f5f7]">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#e8f5e9] to-[#c8e6c9] flex items-center justify-center">
+                        <Users className="w-4 h-4 text-[#2e7d32]" />
+                      </div>
+                      <span className="text-[13px] font-medium text-[#1d1d1f]">Volunteers</span>
+                    </Link>
+                    <Link href="/org-analytics" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-[#f5f5f7] transition-colors">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#f3e8ff] to-[#d8b4fe] flex items-center justify-center">
+                        <BarChart3 className="w-4 h-4 text-[#9333ea]" />
+                      </div>
+                      <span className="text-[13px] font-medium text-[#1d1d1f]">Analytics</span>
+                    </Link>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
+        </nav>
+      ) : (
+        /* --- VOLUNTEER NAVBAR (Default) --- */
+        <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-[#e5e5e7]">
+          <div className="max-w-[1200px] mx-auto px-4 md:px-8 h-11 md:h-14 flex items-center justify-between relative">
+            <Link href="/home" className="flex items-center shrink-0">
+               <span className="text-[15px] md:text-[17px] font-bold text-[#1d1d1f] tracking-tight">KINDLY</span>
+            </Link>
 
-          {/* 3. Right Section */}
-          <div className="flex items-center gap-4 shrink-0">
-            
-            {/* Desktop Profile Avatar */}
-            <Link
+            <div className="hidden md:flex items-center gap-8 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+              <Link href="/events" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors font-medium">
+                Events
+              </Link>
+              <Link href="/history" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors font-medium">
+                History
+              </Link>
+              <Link href="/social" className="text-[13px] md:text-[15px] text-[#0066cc] font-semibold transition-colors">
+                Social
+              </Link>
+              <Link href="/volunteer-impact" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors font-medium flex items-center gap-1.5">
+                Impact
+              </Link>
+            </div>
+
+            <div className="flex items-center gap-4 shrink-0">
+              <Link
                 href={profile?.id ? `/volunteers/${profile.id}` : '#'}
                 className="hidden md:block group"
-            >
+              >
                 <div className="w-9 h-9 md:w-10 md:h-10 rounded-full overflow-hidden border border-gray-200 group-hover:border-gray-400 group-active:scale-95 transition-all bg-gray-50 flex items-center justify-center shadow-sm">
                     {displayImage ? (
                         <img src={displayImage} alt="Profile" className="w-full h-full object-cover" />
@@ -199,68 +294,70 @@ export default function SocialDiscoveryPage() {
                         </span>
                     )}
                 </div>
-            </Link>
+              </Link>
 
-            {/* Mobile Menu Button */}
-            <div className="relative md:hidden">
-              <button
-                onClick={() => setMenuOpen(!menuOpen)}
-                className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-[#f5f5f7] flex items-center justify-center hover:bg-[#e5e5e7] transition-colors"
-              >
-                {menuOpen ? (
-                  <X className="w-4 h-4 md:w-5 md:h-5 text-[#1d1d1f]" />
-                ) : (
-                  <Menu className="w-4 h-4 md:w-5 md:h-5 text-[#1d1d1f]" />
-                )}
-              </button>
+              <div className="relative md:hidden">
+                <button
+                  onClick={() => setMenuOpen(!menuOpen)}
+                  className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-[#f5f5f7] flex items-center justify-center hover:bg-[#e5e5e7] transition-colors"
+                >
+                  {menuOpen ? (
+                    <X className="w-4 h-4 md:w-5 md:h-5 text-[#1d1d1f]" />
+                  ) : (
+                    <Menu className="w-4 h-4 md:w-5 md:h-5 text-[#1d1d1f]" />
+                  )}
+                </button>
 
-              {menuOpen && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
-                  <div className="absolute right-0 top-10 md:top-12 z-50 w-44 md:w-48 bg-white rounded-xl shadow-xl border border-[#e5e5e7] overflow-hidden">
-                    <Link
-                      href="/profile"
-                      onClick={() => setMenuOpen(false)}
-                      className="flex items-center gap-3 px-3 md:px-4 py-2.5 md:py-3 hover:bg-[#f5f5f7] transition-colors border-b border-[#f5f5f7]"
-                    >
-                      <span className="text-[12px] md:text-[13px] font-medium text-[#1d1d1f]">Profile</span>
-                    </Link>
-                    <Link
-                      href="/home"
-                      onClick={() => setMenuOpen(false)}
-                      className="flex items-center gap-3 px-3 md:px-4 py-2.5 md:py-3 hover:bg-[#f5f5f7] transition-colors border-b border-[#f5f5f7]"
-                    >
-                      <span className="text-[12px] md:text-[13px] font-medium text-[#1d1d1f]">Home</span>
-                    </Link>
-                    <Link
-                      href="/events"
-                      onClick={() => setMenuOpen(false)}
-                      className="flex items-center gap-3 px-3 md:px-4 py-2.5 md:py-3 hover:bg-[#f5f5f7] transition-colors border-b border-[#f5f5f7]"
-                    >
-                      <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-gradient-to-br from-[#fef3c7] to-[#fde68a] flex items-center justify-center">
-                        <Sparkles className="w-3.5 h-3.5 md:w-4 md:h-4 text-[#f59e0b]" />
-                      </div>
-                      <span className="text-[12px] md:text-[13px] font-medium text-[#1d1d1f]">Discover Events</span>
-                    </Link>
-                    <Link
-                        href="/volunteer-impact"
+                {menuOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
+                    <div className="absolute right-0 top-10 md:top-12 z-50 w-44 md:w-48 bg-white rounded-xl shadow-xl border border-[#e5e5e7] overflow-hidden">
+                      <Link
+                        href="/profile"
                         onClick={() => setMenuOpen(false)}
-                        className="flex items-center gap-3 px-3 md:px-4 py-2.5 md:py-3 hover:bg-[#f5f5f7] transition-colors"
-                    >
-                        <span className="text-[12px] md:text-[13px] font-medium text-[#1d1d1f]">Impact</span>
-                    </Link>
-                  </div>
-                </>
-              )}
+                        className="flex items-center gap-3 px-3 md:px-4 py-2.5 md:py-3 hover:bg-[#f5f5f7] transition-colors border-b border-[#f5f5f7]"
+                      >
+                        <span className="text-[12px] md:text-[13px] font-medium text-[#1d1d1f]">Profile</span>
+                      </Link>
+                      <Link
+                        href="/home"
+                        onClick={() => setMenuOpen(false)}
+                        className="flex items-center gap-3 px-3 md:px-4 py-2.5 md:py-3 hover:bg-[#f5f5f7] transition-colors border-b border-[#f5f5f7]"
+                      >
+                        <span className="text-[12px] md:text-[13px] font-medium text-[#1d1d1f]">Home</span>
+                      </Link>
+                      <Link
+                        href="/events"
+                        onClick={() => setMenuOpen(false)}
+                        className="flex items-center gap-3 px-3 md:px-4 py-2.5 md:py-3 hover:bg-[#f5f5f7] transition-colors border-b border-[#f5f5f7]"
+                      >
+                        <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-gradient-to-br from-[#fef3c7] to-[#fde68a] flex items-center justify-center">
+                          <Sparkles className="w-3.5 h-3.5 md:w-4 md:h-4 text-[#f59e0b]" />
+                        </div>
+                        <span className="text-[12px] md:text-[13px] font-medium text-[#1d1d1f]">Discover Events</span>
+                      </Link>
+                      <Link
+                          href="/volunteer-impact"
+                          onClick={() => setMenuOpen(false)}
+                          className="flex items-center gap-3 px-3 md:px-4 py-2.5 md:py-3 hover:bg-[#f5f5f7] transition-colors"
+                      >
+                          <span className="text-[12px] md:text-[13px] font-medium text-[#1d1d1f]">Impact</span>
+                      </Link>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      </nav>
+        </nav>
+      )}
 
-      {/* --- MAIN CONTENT AREA --- */}
+      {/* =========================================================
+          MAIN CONTENT AREA
+         ========================================================= */}
       <div className="max-w-2xl mx-auto px-4 py-6">
 
-        {/* ✅ RELOCATED SEARCH BAR */}
+        {/* SEARCH BAR */}
         <div className="mb-8">
             <form onSubmit={handleSearch} className="relative group w-full">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-black transition-colors" />
@@ -317,11 +414,11 @@ export default function SocialDiscoveryPage() {
                           className="flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0"
                       >
                           <div className="w-10 h-10 rounded-full bg-gray-100 overflow-hidden shrink-0 border border-gray-200 flex items-center justify-center">
-                              {item.image ? (
-                                <img src={item.image} className="w-full h-full object-cover" /> 
-                              ) : (
-                                <User className="w-5 h-5 text-gray-400" />
-                              )}
+                            {item.image ? (
+                              <img src={item.image} className="w-full h-full object-cover" /> 
+                            ) : (
+                              <User className="w-5 h-5 text-gray-400" />
+                            )}
                           </div>
                           <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-1.5">

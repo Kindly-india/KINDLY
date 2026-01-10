@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import {
   Calendar,
   MapPin,
@@ -14,6 +14,9 @@ import {
   Eye,
   Edit,
   Trash2,
+  Menu, // Added for Navbar
+  X,    // Added for Navbar
+  BarChart3 // Added for Navbar
 } from "lucide-react"
 import { api } from "@/lib/api"
 
@@ -38,6 +41,13 @@ interface Event {
 
 export function OrgEventManagement() {
   const router = useRouter()
+  const pathname = usePathname()
+  
+  // --- Navbar State ---
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [profile, setProfile] = useState<any>(null)
+
+  // --- Page State ---
   const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -45,17 +55,24 @@ export function OrgEventManagement() {
   const [deletingEventId, setDeletingEventId] = useState<string | null>(null)
 
   useEffect(() => {
-    fetchEvents()
+    fetchData()
   }, [])
 
-  const fetchEvents = async () => {
+  const fetchData = async () => {
     try {
       setLoading(true)
-      const response = await api.getMyEvents()
-      setEvents(response.events || [])
+      // Fetch both Events AND Profile (for the navbar)
+      const [eventsRes, profileRes] = await Promise.all([
+        api.getMyEvents(),
+        api.getUserProfile()
+      ])
+
+      setEvents(eventsRes.events || [])
+      setProfile(profileRes?.profile || null)
+
     } catch (err: any) {
-      setError(err.message || 'Failed to load events')
-      console.error('Error fetching events:', err)
+      setError(err.message || 'Failed to load data')
+      console.error('Error fetching data:', err)
     } finally {
       setLoading(false)
     }
@@ -69,8 +86,9 @@ export function OrgEventManagement() {
     try {
       setDeletingEventId(eventId)
       await api.cancelEvent(eventId)
-      // Refresh events list
-      await fetchEvents()
+      // Refresh only events
+      const response = await api.getMyEvents()
+      setEvents(response.events || [])
       alert('Event cancelled successfully')
     } catch (err: any) {
       alert(err.message || 'Failed to cancel event')
@@ -107,12 +125,16 @@ export function OrgEventManagement() {
     return Math.round((event.registered_count / event.total_slots) * 100)
   }
 
+  // Navbar Helper: Check active link
+  const isActive = (path: string) => 
+    pathname === path ? "text-[#0066cc] font-medium" : "text-[#1d1d1f] hover:text-[#0066cc]"
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600 mb-4"></div>
-          <p className="text-sm text-gray-600">Loading events...</p>
+          <p className="text-sm text-gray-600">Loading...</p>
         </div>
       </div>
     )
@@ -124,6 +146,94 @@ export function OrgEventManagement() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
+      
+      {/* --- INTEGRATED NAVBAR START --- */}
+      <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-[#f5f5f7]">
+        <div className="max-w-[1400px] mx-auto px-4 md:px-8 h-12 md:h-14 flex items-center justify-between">
+          {/* Logo */}
+          <Link href="/org-home" className="flex items-center">
+            <span className="text-[15px] md:text-[17px] font-bold text-[#1d1d1f] tracking-tight">KINDLY</span>
+          </Link>
+
+          {/* Desktop Links */}
+          <div className="hidden md:flex gap-6">
+            <Link href="/org-events" className={`text-[13px] md:text-[15px] transition-colors ${isActive('/org-events')}`}>
+              My Events
+            </Link>
+            <Link href="/social" className={`text-[13px] md:text-[15px] transition-colors ${isActive('/social')}`}>
+              Social
+            </Link>
+            <Link href="/org-analytics" className={`text-[13px] md:text-[15px] transition-colors ${isActive('/org-analytics')}`}>
+              Analytics
+            </Link>
+          </div>
+
+          {/* Desktop Profile Icon */}
+          <Link href={`/organizations/${profile?.id}`} className="hidden md:block">
+            <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-[#f5f5f7] hover:ring-[#0066cc] transition-all bg-gray-100 flex items-center justify-center text-[#0066cc] font-bold">
+              {profile?.logo_url ? (
+                <img src={profile.logo_url} alt={profile.name} className="w-full h-full object-cover" />
+              ) : (
+                <span>{profile?.name?.charAt(0) || "O"}</span>
+              )}
+            </div>
+          </Link>
+
+          {/* Mobile Menu Button */}
+          <div className="relative md:hidden">
+            <button 
+              onClick={() => setMenuOpen(!menuOpen)} 
+              className="w-9 h-9 rounded-full bg-[#f5f5f7] flex items-center justify-center hover:bg-[#e5e5e7] transition-colors"
+            >
+              {menuOpen ? <X className="w-5 h-5 text-[#1d1d1f]" /> : <Menu className="w-5 h-5 text-[#1d1d1f]" />}
+            </button>
+            
+            {/* Mobile Dropdown */}
+            {menuOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
+                <div className="absolute right-0 top-12 z-50 w-56 bg-white rounded-xl shadow-xl border border-[#e5e5e7] overflow-hidden">
+                  <Link href={`/organizations/${profile?.id}`} onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-[#f5f5f7] transition-colors border-b border-[#f5f5f7]">
+                    <div className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-[#f5f5f7] bg-gray-100 flex items-center justify-center">
+                       {profile?.logo_url ? (
+                          <img src={profile.logo_url} alt="Profile" className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-xs font-bold">{profile?.name?.charAt(0) || "O"}</span>
+                        )}
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-[13px] font-medium text-[#1d1d1f]">View Profile</span>
+                      <span className="text-[10px] text-gray-500 truncate max-w-[120px]">{profile?.name}</span>
+                    </div>
+                  </Link>
+
+                  <Link href="/org-events" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-[#f5f5f7] transition-colors border-b border-[#f5f5f7]">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#e0f2fe] to-[#bae6fd] flex items-center justify-center">
+                      <Calendar className="w-4 h-4 text-[#0284c7]" />
+                    </div>
+                    <span className="text-[13px] font-medium text-[#1d1d1f]">My Events</span>
+                  </Link>
+                  <Link href="/org-volunteers" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-[#f5f5f7] transition-colors border-b border-[#f5f5f7]">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#e8f5e9] to-[#c8e6c9] flex items-center justify-center">
+                      <Users className="w-4 h-4 text-[#2e7d32]" />
+                    </div>
+                    <span className="text-[13px] font-medium text-[#1d1d1f]">Volunteers</span>
+                  </Link>
+                  <Link href="/org-analytics" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-[#f5f5f7] transition-colors">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#f3e8ff] to-[#d8b4fe] flex items-center justify-center">
+                      <BarChart3 className="w-4 h-4 text-[#9333ea]" />
+                    </div>
+                    <span className="text-[13px] font-medium text-[#1d1d1f]">Analytics</span>
+                  </Link>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </nav>
+      {/* --- INTEGRATED NAVBAR END --- */}
+
+      {/* Decorative Background Elements */}
       <div className="fixed top-20 left-8 w-12 h-12 bg-white rounded-xl shadow-lg hidden md:flex items-center justify-center pointer-events-none">
         <Heart className="w-5 h-5 text-red-400" />
       </div>
@@ -131,10 +241,10 @@ export function OrgEventManagement() {
         <Sparkles className="w-5 h-5 text-amber-500" />
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 md:px-8 py-6 md:py-8">
+      <div className="max-w-6xl mx-auto px-4 md:px-8 py-6 md:py-8 relative">
         <Link href="/org-home" className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors mb-4">
           <ChevronLeft className="w-4 h-4" />
-          Home
+          Back to Dashboard
         </Link>
 
         <div className="mb-6">
@@ -142,6 +252,7 @@ export function OrgEventManagement() {
           <p className="text-gray-600">Manage your volunteering events</p>
         </div>
 
+        {/* Tabs */}
         <div className="flex gap-3 mb-6">
           <button
             onClick={() => setActiveTab("active")}
@@ -171,6 +282,7 @@ export function OrgEventManagement() {
           </div>
         )}
 
+        {/* Event List */}
         {displayEvents.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-2xl">
             <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -218,14 +330,20 @@ export function OrgEventManagement() {
                           <h3 className="text-lg md:text-xl font-bold text-gray-900">
                             {event.title}
                           </h3>
-                          <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full">
-                            Published
+                          <span className={`px-3 py-1 text-xs font-medium rounded-full ${
+                             event.status === 'completed' ? 'bg-gray-100 text-gray-700' : 'bg-emerald-100 text-emerald-700'
+                          }`}>
+                            {event.status === 'completed' || isEventCompleted(event) ? 'Completed' : 'Published'}
                           </span>
                         </div>
                         <div className="flex items-center gap-4 text-sm text-gray-600">
                           <div className="flex items-center gap-1.5">
                             <Calendar className="w-4 h-4" />
                             {formatDate(event.event_date)} • {formatTime(event.start_time)}
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <MapPin className="w-4 h-4" />
+                            {event.location}
                           </div>
                         </div>
                       </div>
@@ -279,8 +397,6 @@ export function OrgEventManagement() {
                           </button>
                         </>
                       )}
-
-                      
                     </div>
                   </div>
                 </div>

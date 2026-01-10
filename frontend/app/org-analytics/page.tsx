@@ -3,10 +3,12 @@
 import { useEffect, useState } from "react"
 import { api } from "@/lib/api"
 import Link from "next/link"
+import { usePathname } from "next/navigation" // ✅ Added for active link detection
 import { 
   Loader2, Users, Clock, CalendarCheck, 
   DollarSign, ArrowUpRight, ArrowDownRight, Download, 
-  Award, Filter, ArrowLeft 
+  Award, Filter, ArrowLeft,
+  Menu, X, Calendar, BarChart3 // ✅ Added Navbar icons
 } from "lucide-react"
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
@@ -16,8 +18,14 @@ import {
 const COLORS = ['#10b981', '#ef4444', '#f59e0b', '#3b82f6'];
 
 export default function OrgAnalyticsPage() {
+  const pathname = usePathname()
   const [loading, setLoading] = useState(true)
   
+  // --- Navbar State ---
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [profile, setProfile] = useState<any>(null)
+
+  // --- Analytics State ---
   const [data, setData] = useState({
     totalHours: 0,
     totalVolunteers: 0,
@@ -35,9 +43,14 @@ export default function OrgAnalyticsPage() {
       try {
         setLoading(true);
 
-        // 1. Fetch Events directly (We know this works!)
-        const eventsRes = await api.getMyEvents();
+        // 1. Fetch Events & Profile (Parallel)
+        const [eventsRes, profileRes] = await Promise.all([
+          api.getMyEvents(),
+          api.getUserProfile()
+        ]);
+
         const events = eventsRes.events || [];
+        setProfile(profileRes?.profile || null); // Set profile for Navbar
 
         // 2. Fetch Registrations for ALL events to get details
         const allData = await Promise.all(
@@ -67,7 +80,7 @@ export default function OrgAnalyticsPage() {
         });
 
         allData.forEach((ev: any) => {
-            // A. Calculate Duration (Smart Logic from Home Page)
+            // A. Calculate Duration
             let duration = 0;
             if (ev.start_time && ev.end_time) {
                 const [sh, sm] = ev.start_time.split(':').map(Number);
@@ -158,17 +171,116 @@ export default function OrgAnalyticsPage() {
     fetchData()
   }, [])
 
+  // Navbar Helper
+  const isActive = (path: string) => 
+    pathname === path ? "text-[#0066cc] font-medium" : "text-[#1d1d1f] hover:text-[#0066cc]"
+
+  // Helper for displaying profile image/initials
+  const displayImage = profile?.logo_url || profile?.avatar_url
+  const displayName = profile?.name || profile?.full_name || "Org"
+  const displayInitial = displayName.charAt(0)
+
   if (loading) return <div className="h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-blue-600" /></div>
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
+      
+      {/* =========================================================
+          ORGANIZATION NAVBAR (Integrated)
+         ========================================================= */}
+      <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-[#f5f5f7]">
+        <div className="max-w-[1400px] mx-auto px-4 md:px-8 h-12 md:h-14 flex items-center justify-between">
+          <Link href="/org-home" className="flex items-center">
+            <span className="text-[15px] md:text-[17px] font-bold text-[#1d1d1f] tracking-tight">KINDLY</span>
+          </Link>
+
+          {/* Desktop Links */}
+          <div className="hidden md:flex gap-6">
+            <Link href="/org-events" className={`text-[13px] md:text-[15px] transition-colors ${isActive('/org-events')}`}>
+              My Events
+            </Link>
+            <Link href="/social" className={`text-[13px] md:text-[15px] transition-colors ${isActive('/social')}`}>
+              Social
+            </Link>
+            <Link href="/org-analytics" className={`text-[13px] md:text-[15px] transition-colors ${isActive('/org-analytics')}`}>
+              Analytics
+            </Link>
+          </div>
+
+          {/* Desktop Profile Icon */}
+          <Link href={`/organizations/${profile?.id}`} className="hidden md:block">
+            <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-[#f5f5f7] hover:ring-[#0066cc] transition-all bg-gray-100 flex items-center justify-center text-[#0066cc] font-bold">
+              {displayImage ? (
+                <img src={displayImage} alt={displayName} className="w-full h-full object-cover" />
+              ) : (
+                <span>{displayInitial}</span>
+              )}
+            </div>
+          </Link>
+
+          {/* Mobile Menu Button */}
+          <div className="relative md:hidden">
+            <button 
+              onClick={() => setMenuOpen(!menuOpen)} 
+              className="w-9 h-9 rounded-full bg-[#f5f5f7] flex items-center justify-center hover:bg-[#e5e5e7] transition-colors"
+            >
+              {menuOpen ? <X className="w-5 h-5 text-[#1d1d1f]" /> : <Menu className="w-5 h-5 text-[#1d1d1f]" />}
+            </button>
+            
+            {/* Mobile Dropdown */}
+            {menuOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
+                <div className="absolute right-0 top-12 z-50 w-56 bg-white rounded-xl shadow-xl border border-[#e5e5e7] overflow-hidden">
+                  <Link href={`/organizations/${profile?.id}`} onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-[#f5f5f7] transition-colors border-b border-[#f5f5f7]">
+                    <div className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-[#f5f5f7] bg-gray-100 flex items-center justify-center">
+                       {displayImage ? (
+                          <img src={displayImage} alt="Profile" className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-xs font-bold">{displayInitial}</span>
+                        )}
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-[13px] font-medium text-[#1d1d1f]">View Profile</span>
+                      <span className="text-[10px] text-gray-500 truncate max-w-[120px]">{displayName}</span>
+                    </div>
+                  </Link>
+
+                  <Link href="/org-events" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-[#f5f5f7] transition-colors border-b border-[#f5f5f7]">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#e0f2fe] to-[#bae6fd] flex items-center justify-center">
+                      <Calendar className="w-4 h-4 text-[#0284c7]" />
+                    </div>
+                    <span className="text-[13px] font-medium text-[#1d1d1f]">My Events</span>
+                  </Link>
+                  <Link href="/org-volunteers" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-[#f5f5f7] transition-colors border-b border-[#f5f5f7]">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#e8f5e9] to-[#c8e6c9] flex items-center justify-center">
+                      <Users className="w-4 h-4 text-[#2e7d32]" />
+                    </div>
+                    <span className="text-[13px] font-medium text-[#1d1d1f]">Volunteers</span>
+                  </Link>
+                  <Link href="/org-analytics" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-[#f5f5f7] transition-colors">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#f3e8ff] to-[#d8b4fe] flex items-center justify-center">
+                      <BarChart3 className="w-4 h-4 text-[#9333ea]" />
+                    </div>
+                    <span className="text-[13px] font-medium text-[#1d1d1f]">Analytics</span>
+                  </Link>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </nav>
+
+      {/* =========================================================
+          PAGE CONTENT
+         ========================================================= */}
       
       {/* 1. Header Section */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-               <Link href="/org/home" className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+               <Link href="/org-home" className="p-2 hover:bg-gray-100 rounded-full transition-colors">
                   <ArrowLeft className="w-5 h-5 text-gray-500" />
                </Link>
                <div>
@@ -299,7 +411,7 @@ export default function OrgAnalyticsPage() {
                     data.topVolunteers.map((vol, i) => (
                         <div key={i} className="px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-linear-to-br from-blue-100 to-purple-100 flex items-center justify-center font-bold text-blue-600 text-sm">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center font-bold text-blue-600 text-sm">
                                 {vol.name.charAt(0)}
                             </div>
                             <div>
