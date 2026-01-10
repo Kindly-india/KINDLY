@@ -10,14 +10,17 @@ export class AuthService {
   async signupVolunteer(dto: VolunteerSignupDto) {
     const supabase = this.supabaseService.getClient();
 
-    // Create auth user with Supabase Auth
-    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+    // 1. Sign up the user (Triggers confirmation email if enabled in Supabase)
+    const { data: authData, error: authError } = await supabase.auth.signUp({
       email: dto.email,
       password: dto.password,
-      email_confirm: true, // Auto-confirm email for now
-      user_metadata: {
-        user_type: 'volunteer',
-        full_name: dto.fullName,
+      options: {
+        data: {
+          user_type: 'volunteer',
+          full_name: dto.fullName,
+        },
+        // Replace with your actual deployed frontend URL
+        // emailRedirectTo: 'https://your-frontend-url.com/login',
       },
     });
 
@@ -28,7 +31,13 @@ export class AuthService {
       throw new BadRequestException(authError.message);
     }
 
-    // Create volunteer profile
+    if (!authData.user) {
+      throw new BadRequestException('User creation failed');
+    }
+
+    // 2. Create volunteer profile
+    // Note: If email confirmation is ON, the user cannot login yet, 
+    // but we still create the profile so it's ready when they verify.
     const { data: profile, error: profileError } = await supabase
       .from('volunteer_profiles')
       .insert({
@@ -37,28 +46,23 @@ export class AuthService {
         phone: dto.phone,
         city: dto.city,
         interests: dto.interests,
+        total_hours: 0,
       })
       .select()
       .single();
 
     if (profileError) {
-      // Rollback: delete auth user if profile creation fails
+      // Rollback: Delete the auth user if profile creation fails to prevent orphan users
       await supabase.auth.admin.deleteUser(authData.user.id);
-      throw new BadRequestException('Failed to create profile');
+      throw new BadRequestException('Failed to create volunteer profile');
     }
 
     return {
-      message: 'Volunteer registered successfully',
+      message: 'Signup successful. Please check your email to verify your account.',
       user: {
         id: authData.user.id,
         email: authData.user.email,
-        userType: 'volunteer',
-        profile: {
-          fullName: profile.full_name,
-          phone: profile.phone,
-          city: profile.city,
-          interests: profile.interests,
-        },
+        profile,
       },
     };
   }
@@ -66,14 +70,17 @@ export class AuthService {
   async signupOrganization(dto: OrganizationSignupDto) {
     const supabase = this.supabaseService.getClient();
 
-    // Create auth user
-    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+    // 1. Sign up the user
+    const { data: authData, error: authError } = await supabase.auth.signUp({
       email: dto.email,
       password: dto.password,
-      email_confirm: true,
-      user_metadata: {
-        user_type: 'organization',
-        org_name: dto.name,
+      options: {
+        data: {
+          user_type: 'organization',
+          org_type: dto.orgType,
+        },
+        // Replace with your actual deployed frontend URL
+        // emailRedirectTo: 'https://your-frontend-url.com/login',
       },
     });
 
@@ -84,7 +91,11 @@ export class AuthService {
       throw new BadRequestException(authError.message);
     }
 
-    // Create organization profile
+    if (!authData.user) {
+      throw new BadRequestException('User creation failed');
+    }
+
+    // 2. Create organization profile
     const { data: profile, error: profileError } = await supabase
       .from('organization_profiles')
       .insert({
@@ -109,20 +120,18 @@ export class AuthService {
       })
       .select()
       .single();
-      
+
     if (profileError) {
-      // Rollback
       await supabase.auth.admin.deleteUser(authData.user.id);
       throw new BadRequestException('Failed to create organization profile');
     }
 
     return {
-      message: 'Organization application submitted. Awaiting approval.',
+      message: 'Organization application submitted. Please check your email to verify your account.',
       user: {
         id: authData.user.id,
         email: authData.user.email,
-        userType: 'organization',
-        approvalStatus: profile.approval_status,
+        profile,
       },
     };
   }
