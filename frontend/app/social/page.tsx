@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import {
@@ -11,7 +12,10 @@ import {
   Loader2,
   Clock,
   User,
-  ArrowLeft // ✅ Import ArrowLeft for the back button
+  ArrowLeft,
+  Menu, // ✅ Added
+  X,    // ✅ Added
+  Sparkles // ✅ Added
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { api } from "@/lib/api"
@@ -87,6 +91,10 @@ export default function SocialDiscoveryPage() {
   const [loading, setLoading] = useState(false)
   const [results, setResults] = useState<any[]>([]) 
   const [isSearching, setIsSearching] = useState(false)
+  
+  // ✅ Added for Navbar Consistency
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [profile, setProfile] = useState<any>(null)
 
   // --- HANDLERS ---
   const handleSearch = async (e: React.FormEvent) => {
@@ -95,7 +103,7 @@ export default function SocialDiscoveryPage() {
 
     setIsSearching(true)
     setLoading(true)
-    setResults([]) // Clear previous results
+    setResults([]) 
     
     try {
       const data = await api.globalSearch(searchQuery)
@@ -107,18 +115,17 @@ export default function SocialDiscoveryPage() {
     }
   }
 
-  // ✅ HANDLER: GO BACK TO HOME
-  const handleGoBack = () => {
-    // If user is searching, clear search first
-    if (isSearching) {
-        setIsSearching(false)
-        setSearchQuery("")
-        setResults([])
-    } else {
-        // Otherwise go to home
-        router.push('/home')
-    }
-  }
+  // Fetch Profile for Navbar
+  useEffect(() => {
+    api.getUserProfile().then(res => {
+        if(res?.profile) setProfile(res.profile)
+    }).catch(() => {})
+  }, [])
+
+  // Display Logic for Profile
+  const displayImage = profile?.avatar_url || profile?.logo_url
+  const displayName = profile?.full_name || profile?.name || "User"
+  const displayInitial = displayName ? displayName.charAt(0).toUpperCase() : "U"
 
   // Filter Results
   const displayedResults = results.filter(item => {
@@ -143,21 +150,119 @@ export default function SocialDiscoveryPage() {
   return (
     <div className="min-h-screen bg-[#f8f9fa] pb-20">
       
-      {/* --- HEADER & SEARCH --- */}
-      <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-200">
-        <div className="max-w-2xl mx-auto px-4 pt-4 pb-4">
+      {/* ✅ NEW CONSISTENT NAVBAR */}
+      <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-[#e5e5e7]">
+        <div className="max-w-[1200px] mx-auto px-4 md:px-8 h-11 md:h-14 flex items-center justify-between relative">
           
-          <div className="flex items-center gap-3">
-            {/* ✅ ADDED: BACK BUTTON */}
-            <button 
-                onClick={handleGoBack}
-                className="p-2 -ml-2 rounded-full hover:bg-gray-100 text-gray-600 transition-colors"
-                aria-label="Go back"
-            >
-                <ArrowLeft className="w-5 h-5" />
-            </button>
+          {/* 1. Logo */}
+          <Link href="/home" className="flex items-center shrink-0">
+            <Image 
+                src="/logo.png" 
+                alt="Kindly" 
+                width={120} 
+                height={40} 
+                className="h-8 md:h-10 w-auto" 
+                priority 
+            />
+          </Link>
 
-            <form onSubmit={handleSearch} className="relative group flex-1">
+          {/* 2. Desktop Navigation (Centered) */}
+          <div className="hidden md:flex items-center gap-8 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+            <Link href="/events" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors font-medium">
+              Events
+            </Link>
+            <Link href="/history" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors font-medium">
+              History
+            </Link>
+            <Link href="/social" className="text-[13px] md:text-[15px] text-[#0066cc] font-semibold transition-colors">
+              Social
+            </Link>
+            <Link href="/volunteer-impact" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors font-medium flex items-center gap-1.5">
+              Impact
+            </Link>
+          </div>
+
+          {/* 3. Right Section */}
+          <div className="flex items-center gap-4 shrink-0">
+            
+            {/* Desktop Profile Avatar */}
+            <Link
+                href={profile?.id ? `/volunteers/${profile.id}` : '#'}
+                className="hidden md:block group"
+            >
+                <div className="w-9 h-9 md:w-10 md:h-10 rounded-full overflow-hidden border border-gray-200 group-hover:border-gray-400 group-active:scale-95 transition-all bg-gray-50 flex items-center justify-center shadow-sm">
+                    {displayImage ? (
+                        <img src={displayImage} alt="Profile" className="w-full h-full object-cover" />
+                    ) : (
+                        <span className="font-bold text-gray-500 group-hover:text-gray-900 transition-colors">
+                            {displayInitial}
+                        </span>
+                    )}
+                </div>
+            </Link>
+
+            {/* Mobile Menu Button */}
+            <div className="relative md:hidden">
+              <button
+                onClick={() => setMenuOpen(!menuOpen)}
+                className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-[#f5f5f7] flex items-center justify-center hover:bg-[#e5e5e7] transition-colors"
+              >
+                {menuOpen ? (
+                  <X className="w-4 h-4 md:w-5 md:h-5 text-[#1d1d1f]" />
+                ) : (
+                  <Menu className="w-4 h-4 md:w-5 md:h-5 text-[#1d1d1f]" />
+                )}
+              </button>
+
+              {menuOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
+                  <div className="absolute right-0 top-10 md:top-12 z-50 w-44 md:w-48 bg-white rounded-xl shadow-xl border border-[#e5e5e7] overflow-hidden">
+                    <Link
+                      href="/profile"
+                      onClick={() => setMenuOpen(false)}
+                      className="flex items-center gap-3 px-3 md:px-4 py-2.5 md:py-3 hover:bg-[#f5f5f7] transition-colors border-b border-[#f5f5f7]"
+                    >
+                      <span className="text-[12px] md:text-[13px] font-medium text-[#1d1d1f]">Profile</span>
+                    </Link>
+                    <Link
+                      href="/home"
+                      onClick={() => setMenuOpen(false)}
+                      className="flex items-center gap-3 px-3 md:px-4 py-2.5 md:py-3 hover:bg-[#f5f5f7] transition-colors border-b border-[#f5f5f7]"
+                    >
+                      <span className="text-[12px] md:text-[13px] font-medium text-[#1d1d1f]">Home</span>
+                    </Link>
+                    <Link
+                      href="/events"
+                      onClick={() => setMenuOpen(false)}
+                      className="flex items-center gap-3 px-3 md:px-4 py-2.5 md:py-3 hover:bg-[#f5f5f7] transition-colors border-b border-[#f5f5f7]"
+                    >
+                      <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-gradient-to-br from-[#fef3c7] to-[#fde68a] flex items-center justify-center">
+                        <Sparkles className="w-3.5 h-3.5 md:w-4 md:h-4 text-[#f59e0b]" />
+                      </div>
+                      <span className="text-[12px] md:text-[13px] font-medium text-[#1d1d1f]">Discover Events</span>
+                    </Link>
+                    <Link
+                        href="/volunteer-impact"
+                        onClick={() => setMenuOpen(false)}
+                        className="flex items-center gap-3 px-3 md:px-4 py-2.5 md:py-3 hover:bg-[#f5f5f7] transition-colors"
+                    >
+                        <span className="text-[12px] md:text-[13px] font-medium text-[#1d1d1f]">Impact</span>
+                    </Link>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      {/* --- MAIN CONTENT AREA --- */}
+      <div className="max-w-2xl mx-auto px-4 py-6">
+
+        {/* ✅ RELOCATED SEARCH BAR */}
+        <div className="mb-8">
+            <form onSubmit={handleSearch} className="relative group w-full">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-black transition-colors" />
                 <input 
                 type="text" 
@@ -167,35 +272,30 @@ export default function SocialDiscoveryPage() {
                     setSearchQuery(e.target.value)
                     if(e.target.value === '') { setIsSearching(false); setResults([]); }
                 }}
-                className="w-full h-12 pl-12 pr-4 bg-[#f5f5f7] rounded-full text-[15px] outline-none border border-transparent focus:bg-white focus:border-gray-300 focus:shadow-sm transition-all placeholder:text-gray-500"
+                className="w-full h-12 pl-12 pr-4 bg-white border border-gray-200 shadow-sm rounded-full text-[15px] outline-none focus:border-gray-400 focus:shadow-md transition-all placeholder:text-gray-500"
                 />
             </form>
-          </div>
 
-          {/* Filters (Only visible when searching) */}
-          {isSearching && (
-            <div className="flex gap-2 mt-3 animate-in fade-in slide-in-from-top-2 ml-10"> {/* Added ml-10 to align with input */}
-              {['all', 'volunteers', 'orgs'].map((tab) => (
-                <button 
-                  key={tab}
-                  onClick={() => setActiveTab(tab as any)}
-                  className={cn(
-                    "px-4 py-1.5 rounded-full text-xs font-semibold capitalize transition-all",
-                    activeTab === tab 
-                      ? "bg-black text-white shadow-md" 
-                      : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
-                  )}
-                >
-                  {tab === 'orgs' ? 'Organizations' : tab}
-                </button>
-              ))}
-            </div>
-          )}
+            {/* Filters (Only visible when searching) */}
+            {isSearching && (
+                <div className="flex gap-2 mt-3 animate-in fade-in slide-in-from-top-2 ml-4"> 
+                {['all', 'volunteers', 'orgs'].map((tab) => (
+                    <button 
+                    key={tab}
+                    onClick={() => setActiveTab(tab as any)}
+                    className={cn(
+                        "px-4 py-1.5 rounded-full text-xs font-semibold capitalize transition-all",
+                        activeTab === tab 
+                        ? "bg-black text-white shadow-md" 
+                        : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
+                    )}
+                    >
+                    {tab === 'orgs' ? 'Organizations' : tab}
+                    </button>
+                ))}
+                </div>
+            )}
         </div>
-      </div>
-
-      {/* --- MAIN CONTENT AREA --- */}
-      <div className="max-w-2xl mx-auto px-4 py-6">
 
         {/* LOADING STATE */}
         {loading && (
@@ -213,8 +313,6 @@ export default function SocialDiscoveryPage() {
                   {displayedResults.map((item, idx) => (
                       <Link 
                           key={idx} 
-                          // ✅ LOGIC: When clicking a profile, browser history stacks. 
-                          // Clicking 'Back' on that profile page will naturally return here.
                           href={item.type === 'volunteer' ? `/volunteers/${item.id}` : `/organizations/${item.id}`}
                           className="flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0"
                       >
@@ -267,7 +365,7 @@ export default function SocialDiscoveryPage() {
                                   src={story.image} 
                                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
                                 />
-                                <div className="absolute inset-0 bg-linear-to-t from-black/40 to-transparent opacity-60" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-60" />
                                 <span className={cn("absolute top-3 left-3 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider backdrop-blur-md shadow-sm", getCategoryColor(story.category))}>
                                     {story.category}
                                 </span>

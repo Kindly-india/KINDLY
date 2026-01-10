@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { cn } from "@/lib/utils"
 import { OrgSignupWizard } from "./org-signup-wizard"
 import { api } from "@/lib/api"
+import Image from "next/image"
 
 type UserType = "volunteer" | "organisation" | null
 
@@ -33,11 +34,15 @@ export function HeroSection() {
       <section id="hero" className="min-h-screen bg-gradient-to-b from-orange-50 via-white to-green-50 relative overflow-x-hidden">
         {/* Header */}
         <header className="md:hidden pt-4 pb-3 text-center px-4">
-          <Link href="/" className="inline-flex items-center gap-1.5">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-red-400 to-red-500 flex items-center justify-center">
-              <Heart className="w-3.5 h-3.5 text-white fill-white" />
-            </div>
-            <span className="text-base font-semibold text-gray-900 tracking-tight">KINDLY</span>
+          <Link href="/" className="inline-flex items-center">
+            <Image
+              src="/logo.png"   // ✅ Correct: Points directly to the public folder root
+              alt="Kindly"
+              width={120}
+              height={40}
+              className="h-8 w-auto"
+              priority
+            />
           </Link>
         </header>
 

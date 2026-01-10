@@ -21,6 +21,8 @@ import {
     Filter,
     Sparkles,
     ChevronDown,
+    Menu,
+    Clock,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -63,35 +65,46 @@ export function EventsDiscoveryPage() {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [searchQuery, setSearchQuery] = useState("")
+    const [menuOpen, setMenuOpen] = useState(false)
+    
+    // Profile State
+    const [profile, setProfile] = useState<any>(null)
 
     // Filters
     const [selectedDate, setSelectedDate] = useState<string | null>(null)
     const [selectedCauses, setSelectedCauses] = useState<string[]>([])
     const [selectedTime, setSelectedTime] = useState<string | null>(null)
     const [selectedDuration, setSelectedDuration] = useState<string | null>(null)
-    const [locationFilter, setLocationFilter] = useState("") // State for input value
+    const [locationFilter, setLocationFilter] = useState("") 
     const [showFilledEvents, setShowFilledEvents] = useState(true)
 
     const [sortBy, setSortBy] = useState("newest")
     const [isFilterOpen, setIsFilterOpen] = useState(false)
     const [visibleEvents, setVisibleEvents] = useState(6)
 
-    // Fetch events
+    // Fetch events & Profile
     useEffect(() => {
-        const fetchEvents = async () => {
+        const fetchData = async () => {
             try {
                 setLoading(true)
-                const response = await api.getPublicEvents()
-                setEvents(response.events || [])
+                const [eventsRes, profileRes] = await Promise.all([
+                    api.getPublicEvents(),
+                    api.getUserProfile().catch(() => null)
+                ])
+                
+                setEvents(eventsRes.events || [])
+                if (profileRes?.profile) {
+                    setProfile(profileRes.profile)
+                }
             } catch (err: any) {
-                setError(err.message || 'Failed to load events')
-                console.error('Error fetching events:', err)
+                setError(err.message || 'Failed to load data')
+                console.error('Error fetching data:', err)
             } finally {
                 setLoading(false)
             }
         }
 
-        fetchEvents()
+        fetchData()
     }, [])
 
     const toggleCause = (causeId: string) => {
@@ -119,16 +132,16 @@ export function EventsDiscoveryPage() {
         return new Date(deadline) > new Date();
     };
 
+    // Display Logic for Profile
+    const displayImage = profile?.avatar_url || profile?.logo_url
+    const displayName = profile?.full_name || profile?.name || "User"
+    const displayInitial = displayName ? displayName.charAt(0).toUpperCase() : "U"
+
     const FilterContent = ({ isMobile = false }: { isMobile?: boolean }) => (
         <div className={cn("space-y-4", isMobile ? "space-y-3" : "space-y-5")}>
             {/* Date Section */}
             <div>
-                <h3
-                    className={cn(
-                        "font-semibold text-[#1d1d1f] uppercase tracking-wide",
-                        isMobile ? "text-[10px] mb-2" : "text-[12px] mb-3",
-                    )}
-                >
+                <h3 className={cn("font-semibold text-[#1d1d1f] uppercase tracking-wide", isMobile ? "text-[10px] mb-2" : "text-[12px] mb-3")}>
                     Date
                 </h3>
                 <div className="flex flex-wrap gap-1.5">
@@ -152,12 +165,7 @@ export function EventsDiscoveryPage() {
 
             {/* Causes Section */}
             <div>
-                <h3
-                    className={cn(
-                        "font-semibold text-[#1d1d1f] uppercase tracking-wide",
-                        isMobile ? "text-[10px] mb-2" : "text-[12px] mb-3",
-                    )}
-                >
+                <h3 className={cn("font-semibold text-[#1d1d1f] uppercase tracking-wide", isMobile ? "text-[10px] mb-2" : "text-[12px] mb-3")}>
                     Causes
                 </h3>
                 <div className="grid grid-cols-2 gap-1.5">
@@ -191,12 +199,7 @@ export function EventsDiscoveryPage() {
 
             {/* Duration */}
             <div>
-                <h3
-                    className={cn(
-                        "font-semibold text-[#1d1d1f] uppercase tracking-wide",
-                        isMobile ? "text-[10px] mb-2" : "text-[12px] mb-3",
-                    )}
-                >
+                <h3 className={cn("font-semibold text-[#1d1d1f] uppercase tracking-wide", isMobile ? "text-[10px] mb-2" : "text-[12px] mb-3")}>
                     Duration
                 </h3>
                 <div className="grid grid-cols-2 gap-1.5">
@@ -220,12 +223,7 @@ export function EventsDiscoveryPage() {
 
             {/* Time of Day Section */}
             <div>
-                <h3
-                    className={cn(
-                        "font-semibold text-[#1d1d1f] uppercase tracking-wide",
-                        isMobile ? "text-[10px] mb-2" : "text-[12px] mb-3",
-                    )}
-                >
+                <h3 className={cn("font-semibold text-[#1d1d1f] uppercase tracking-wide", isMobile ? "text-[10px] mb-2" : "text-[12px] mb-3")}>
                     Time of Day
                 </h3>
                 <div className="space-y-1.5">
@@ -241,28 +239,12 @@ export function EventsDiscoveryPage() {
                                     : "bg-white border-[#e8e8ed] hover:border-[#d1d1d6]",
                             )}
                         >
-                            <time.icon
-                                className={cn(
-                                    selectedTime === time.id ? "text-amber-600" : "text-[#86868b]",
-                                    isMobile ? "w-3 h-3" : "w-4 h-4",
-                                )}
-                            />
+                            <time.icon className={cn(selectedTime === time.id ? "text-amber-600" : "text-[#86868b]", isMobile ? "w-3 h-3" : "w-4 h-4")} />
                             <div className="flex-1">
-                                <div
-                                    className={cn(
-                                        "font-medium",
-                                        selectedTime === time.id ? "text-amber-900" : "text-[#1d1d1f]",
-                                        isMobile ? "text-[10px]" : "text-[12px]",
-                                    )}
-                                >
+                                <div className={cn("font-medium", selectedTime === time.id ? "text-amber-900" : "text-[#1d1d1f]", isMobile ? "text-[10px]" : "text-[12px]")}>
                                     {time.label}
                                 </div>
-                                <div
-                                    className={cn(
-                                        selectedTime === time.id ? "text-amber-700" : "text-[#86868b]",
-                                        isMobile ? "text-[8px]" : "text-[10px]",
-                                    )}
-                                >
+                                <div className={cn(selectedTime === time.id ? "text-amber-700" : "text-[#86868b]", isMobile ? "text-[8px]" : "text-[10px]")}>
                                     {time.time}
                                 </div>
                             </div>
@@ -273,30 +255,17 @@ export function EventsDiscoveryPage() {
 
             {/* Location */}
             <div>
-                <h3
-                    className={cn(
-                        "font-semibold text-[#1d1d1f] uppercase tracking-wide",
-                        isMobile ? "text-[10px] mb-2" : "text-[12px] mb-3",
-                    )}
-                >
+                <h3 className={cn("font-semibold text-[#1d1d1f] uppercase tracking-wide", isMobile ? "text-[10px] mb-2" : "text-[12px] mb-3")}>
                     Location
                 </h3>
                 <div className="relative">
-                    <MapPin
-                        className={cn(
-                            "absolute left-2.5 top-1/2 -translate-y-1/2 text-[#86868b]",
-                            isMobile ? "w-3 h-3" : "w-4 h-4",
-                        )}
-                    />
+                    <MapPin className={cn("absolute left-2.5 top-1/2 -translate-y-1/2 text-[#86868b]", isMobile ? "w-3 h-3" : "w-4 h-4")} />
                     <input
                         type="text"
                         placeholder="Enter specific location..."
                         value={locationFilter}
                         onChange={(e) => setLocationFilter(e.target.value)}
-                        className={cn(
-                            "w-full bg-white border border-[#e8e8ed] rounded-lg text-[#1d1d1f] placeholder:text-[#86868b] focus:outline-none focus:border-[#06b6d4] transition-colors",
-                            isMobile ? "pl-7 pr-3 py-2 text-[10px]" : "pl-9 pr-4 py-2.5 text-[12px]",
-                        )}
+                        className={cn("w-full bg-white border border-[#e8e8ed] rounded-lg text-[#1d1d1f] placeholder:text-[#86868b] focus:outline-none focus:border-[#06b6d4] transition-colors", isMobile ? "pl-7 pr-3 py-2 text-[10px]" : "pl-9 pr-4 py-2.5 text-[12px]")}
                     />
                 </div>
             </div>
@@ -315,10 +284,7 @@ export function EventsDiscoveryPage() {
                     <Checkbox
                         checked={showFilledEvents}
                         onCheckedChange={(checked) => setShowFilledEvents(checked as boolean)}
-                        className={cn(
-                            "rounded border-[#d1d1d6] data-[state=checked]:bg-[#1d1d1f] data-[state=checked]:border-[#1d1d1f]",
-                            isMobile ? "w-4 h-4" : "w-5 h-5",
-                        )}
+                        className={cn("rounded border-[#d1d1d6] data-[state=checked]:bg-[#1d1d1f] data-[state=checked]:border-[#1d1d1f]", isMobile ? "w-4 h-4" : "w-5 h-5")}
                     />
                 </label>
             </div>
@@ -353,31 +319,26 @@ export function EventsDiscoveryPage() {
 
     // Filter events
     const filteredEvents = events.filter(event => {
-        // Search filter (Title or Location or Org)
         if (searchQuery) {
             const query = searchQuery.toLowerCase()
             const matchTitle = event.title?.toLowerCase().includes(query)
             const matchLocation = event.location?.toLowerCase().includes(query)
-            const matchOrg = event.org_name?.toLowerCase().includes(query) // Assuming API returns org_name
+            const matchOrg = event.org_name?.toLowerCase().includes(query) 
             if (!matchTitle && !matchLocation && !matchOrg) return false
         }
 
-        // Sidebar Location Filter - Fixed: Simple string includes check
         if (locationFilter && !event.location?.toLowerCase().includes(locationFilter.toLowerCase())) {
             return false
         }
 
-        // Category filter
         if (selectedCauses.length > 0 && !selectedCauses.includes(event.category)) {
             return false
         }
 
-        // Date Filter Logic
         if (selectedDate) {
             const eventDate = new Date(event.event_date)
             const today = new Date()
             today.setHours(0, 0, 0, 0)
-
             const tomorrow = new Date(today)
             tomorrow.setDate(today.getDate() + 1)
 
@@ -395,7 +356,6 @@ export function EventsDiscoveryPage() {
             }
         }
 
-        // Time of Day Filter
         if (selectedTime) {
             if (!event.start_time) return false
             const hour = parseInt(event.start_time.split(':')[0])
@@ -404,7 +364,6 @@ export function EventsDiscoveryPage() {
             if (selectedTime === 'evening' && (hour < 17 || hour >= 21)) return false
         }
 
-        // Duration Filter
         if (selectedDuration) {
             if (!event.start_time || !event.end_time) return false
             const startHour = parseInt(event.start_time.split(':')[0]) + (parseInt(event.start_time.split(':')[1] || '0') / 60)
@@ -417,7 +376,6 @@ export function EventsDiscoveryPage() {
             if (selectedDuration === 'full-day' && duration <= 8) return false
         }
 
-        // Show filled events filter
         if (!showFilledEvents && event.registered_count >= event.total_slots) {
             return false
         }
@@ -425,7 +383,6 @@ export function EventsDiscoveryPage() {
         return true
     })
 
-    // Sort events
     const sortedEvents = [...filteredEvents].sort((a, b) => {
         if (sortBy === 'newest') {
             return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -441,55 +398,116 @@ export function EventsDiscoveryPage() {
 
     return (
         <div className="min-h-screen bg-white overflow-x-hidden">
-            <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-[#f5f5f7] shadow-sm">
-                <div className="max-w-350 mx-auto px-3 md:px-8 h-12 md:h-16 flex items-center justify-between gap-3">
-                    {/* Logo */}
-                    <Link href="/home" className="shrink-0">
-                        <h1 className="text-[16px] md:text-[22px] font-bold tracking-tight text-[#1d1d1f]">KINDLY</h1>
+            {/* ✅ NEW CONSISTENT NAVBAR */}
+            <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-[#f5f5f7]">
+                <div className="max-w-350 mx-auto px-4 md:px-8 h-12 md:h-14 flex items-center justify-between relative">
+                    
+                    {/* 1. Left: Logo */}
+                    <Link href="/home" className="flex items-center shrink-0">
+                        <Image 
+                            src="/logo.png" 
+                            alt="Kindly" 
+                            width={120} 
+                            height={40} 
+                            className="h-8 md:h-10 w-auto" 
+                            priority 
+                        />
                     </Link>
 
-                    {/* Desktop Search */}
-                    <div className="flex-1 max-w-2xl hidden md:block">
-                        <div className="relative">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#86868b]" />
-                            <input
-                                type="text"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                placeholder="Search by event name, location, or organization..."
-                                className="w-full pl-11 pr-10 py-3 bg-gradient-to-r from-[#f5f5f7] to-[#fafafa] rounded-full text-[14px] text-[#1d1d1f] placeholder:text-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#ff6b6b]/20 border border-transparent focus:border-[#ff6b6b]/30 transition-all"
-                            />
-                            {searchQuery ? (
-                                <button onClick={() => setSearchQuery("")} className="absolute right-4 top-1/2 -translate-y-1/2">
-                                    <X className="w-4 h-4 text-[#86868b] hover:text-[#1d1d1f]" />
-                                </button>
-                            ) : (
-                                <Filter className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#86868b]" />
+                    {/* 2. Center: Navigation Links */}
+                    <div className="hidden md:flex items-center gap-8 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+                        <Link href="/events" className="text-[13px] md:text-[15px] text-[#0066cc] font-semibold transition-colors">
+                            Events
+                        </Link>
+                        <Link href="/history" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors font-medium">
+                            History
+                        </Link>
+                        <Link href="/social" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors font-medium">
+                            Social
+                        </Link>
+                        <Link href="/volunteer-impact" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors font-medium flex items-center gap-1.5">
+                            Impact
+                        </Link>
+                    </div>
+
+                    {/* 3. Right: Profile & Mobile Menu */}
+                    <div className="flex items-center gap-4 shrink-0">
+                        <Link
+                            href={profile?.id ? `/volunteers/${profile.id}` : '#'}
+                            className="hidden md:block group"
+                        >
+                            <div className="w-9 h-9 md:w-10 md:h-10 rounded-full overflow-hidden border border-gray-200 group-hover:border-gray-400 group-active:scale-95 transition-all bg-gray-50 flex items-center justify-center shadow-sm">
+                                {displayImage ? (
+                                    <img
+                                        src={displayImage}
+                                        alt="Profile"
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    <span className="font-bold text-gray-500 group-hover:text-gray-900 transition-colors">
+                                        {displayInitial}
+                                    </span>
+                                )}
+                            </div>
+                        </Link>
+
+                        <div className="relative md:hidden">
+                            <button
+                                onClick={() => setMenuOpen(!menuOpen)}
+                                className="w-9 h-9 rounded-full bg-[#f5f5f7] flex items-center justify-center hover:bg-[#e5e5e7] transition-colors"
+                            >
+                                {menuOpen ? <X className="w-5 h-5 text-[#1d1d1f]" /> : <Menu className="w-5 h-5 text-[#1d1d1f]" />}
+                            </button>
+
+                            {menuOpen && (
+                                <>
+                                    <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
+                                    <div className="absolute right-0 top-12 z-50 w-48 bg-white rounded-xl shadow-xl border border-[#e5e5e7] overflow-hidden">
+                                        <Link
+                                            href="/profile"
+                                            onClick={() => setMenuOpen(false)}
+                                            className="flex items-center gap-3 px-4 py-3 hover:bg-[#f5f5f7] transition-colors border-b border-[#f5f5f7]"
+                                        >
+                                            <div className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-[#f5f5f7] flex items-center justify-center bg-gray-50">
+                                                {displayImage ? (
+                                                    <img
+                                                        src={displayImage}
+                                                        alt="Profile"
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                ) : (
+                                                    <span className="font-bold text-xs text-gray-500">{displayInitial}</span>
+                                                )}
+                                            </div>
+                                            <span className="text-[13px] font-medium text-[#1d1d1f]">Profile</span>
+                                        </Link>
+                                        <Link
+                                            href="/home"
+                                            onClick={() => setMenuOpen(false)}
+                                            className="flex items-center gap-3 px-4 py-3 hover:bg-[#f5f5f7] transition-colors border-b border-[#f5f5f7]"
+                                        >
+                                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#fef3c7] to-[#fde68a] flex items-center justify-center">
+                                                <Sparkles className="w-4 h-4 text-[#f59e0b]" />
+                                            </div>
+                                            <span className="text-[13px] font-medium text-[#1d1d1f]">Home</span>
+                                        </Link>
+                                        <Link
+                                            href="/history"
+                                            onClick={() => setMenuOpen(false)}
+                                            className="flex items-center gap-3 px-4 py-3 hover:bg-[#f5f5f7] transition-colors"
+                                        >
+                                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#e8f5e9] to-[#c8e6c9] flex items-center justify-center">
+                                                <Clock className="w-4 h-4 text-[#2e7d32]" />
+                                            </div>
+                                            <span className="text-[13px] font-medium text-[#1d1d1f]">Event History</span>
+                                        </Link>
+                                    </div>
+                                </>
                             )}
                         </div>
                     </div>
-
-                    {/* Profile Avatar */}
-                    <Link href="/profile" className="shrink-0">
-                        <div className="w-7 h-7 md:w-10 md:h-10 rounded-full overflow-hidden border-2 border-gradient-to-r from-[#ff6b6b] to-[#ff8e53] shadow-md hover:shadow-lg transition-shadow">
-                            <Image src="/IMG_2048.jpeg" alt="Profile" width={40} height={40} className="w-full h-full object-cover" />
-                        </div>
-                    </Link>
                 </div>
-
-                <div className="md:hidden px-3 pb-2">
-                    <div className="relative">
-                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#86868b]" />
-                        <input
-                            type="text"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder="Search events..."
-                            className="w-full pl-8 pr-3 py-2 bg-[#f5f5f7] rounded-full text-[11px] text-[#1d1d1f] placeholder:text-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#ff6b6b]/20"
-                        />
-                    </div>
-                </div>
-            </header>
+            </nav>
 
             <div className="flex">
                 {/* Left Sidebar - Desktop Only */}
@@ -512,6 +530,26 @@ export function EventsDiscoveryPage() {
 
                 {/* Right Content Area */}
                 <main className="flex-1 bg-gradient-to-br from-[#fafafa] via-white to-[#f5f5f7] min-h-[calc(100vh-64px)]">
+                    
+                    {/* ✅ MOVED SEARCH BAR HERE */}
+                    <div className="px-3 md:px-6 pt-4 pb-2 bg-white/50 backdrop-blur-sm">
+                        <div className="relative max-w-2xl mx-auto">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#86868b]" />
+                            <input
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="Search by event name, location, or organization..."
+                                className="w-full pl-11 pr-10 py-3 bg-white border border-[#e8e8ed] rounded-full text-[14px] text-[#1d1d1f] placeholder:text-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#ff6b6b]/20 focus:border-[#ff6b6b]/30 transition-all shadow-sm"
+                            />
+                            {searchQuery ? (
+                                <button onClick={() => setSearchQuery("")} className="absolute right-4 top-1/2 -translate-y-1/2">
+                                    <X className="w-4 h-4 text-[#86868b] hover:text-[#1d1d1f]" />
+                                </button>
+                            ) : null}
+                        </div>
+                    </div>
+
                     <div className="sticky top-12 md:top-16 z-40 bg-white/80 backdrop-blur-xl border-b border-[#e8e8ed] shadow-sm">
                         <div className="px-3 md:px-6 py-2 md:py-3">
                             <div className="flex items-center justify-between gap-2 flex-wrap">

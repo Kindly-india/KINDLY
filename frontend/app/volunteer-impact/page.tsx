@@ -3,7 +3,23 @@
 import { useEffect, useState } from "react"
 import { api } from "@/lib/api"
 import Link from "next/link"
-import { Loader2, TrendingUp, Award, Clock, Heart, CheckCircle2, Zap, Globe, Download, Share2, ArrowLeft } from "lucide-react"
+import Image from "next/image" // ✅ Added
+import { 
+  Loader2, 
+  TrendingUp, 
+  Award, 
+  Clock, 
+  Heart, 
+  CheckCircle2, 
+  Zap, 
+  Globe, 
+  Download, 
+  Share2, 
+  ArrowLeft,
+  Menu, // ✅ Added
+  X,    // ✅ Added
+  Sparkles // ✅ Added
+} from "lucide-react"
 import { 
   BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, 
   PieChart, Pie, Cell 
@@ -14,6 +30,10 @@ const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'];
 export default function VolunteerImpactPage() {
   const [loading, setLoading] = useState(true)
   
+  // ✅ Added for Navbar
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [profile, setProfile] = useState<any>(null)
+
   const [stats, setStats] = useState({
     verifiedHours: 0,
     pendingHours: 0,
@@ -29,7 +49,16 @@ export default function VolunteerImpactPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await api.getMyRegistrations();
+        // ✅ Fetch Profile & Registrations together
+        const [profileRes, res] = await Promise.all([
+            api.getUserProfile().catch(() => null),
+            api.getMyRegistrations()
+        ]);
+
+        if (profileRes?.profile) {
+            setProfile(profileRes.profile)
+        }
+
         const events = res.events || []; 
 
         let verified = 0;
@@ -104,6 +133,11 @@ export default function VolunteerImpactPage() {
     fetchData();
   }, [])
 
+  // ✅ Profile Display Logic
+  const displayImage = profile?.avatar_url || profile?.logo_url
+  const displayName = profile?.full_name || profile?.name || "User"
+  const displayInitial = displayName ? displayName.charAt(0).toUpperCase() : "U"
+
   if (loading) return <div className="h-screen flex items-center justify-center bg-gray-50"><Loader2 className="w-8 h-8 animate-spin text-emerald-600" /></div>
 
   const level = Math.floor(stats.impactScore / 100) + 1;
@@ -113,22 +147,122 @@ export default function VolunteerImpactPage() {
   return (
     <div className="min-h-screen bg-[#F8F9FA] pb-20 font-sans">
       
-      {/* 1. HERO HEADER WITH BACK BUTTON */}
-      <div className="bg-[#0F172A] text-white pt-6 pb-24 px-6 relative overflow-hidden">
-         {/* Navigation Bar Placeholder */}
-         <div className="max-w-5xl mx-auto flex items-center justify-between mb-8 relative z-20">
-            {/* ✅ UPDATED LINK: Points to /home (Change to /volunteer-home if needed) */}
-            <Link href="/home" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors">
-                <ArrowLeft className="w-5 h-5" /> Back to Dashboard
-            </Link>
-            {/* ✅ UPDATED LOGO LINK */}
-            <Link href="/home" className="font-bold text-xl tracking-tight">KINDLY</Link>
-         </div>
+      {/* ✅ NEW CONSISTENT NAVBAR */}
+      <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-[#e5e5e7]">
+        <div className="max-w-[1200px] mx-auto px-4 md:px-8 h-11 md:h-14 flex items-center justify-between relative">
+          
+          {/* 1. Logo */}
+          <Link href="/home" className="flex items-center shrink-0">
+            <Image 
+                src="/logo.png" 
+                alt="Kindly" 
+                width={120} 
+                height={40} 
+                className="h-8 md:h-10 w-auto" 
+                priority 
+            />
+          </Link>
 
+          {/* 2. Desktop Navigation (Centered) */}
+          <div className="hidden md:flex items-center gap-8 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+            <Link href="/events" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors font-medium">
+              Events
+            </Link>
+            <Link href="/history" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors font-medium">
+              History
+            </Link>
+            <Link href="/social" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors font-medium">
+              Social
+            </Link>
+            <Link href="/volunteer-impact" className="text-[13px] md:text-[15px] text-[#0066cc] font-semibold transition-colors flex items-center gap-1.5">
+              Impact
+            </Link>
+          </div>
+
+          {/* 3. Right Section */}
+          <div className="flex items-center gap-4 shrink-0">
+            
+            {/* Desktop Profile Avatar */}
+            <Link
+                href={profile?.id ? `/volunteers/${profile.id}` : '#'}
+                className="hidden md:block group"
+            >
+                <div className="w-9 h-9 md:w-10 md:h-10 rounded-full overflow-hidden border border-gray-200 group-hover:border-gray-400 group-active:scale-95 transition-all bg-gray-50 flex items-center justify-center shadow-sm">
+                    {displayImage ? (
+                        <img src={displayImage} alt="Profile" className="w-full h-full object-cover" />
+                    ) : (
+                        <span className="font-bold text-gray-500 group-hover:text-gray-900 transition-colors">
+                            {displayInitial}
+                        </span>
+                    )}
+                </div>
+            </Link>
+
+            {/* Mobile Menu Button */}
+            <div className="relative md:hidden">
+              <button
+                onClick={() => setMenuOpen(!menuOpen)}
+                className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-[#f5f5f7] flex items-center justify-center hover:bg-[#e5e5e7] transition-colors"
+              >
+                {menuOpen ? (
+                  <X className="w-4 h-4 md:w-5 md:h-5 text-[#1d1d1f]" />
+                ) : (
+                  <Menu className="w-4 h-4 md:w-5 md:h-5 text-[#1d1d1f]" />
+                )}
+              </button>
+
+              {menuOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
+                  <div className="absolute right-0 top-10 md:top-12 z-50 w-44 md:w-48 bg-white rounded-xl shadow-xl border border-[#e5e5e7] overflow-hidden">
+                    <Link
+                      href="/profile"
+                      onClick={() => setMenuOpen(false)}
+                      className="flex items-center gap-3 px-3 md:px-4 py-2.5 md:py-3 hover:bg-[#f5f5f7] transition-colors border-b border-[#f5f5f7]"
+                    >
+                      <span className="text-[12px] md:text-[13px] font-medium text-[#1d1d1f]">Profile</span>
+                    </Link>
+                    <Link
+                      href="/home"
+                      onClick={() => setMenuOpen(false)}
+                      className="flex items-center gap-3 px-3 md:px-4 py-2.5 md:py-3 hover:bg-[#f5f5f7] transition-colors border-b border-[#f5f5f7]"
+                    >
+                      <span className="text-[12px] md:text-[13px] font-medium text-[#1d1d1f]">Home</span>
+                    </Link>
+                    <Link
+                      href="/events"
+                      onClick={() => setMenuOpen(false)}
+                      className="flex items-center gap-3 px-3 md:px-4 py-2.5 md:py-3 hover:bg-[#f5f5f7] transition-colors border-b border-[#f5f5f7]"
+                    >
+                      <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-gradient-to-br from-[#fef3c7] to-[#fde68a] flex items-center justify-center">
+                        <Sparkles className="w-3.5 h-3.5 md:w-4 md:h-4 text-[#f59e0b]" />
+                      </div>
+                      <span className="text-[12px] md:text-[13px] font-medium text-[#1d1d1f]">Discover Events</span>
+                    </Link>
+                    <Link
+                        href="/history"
+                        onClick={() => setMenuOpen(false)}
+                        className="flex items-center gap-3 px-3 md:px-4 py-2.5 md:py-3 hover:bg-[#f5f5f7] transition-colors"
+                    >
+                        <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-gradient-to-br from-[#e8f5e9] to-[#c8e6c9] flex items-center justify-center">
+                            <Clock className="w-3.5 h-3.5 md:w-4 md:h-4 text-[#2e7d32]" />
+                        </div>
+                        <span className="text-[12px] md:text-[13px] font-medium text-[#1d1d1f]">History</span>
+                    </Link>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      {/* 1. HERO HEADER */}
+      <div className="bg-[#0F172A] text-white pt-6 pb-24 px-6 relative overflow-hidden">
          <div className="absolute top-0 right-0 p-12 opacity-10">
             <Globe className="w-64 h-64" />
          </div>
-         <div className="max-w-5xl mx-auto relative z-10">
+         <div className="max-w-5xl mx-auto relative z-10 pt-4">
             <div className="flex justify-between items-start">
                <div>
                   <h1 className="text-3xl md:text-4xl font-bold mb-2">My Impact Report</h1>
@@ -146,7 +280,7 @@ export default function VolunteerImpactPage() {
                   <span className="text-gray-400">{stats.impactScore} / {nextLevel} XP</span>
                </div>
                <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
-                  <div className="h-full bg-linear-to-r from-emerald-500 to-teal-400" style={{width: `${progress}%`}} />
+                  <div className="h-full bg-gradient-to-r from-emerald-500 to-teal-400" style={{width: `${progress}%`}} />
                </div>
             </div>
          </div>
@@ -181,7 +315,7 @@ export default function VolunteerImpactPage() {
              </div>
           </div>
 
-          <div className="bg-linear-to-br from-emerald-500 to-teal-600 p-6 rounded-2xl shadow-lg shadow-emerald-200 text-white flex flex-col justify-between h-32">
+          <div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-6 rounded-2xl shadow-lg shadow-emerald-200 text-white flex flex-col justify-between h-32">
              <div className="flex items-center gap-2 font-semibold text-sm uppercase tracking-wide opacity-90"><Zap className="w-4 h-4" /> Impact Score</div>
              <div className="text-4xl font-bold">{stats.impactScore}</div>
           </div>

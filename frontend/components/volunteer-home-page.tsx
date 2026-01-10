@@ -113,7 +113,7 @@ export function VolunteerHomePage() {
     const endTotalMins = (endH * 60) + endM;
 
     const diffMins = Math.max(0, endTotalMins - startTotalMins);
-    return diffMins / 60; // Returns float (e.g. 1.5 for 1hr 30m)
+    return diffMins / 60; 
   }
 
   // --- Fetch Data ---
@@ -131,7 +131,6 @@ export function VolunteerHomePage() {
 
         setProfile(userProfile)
 
-        // Only show 'registered' events in the carousel
         const displayList = allEvents.filter((ev: any) => ev.registration_status === 'registered');
         setMyEvents(displayList)
 
@@ -161,38 +160,31 @@ export function VolunteerHomePage() {
           const isCheckedIn = status === 'checked_in';
           const isMissed = status === 'missed';
 
-          // 1. Calculate Hours & Completed
           if (isCompleted || isCheckedIn) {
             const eventHours = calculateExactHours(ev.start_time, ev.end_time);
-            // Default to 1 hour if calculation fails or is 0, otherwise use exact float
             totalHours += (eventHours > 0 ? eventHours : 1);
             completed += 1
           }
 
-          // 2. Calculate Upcoming
           if (evDate >= now && status === 'registered') {
             upcomingCount += 1
           }
 
-          // 3. Calculate Missed
           if (isMissed) {
             missed += 1;
           }
 
-          // 4. This Week Badge
           if (evDate >= now && evDate <= nextWeek) {
             thisWeek += 1
           }
         })
 
-        // 5. Calculate Attendance %
         const totalScorable = completed + missed;
         const attendanceRate = totalScorable > 0
           ? Math.round((completed / totalScorable) * 100)
           : 100;
 
         setStats({
-          // Round hours to 1 decimal place for display
           hoursContributed: parseFloat(totalHours.toFixed(1)),
           eventsThisWeek: thisWeek,
           impactScore: Math.round((totalHours * 10) + (completed * 50)),
@@ -267,7 +259,7 @@ export function VolunteerHomePage() {
             <span className="text-[15px] md:text-[17px] font-bold text-[#1d1d1f] tracking-tight">KINDLY</span>
           </Link>
 
-          {/* 2. Center: Navigation Links (Absolutely Centered) */}
+          {/* 2. Center: Navigation Links */}
           <div className="hidden md:flex items-center gap-8 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
             <Link href="/events" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors font-medium">
               Events
@@ -278,7 +270,6 @@ export function VolunteerHomePage() {
             <Link href="/social" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors font-medium">
               Social
             </Link>
-            {/* ✅ FIXED PATH: /volunteer-impact */}
             <Link href="/volunteer-impact" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors font-medium flex items-center gap-1.5">
               Impact
             </Link>
@@ -286,7 +277,6 @@ export function VolunteerHomePage() {
 
           {/* 3. Right: Profile & Mobile Menu */}
           <div className="flex items-center gap-4 shrink-0">
-            {/* Profile Avatar */}
             <Link
               href={profile?.id ? `/volunteers/${profile.id}` : '#'}
               className="hidden md:block group"
@@ -306,7 +296,6 @@ export function VolunteerHomePage() {
               </div>
             </Link>
 
-            {/* Mobile Menu Toggle */}
             <div className="relative md:hidden">
               <button onClick={() => setMenuOpen(!menuOpen)} className="w-9 h-9 rounded-full bg-[#f5f5f7] flex items-center justify-center hover:bg-[#e5e5e7]">
                 {menuOpen ? <X className="w-5 h-5 text-[#1d1d1f]" /> : <Menu className="w-5 h-5 text-[#1d1d1f]" />}
@@ -316,7 +305,6 @@ export function VolunteerHomePage() {
                   <Link href="/profile" className="flex items-center gap-3 px-4 py-3 border-b border-[#f5f5f7]">Profile</Link>
                   <Link href="/events" className="flex items-center gap-3 px-4 py-3 border-b border-[#f5f5f7]">Events</Link>
                   <Link href="/social" className="flex items-center gap-3 px-4 py-3 border-b border-[#f5f5f7]">Social</Link>
-                  {/* ✅ FIXED PATH MOBILE: /volunteer-impact */}
                   <Link href="/volunteer-impact" className="flex items-center gap-3 px-4 py-3 border-b border-[#f5f5f7]">Impact</Link>
                 </div>
               )}
@@ -325,7 +313,7 @@ export function VolunteerHomePage() {
         </div>
       </nav>
 
-      {/* Hero Section & Rest of Body */}
+      {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-[#fef5f0] via-[#fff8f5] to-[#f5fcf8] py-8 md:py-16 overflow-hidden">
         {/* Decorative Icons */}
         <div className="absolute top-4 left-4 md:top-8 md:left-20 w-8 h-8 md:w-12 md:h-12 bg-white rounded-xl shadow-lg flex items-center justify-center">
@@ -479,7 +467,6 @@ export function VolunteerHomePage() {
               <p className="text-[13px] md:text-[15px] text-[#86868b] mt-0.5">Total Contribution</p>
               <p className="text-[13px] md:text-[15px] text-[#1d1d1f] mt-3 max-w-md">You're making a real difference in {profile?.city || "Nashik"}. Keep up the amazing work!</p>
               
-              {/* ✅ FIXED BUTTON LINK: /volunteer-impact */}
               <Link 
                 href="/volunteer-impact" 
                 className="mt-6 inline-flex items-center gap-2 px-6 py-2.5 bg-[#10b981] text-white rounded-full font-semibold text-sm hover:bg-[#059669] transition-all shadow-sm shadow-emerald-200 hover:shadow-emerald-300 hover:-translate-y-0.5"
@@ -489,7 +476,6 @@ export function VolunteerHomePage() {
             </div>
           </div>
 
-          {/* Stats Grid */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mt-8 md:mt-12">
             <div className="bg-white rounded-xl p-3 md:p-4 shadow-sm">
               <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-[#ff6b6b]/10 flex items-center justify-center mb-2">
@@ -564,6 +550,135 @@ export function VolunteerHomePage() {
           </div>
         </div>
       </section>
+
+      {/* CTA Section */}
+      <section className="bg-[#1d1d1f] py-10 md:py-20">
+        <div className="max-w-175 mx-auto px-4 md:px-8 text-center">
+          <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl bg-gradient-to-br from-[#f59e0b] to-[#d97706] flex items-center justify-center mx-auto mb-4 md:mb-5">
+            <Heart className="w-6 h-6 md:w-7 md:h-7 text-white fill-white" />
+          </div>
+          <h2 className="text-[20px] md:text-[36px] font-bold text-white tracking-tight">
+            Ready to make a difference?
+          </h2>
+          <p className="text-[13px] md:text-[15px] text-[#86868b] mt-2">
+            Join thousands of volunteers creating positive change.
+          </p>
+          <button className="mt-6 px-6 py-3 bg-[#f59e0b] text-white rounded-full text-[13px] md:text-[15px] font-semibold hover:bg-[#d97706] transition-colors inline-flex items-center gap-1.5">
+            Get started
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      </section>
+
+      {/* Footer / Contact Section */}
+      <footer className="bg-[#1d1d1f] border-t border-[#424245] py-8 md:py-12">
+        <div className="max-w-300 mx-auto px-4 md:px-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-10">
+            <div>
+              <h4 className="text-[10px] md:text-[11px] font-semibold text-[#86868b] uppercase tracking-wider mb-3">
+                Platform
+              </h4>
+              <ul className="space-y-2">
+                <li>
+                  <a href="#" className="text-[12px] md:text-[13px] text-[#f5f5f7] hover:text-white transition-colors">
+                    How it Works
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="text-[12px] md:text-[13px] text-[#f5f5f7] hover:text-white transition-colors">
+                    For Volunteers
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="text-[12px] md:text-[13px] text-[#f5f5f7] hover:text-white transition-colors">
+                    For Organisations
+                  </a>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-[10px] md:text-[11px] font-semibold text-[#86868b] uppercase tracking-wider mb-3">
+                Company
+              </h4>
+              <ul className="space-y-2">
+                <li>
+                  <a href="#" className="text-[12px] md:text-[13px] text-[#f5f5f7] hover:text-white transition-colors">
+                    About
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="text-[12px] md:text-[13px] text-[#f5f5f7] hover:text-white transition-colors">
+                    Careers
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="text-[12px] md:text-[13px] text-[#f5f5f7] hover:text-white transition-colors">
+                    Press
+                  </a>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-[10px] md:text-[11px] font-semibold text-[#86868b] uppercase tracking-wider mb-3">
+                Resources
+              </h4>
+              <ul className="space-y-2">
+                <li>
+                  <a href="#" className="text-[12px] md:text-[13px] text-[#f5f5f7] hover:text-white transition-colors">
+                    Blog
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="text-[12px] md:text-[13px] text-[#f5f5f7] hover:text-white transition-colors">
+                    Help Center
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="text-[12px] md:text-[13px] text-[#f5f5f7] hover:text-white transition-colors">
+                    Community
+                  </a>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-[10px] md:text-[11px] font-semibold text-[#86868b] uppercase tracking-wider mb-3">
+                Contact
+              </h4>
+              <ul className="space-y-2">
+                <li className="flex items-center gap-1.5 text-[12px] md:text-[13px] text-[#f5f5f7]">
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                    />
+                  </svg>
+                  hello@kindly.org
+                </li>
+                <li className="flex items-center gap-1.5 text-[12px] md:text-[13px] text-[#f5f5f7]">
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                    />
+                  </svg>
+                  +91 98765 43210
+                </li>
+                <li className="flex items-center gap-1.5 text-[12px] md:text-[13px] text-[#f5f5f7]">
+                  <MapPin className="w-3.5 h-3.5" />
+                  Nashik, India
+                </li>
+              </ul>
+            </div>
+          </div>
+          <div className="border-t border-[#424245] mt-8 pt-6 text-center">
+            <p className="text-[10px] md:text-[12px] text-[#86868b]">© 2025 Kindly. Made with love in Nashik.</p>
+          </div>
+        </div>
+      </footer>
     </div>
   )
 }

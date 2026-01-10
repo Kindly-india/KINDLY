@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
+import Image from "next/image"
 
 export function Navigation() {
   const [scrolled, setScrolled] = useState(false)
@@ -24,9 +25,18 @@ export function Navigation() {
     >
       <div className="max-w-245 mx-auto px-4 md:px-6">
         <div className="flex items-center justify-between h-11 md:h-12">
-          <Link href="/signup" className="text-[17px] md:text-[21px] font-semibold text-[#1d1d1f] tracking-tight">
-            Kindly
+
+          <Link href="/" className="inline-flex items-center">
+            <Image
+              src="/logo.png"   // ✅ Correct: Points directly to the public folder root
+              alt="Kindly"
+              width={120}
+              height={40}
+              className="h-8 w-auto"
+              priority
+            />
           </Link>
+
 
           <div className="hidden md:flex items-center gap-8">
             {[
