@@ -14,7 +14,7 @@ export class OrganizationService {
     // A. Resolve ID (Handle User ID vs Org ID)
     let targetId = orgId;
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orgId);
-    
+
     let { data: profile, error } = await client
       .from('organization_profiles')
       .select('*')
@@ -22,19 +22,19 @@ export class OrganizationService {
       .maybeSingle();
 
     if (error || !profile) {
-       const { data: profileByUserId } = await client
+      const { data: profileByUserId } = await client
         .from('organization_profiles')
         .select('*')
         .eq('user_id', targetId)
         .single();
-       if (!profileByUserId) throw new NotFoundException('Organization not found');
-       profile = profileByUserId;
+      if (!profileByUserId) throw new NotFoundException('Organization not found');
+      profile = profileByUserId;
     }
 
     // B. Security Check
     const isOwner = viewerId && profile.user_id === viewerId;
     const returnedProfile = { ...profile };
-    
+
     if (!isOwner) {
       returnedProfile.pan_card_url = null;
       returnedProfile.registration_certificate_url = null;
@@ -53,12 +53,12 @@ export class OrganizationService {
 
     // D. ✅ CALL THE SQL FUNCTION FOR REAL STATS
     // This bypasses the RLS issue causing the "Zero" bug
-    const { data: stats, error: statsError } = await client.rpc('get_org_stats', { 
-        target_org_id: profile.id 
+    const { data: stats, error: statsError } = await client.rpc('get_org_stats', {
+      target_org_id: profile.id
     });
 
     if (statsError) {
-        console.error("Stats Error:", statsError);
+      console.error("Stats Error:", statsError);
     }
 
     return {
@@ -79,26 +79,26 @@ export class OrganizationService {
 
     let targetId = orgId;
     const { data: p } = await client.from('organization_profiles').select('id').eq('user_id', orgId).maybeSingle();
-    if(p) targetId = p.id;
-    const finalId = p ? p.id : orgId; 
+    if (p) targetId = p.id;
+    const finalId = p ? p.id : orgId;
 
     const { data: events, error } = await client
       .from('events')
       .select('*')
       .eq('organization_id', finalId)
-      .in('status', ['published', 'ongoing', 'completed']) 
+      .in('status', ['published', 'ongoing', 'completed'])
       .order('event_date', { ascending: false });
 
     if (error) return { events: [] };
 
     // Get counts
     const eventsWithCounts = await Promise.all(events.map(async (event) => {
-        const { count } = await client
-            .from('event_registrations')
-            .select('*', { count: 'exact', head: true })
-            .eq('event_id', event.id);
-        
-        return { ...event, registered_count: count || 0 };
+      const { count } = await client
+        .from('event_registrations')
+        .select('*', { count: 'exact', head: true })
+        .eq('event_id', event.id);
+
+      return { ...event, registered_count: count || 0 };
     }));
 
     return { events: eventsWithCounts };
@@ -106,23 +106,41 @@ export class OrganizationService {
 
   // 3. GET REVIEWS (Keep existing)
   async getOrgReviews(orgId: string) {
-    const client = this.supabase.getClient();
-    let targetId = orgId;
-    const { data: p } = await client.from('organization_profiles').select('id').eq('user_id', orgId).maybeSingle();
-    if(p) targetId = p.id;
-    const finalId = p ? p.id : orgId;
+    const supabase = this.supabase.getClient();
 
-    const { data: reviews } = await client
-      .from('organization_reviews')
-      .select(`*, volunteers:volunteer_profiles(full_name), events(title)`)
-      .eq('organization_id', finalId)
+    const { data: reviews, error } = await supabase
+      .from('org_reviews')
+      .select(`
+      id,
+      rating,
+      comment,
+      created_at,
+      volunteer_profiles (
+        full_name,
+        avatar_url
+      ),
+      events (
+        title
+      )
+    `)
+      .eq('organization_id', orgId)
       .order('created_at', { ascending: false });
 
-    const formattedReviews = reviews?.map((r: any) => ({
-      ...r,
-      volunteer_name: r.volunteers?.full_name || 'Anonymous',
-      event_title: r.events?.title || 'General Review'
-    })) || [];
+    if (error) {
+      // If invalid UUID or not found, return empty array instead of crashing
+      return { reviews: [] };
+    }
+
+    // Map to flat structure for frontend
+    const formattedReviews = reviews.map((r: any) => ({
+      id: r.id,
+      rating: r.rating,
+      comment: r.comment,
+      created_at: r.created_at,
+      volunteer_name: r.volunteer_profiles?.full_name || 'Anonymous',
+      volunteer_avatar: r.volunteer_profiles?.avatar_url,
+      event_title: r.events?.title || 'General'
+    }));
 
     return { reviews: formattedReviews };
   }
@@ -139,34 +157,34 @@ export class OrganizationService {
   }
 
   async toggleFollow(targetUserId: string, currentUserId: string) {
-  const client = this.supabase.getClient();
+    const client = this.supabase.getClient();
 
-  // 1. Check if already following in the Unified Table
-  const { data: existing } = await client
-    .from('follows')
-    .select('id')
-    .eq('follower_id', currentUserId)   // The Volunteer
-    .eq('following_id', targetUserId)   // The Target (Org or Vol)
-    .maybeSingle();
-
-  if (existing) {
-    // Unfollow
-    await client.from('follows').delete().eq('id', existing.id);
-    return { isFollowing: false };
-  } else {
-    // Follow
-    // The DB Trigger we just made will auto-reject this if currentUserId is an Org
-    const { error } = await client
+    // 1. Check if already following in the Unified Table
+    const { data: existing } = await client
       .from('follows')
-      .insert({ 
-        follower_id: currentUserId, 
-        following_id: targetUserId 
-      });
-      
-    if (error) throw new Error(error.message); // Will catch "Operation Denied"
-    return { isFollowing: true };
+      .select('id')
+      .eq('follower_id', currentUserId)   // The Volunteer
+      .eq('following_id', targetUserId)   // The Target (Org or Vol)
+      .maybeSingle();
+
+    if (existing) {
+      // Unfollow
+      await client.from('follows').delete().eq('id', existing.id);
+      return { isFollowing: false };
+    } else {
+      // Follow
+      // The DB Trigger we just made will auto-reject this if currentUserId is an Org
+      const { error } = await client
+        .from('follows')
+        .insert({
+          follower_id: currentUserId,
+          following_id: targetUserId
+        });
+
+      if (error) throw new Error(error.message); // Will catch "Operation Denied"
+      return { isFollowing: true };
+    }
   }
-}
 
   async checkFollowStatus(orgId: string, userId: string) {
     const client = this.supabase.getClient();

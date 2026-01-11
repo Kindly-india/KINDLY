@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react" // ✅ Added useMemo
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import {
@@ -14,8 +14,7 @@ import { api } from "@/lib/api"
 import { cn } from "@/lib/utils"
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from "recharts"
 
-// ... (Keep Achievements, OurTeam, Reviews, OrgDetails sub-components exactly as they were) ...
-// ... I am omitting them here to save space, but DO NOT DELETE THEM from your file ...
+// ... [Keep Achievements, OurTeam, Reviews, and OrgDetails components exactly the same] ...
 
 function Achievements({ items }: { items: any[] }) {
   if (!items || items.length === 0) return null;
@@ -178,7 +177,7 @@ export default function OrganizationProfile() {
           try {
             const followRes = await api.getFollowStatus(profileRes.profile.user_id)
             setIsFollowing(followRes.isFollowing)
-          } catch (err) {}
+          } catch (err) { }
         }
       } catch (err) {
         console.error(err)
@@ -188,6 +187,27 @@ export default function OrganizationProfile() {
     }
     fetchProfile()
   }, [id])
+
+  // --- CALCULATE AVERAGE RATING ---
+  const averageRating = useMemo(() => {
+    // 1. Check if reviews exist
+    if (!reviews || reviews.length === 0) return "N/A";
+
+    // 2. Calculate Sum (Ensure rating is treated as a number)
+    const total = reviews.reduce((sum, review) => {
+      const score = Number(review.rating); // Force conversion to Number
+      return sum + (isNaN(score) ? 0 : score);
+    }, 0);
+
+    // 3. Calculate Average
+    const avg = total / reviews.length;
+
+    // 4. Return formatted (e.g., "4.5" or "5.0")
+    // If NaN (e.g. all ratings were invalid), return N/A
+    if (isNaN(avg)) return "N/A";
+
+    return avg.toFixed(1);
+  }, [reviews]);
 
   // --- HANDLERS (Follow, Share) ---
   const handleFollow = async () => {
@@ -207,7 +227,7 @@ export default function OrganizationProfile() {
 
   const handleShare = async () => {
     if (navigator.share) {
-      await navigator.share({ title: profile.name, url: window.location.href }).catch(() => {})
+      await navigator.share({ title: profile.name, url: window.location.href }).catch(() => { })
     } else {
       navigator.clipboard.writeText(window.location.href)
       setCopied(true)
@@ -215,11 +235,8 @@ export default function OrganizationProfile() {
     }
   }
 
-  // --- FILTERED EVENTS LOGIC ---
-  // If owner: Show ALL events
-  // If public: Show ONLY completed events
-  const displayedEvents = isOwnProfile 
-    ? events 
+  const displayedEvents = isOwnProfile
+    ? events
     : events.filter(ev => ev.status === 'completed');
 
   if (loading) return <div className="min-h-screen bg-white flex items-center justify-center"><Loader2 className="w-8 h-8 text-gray-900 animate-spin" /></div>
@@ -227,7 +244,7 @@ export default function OrganizationProfile() {
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] pb-20 font-sans">
-      
+
       {/* 1. TOP NAVIGATION */}
       <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -262,7 +279,7 @@ export default function OrganizationProfile() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-20 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          
+
           {/* LEFT SIDEBAR (Profile Card + Details) */}
           <div className="lg:col-span-4 space-y-6">
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 relative">
@@ -277,7 +294,13 @@ export default function OrganizationProfile() {
               <div className="grid grid-cols-3 gap-2 border-t border-b border-gray-100 py-4 mb-6">
                 <div className="text-center"><span className="block font-bold text-gray-900 text-lg">{profile.followers_count || 0}</span><span className="text-xs text-gray-500 uppercase">Followers</span></div>
                 <div className="text-center border-l border-gray-100"><span className="block font-bold text-gray-900 text-lg">{events.length}</span><span className="text-xs text-gray-500 uppercase">Events</span></div>
-                <div className="text-center border-l border-gray-100"><span className="block font-bold text-gray-900 text-lg">4.9</span><span className="text-xs text-gray-500 uppercase">Rating</span></div>
+
+                {/* ✅ UPDATED RATING DISPLAY */}
+                <div className="text-center border-l border-gray-100">
+                  <span className="block font-bold text-gray-900 text-lg">{averageRating}</span>
+                  <span className="text-xs text-gray-500 uppercase">Rating</span>
+                </div>
+
               </div>
               <div className="flex gap-3 pt-2 justify-center lg:justify-start">
                 {profile.linkedin && <a href={profile.linkedin} target="_blank" className="p-2 bg-gray-50 rounded-full hover:bg-blue-600 hover:text-white transition-colors"><Linkedin className="w-5 h-5" /></a>}
@@ -285,7 +308,7 @@ export default function OrganizationProfile() {
                 {profile.website && <a href={profile.website} target="_blank" className="p-2 bg-gray-50 rounded-full hover:bg-gray-200 hover:text-black transition-colors"><Globe className="w-5 h-5" /></a>}
               </div>
             </div>
-            
+
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
               <h3 className="font-bold text-gray-900 mb-4 text-sm uppercase tracking-wide">Contact Details</h3>
               <div className="space-y-3">
@@ -343,15 +366,11 @@ export default function OrganizationProfile() {
                 <div className="space-y-4">
                   {displayedEvents.map((event, idx) => {
                     const isCompleted = event.status === 'completed';
-                    
-                    // ✅ NEW LINK LOGIC
                     let linkHref;
                     if (isOwnProfile) {
-                        // Owner Logic
-                        linkHref = isCompleted ? `/org-events/${event.id}/report` : `/org-events/${event.id}`;
+                      linkHref = isCompleted ? `/org-events/${event.id}/report` : `/org-events/${event.id}`;
                     } else {
-                        // Public Logic (Redirect to Showcase)
-                        linkHref = `/events/${event.id}/showcase`;
+                      linkHref = `/events/${event.id}/showcase`;
                     }
 
                     return (

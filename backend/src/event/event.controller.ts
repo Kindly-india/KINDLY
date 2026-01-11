@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Delete, ValidationPipe, Request, UseGuards, Param, Patch } from '@nestjs/common';
+import { Controller, Post, Get, Body, Delete, ValidationPipe, Request, UseGuards, Param, Patch, BadRequestException } from '@nestjs/common';
 import { EventService } from './event.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -9,7 +9,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 // We apply it only to specific methods below.
 @Controller('events')
 export class EventController {
-  constructor(private eventService: EventService) {}
+  constructor(private eventService: EventService) { }
 
   // ==========================================
   // 🟢 PUBLIC ROUTES (No Token Needed)
@@ -26,12 +26,12 @@ export class EventController {
   }
 
   // This matches the error URL you saw: /events/:id/public
-@Get('details/:id')
+  @Get('details/:id')
   async getPublicEventById(@Param('id') id: string) {
     return this.eventService.getPublicEventById(id);
   }
 
-@Get(':id/broadcasts')
+  @Get(':id/broadcasts')
   async getBroadcasts(@Param('id') id: string) {
     return this.eventService.getEventBroadcasts(id);
   }
@@ -41,7 +41,7 @@ export class EventController {
   // ==========================================
 
   // 1. Volunteer Routes
-  @Get('my-registrations') 
+  @Get('my-registrations')
   @UseGuards(JwtAuthGuard)
   async getMyRegistrations(@Request() req: any) {
     // This fetches the volunteer's history and active events
@@ -55,7 +55,7 @@ export class EventController {
     return this.eventService.sendBroadcast(req.user.id, id, body.message);
   }
 
-// ✅ NEW: Recent Activity Route
+  // ✅ NEW: Recent Activity Route
   @Get('recent-activity')
   @UseGuards(JwtAuthGuard)
   async getRecentActivity(@Request() req: any) {
@@ -78,7 +78,7 @@ export class EventController {
   }
 
   // This is the duplicate path some parts of your app might still use
-  @Get('volunteer/my-registrations') 
+  @Get('volunteer/my-registrations')
   @UseGuards(JwtAuthGuard)
   async getVolunteerRegistrationsAlt(@Request() req: any) {
     return this.eventService.getVolunteerRegistrations(req.user.id);
@@ -109,11 +109,11 @@ export class EventController {
     return this.eventService.createEvent(req.user.id, dto);
   }
 
-@Delete(':id/broadcast/:broadcastId')
+  @Delete(':id/broadcast/:broadcastId')
   @UseGuards(JwtAuthGuard)
   async deleteBroadcast(
-    @Request() req: any, 
-    @Param('id') eventId: string, 
+    @Request() req: any,
+    @Param('id') eventId: string,
     @Param('broadcastId') broadcastId: string
   ) {
     return this.eventService.deleteBroadcast(req.user.id, eventId, broadcastId);
@@ -173,5 +173,27 @@ export class EventController {
   @UseGuards(JwtAuthGuard)
   async getEventRegistrations(@Request() req: any, @Param('id') id: string) {
     return this.eventService.getEventRegistrations(req.user.id, id);
+  }
+
+  // In EventController class
+
+  @Post(':id/review')
+  @UseGuards(JwtAuthGuard)
+  async submitReview(
+    @Request() req: any,
+    @Param('id') eventId: string,
+    @Body() body: { rating: number; comment: string }
+  ) {
+    if (!body.rating || body.rating < 1 || body.rating > 5) {
+      throw new BadRequestException('Rating must be between 1 and 5');
+    }
+    return this.eventService.submitReview(req.user.id, eventId, body.rating, body.comment);
+  }
+
+  // Add this route
+  @Get(':id/review/me')
+  @UseGuards(JwtAuthGuard)
+  async getMyReview(@Request() req: any, @Param('id') eventId: string) {
+    return this.eventService.getVolunteerReview(req.user.id, eventId);
   }
 }

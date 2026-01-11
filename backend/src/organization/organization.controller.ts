@@ -1,12 +1,12 @@
-import { 
-  Controller, 
-  Get, 
-  Post, 
+import {
+  Controller,
+  Get,
+  Post,
   Patch,
-  Body, 
+  Body,
   Param,
-  UseGuards, 
-  Request 
+  UseGuards,
+  Request
 } from '@nestjs/common';
 import { OrganizationService } from './organization.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -16,7 +16,7 @@ import { AddReviewDto } from './dto/add-review.dto';
 
 @Controller('organizations')
 export class OrganizationController {
-  constructor(private readonly organizationService: OrganizationService) {}
+  constructor(private readonly organizationService: OrganizationService) { }
 
   // ✅ UPDATED: Public profile with Security Check
   // Uses OptionalJwtAuthGuard to allow both Guests and Logged-in users
@@ -35,7 +35,7 @@ export class OrganizationController {
 
   // Public reviews
   @Get(':id/reviews')
-  async getOrgReviews(@Param('id') id: string) {
+  async getReviews(@Param('id') id: string) {
     return this.organizationService.getOrgReviews(id);
   }
 

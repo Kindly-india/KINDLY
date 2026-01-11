@@ -907,4 +907,72 @@ export class EventService {
 
     return { message: 'Certificates issued successfully' };
   }
+
+  // In EventService class
+
+  async submitReview(userId: string, eventId: string, rating: number, comment: string) {
+    const supabase = this.supabaseService.getClient();
+
+    // 1. Get Volunteer Profile
+    const { data: volProfile } = await supabase
+      .from('volunteer_profiles')
+      .select('id')
+      .eq('user_id', userId)
+      .single();
+
+    if (!volProfile) throw new NotFoundException('Volunteer profile not found');
+
+    // 2. Get Event & Organization Details
+    const { data: event } = await supabase
+      .from('events')
+      .select('organization_id')
+      .eq('id', eventId)
+      .single();
+
+    if (!event) throw new NotFoundException('Event not found');
+
+    // 3. Check if review already exists (Optional, prevents duplicates)
+    const { data: existing } = await supabase
+      .from('org_reviews')
+      .select('id')
+      .eq('event_id', eventId)
+      .eq('volunteer_id', volProfile.id)
+      .single();
+
+    if (existing) throw new BadRequestException('You have already reviewed this event');
+
+    // 4. Insert Review
+    const { error } = await supabase
+      .from('org_reviews')
+      .insert({
+        organization_id: event.organization_id,
+        volunteer_id: volProfile.id,
+        event_id: eventId,
+        rating: rating,
+        comment: comment
+      });
+
+    if (error) throw new BadRequestException('Failed to submit review: ' + error.message);
+
+    return { message: 'Review submitted successfully' };
+  }
+
+  // Add this method
+  async getVolunteerReview(userId: string, eventId: string) {
+    const supabase = this.supabaseService.getClient();
+    
+    const { data: volProfile } = await supabase
+      .from('volunteer_profiles').select('id').eq('user_id', userId).single();
+      
+    if (!volProfile) return null;
+
+    const { data: review } = await supabase
+      .from('org_reviews')
+      .select('*')
+      .eq('event_id', eventId)
+      .eq('volunteer_id', volProfile.id)
+      .single();
+
+    return { review };
+  }
 }

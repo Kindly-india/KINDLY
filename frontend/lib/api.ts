@@ -281,7 +281,7 @@ export const api = {
     return response.json();
   },
 
-// Get single event by ID (Authenticated with Public Fallback)
+  // Get single event by ID (Authenticated with Public Fallback)
   getEventById: async (eventId: string) => {
     const { data: { session } } = await supabase.auth.getSession();
 
@@ -673,11 +673,11 @@ export const api = {
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
     const response = await fetch(`${API_URL}/volunteers/${volunteerId}/profile`, {
-      headers 
+      headers
     });
-    
+
     if (!response.ok) {
-        throw new Error('Failed to fetch profile');
+      throw new Error('Failed to fetch profile');
     }
     return response.json();
   },
@@ -906,14 +906,14 @@ export const api = {
     return response.json();
   },
 
-followUser: async (targetUserId: string) => {
+  followUser: async (targetUserId: string) => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error('Please login to follow');
 
     const response = await fetch(`${API_URL}/social/follow/${targetUserId}`, {
       method: 'POST',
-      headers: { 
-        'Authorization': `Bearer ${session.access_token}` 
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`
       }
     });
 
@@ -924,53 +924,87 @@ followUser: async (targetUserId: string) => {
     return response.json();
   },
 
-unfollowUser: async (targetUserId: string) => {
+  unfollowUser: async (targetUserId: string) => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error('Please login to unfollow');
 
     const response = await fetch(`${API_URL}/social/follow/${targetUserId}`, {
       method: 'DELETE',
-      headers: { 
-        'Authorization': `Bearer ${session.access_token}` 
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`
       }
     });
 
     if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.message || 'Failed to unfollow');
+      const err = await response.json();
+      throw new Error(err.message || 'Failed to unfollow');
     }
     return response.json();
   },
 
-// ✅ FIX: Add cache-busting timestamp
-// In src/lib/api.ts
-getFollowStatus: async (targetUserId: string) => {
+  // ✅ FIX: Add cache-busting timestamp
+  // In src/lib/api.ts
+  getFollowStatus: async (targetUserId: string) => {
     const { data: { session } } = await supabase.auth.getSession();
     const headers: any = {};
-    
+
     // Prefer Session token, fallback to localStorage if needed
     const token = session?.access_token || localStorage.getItem('token');
     if (token) headers['Authorization'] = `Bearer ${token}`;
-    
+
     if (!token) return { isFollowing: false };
 
     // ⚡ THE IMPORTANT PART: ?t=${Date.now()}
-    const response = await fetch(`${API_URL}/social/follow/status/${targetUserId}?t=${Date.now()}`, { 
-        headers 
+    const response = await fetch(`${API_URL}/social/follow/status/${targetUserId}?t=${Date.now()}`, {
+      headers
     });
-    
+
     if (!response.ok) return { isFollowing: false };
     return response.json();
   },
 
   getVolunteerImpact: async () => {
     const token = localStorage.getItem('token');
-    const res = await fetch(`${API_URL}/analytics/volunteer`, { headers: { Authorization: `Bearer ${token}` }});
+    const res = await fetch(`${API_URL}/analytics/volunteer`, { headers: { Authorization: `Bearer ${token}` } });
     return res.json();
   },
   getOrgAnalytics: async () => {
     const token = localStorage.getItem('token');
-    const res = await fetch(`${API_URL}/analytics/org`, { headers: { Authorization: `Bearer ${token}` }});
+    const res = await fetch(`${API_URL}/analytics/org`, { headers: { Authorization: `Bearer ${token}` } });
     return res.json();
-  }
+  },
+
+  submitEventReview: async (eventId: string, rating: number, comment: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+
+    const res = await fetch(`${API_URL}/events/${eventId}/review`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ rating, comment }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.message || 'Failed to submit review');
+    }
+    return res.json();
+  },
+
+  // In lib/api.ts
+  getMyReview: async (eventId: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+    if (!token) return null;
+
+    const res = await fetch(`${API_URL}/events/${eventId}/review/me`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
+    if (!res.ok) return null;
+    return res.json();
+  },
 };
