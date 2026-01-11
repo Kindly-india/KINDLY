@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsInt, IsBoolean, IsOptional, IsIn, IsUrl, Min, IsDateString } from 'class-validator';
+import { IsString, IsNotEmpty, IsInt, IsBoolean, IsOptional, IsIn, IsUrl, Min, IsDateString, IsArray } from 'class-validator';
 
 export class CreateEventDto {
   @IsString()
@@ -50,10 +50,14 @@ export class CreateEventDto {
 
   @IsDateString() // Updated to validate ISO date string
   @IsNotEmpty()
-  registrationDeadline: string; 
+  registrationDeadline: string;
 
   @IsOptional()
   @IsInt()
   @Min(1)
   minimumAge?: number;
+
+  @IsOptional()
+  @IsArray()
+  galleryImages?: string[];
 }

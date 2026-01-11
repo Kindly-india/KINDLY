@@ -26,7 +26,7 @@ export class VolunteerController {
   async getOwnProfile(@Request() req: any) {
     return this.volunteerService.getProfileForViewer(req.user.id, req.user.id);
   }
-  
+
   // 2. Update Own Profile
   @UseGuards(JwtAuthGuard)
   @Patch('profile')

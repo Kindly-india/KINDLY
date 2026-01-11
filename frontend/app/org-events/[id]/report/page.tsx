@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image" // ✅ Added for Gallery
 import {
-  ArrowLeft, Users, Clock, Star, Download, Share2, 
+  ArrowLeft, Users, Clock, Star, Download, Share2,
   CheckCircle2, XCircle, Award, Loader2, Upload, Trash2, Plus // ✅ Added Icons
 } from "lucide-react"
 import { api } from "@/lib/api"
@@ -64,75 +64,73 @@ export default function EventReportPage() {
   }, [eventId])
 
   // ✅ HANDLE IMAGE UPLOAD
- const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // ✅ HANDLE IMAGE UPLOAD
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     try {
-        setUploading(true);
-        const publicUrl = await api.uploadEventImage(file);
+      setUploading(true);
+      const publicUrl = await api.uploadEventImage(file); // ✅ Directly returns string URL
 
-        const currentGallery = event.gallery_images || [];
-        const updatedGallery = [...currentGallery, publicUrl];
+      const currentGallery = event.gallery_images || [];
+      const updatedGallery = [...currentGallery, publicUrl];
 
-        // 🔴 FIX: Map snake_case (DB) to camelCase (API)
-        // The backend validation requires these specific fields
-        const updatePayload = {
-            title: event.title,
-            description: event.description,
-            category: event.category,
-            isUrgent: event.is_urgent, // Map is_urgent -> isUrgent
-            eventDate: event.event_date,
-            startTime: event.start_time,
-            endTime: event.end_time,
-            location: event.location,
-            totalSlots: event.total_slots,
-            registrationDeadline: event.registration_deadline,
-            coverImageUrl: event.cover_image_url,
-            gallery_images: updatedGallery // The new field
-        };
+      // Map snake_case (DB) to camelCase (API)
+      const updatePayload = {
+        title: event.title,
+        description: event.description,
+        category: event.category,
+        isUrgent: event.is_urgent,
+        eventDate: event.event_date,
+        startTime: event.start_time,
+        endTime: event.end_time,
+        location: event.location,
+        totalSlots: event.total_slots,
+        registrationDeadline: event.registration_deadline,
+        coverImageUrl: event.cover_image_url,
+        galleryImages: updatedGallery // ✅ Use camelCase to match DTO
+      };
 
-        // Call API with the fixed payload
-        await api.updateEvent(eventId, updatePayload as any);
-
-        setEvent({ ...event, gallery_images: updatedGallery });
+      await api.updateEvent(eventId, updatePayload as any);
+      setEvent({ ...event, gallery_images: updatedGallery });
 
     } catch (error: any) {
-        console.error("Upload failed", error);
-        alert(error.message || "Failed to upload image.");
+      console.error("Upload failed", error);
+      alert(error.message || "Failed to upload image.");
     } finally {
-        setUploading(false);
+      setUploading(false);
     }
   };
 
   // ✅ HANDLE IMAGE DELETE (FIXED MAPPING)
   const removeImage = async (indexToRemove: number) => {
-    if(!confirm("Delete this image?")) return;
+    if (!confirm("Delete this image?")) return;
 
     try {
-        const currentGallery = event.gallery_images || [];
-        const updatedGallery = currentGallery.filter((_: any, i: number) => i !== indexToRemove);
+      const currentGallery = event.gallery_images || [];
+      const updatedGallery = currentGallery.filter((_: any, i: number) => i !== indexToRemove);
 
-        // 🔴 FIX: Same mapping here
-        const updatePayload = {
-            title: event.title,
-            description: event.description,
-            category: event.category,
-            isUrgent: event.is_urgent,
-            eventDate: event.event_date,
-            startTime: event.start_time,
-            endTime: event.end_time,
-            location: event.location,
-            totalSlots: event.total_slots,
-            registrationDeadline: event.registration_deadline,
-            coverImageUrl: event.cover_image_url,
-            gallery_images: updatedGallery
-        };
+      // 🔴 FIX: Same mapping here
+      const updatePayload = {
+        title: event.title,
+        description: event.description,
+        category: event.category,
+        isUrgent: event.is_urgent,
+        eventDate: event.event_date,
+        startTime: event.start_time,
+        endTime: event.end_time,
+        location: event.location,
+        totalSlots: event.total_slots,
+        registrationDeadline: event.registration_deadline,
+        coverImageUrl: event.cover_image_url,
+        gallery_images: updatedGallery
+      };
 
-        await api.updateEvent(eventId, updatePayload as any);
-        setEvent({ ...event, gallery_images: updatedGallery });
+      await api.updateEvent(eventId, updatePayload as any);
+      setEvent({ ...event, gallery_images: updatedGallery });
     } catch (error) {
-        alert("Failed to delete image.");
+      alert("Failed to delete image.");
     }
   }
 
@@ -157,9 +155,9 @@ export default function EventReportPage() {
             <p className="text-xs text-gray-500">Post-Event Report</p>
           </div>
           <div className="ml-auto flex gap-3">
-             <Link href={`/events/${eventId}/showcase`} className="hidden md:flex items-center gap-2 text-xs font-semibold text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-full transition-colors">
-                View Public Showcase <Share2 className="w-3.5 h-3.5" />
-             </Link>
+            <Link href={`/events/${eventId}/showcase`} className="hidden md:flex items-center gap-2 text-xs font-semibold text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-full transition-colors">
+              View Public Showcase <Share2 className="w-3.5 h-3.5" />
+            </Link>
             <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-full flex items-center">
               COMPLETED
             </span>
@@ -200,60 +198,60 @@ export default function EventReportPage() {
 
         {/* ✅ NEW: EVENT GALLERY SECTION */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden p-6">
-            <div className="flex justify-between items-center mb-6">
-                <div>
-                    <h2 className="text-lg font-bold text-gray-900">Event Gallery</h2>
-                    <p className="text-sm text-gray-500">Upload photos to showcase the impact of this event.</p>
-                </div>
-                <div className="relative">
-                    <input 
-                        type="file" 
-                        id="gallery-upload" 
-                        className="hidden" 
-                        accept="image/*" 
-                        onChange={handleImageUpload}
-                        disabled={uploading}
-                    />
-                    <label 
-                        htmlFor="gallery-upload"
-                        className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-black text-white text-sm font-semibold rounded-xl hover:bg-gray-800 transition-colors"
-                    >
-                        {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                        Add Photo
-                    </label>
-                </div>
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h2 className="text-lg font-bold text-gray-900">Event Gallery</h2>
+              <p className="text-sm text-gray-500">Upload photos to showcase the impact of this event.</p>
             </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {/* Existing Images */}
-                {event?.gallery_images && event.gallery_images.map((img: string, idx: number) => (
-                    <div key={idx} className="relative group aspect-square rounded-xl overflow-hidden bg-gray-100 border border-gray-200">
-                        <img 
-                            src={img} 
-                            alt={`Gallery ${idx}`} 
-                            className="w-full h-full object-cover" 
-                        />
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                            <button 
-                                onClick={() => removeImage(idx)}
-                                className="p-2 bg-white/20 hover:bg-red-500 text-white rounded-full backdrop-blur-sm transition-colors"
-                            >
-                                <Trash2 className="w-5 h-5" />
-                            </button>
-                        </div>
-                    </div>
-                ))}
-
-                {/* Empty State */}
-                {(!event?.gallery_images || event.gallery_images.length === 0) && (
-                    <div className="col-span-full py-10 flex flex-col items-center justify-center text-gray-400 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50">
-                        <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mb-3 shadow-sm">
-                            <Upload className="w-5 h-5 text-gray-400" />
-                        </div>
-                        <p className="text-sm">No photos added yet.</p>
-                    </div>
-                )}
+            <div className="relative">
+              <input
+                type="file"
+                id="gallery-upload"
+                className="hidden"
+                accept="image/*"
+                onChange={handleImageUpload}
+                disabled={uploading}
+              />
+              <label
+                htmlFor="gallery-upload"
+                className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-black text-white text-sm font-semibold rounded-xl hover:bg-gray-800 transition-colors"
+              >
+                {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                Add Photo
+              </label>
             </div>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {/* Existing Images */}
+            {event?.gallery_images && event.gallery_images.map((img: string, idx: number) => (
+              <div key={idx} className="relative group aspect-square rounded-xl overflow-hidden bg-gray-100 border border-gray-200">
+                <img
+                  src={img}
+                  alt={`Gallery ${idx}`}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <button
+                    onClick={() => removeImage(idx)}
+                    className="p-2 bg-white/20 hover:bg-red-500 text-white rounded-full backdrop-blur-sm transition-colors"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+            ))}
+
+            {/* Empty State */}
+            {(!event?.gallery_images || event.gallery_images.length === 0) && (
+              <div className="col-span-full py-10 flex flex-col items-center justify-center text-gray-400 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50">
+                <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mb-3 shadow-sm">
+                  <Upload className="w-5 h-5 text-gray-400" />
+                </div>
+                <p className="text-sm">No photos added yet.</p>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Volunteer Attendance List */}
