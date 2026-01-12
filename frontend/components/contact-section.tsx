@@ -37,17 +37,17 @@ export function ContactSection() {
             </h3>
             <ul className="space-y-1.5 md:space-y-3">
               <li>
-                <a href="#" className="text-[11px] md:text-sm text-[#d2d2d7] hover:text-white transition-colors">
+                <a href="/how-it-works" className="text-[11px] md:text-sm text-[#d2d2d7] hover:text-white transition-colors">
                   How it Works
                 </a>
               </li>
               <li>
-                <a href="#" className="text-[11px] md:text-sm text-[#d2d2d7] hover:text-white transition-colors">
+                <a href="/for-volunteers" className="text-[11px] md:text-sm text-[#d2d2d7] hover:text-white transition-colors">
                   For Volunteers
                 </a>
               </li>
               <li>
-                <a href="#" className="text-[11px] md:text-sm text-[#d2d2d7] hover:text-white transition-colors">
+                <a href="/for-organisations" className="text-[11px] md:text-sm text-[#d2d2d7] hover:text-white transition-colors">
                   For Organisations
                 </a>
               </li>
@@ -60,17 +60,17 @@ export function ContactSection() {
             </h3>
             <ul className="space-y-1.5 md:space-y-3">
               <li>
-                <a href="#about" className="text-[11px] md:text-sm text-[#d2d2d7] hover:text-white transition-colors">
+                <a href="/company/about" className="text-[11px] md:text-sm text-[#d2d2d7] hover:text-white transition-colors">
                   About
                 </a>
               </li>
               <li>
-                <a href="#" className="text-[11px] md:text-sm text-[#d2d2d7] hover:text-white transition-colors">
+                <a href="/company/careers" className="text-[11px] md:text-sm text-[#d2d2d7] hover:text-white transition-colors">
                   Careers
                 </a>
               </li>
               <li>
-                <a href="#" className="text-[11px] md:text-sm text-[#d2d2d7] hover:text-white transition-colors">
+                <a href="/company/press" className="text-[11px] md:text-sm text-[#d2d2d7] hover:text-white transition-colors">
                   Press
                 </a>
               </li>
@@ -83,17 +83,17 @@ export function ContactSection() {
             </h3>
             <ul className="space-y-1.5 md:space-y-3">
               <li>
-                <a href="#" className="text-[11px] md:text-sm text-[#d2d2d7] hover:text-white transition-colors">
+                <a href="/resources/blog" className="text-[11px] md:text-sm text-[#d2d2d7] hover:text-white transition-colors">
                   Blog
                 </a>
               </li>
               <li>
-                <a href="#" className="text-[11px] md:text-sm text-[#d2d2d7] hover:text-white transition-colors">
+                <a href="/resources/help-center" className="text-[11px] md:text-sm text-[#d2d2d7] hover:text-white transition-colors">
                   Help Center
                 </a>
               </li>
               <li>
-                <a href="#" className="text-[11px] md:text-sm text-[#d2d2d7] hover:text-white transition-colors">
+                <a href="/resources/community" className="text-[11px] md:text-sm text-[#d2d2d7] hover:text-white transition-colors">
                   Community
                 </a>
               </li>
