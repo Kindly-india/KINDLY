@@ -1007,4 +1007,16 @@ export const api = {
     if (!res.ok) return null;
     return res.json();
   },
+
+getPlatformStats: async () => {
+    try {
+      // Ensure your backend has this endpoint, or create it to return { volunteers, organisations, hours, cities }
+      const response = await fetch(`${API_URL}/analytics/platform`);
+      if (!response.ok) return null;
+      return await response.json();
+    } catch (error) {
+      console.error('Failed to fetch platform stats:', error);
+      return null;
+    }
+  },
 };
