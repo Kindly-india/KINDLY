@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react" // ✅ Added useMemo
+import { useState, useEffect, useMemo } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import {
@@ -8,7 +8,7 @@ import {
   Mail, Phone, UserPlus, UserMinus,
   Share2, Linkedin, Instagram, Globe,
   Check, Quote, Building2, Users, CalendarDays,
-  Hash, FileBadge, Users2, Trophy
+  Hash, FileBadge, Users2, Trophy, LogOut // ✅ Added LogOut Icon
 } from "lucide-react"
 import { api } from "@/lib/api"
 import { cn } from "@/lib/utils"
@@ -190,26 +190,17 @@ export default function OrganizationProfile() {
 
   // --- CALCULATE AVERAGE RATING ---
   const averageRating = useMemo(() => {
-    // 1. Check if reviews exist
     if (!reviews || reviews.length === 0) return "N/A";
-
-    // 2. Calculate Sum (Ensure rating is treated as a number)
     const total = reviews.reduce((sum, review) => {
-      const score = Number(review.rating); // Force conversion to Number
+      const score = Number(review.rating);
       return sum + (isNaN(score) ? 0 : score);
     }, 0);
-
-    // 3. Calculate Average
     const avg = total / reviews.length;
-
-    // 4. Return formatted (e.g., "4.5" or "5.0")
-    // If NaN (e.g. all ratings were invalid), return N/A
     if (isNaN(avg)) return "N/A";
-
     return avg.toFixed(1);
   }, [reviews]);
 
-  // --- HANDLERS (Follow, Share) ---
+  // --- HANDLERS (Follow, Share, Logout) ---
   const handleFollow = async () => {
     if (!profile?.user_id) return
     try {
@@ -235,6 +226,17 @@ export default function OrganizationProfile() {
     }
   }
 
+  // ✅ Added Logout Handler
+  const handleLogout = async () => {
+    try {
+      if (api.logout) await api.logout();
+      router.push("/login");
+    } catch (error) {
+      console.error("Logout failed", error);
+      router.push("/login");
+    }
+  };
+
   const displayedEvents = isOwnProfile
     ? events
     : events.filter(ev => ev.status === 'completed');
@@ -256,9 +258,19 @@ export default function OrganizationProfile() {
               {copied ? <Check className="w-5 h-5 text-green-600" /> : <Share2 className="w-5 h-5" />}
             </button>
             {isOwnProfile ? (
-              <Link href="/settings/profile" className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-full hover:bg-gray-800 transition-colors flex items-center gap-2">
-                <Edit2 className="w-4 h-4" /> Edit Page
-              </Link>
+              <>
+                <Link href="/settings/profile" className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-full hover:bg-gray-800 transition-colors flex items-center gap-2">
+                  <Edit2 className="w-4 h-4" /> Edit Page
+                </Link>
+                {/* ✅ Added Logout Button */}
+                <button 
+                  onClick={handleLogout} 
+                  className="p-2 text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                  title="Logout"
+                >
+                  <LogOut className="w-5 h-5" />
+                </button>
+              </>
             ) : (
               <button onClick={handleFollow} className={cn("px-6 py-2 rounded-full text-sm font-bold transition-all flex items-center gap-2", isFollowing ? "bg-white text-red-600 border border-red-200" : "bg-black text-white")}>
                 {isFollowing ? <><UserMinus className="w-4 h-4" /> Unfollow</> : <><UserPlus className="w-4 h-4" /> Follow</>}
@@ -295,7 +307,6 @@ export default function OrganizationProfile() {
                 <div className="text-center"><span className="block font-bold text-gray-900 text-lg">{profile.followers_count || 0}</span><span className="text-xs text-gray-500 uppercase">Followers</span></div>
                 <div className="text-center border-l border-gray-100"><span className="block font-bold text-gray-900 text-lg">{events.length}</span><span className="text-xs text-gray-500 uppercase">Events</span></div>
 
-                {/* ✅ UPDATED RATING DISPLAY */}
                 <div className="text-center border-l border-gray-100">
                   <span className="block font-bold text-gray-900 text-lg">{averageRating}</span>
                   <span className="text-xs text-gray-500 uppercase">Rating</span>
