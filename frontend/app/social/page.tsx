@@ -180,9 +180,17 @@ export default function SocialDiscoveryPage() {
       {userType === 'org' ? (
         /* --- ORGANIZATION NAVBAR --- */
         <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-[#f5f5f7]">
-          <div className="max-w-[1400px] mx-auto px-4 md:px-8 h-12 md:h-14 flex items-center justify-between">
-            <Link href="/org-home" className="flex items-center">
-              <span className="text-[15px] md:text-[17px] font-bold text-[#1d1d1f] tracking-tight">KINDLY</span>
+          <div className="w-full px-6 md:px-10 h-16 flex items-center justify-between">
+            {/* ✅ FIXED LOGO */}
+            <Link href="/org-home" className="flex items-center shrink-0">
+                <Image 
+                    src="/logo.png" 
+                    alt="Kindly" 
+                    width={100} 
+                    height={30} 
+                    className="h-5 md:h-6 w-auto" 
+                    priority 
+                />
             </Link>
 
             <div className="hidden md:flex gap-6">
@@ -260,9 +268,17 @@ export default function SocialDiscoveryPage() {
       ) : (
         /* --- VOLUNTEER NAVBAR (Default) --- */
         <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-[#e5e5e7]">
-          <div className="max-w-[1200px] mx-auto px-4 md:px-8 h-11 md:h-14 flex items-center justify-between relative">
+          <div className="w-full px-6 md:px-10 h-16 flex items-center justify-between">
+            {/* ✅ FIXED LOGO */}
             <Link href="/home" className="flex items-center shrink-0">
-               <span className="text-[15px] md:text-[17px] font-bold text-[#1d1d1f] tracking-tight">KINDLY</span>
+                <Image 
+                    src="/logo.png" 
+                    alt="Kindly" 
+                    width={100} 
+                    height={30} 
+                    className="h-5 md:h-6 w-auto" 
+                    priority 
+                />
             </Link>
 
             <div className="hidden md:flex items-center gap-8 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">

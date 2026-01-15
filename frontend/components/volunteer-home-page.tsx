@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
+import Image from "next/image" // ✅ Ensure Image is imported
 import {
   Clock,
   MapPin,
@@ -254,9 +255,16 @@ export function VolunteerHomePage() {
       <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-[#f5f5f7]">
         <div className="max-w-300 mx-auto px-4 md:px-8 h-12 md:h-14 flex items-center justify-between relative">
           
-          {/* 1. Left: Logo */}
+          {/* 1. Left: Logo (UPDATED) */}
           <Link href="/" className="flex items-center shrink-0">
-            <span className="text-[15px] md:text-[17px] font-bold text-[#1d1d1f] tracking-tight">KINDLY</span>
+            <Image 
+                src="/logo.png" 
+                alt="Kindly" 
+                width={100} 
+                height={30} 
+                className="h-5 md:h-6 w-auto" 
+                priority 
+            />
           </Link>
 
           {/* 2. Center: Navigation Links */}
@@ -580,17 +588,17 @@ export function VolunteerHomePage() {
               </h4>
               <ul className="space-y-2">
                 <li>
-                  <a href="#" className="text-[12px] md:text-[13px] text-[#f5f5f7] hover:text-white transition-colors">
+                  <a href="/how-it-works" className="text-[12px] md:text-[13px] text-[#f5f5f7] hover:text-white transition-colors">
                     How it Works
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="text-[12px] md:text-[13px] text-[#f5f5f7] hover:text-white transition-colors">
+                  <a href="/for-volunteers" className="text-[12px] md:text-[13px] text-[#f5f5f7] hover:text-white transition-colors">
                     For Volunteers
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="text-[12px] md:text-[13px] text-[#f5f5f7] hover:text-white transition-colors">
+                  <a href="/for-organisations" className="text-[12px] md:text-[13px] text-[#f5f5f7] hover:text-white transition-colors">
                     For Organisations
                   </a>
                 </li>
@@ -602,17 +610,17 @@ export function VolunteerHomePage() {
               </h4>
               <ul className="space-y-2">
                 <li>
-                  <a href="#" className="text-[12px] md:text-[13px] text-[#f5f5f7] hover:text-white transition-colors">
+                  <a href="/company/about" className="text-[12px] md:text-[13px] text-[#f5f5f7] hover:text-white transition-colors">
                     About
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="text-[12px] md:text-[13px] text-[#f5f5f7] hover:text-white transition-colors">
+                  <a href="/company/careers" className="text-[12px] md:text-[13px] text-[#f5f5f7] hover:text-white transition-colors">
                     Careers
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="text-[12px] md:text-[13px] text-[#f5f5f7] hover:text-white transition-colors">
+                  <a href="/company/press" className="text-[12px] md:text-[13px] text-[#f5f5f7] hover:text-white transition-colors">
                     Press
                   </a>
                 </li>
@@ -624,17 +632,17 @@ export function VolunteerHomePage() {
               </h4>
               <ul className="space-y-2">
                 <li>
-                  <a href="#" className="text-[12px] md:text-[13px] text-[#f5f5f7] hover:text-white transition-colors">
+                  <a href="/resources/blog" className="text-[12px] md:text-[13px] text-[#f5f5f7] hover:text-white transition-colors">
                     Blog
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="text-[12px] md:text-[13px] text-[#f5f5f7] hover:text-white transition-colors">
+                  <a href="/resources/help-center" className="text-[12px] md:text-[13px] text-[#f5f5f7] hover:text-white transition-colors">
                     Help Center
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="text-[12px] md:text-[13px] text-[#f5f5f7] hover:text-white transition-colors">
+                  <a href="/resources/community" className="text-[12px] md:text-[13px] text-[#f5f5f7] hover:text-white transition-colors">
                     Community
                   </a>
                 </li>
@@ -654,7 +662,7 @@ export function VolunteerHomePage() {
                       d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
                     />
                   </svg>
-                  hello@kindly.org
+                  manasdhivare@gmail.com
                 </li>
                 <li className="flex items-center gap-1.5 text-[12px] md:text-[13px] text-[#f5f5f7]">
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -665,7 +673,7 @@ export function VolunteerHomePage() {
                       d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
                     />
                   </svg>
-                  +91 98765 43210
+                  +91 7517018954
                 </li>
                 <li className="flex items-center gap-1.5 text-[12px] md:text-[13px] text-[#f5f5f7]">
                   <MapPin className="w-3.5 h-3.5" />
@@ -683,4 +691,4 @@ export function VolunteerHomePage() {
   )
 }
 
-export default VolunteerHomePage;
+export default VolunteerHomePage

@@ -407,9 +407,9 @@ export function EventsDiscoveryPage() {
                         <Image 
                             src="/logo.png" 
                             alt="Kindly" 
-                            width={120} 
-                            height={40} 
-                            className="h-8 md:h-10 w-auto" 
+                            width={100} 
+                            height={30} 
+                            className="h-5 md:h-6 w-auto" 
                             priority 
                         />
                     </Link>

@@ -149,19 +149,20 @@ export default function VolunteerImpactPage() {
       
       {/* ✅ NEW CONSISTENT NAVBAR */}
       <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-[#e5e5e7]">
-        <div className="max-w-[1200px] mx-auto px-4 md:px-8 h-11 md:h-14 flex items-center justify-between relative">
+        <div className="w-full px-6 md:px-10 h-16 flex items-center justify-between">
           
           {/* 1. Logo */}
           <Link href="/home" className="flex items-center shrink-0">
             <Image 
                 src="/logo.png" 
                 alt="Kindly" 
-                width={120} 
-                height={40} 
-                className="h-8 md:h-10 w-auto" 
+                width={100} 
+                height={30} 
+                className="h-5 md:h-6 w-auto" 
                 priority 
             />
           </Link>
+          
 
           {/* 2. Desktop Navigation (Centered) */}
           <div className="hidden md:flex items-center gap-8 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">

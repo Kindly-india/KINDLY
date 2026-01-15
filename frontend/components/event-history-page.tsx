@@ -170,16 +170,16 @@ export function EventHistoryPage() {
     <div className="min-h-screen bg-[#f5f5f7] overflow-x-hidden">
       {/* ✅ UPDATED NAVBAR */}
       <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-[#e5e5e7]">
-        <div className="max-w-[1200px] mx-auto px-4 md:px-8 h-11 md:h-14 flex items-center justify-between relative">
+        <div className="w-full px-6 md:px-10 h-16 flex items-center justify-between">
 
-          {/* 1. Logo */}
+          {/* 1. Left: Logo (Fixed Size & Alignment) */}
           <Link href="/home" className="flex items-center shrink-0">
             <Image
               src="/logo.png"
               alt="Kindly"
-              width={120}
-              height={40}
-              className="h-8 md:h-10 w-auto"
+              width={100}
+              height={30}
+              className="h-5 md:h-6 w-auto"
               priority
             />
           </Link>
@@ -293,8 +293,8 @@ export function EventHistoryPage() {
           <button
             onClick={() => setActiveFilter("all")}
             className={`px-3 py-1.5 md:px-4 md:py-2 rounded-full text-[11px] md:text-sm font-medium whitespace-nowrap transition-all ${activeFilter === "all"
-                ? "bg-[#1d1d1f] text-white"
-                : "bg-white text-[#1d1d1f] border border-[#e5e5e7] hover:border-[#86868b]"
+              ? "bg-[#1d1d1f] text-white"
+              : "bg-white text-[#1d1d1f] border border-[#e5e5e7] hover:border-[#86868b]"
               }`}
           >
             All
@@ -302,8 +302,8 @@ export function EventHistoryPage() {
           <button
             onClick={() => setActiveFilter("registered")}
             className={`px-3 py-1.5 md:px-4 md:py-2 rounded-full text-[11px] md:text-sm font-medium whitespace-nowrap transition-all ${activeFilter === "registered"
-                ? "bg-blue-50 text-blue-600 border border-blue-200"
-                : "bg-white text-blue-600 border border-blue-100 hover:border-blue-300"
+              ? "bg-blue-50 text-blue-600 border border-blue-200"
+              : "bg-white text-blue-600 border border-blue-100 hover:border-blue-300"
               }`}
           >
             Upcoming
@@ -311,8 +311,8 @@ export function EventHistoryPage() {
           <button
             onClick={() => setActiveFilter("attended")}
             className={`px-3 py-1.5 md:px-4 md:py-2 rounded-full text-[11px] md:text-sm font-medium whitespace-nowrap transition-all ${activeFilter === "attended"
-                ? "bg-[#e8f5e9] text-[#2e7d32] border border-[#2e7d32]"
-                : "bg-white text-[#2e7d32] border border-[#c8e6c9] hover:border-[#2e7d32]"
+              ? "bg-[#e8f5e9] text-[#2e7d32] border border-[#2e7d32]"
+              : "bg-white text-[#2e7d32] border border-[#c8e6c9] hover:border-[#2e7d32]"
               }`}
           >
             Attended
@@ -320,8 +320,8 @@ export function EventHistoryPage() {
           <button
             onClick={() => setActiveFilter("missed")}
             className={`px-3 py-1.5 md:px-4 md:py-2 rounded-full text-[11px] md:text-sm font-medium whitespace-nowrap transition-all ${activeFilter === "missed"
-                ? "bg-[#f5f5f5] text-[#86868b] border border-[#86868b]"
-                : "bg-white text-[#86868b] border border-[#e5e5e7] hover:border-[#86868b]"
+              ? "bg-[#f5f5f5] text-[#86868b] border border-[#86868b]"
+              : "bg-white text-[#86868b] border border-[#e5e5e7] hover:border-[#86868b]"
               }`}
           >
             Missed
@@ -329,8 +329,8 @@ export function EventHistoryPage() {
           <button
             onClick={() => setActiveFilter("certificate")}
             className={`px-3 py-1.5 md:px-4 md:py-2 rounded-full text-[11px] md:text-sm font-medium whitespace-nowrap transition-all ${activeFilter === "certificate"
-                ? "bg-gradient-to-r from-[#fef9e7] to-[#fff8e1] text-[#b8860b] border border-[#daa520]"
-                : "bg-white text-[#b8860b] border border-[#f5deb3] hover:border-[#daa520]"
+              ? "bg-gradient-to-r from-[#fef9e7] to-[#fff8e1] text-[#b8860b] border border-[#daa520]"
+              : "bg-white text-[#b8860b] border border-[#f5deb3] hover:border-[#daa520]"
               }`}
           >
             Certificate Available

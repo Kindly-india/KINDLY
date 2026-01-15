@@ -352,6 +352,18 @@ export function HeroSection() {
         <Star className="w-7 h-7 text-emerald-500" />
       </div>
 
+      {/* ✅ UPDATED: Logo 2 with NO query string */}
+            <div className="mb-6 md:mb-8 animate-in fade-in zoom-in duration-500">
+                <Image
+                    src="/logoblack.png" 
+                    alt="Kindly Icon"
+                    width={60}
+                    height={60}
+                    className="w-12 h-12 md:w-16 md:h-16"
+                    priority
+                />
+            </div>
+
       <h1 className="text-3xl md:text-6xl font-semibold text-gray-900 tracking-tight text-center leading-tight">
         Make a difference.
         <br />
