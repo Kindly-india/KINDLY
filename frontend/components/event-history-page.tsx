@@ -8,20 +8,15 @@ import {
   ChevronRight,
   X,
   Download,
-  Star,
-  MapPin,
-  Calendar,
-  CheckCircle2,
-  Menu,
-  Clock,
-  Sparkles,
   Trophy,
-  Linkedin,
+  Menu,
+  Sparkles,
   Loader2
 } from "lucide-react"
 import { api } from "@/lib/api"
 
-type FilterType = "all" | "attended" | "missed" | "certificate" | "registered"
+// ✅ Updated: Removed 'certificate' from types
+type FilterType = "all" | "attended" | "missed" | "registered"
 
 export function EventHistoryPage() {
   const [historyEvents, setHistoryEvents] = useState<any[]>([])
@@ -31,7 +26,6 @@ export function EventHistoryPage() {
   const [activeFilter, setActiveFilter] = useState<FilterType>("all")
   const [menuOpen, setMenuOpen] = useState(false)
 
-  // ✅ Added Profile State
   const [profile, setProfile] = useState<any>(null)
   const [volunteerName, setVolunteerName] = useState("Volunteer")
 
@@ -56,13 +50,11 @@ export function EventHistoryPage() {
       try {
         setLoading(true)
 
-        // Fetch Profile & Registrations in parallel
         const [profileRes, response] = await Promise.all([
           api.getUserProfile(),
           api.getVolunteerRegistrations()
         ])
 
-        // ✅ Set Profile State
         if (profileRes?.profile) {
           setProfile(profileRes.profile)
           if (profileRes.profile.full_name) {
@@ -79,8 +71,6 @@ export function EventHistoryPage() {
           status: mapBackendStatusToUI(ev.registration_status, ev.status),
           org: ev.organization_profiles?.name || "Organizer",
           hours: calculateExactHours(ev.start_time, ev.end_time),
-
-          // Allows Certificate if 'Checked In' OR 'Completed'
           hasCertificate: !!ev.certificates_issued && (ev.registration_status === 'completed' || ev.registration_status === 'checked_in')
         }))
 
@@ -94,11 +84,13 @@ export function EventHistoryPage() {
     fetchHistory()
   }, [])
 
-  // Helper: Map Backend Status to UI Status
+  // ✅ UPDATED: Maps 'absent' from DB directly to 'missed' in UI
   const mapBackendStatusToUI = (regStatus: string, eventStatus: string) => {
-    if (regStatus === 'completed') return 'attended';
-    if (regStatus === 'missed') return 'missed';
-    if (regStatus === 'checked_in') return 'attended';
+    if (regStatus === 'completed' || regStatus === 'checked_in') return 'attended';
+    
+    // ✅ Logic for Missed Events
+    if (regStatus === 'absent' || regStatus === 'cancelled') return 'missed';
+    
     if (regStatus === 'registered') return 'registered';
     return 'pending';
   }
@@ -107,7 +99,6 @@ export function EventHistoryPage() {
     const matchesSearch = event.title.toLowerCase().includes(searchQuery.toLowerCase())
 
     if (activeFilter === "all") return matchesSearch;
-    if (activeFilter === "certificate") return matchesSearch && event.hasCertificate;
     if (activeFilter === "attended") return matchesSearch && event.status === "attended";
     if (activeFilter === "missed") return matchesSearch && event.status === "missed";
     if (activeFilter === "registered") return matchesSearch && event.status === "registered";
@@ -153,7 +144,6 @@ export function EventHistoryPage() {
     window.print();
   }
 
-  // ✅ Profile Display Logic
   const displayImage = profile?.avatar_url || profile?.logo_url
   const displayName = profile?.full_name || profile?.name || "User"
   const displayInitial = displayName ? displayName.charAt(0).toUpperCase() : "U"
@@ -168,11 +158,11 @@ export function EventHistoryPage() {
 
   return (
     <div className="min-h-screen bg-[#f5f5f7] overflow-x-hidden">
-      {/* ✅ UPDATED NAVBAR */}
+      {/* NAVBAR */}
       <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-[#e5e5e7]">
         <div className="w-full px-6 md:px-10 h-16 flex items-center justify-between">
 
-          {/* 1. Left: Logo (Fixed Size & Alignment) */}
+          {/* 1. Left: Logo */}
           <Link href="/home" className="flex items-center shrink-0">
             <Image
               src="/logo.png"
@@ -184,7 +174,7 @@ export function EventHistoryPage() {
             />
           </Link>
 
-          {/* 2. Desktop Navigation (Centered) */}
+          {/* 2. Desktop Navigation */}
           <div className="hidden md:flex items-center gap-8 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
             <Link href="/events" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors font-medium">
               Events
@@ -202,8 +192,6 @@ export function EventHistoryPage() {
 
           {/* 3. Right Section */}
           <div className="flex items-center gap-4 shrink-0">
-
-            {/* Desktop Profile Avatar */}
             <Link
               href={profile?.id ? `/volunteers/${profile.id}` : '#'}
               className="hidden md:block group"
@@ -289,6 +277,7 @@ export function EventHistoryPage() {
           />
         </div>
 
+        {/* ✅ UPDATED: Removed Certificate Filter Button */}
         <div className="flex gap-2 mb-4 md:mb-6 overflow-x-auto pb-1 scrollbar-hide">
           <button
             onClick={() => setActiveFilter("all")}
@@ -325,15 +314,6 @@ export function EventHistoryPage() {
               }`}
           >
             Missed
-          </button>
-          <button
-            onClick={() => setActiveFilter("certificate")}
-            className={`px-3 py-1.5 md:px-4 md:py-2 rounded-full text-[11px] md:text-sm font-medium whitespace-nowrap transition-all ${activeFilter === "certificate"
-              ? "bg-gradient-to-r from-[#fef9e7] to-[#fff8e1] text-[#b8860b] border border-[#daa520]"
-              : "bg-white text-[#b8860b] border border-[#f5deb3] hover:border-[#daa520]"
-              }`}
-          >
-            Certificate Available
           </button>
         </div>
 

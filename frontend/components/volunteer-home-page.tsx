@@ -571,10 +571,6 @@ export function VolunteerHomePage() {
           <p className="text-[13px] md:text-[15px] text-[#86868b] mt-2">
             Join thousands of volunteers creating positive change.
           </p>
-          <button className="mt-6 px-6 py-3 bg-[#f59e0b] text-white rounded-full text-[13px] md:text-[15px] font-semibold hover:bg-[#d97706] transition-colors inline-flex items-center gap-1.5">
-            Get started
-            <ChevronRight className="w-4 h-4" />
-          </button>
         </div>
       </section>
 

@@ -300,7 +300,7 @@ export default function VolunteerImpactPage() {
              </div>
           </div>
           
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between h-32 opacity-80">
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between h-32">
              <div className="flex items-center gap-2 text-orange-500 font-semibold text-sm uppercase tracking-wide"><Clock className="w-4 h-4" /> Committed</div>
              <div>
                 <span className="text-4xl font-bold text-gray-900">{stats.pendingHours}</span>

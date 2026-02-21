@@ -106,18 +106,14 @@ export const api = {
 
     const result = await response.json();
 
-    // Now sign in the user with Supabase client
-    const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
-      email: data.email,
-      password: data.password,
-    });
-
-    if (signInError) {
-      throw new Error('Account created but auto-login failed. Please log in manually.');
-    }
-
+    // ✅ REMOVED: Auto-login logic
+    // We simply return the result here. The frontend can now show the 
+    // "Please check your email" alert instead of redirecting.
+    
     return result;
   },
+
+  // ... rest of your api functions
 
   // Organization signup
   signupOrganization: async (data: OrganizationSignupData) => {

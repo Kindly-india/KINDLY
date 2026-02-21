@@ -103,7 +103,7 @@ export function HeroSection() {
                     });
 
                     alert('Account created successfully! You can now log in.');
-                    window.location.href = '/volunteer-home';
+                    window.location.href = '/login';
                   } catch (error: any) {
                     alert(error.message || 'Signup failed. Please try again.');
                   }
@@ -355,11 +355,11 @@ export function HeroSection() {
       {/* ✅ UPDATED: Logo 2 with NO query string */}
             <div className="mb-6 md:mb-8 animate-in fade-in zoom-in duration-500">
                 <Image
-                    src="/logoblack.png" 
+                    src="/logobeige.png" 
                     alt="Kindly Icon"
                     width={60}
                     height={60}
-                    className="w-12 h-12 md:w-16 md:h-16"
+                    className="w-12 h-12 md:w-20 md:h-20"
                     priority
                 />
             </div>
