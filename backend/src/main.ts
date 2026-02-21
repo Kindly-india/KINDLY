@@ -9,7 +9,8 @@ async function bootstrap() {
   app.enableCors({
     origin: (origin, callback) => {
       const allowedOrigins = [
-        'https://kindlyin.vercel.app',
+        'https://kindly.co.in',
+        'https://kindly-sigma.vercel.app',
         'http://localhost:3000'
       ];
 
