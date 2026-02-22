@@ -187,12 +187,7 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
       <section className="min-h-screen bg-gradient-to-b from-[#fef7f0] via-white to-[#f0fdf4] relative overflow-x-hidden">
         {/* Header - only visible on mobile */}
         <header className="md:hidden pt-4 pb-3 text-center px-4">
-          <Link href="/" className="inline-flex items-center gap-1.5">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#ff6b6b] to-[#ee5a5a] flex items-center justify-center">
-              <Heart className="w-3.5 h-3.5 text-white fill-white" />
-            </div>
-            <span className="text-base font-semibold text-[#1d1d1f] tracking-tight">KINDLY</span>
-          </Link>
+          <div></div>
         </header>
 
         <div className="absolute top-20 left-4 md:top-28 md:left-20 w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-white shadow-lg flex items-center justify-center z-10">
@@ -208,7 +203,7 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
           <Star className="w-7 h-7 text-[#10b981]" />
         </div>
 
-        <div className="flex items-start md:items-center justify-center px-4 md:px-6 pt-2 md:pt-24 pb-8 md:pb-20">
+        <div className="mt-3 flex items-start md:items-center justify-center px-4 md:px-6 pt-2 md:pt-24 pb-8 md:pb-20">
           <div className="w-full max-w-90 md:max-w-125 relative">
             {/* Decorative blur elements */}
             <div className="absolute -top-8 -left-8 md:-top-10 md:-left-10 w-16 h-16 md:w-24 md:h-24 bg-gradient-to-br from-[#ffecd2]/40 to-[#fcb69f]/40 rounded-full blur-2xl" />

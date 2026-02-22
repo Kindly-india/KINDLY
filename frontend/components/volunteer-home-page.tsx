@@ -310,7 +310,7 @@ export function VolunteerHomePage() {
               </button>
               {menuOpen && (
                 <div className="absolute right-0 top-12 z-50 w-48 bg-white rounded-xl shadow-xl border border-[#e5e5e7] overflow-hidden">
-                  <Link href="/profile" className="flex items-center gap-3 px-4 py-3 border-b border-[#f5f5f7]">Profile</Link>
+                  <Link href={`/volunteers/${profile.id}`} className="flex items-center gap-3 px-4 py-3 border-b border-[#f5f5f7]">Profile</Link>
                   <Link href="/events" className="flex items-center gap-3 px-4 py-3 border-b border-[#f5f5f7]">Events</Link>
                   <Link href="/social" className="flex items-center gap-3 px-4 py-3 border-b border-[#f5f5f7]">Social</Link>
                   <Link href="/volunteer-impact" className="flex items-center gap-3 px-4 py-3 border-b border-[#f5f5f7]">Impact</Link>

@@ -13,6 +13,7 @@ import {
 import { api } from "@/lib/api"
 import { cn } from "@/lib/utils"
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from "recharts"
+import Image from "next/image"
 
 // --- SUB-COMPONENTS ---
 
