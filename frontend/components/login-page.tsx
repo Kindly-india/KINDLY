@@ -2,24 +2,31 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Eye, EyeOff, Heart, Sparkles, Users, Star } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { api } from "@/lib/api"
+import { ChevronLeft } from "lucide-react";
 
 export function LoginPage() {
     const [showPassword, setShowPassword] = useState(false)
+    const router = useRouter()
 
     return (
         <div className="min-h-screen bg-gradient-to-b from-[#fef7f0] via-white to-[#f0fdf4] flex flex-col overflow-x-hidden">
-            <header className="pt-4 md:pt-12 pb-3 md:pb-6 text-center px-4">
-                <Link href="/" className="inline-flex items-center gap-1.5 md:gap-2">
-                    <div className="w-7 h-7 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-gradient-to-br from-[#ff6b6b] to-[#ee5a5a] flex items-center justify-center">
-                        <Heart className="w-3.5 h-3.5 md:w-5 md:h-5 text-white fill-white" />
-                    </div>
-                    <span className="text-base md:text-[21px] font-semibold text-[#1d1d1f] tracking-tight">KINDLY</span>
-                </Link>
+            <header className="pt-4 md:pt-12 pb-3 md:pb-6 px-4 flex items-center justify-between">
+
+                <div className="flex justify-center flex-1">
+                    <img
+                        src="/logo.png"
+                        alt="Kindly Logo"
+                        className="h-6 object-contain"
+                    />
+                </div>
+
+                <div className="w-[60px]" />
             </header>
 
             <main className="flex-1 flex items-start md:items-center justify-center px-4 md:px-6 pt-2 md:pt-0 pb-8 md:pb-20 relative">
@@ -38,10 +45,18 @@ export function LoginPage() {
 
                 <div className="w-full max-w-90 md:max-w-100 relative">
                     {/* Decorative blur elements */}
+
                     <div className="absolute -top-8 -left-8 md:-top-10 md:-left-10 w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-[#ffecd2]/40 to-[#fcb69f]/40 rounded-full blur-2xl" />
                     <div className="absolute -bottom-8 -right-8 md:-bottom-10 md:-right-10 w-20 h-20 md:w-24 md:h-24 bg-gradient-to-br from-[#a8edea]/40 to-[#fed6e3]/40 rounded-full blur-2xl" />
 
                     <div className="relative bg-white/80 backdrop-blur-sm rounded-2xl md:rounded-3xl p-5 md:p-10 shadow-[0_2px_40px_-12px_rgba(0,0,0,0.1)]">
+                        <button
+                            onClick={() => router.back()}
+                            className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+                        >
+                            <ChevronLeft className="w-5 h-5" />
+                            Back
+                        </button>
                         <h1 className="text-[24px] md:text-[40px] font-semibold text-[#1d1d1f] tracking-tight text-center leading-tight">
                             Welcome Back.
                         </h1>

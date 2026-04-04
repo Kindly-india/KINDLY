@@ -198,12 +198,24 @@ export default function VolunteerProfile() {
         if (!isMounted) return;
 
         const fetchedProfile = profileRes.profile;
-        setProfile(fetchedProfile)
-        setActivityData(fetchedProfile.activity_graph || [])
         setJourney(journeyRes.journey || [])
 
         const isSelf = currentUser?.id === fetchedProfile.user_id;
         setIsOwnProfile(isSelf);
+
+        if (isSelf) {
+          try {
+            const ownProfile = await api.getUserProfile();
+            if (ownProfile?.profile) {
+              const p = ownProfile.profile;
+              if (p.email) fetchedProfile.email = p.email;
+              if (p.phone) fetchedProfile.phone = p.phone;
+              if (p.address) fetchedProfile.address = p.address;
+            }
+          } catch (e) { }
+        }
+        setProfile(fetchedProfile)
+        setActivityData(fetchedProfile.activity_graph || [])
 
         if (currentUser?.user_metadata?.user_type === 'organization') {
           // setIsViewerOrg(true); 

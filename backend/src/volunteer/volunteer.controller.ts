@@ -15,6 +15,7 @@ import { FileInterceptor } from '@nestjs/platform-express'; // ✅ Helper for pa
 import { VolunteerService } from './volunteer.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UpdateVolunteerProfileDto } from './dto/update-volunteer-profile.dto';
+import { OptionalAuthGuard } from 'src/auth/guards/optional-auth.guard';
 
 @Controller('volunteers')
 export class VolunteerController {
@@ -39,6 +40,7 @@ export class VolunteerController {
 
   // 3. Smart Profile View (Public / Resume / Private)
   @Get(':id/profile')
+  @UseGuards(OptionalAuthGuard)
   async getProfileForViewer(@Param('id') targetId: string, @Request() req: any) {
     const viewerId = req.user?.id || null;
     return this.volunteerService.getProfileForViewer(targetId, viewerId);

@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
-import Image from "next/image" // ✅ Ensure Image is imported
+import Image from "next/image"
 import {
   Clock,
   MapPin,
@@ -256,7 +256,6 @@ export function VolunteerHomePage() {
         <div className="max-w-300 mx-auto px-4 md:px-8 h-12 md:h-14 flex items-center justify-between relative">
           
           {/* 1. Left: Logo (UPDATED) */}
-          <Link href="/" className="flex items-center shrink-0">
             <Image 
                 src="/logo.png" 
                 alt="Kindly" 
@@ -265,7 +264,6 @@ export function VolunteerHomePage() {
                 className="h-5 md:h-6 w-auto" 
                 priority 
             />
-          </Link>
 
           {/* 2. Center: Navigation Links */}
           <div className="hidden md:flex items-center gap-8 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">

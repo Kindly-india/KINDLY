@@ -106,14 +106,9 @@ export const api = {
 
     const result = await response.json();
 
-    // ✅ REMOVED: Auto-login logic
-    // We simply return the result here. The frontend can now show the 
-    // "Please check your email" alert instead of redirecting.
-    
     return result;
   },
 
-  // ... rest of your api functions
 
   // Organization signup
   signupOrganization: async (data: OrganizationSignupData) => {

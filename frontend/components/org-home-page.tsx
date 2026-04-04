@@ -25,6 +25,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { api } from "@/lib/api"
+import Image from "next/image"
 
 export function OrgHomePage() {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -190,9 +191,15 @@ export function OrgHomePage() {
       {/* Sticky Top Navbar */}
       <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-[#f5f5f7]">
         <div className="max-w-300 mx-auto px-4 md:px-8 h-12 md:h-14 flex items-center justify-between">
-          <Link href="/" className="flex items-center">
-            <span className="text-[15px] md:text-[17px] font-bold text-[#1d1d1f] tracking-tight">KINDLY</span>
-          </Link>
+
+          <Image
+            src="/logo.png"
+            alt="Kindly"
+            width={100}
+            height={30}
+            className="h-5 md:h-6 w-auto"
+            priority
+          />
 
           <div className="hidden md:flex gap-4">
             <Link href="/org-events" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors">
