@@ -72,7 +72,7 @@ export function EventsSection() {
               <span className="md:hidden"> </span>opportunities.
             </h2>
           </div>
-          <Link href="/events">
+          <Link href="#hero">
             <Button
               variant="outline"
               className="inline-flex items-center text-purple-600 text-xs hover:underline bg-transparent border-0 hover:bg-transparent"

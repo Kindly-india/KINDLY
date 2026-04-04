@@ -19,6 +19,7 @@ import {
   BarChart3 // Added for Navbar
 } from "lucide-react"
 import { api } from "@/lib/api"
+import Image from "next/image"
 
 type EventTab = "active" | "completed"
 
@@ -42,7 +43,7 @@ interface Event {
 export function OrgEventManagement() {
   const router = useRouter()
   const pathname = usePathname()
-  
+
   // --- Navbar State ---
   const [menuOpen, setMenuOpen] = useState(false)
   const [profile, setProfile] = useState<any>(null)
@@ -99,8 +100,8 @@ export function OrgEventManagement() {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
-    return date.toLocaleDateString('en-US', { 
-      month: 'short', 
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
       day: 'numeric',
       year: 'numeric'
     })
@@ -126,7 +127,7 @@ export function OrgEventManagement() {
   }
 
   // Navbar Helper: Check active link
-  const isActive = (path: string) => 
+  const isActive = (path: string) =>
     pathname === path ? "text-[#0066cc] font-medium" : "text-[#1d1d1f] hover:text-[#0066cc]"
 
   if (loading) {
@@ -146,14 +147,19 @@ export function OrgEventManagement() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
-      
+
       {/* --- INTEGRATED NAVBAR START --- */}
       <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-[#f5f5f7]">
         <div className="max-w-[1400px] mx-auto px-4 md:px-8 h-12 md:h-14 flex items-center justify-between">
           {/* Logo */}
-          <Link href="/org-home" className="flex items-center">
-            <span className="text-[15px] md:text-[17px] font-bold text-[#1d1d1f] tracking-tight">KINDLY</span>
-          </Link>
+          <Image
+            src="/logo.png"
+            alt="Kindly"
+            width={100}
+            height={30}
+            className="h-5 md:h-6 w-auto"
+            priority
+          />
 
           {/* Desktop Links */}
           <div className="hidden md:flex gap-6">
@@ -181,13 +187,13 @@ export function OrgEventManagement() {
 
           {/* Mobile Menu Button */}
           <div className="relative md:hidden">
-            <button 
-              onClick={() => setMenuOpen(!menuOpen)} 
+            <button
+              onClick={() => setMenuOpen(!menuOpen)}
               className="w-9 h-9 rounded-full bg-[#f5f5f7] flex items-center justify-center hover:bg-[#e5e5e7] transition-colors"
             >
               {menuOpen ? <X className="w-5 h-5 text-[#1d1d1f]" /> : <Menu className="w-5 h-5 text-[#1d1d1f]" />}
             </button>
-            
+
             {/* Mobile Dropdown */}
             {menuOpen && (
               <>
@@ -195,11 +201,11 @@ export function OrgEventManagement() {
                 <div className="absolute right-0 top-12 z-50 w-56 bg-white rounded-xl shadow-xl border border-[#e5e5e7] overflow-hidden">
                   <Link href={`/organizations/${profile?.id}`} onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-[#f5f5f7] transition-colors border-b border-[#f5f5f7]">
                     <div className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-[#f5f5f7] bg-gray-100 flex items-center justify-center">
-                       {profile?.logo_url ? (
-                          <img src={profile.logo_url} alt="Profile" className="w-full h-full object-cover" />
-                        ) : (
-                          <span className="text-xs font-bold">{profile?.name?.charAt(0) || "O"}</span>
-                        )}
+                      {profile?.logo_url ? (
+                        <img src={profile.logo_url} alt="Profile" className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-xs font-bold">{profile?.name?.charAt(0) || "O"}</span>
+                      )}
                     </div>
                     <div className="flex flex-col">
                       <span className="text-[13px] font-medium text-[#1d1d1f]">View Profile</span>
@@ -256,21 +262,19 @@ export function OrgEventManagement() {
         <div className="flex gap-3 mb-6">
           <button
             onClick={() => setActiveTab("active")}
-            className={`px-6 py-2.5 rounded-full font-medium text-sm transition-all ${
-              activeTab === "active"
+            className={`px-6 py-2.5 rounded-full font-medium text-sm transition-all ${activeTab === "active"
                 ? "bg-orange-500 text-white shadow-md"
                 : "bg-white text-gray-600 hover:bg-gray-50"
-            }`}
+              }`}
           >
             Active
           </button>
           <button
             onClick={() => setActiveTab("completed")}
-            className={`px-6 py-2.5 rounded-full font-medium text-sm transition-all ${
-              activeTab === "completed"
+            className={`px-6 py-2.5 rounded-full font-medium text-sm transition-all ${activeTab === "completed"
                 ? "bg-orange-500 text-white shadow-md"
                 : "bg-white text-gray-600 hover:bg-gray-50"
-            }`}
+              }`}
           >
             Completed
           </button>
@@ -290,8 +294,8 @@ export function OrgEventManagement() {
               No {activeTab} events
             </h3>
             <p className="text-gray-500 mb-6">
-              {activeTab === "active" 
-                ? "Create your first event to get started!" 
+              {activeTab === "active"
+                ? "Create your first event to get started!"
                 : "Your completed events will appear here"}
             </p>
             {activeTab === "active" && (
@@ -330,9 +334,8 @@ export function OrgEventManagement() {
                           <h3 className="text-lg md:text-xl font-bold text-gray-900">
                             {event.title}
                           </h3>
-                          <span className={`px-3 py-1 text-xs font-medium rounded-full ${
-                             event.status === 'completed' ? 'bg-gray-100 text-gray-700' : 'bg-emerald-100 text-emerald-700'
-                          }`}>
+                          <span className={`px-3 py-1 text-xs font-medium rounded-full ${event.status === 'completed' ? 'bg-gray-100 text-gray-700' : 'bg-emerald-100 text-emerald-700'
+                            }`}>
                             {event.status === 'completed' || isEventCompleted(event) ? 'Completed' : 'Published'}
                           </span>
                         </div>
@@ -368,15 +371,15 @@ export function OrgEventManagement() {
 
                     <div className="flex flex-wrap gap-2">
                       <Link
-                        href={activeTab === "completed" 
-                          ? `/org-events/${event.id}/report` 
+                        href={activeTab === "completed"
+                          ? `/org-events/${event.id}/report`
                           : `/org-events/${event.id}`}
                         className="px-4 py-2 bg-teal-50 text-teal-600 rounded-lg text-sm font-medium hover:bg-teal-100 transition-colors inline-flex items-center gap-2"
                       >
                         <Eye className="w-4 h-4" />
                         View Details
                       </Link>
-                      
+
                       {activeTab === "active" && (
                         <>
                           <Link
@@ -386,7 +389,7 @@ export function OrgEventManagement() {
                             <Edit className="w-4 h-4" />
                             Edit
                           </Link>
-                          
+
                           <button
                             onClick={() => handleCancelEvent(event.id)}
                             disabled={deletingEventId === event.id}

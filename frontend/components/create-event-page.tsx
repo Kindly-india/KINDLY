@@ -529,11 +529,16 @@ export function CreateEventPage() {
                                 <Users className="w-4 h-4 inline mr-2 text-emerald-500" />
                                 Total Volunteer Slots
                             </label>
+                            {/* ✅ UPDATED: Added min="1" and an onKeyDown blocker to prevent -, e, and . */}
                             <input
                                 type="number"
+                                min="1"
                                 placeholder="50"
-                                value={formData.totalSlots}
-                                onChange={(e) => setFormData({ ...formData, totalSlots: parseInt(e.target.value) || 0 })}
+                                value={formData.totalSlots || ''}
+                                onKeyDown={(e) => {
+                                    if (e.key === '-' || e.key === 'e' || e.key === '.') e.preventDefault();
+                                }}
+                                onChange={(e) => setFormData({ ...formData, totalSlots: parseInt(e.target.value) || 0 as any })}
                                 className="w-full h-12 md:h-14 px-4 bg-[#f5f5f7] rounded-xl border-0 text-[#1d1d1f] placeholder:text-[#86868b] focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all text-sm md:text-base"
                             />
                         </div>
@@ -564,10 +569,15 @@ export function CreateEventPage() {
                                 Minimum Age
                                 <span className="text-xs text-[#86868b] font-normal ml-2">(Optional)</span>
                             </label>
+                            {/* ✅ UPDATED: Added min="1" and an onKeyDown blocker to prevent -, e, and . */}
                             <input
                                 type="number"
+                                min="1"
                                 placeholder="18"
                                 value={formData.minimumAge || ''}
+                                onKeyDown={(e) => {
+                                    if (e.key === '-' || e.key === 'e' || e.key === '.') e.preventDefault();
+                                }}
                                 onChange={(e) => setFormData({ ...formData, minimumAge: parseInt(e.target.value) || undefined })}
                                 className="w-full h-12 md:h-14 px-4 bg-[#f5f5f7] rounded-xl border-0 text-[#1d1d1f] placeholder:text-[#86868b] focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all text-sm md:text-base"
                             />
