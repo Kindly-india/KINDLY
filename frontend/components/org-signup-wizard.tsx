@@ -190,16 +190,17 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
           <div></div>
         </header>
 
-        <div className="absolute top-20 left-4 md:top-28 md:left-20 w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-white shadow-lg flex items-center justify-center z-10">
-          <Building2 className="w-5 h-5 md:w-7 md:h-7 text-[#3b82f6]" />
+        {/* ✅ UPDATED: Floating Icons are now hidden on small screens and pushed behind (z-0) */}
+        <div className="hidden lg:flex absolute top-28 left-10 xl:left-20 w-14 h-14 rounded-2xl bg-white shadow-lg items-center justify-center z-0">
+          <Building2 className="w-7 h-7 text-[#3b82f6]" />
         </div>
-        <div className="absolute top-32 right-4 md:top-40 md:right-24 w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-white shadow-lg flex items-center justify-center z-10">
-          <Sparkles className="w-5 h-5 md:w-7 md:h-7 text-[#f59e0b]" />
+        <div className="hidden lg:flex absolute top-40 right-10 xl:right-24 w-14 h-14 rounded-2xl bg-white shadow-lg items-center justify-center z-0">
+          <Sparkles className="w-7 h-7 text-[#f59e0b]" />
         </div>
-        <div className="hidden md:flex absolute bottom-40 left-32 w-14 h-14 rounded-2xl bg-white shadow-lg items-center justify-center z-10">
+        <div className="hidden lg:flex absolute bottom-40 left-10 xl:left-32 w-14 h-14 rounded-2xl bg-white shadow-lg items-center justify-center z-0">
           <Users className="w-7 h-7 text-[#8b5cf6]" />
         </div>
-        <div className="hidden md:flex absolute bottom-32 right-40 w-14 h-14 rounded-2xl bg-white shadow-lg items-center justify-center z-10">
+        <div className="hidden lg:flex absolute bottom-32 right-10 xl:right-40 w-14 h-14 rounded-2xl bg-white shadow-lg items-center justify-center z-0">
           <Star className="w-7 h-7 text-[#10b981]" />
         </div>
 
@@ -209,7 +210,8 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
             <div className="absolute -top-8 -left-8 md:-top-10 md:-left-10 w-16 h-16 md:w-24 md:h-24 bg-gradient-to-br from-[#ffecd2]/40 to-[#fcb69f]/40 rounded-full blur-2xl" />
             <div className="absolute -bottom-8 -right-8 md:-bottom-10 md:-right-10 w-20 h-20 md:w-28 md:h-28 bg-gradient-to-br from-[#a8edea]/40 to-[#fed6e3]/40 rounded-full blur-2xl" />
 
-            <div className="relative bg-white/80 backdrop-blur-sm rounded-2xl md:rounded-3xl p-5 md:p-10 shadow-[0_2px_40px_-12px_rgba(0,0,0,0.1)]">
+            {/* ✅ UPDATED: Added z-20 so the card is always above decorative icons */}
+            <div className="relative z-20 bg-white/80 backdrop-blur-sm rounded-2xl md:rounded-3xl p-5 md:p-10 shadow-[0_2px_40px_-12px_rgba(0,0,0,0.1)]">
               {/* Back button */}
               <button
                 onClick={onBack}
@@ -301,18 +303,20 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
   if (currentView === "success") {
     return (
       <section className="min-h-screen bg-gradient-to-b from-[#fef7f0] via-white to-[#f0fdf4] flex flex-col items-center justify-center px-4 md:px-6 py-8 md:py-20 relative overflow-x-hidden">
-        <div className="absolute top-16 left-4 md:top-24 md:left-24 w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-white shadow-lg flex items-center justify-center z-10">
-          <Check className="w-5 h-5 md:w-7 md:h-7 text-[#10b981]" />
+        {/* ✅ UPDATED: Floating Icons pushed behind and moved */}
+        <div className="hidden lg:flex absolute top-24 left-10 xl:left-24 w-14 h-14 rounded-2xl bg-white shadow-lg items-center justify-center z-0">
+          <Check className="w-7 h-7 text-[#10b981]" />
         </div>
-        <div className="absolute top-24 right-4 md:top-32 md:right-28 w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-white shadow-lg flex items-center justify-center z-10">
-          <Sparkles className="w-5 h-5 md:w-7 md:h-7 text-[#f59e0b]" />
+        <div className="hidden lg:flex absolute top-32 right-10 xl:right-28 w-14 h-14 rounded-2xl bg-white shadow-lg items-center justify-center z-0">
+          <Sparkles className="w-7 h-7 text-[#f59e0b]" />
         </div>
 
         <div className="w-full max-w-85 md:max-w-110 relative">
           <div className="absolute -top-8 -left-8 md:-top-10 md:-left-10 w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-[#ffecd2]/40 to-[#fcb69f]/40 rounded-full blur-2xl" />
           <div className="absolute -bottom-8 -right-8 md:-bottom-10 md:-right-10 w-20 h-20 md:w-24 md:h-24 bg-gradient-to-br from-[#a8edea]/40 to-[#fed6e3]/40 rounded-full blur-2xl" />
 
-          <div className="relative bg-white/80 backdrop-blur-sm rounded-2xl md:rounded-3xl p-6 md:p-12 shadow-[0_2px_40px_-12px_rgba(0,0,0,0.1)] text-center">
+          {/* ✅ UPDATED: Added z-20 */}
+          <div className="relative z-20 bg-white/80 backdrop-blur-sm rounded-2xl md:rounded-3xl p-6 md:p-12 shadow-[0_2px_40px_-12px_rgba(0,0,0,0.1)] text-center">
             <div className="w-16 h-16 md:w-24 md:h-24 mx-auto mb-4 md:mb-6 rounded-full bg-gradient-to-br from-[#fef3c7] to-[#fde68a] flex items-center justify-center shadow-lg">
               <Clock className="w-8 h-8 md:w-12 md:h-12 text-[#f59e0b]" />
             </div>
@@ -360,7 +364,8 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
         </Link>
       </header>
 
-      <div className="hidden md:flex absolute top-28 left-20 w-14 h-14 rounded-2xl bg-white shadow-lg items-center justify-center z-10">
+      {/* ✅ UPDATED: Floating Icons pushed behind and moved */}
+      <div className="hidden lg:flex absolute top-28 left-10 xl:left-20 w-14 h-14 rounded-2xl bg-white shadow-lg items-center justify-center z-0">
         {selectedOrgData && (
           <selectedOrgData.icon
             className="w-7 h-7"
@@ -376,10 +381,10 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
           />
         )}
       </div>
-      <div className="hidden md:flex absolute top-40 right-24 w-14 h-14 rounded-2xl bg-white shadow-lg items-center justify-center z-10">
+      <div className="hidden lg:flex absolute top-40 right-10 xl:right-24 w-14 h-14 rounded-2xl bg-white shadow-lg items-center justify-center z-0">
         <Sparkles className="w-7 h-7 text-[#f59e0b]" />
       </div>
-      <div className="hidden md:flex absolute bottom-32 right-40 w-14 h-14 rounded-2xl bg-white shadow-lg items-center justify-center z-10">
+      <div className="hidden lg:flex absolute bottom-32 right-10 xl:right-40 w-14 h-14 rounded-2xl bg-white shadow-lg items-center justify-center z-0">
         <Star className="w-7 h-7 text-[#10b981]" />
       </div>
 
@@ -388,7 +393,8 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
           <div className="absolute -top-8 -left-8 md:-top-10 md:-left-10 w-16 h-16 md:w-24 md:h-24 bg-gradient-to-br from-[#ffecd2]/40 to-[#fcb69f]/40 rounded-full blur-2xl" />
           <div className="absolute -bottom-8 -right-8 md:-bottom-10 md:-right-10 w-20 h-20 md:w-28 md:h-28 bg-gradient-to-br from-[#a8edea]/40 to-[#fed6e3]/40 rounded-full blur-2xl" />
 
-          <div className="relative bg-white/80 backdrop-blur-sm rounded-2xl md:rounded-3xl p-5 md:p-10 shadow-[0_2px_40px_-12px_rgba(0,0,0,0.1)]">
+          {/* ✅ UPDATED: Added z-20 */}
+          <div className="relative z-20 bg-white/80 backdrop-blur-sm rounded-2xl md:rounded-3xl p-5 md:p-10 shadow-[0_2px_40px_-12px_rgba(0,0,0,0.1)]">
             {/* Back button */}
             <button
               onClick={() => setCurrentView("category")}
@@ -919,13 +925,6 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
                       </label>
                     </div>
                   </div>
-
-                  <div className="border-2 border-dashed border-[#d2d2d7] rounded-lg md:rounded-xl p-4 md:p-6 text-center bg-gradient-to-br from-[#fffbeb]/50 to-[#fef3c7]/50 hover:border-[#f59e0b] transition-colors cursor-pointer">
-                    <Upload className="w-6 h-6 md:w-8 md:h-8 mx-auto mb-2 text-[#f59e0b]" />
-                    <p className="text-[11px] md:text-[13px] text-[#86868b]">
-                      Social media URL, certificate, or any proof
-                    </p>
-                  </div>
                 </div>
               )}
 
@@ -1020,7 +1019,9 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
                     <Label className="text-[10px] md:text-xs text-[#86868b] font-normal">
                       Why do you want to join? <span className="text-[#ef4444]">*</span>
                     </Label>
+                    {/* ✅ UPDATED: Added name="intentDescription" so the form can actually send it */}
                     <Textarea
+                      name="intentDescription"
                       placeholder="Tell us about your intent - what type of events you want to create, your passion for volunteering, etc."
                       className="min-h-25 md:min-h-30 bg-[#f5f5f7] border-0 rounded-lg md:rounded-xl text-[13px] md:text-[17px] text-[#1d1d1f] placeholder:text-[#86868b] focus-visible:ring-2 focus-visible:ring-[#10b981] resize-none"
                     />

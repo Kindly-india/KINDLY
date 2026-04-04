@@ -13,7 +13,6 @@ import {
 import { api } from "@/lib/api"
 import { cn } from "@/lib/utils"
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from "recharts"
-import Image from "next/image"
 
 // --- SUB-COMPONENTS ---
 
@@ -181,7 +180,6 @@ export default function VolunteerProfile() {
   const [coverError, setCoverError] = useState(false)
   const [copied, setCopied] = useState(false)
 
-  // ... (Keep existing useEffect exactly as is) ...
   useEffect(() => {
     let isMounted = true;
 
@@ -217,8 +215,9 @@ export default function VolunteerProfile() {
         setProfile(fetchedProfile)
         setActivityData(fetchedProfile.activity_graph || [])
 
+        // ✅ UNCOMMENTED: Hides the follow button for organizations perfectly
         if (currentUser?.user_metadata?.user_type === 'organization') {
-          // setIsViewerOrg(true); 
+          setIsViewerOrg(true); 
         }
 
         if (!isSelf && currentUser && fetchedProfile.user_id) {
@@ -241,7 +240,6 @@ export default function VolunteerProfile() {
     return () => { isMounted = false; }
   }, [id])
 
-  // ... (Keep existing helper functions: handleFollow, handleShare, etc.) ...
   const handleFollow = async () => {
     if (!profile?.user_id) return
     try {
@@ -275,21 +273,18 @@ export default function VolunteerProfile() {
     }
   }
 
-  // ✅ NEW: Logout Handler
   const handleLogout = async () => {
     if (confirm("Are you sure you want to log out?")) {
       try {
-        // Attempt API logout if method exists, otherwise just clear local state
         if (api.logout) await api.logout();
         else {
-          // Fallback if your api.ts doesn't have an explicit logout
-          localStorage.removeItem('supabase.auth.token'); // Or whatever key you use
+          localStorage.removeItem('supabase.auth.token'); 
           localStorage.clear();
         }
       } catch (err) {
         console.error("Logout error", err);
       } finally {
-        router.push('/'); // Redirect to localhost:3000/
+        router.push('/'); 
       }
     }
   }
@@ -328,12 +323,10 @@ export default function VolunteerProfile() {
 
             {isOwnProfile ? (
               <>
-                {/* Edit Button */}
                 <Link href="/settings/profile" className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-full hover:bg-gray-800 transition-colors flex items-center gap-2">
                   <Edit2 className="w-4 h-4" /> Edit Profile
                 </Link>
 
-                {/* ✅ LOGOUT BUTTON (Only shows on own profile) */}
                 <button
                   onClick={handleLogout}
                   className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-all ml-1"
@@ -343,15 +336,14 @@ export default function VolunteerProfile() {
                 </button>
               </>
             ) : (
-              // Logic: Hide if Viewer is Org
               !isViewerOrg && (
                 <button
                   onClick={handleFollow}
                   className={cn(
                     "px-6 py-2 rounded-full text-sm font-bold transition-all shadow-sm active:scale-95 flex items-center gap-2",
                     isFollowing
-                      ? "bg-white text-red-600 border border-red-200 hover:bg-red-50 hover:border-red-300" // Unfollow Style
-                      : "bg-black text-white hover:bg-gray-800" // Follow Style
+                      ? "bg-white text-red-600 border border-red-200 hover:bg-red-50 hover:border-red-300"
+                      : "bg-black text-white hover:bg-gray-800" 
                   )}
                 >
                   {isFollowing ? (
@@ -366,10 +358,9 @@ export default function VolunteerProfile() {
         </div>
       </nav>
 
-      {/* ... (Keep the rest of the return statement exactly the same) ... */}
       {/* 2. COVER IMAGE */}
       <div className="h-48 md:h-64 bg-gray-200 w-full relative overflow-hidden group">
-        {!coverError && profile.cover_url ? (
+        {!coverError && profile?.cover_url ? (
           <img
             src={profile.cover_url}
             alt="Cover"
@@ -391,20 +382,20 @@ export default function VolunteerProfile() {
             {/* Profile Card */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 relative">
               <div className="w-32 h-32 rounded-full border-4 border-white shadow-md overflow-hidden bg-gray-100 -mt-20 mb-4">
-                {profile.avatar_url ? (
+                {profile?.avatar_url ? (
                   <img src={profile.avatar_url} alt={profile.full_name} className="w-full h-full object-cover" />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-3xl font-bold text-gray-400">{profile.full_name?.charAt(0)}</div>
+                  <div className="w-full h-full flex items-center justify-center text-3xl font-bold text-gray-400">{profile?.full_name?.charAt(0)}</div>
                 )}
               </div>
 
               <div className="mb-6">
                 <div className="flex items-center gap-2 mb-1">
-                  <h1 className="text-2xl font-bold text-gray-900">{profile.full_name}</h1>
-                  {profile.is_verified && <CheckCircle2 className="w-5 h-5 text-blue-500 fill-blue-50" />}
+                  <h1 className="text-2xl font-bold text-gray-900">{profile?.full_name}</h1>
+                  {profile?.is_verified && <CheckCircle2 className="w-5 h-5 text-blue-500 fill-blue-50" />}
                 </div>
-                <p className="text-gray-600 font-medium">{profile.headline || "Volunteer"}</p>
-                {profile.city && (
+                <p className="text-gray-600 font-medium">{profile?.headline || "Volunteer"}</p>
+                {profile?.city && (
                   <div className="flex items-center gap-1 text-sm text-gray-500 mt-2">
                     <MapPin className="w-4 h-4" /> {profile.city}
                   </div>
@@ -413,23 +404,23 @@ export default function VolunteerProfile() {
 
               <div className="grid grid-cols-3 gap-2 border-t border-b border-gray-100 py-4 mb-6">
                 <div className="text-center">
-                  <span className="block font-bold text-gray-900 text-lg">{profile.followers_count || 0}</span>
+                  <span className="block font-bold text-gray-900 text-lg">{profile?.followers_count || 0}</span>
                   <span className="text-xs text-gray-500 uppercase tracking-wide">Followers</span>
                 </div>
                 <div className="text-center border-l border-gray-100">
-                  <span className="block font-bold text-gray-900 text-lg">{profile.following_count || 0}</span>
+                  <span className="block font-bold text-gray-900 text-lg">{profile?.following_count || 0}</span>
                   <span className="text-xs text-gray-500 uppercase tracking-wide">Following</span>
                 </div>
                 <div className="text-center border-l border-gray-100">
-                  <span className="block font-bold text-gray-900 text-lg">{profile.total_hours || 0}</span>
+                  <span className="block font-bold text-gray-900 text-lg">{profile?.total_hours || 0}</span>
                   <span className="text-xs text-gray-500 uppercase tracking-wide">Hours</span>
                 </div>
               </div>
 
               <div className="flex gap-3 pt-2 justify-center lg:justify-start">
-                {profile.linkedin && <a href={getExternalLink(profile.linkedin)} target="_blank" className="p-2 bg-gray-50 rounded-full hover:bg-blue-600 hover:text-white transition-colors"><Linkedin className="w-5 h-5" /></a>}
-                {profile.instagram && <a href={getExternalLink(profile.instagram)} target="_blank" className="p-2 bg-gray-50 rounded-full hover:bg-pink-600 hover:text-white transition-colors"><Instagram className="w-5 h-5" /></a>}
-                {profile.website && <a href={getExternalLink(profile.website)} target="_blank" className="p-2 bg-gray-50 rounded-full hover:bg-gray-200 hover:text-black transition-colors"><Globe className="w-5 h-5" /></a>}
+                {profile?.linkedin && <a href={getExternalLink(profile.linkedin)} target="_blank" className="p-2 bg-gray-50 rounded-full hover:bg-blue-600 hover:text-white transition-colors"><Linkedin className="w-5 h-5" /></a>}
+                {profile?.instagram && <a href={getExternalLink(profile.instagram)} target="_blank" className="p-2 bg-gray-50 rounded-full hover:bg-pink-600 hover:text-white transition-colors"><Instagram className="w-5 h-5" /></a>}
+                {profile?.website && <a href={getExternalLink(profile.website)} target="_blank" className="p-2 bg-gray-50 rounded-full hover:bg-gray-200 hover:text-black transition-colors"><Globe className="w-5 h-5" /></a>}
               </div>
 
               <div className="mt-6 pt-6 border-t border-gray-100">
@@ -440,11 +431,12 @@ export default function VolunteerProfile() {
             </div>
 
             {/* CONTACT DETAILS */}
-            {(isOwnProfile || profile.view_type === 'private' || profile.view_type === 'resume') && (
+            {(isOwnProfile || profile?.view_type === 'private' || profile?.view_type === 'resume') && (
               <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
                 <h3 className="font-bold text-gray-900 mb-4 text-sm uppercase tracking-wide">Contact Details</h3>
                 <div className="space-y-3">
-                  {profile.email ? (
+                  {/* ✅ UPDATED: Safe optional chaining here */}
+                  {profile?.email ? (
                     <div className="flex items-center gap-3 text-sm text-gray-600">
                       <Mail className="w-4 h-4 text-gray-400" />
                       <span>{profile.email}</span>
@@ -455,13 +447,13 @@ export default function VolunteerProfile() {
                       {isOwnProfile && <Link href="/settings/profile" className="underline font-semibold">Add now</Link>}
                     </div>
                   )}
-                  {profile.phone && (
+                  {profile?.phone && (
                     <div className="flex items-center gap-3 text-sm text-gray-600">
                       <Phone className="w-4 h-4 text-gray-400" />
                       <span>{profile.phone}</span>
                     </div>
                   )}
-                  {profile.address && (
+                  {profile?.address && (
                     <div className="flex items-start gap-3 text-sm text-gray-600">
                       <Home className="w-4 h-4 text-gray-400 mt-0.5" />
                       <span>{profile.address}</span>
@@ -472,7 +464,7 @@ export default function VolunteerProfile() {
             )}
 
             {/* Skills */}
-            {profile.skills && profile.skills.length > 0 && (
+            {profile?.skills && profile.skills.length > 0 && (
               <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
                 <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2"><Sparkles className="w-4 h-4 text-amber-500" /> Skills</h3>
                 <div className="flex flex-wrap gap-2">
@@ -492,9 +484,9 @@ export default function VolunteerProfile() {
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-bold text-gray-900">About</h3>
-                {profile.created_at && <span className="text-xs text-gray-500 flex items-center gap-1"><Calendar className="w-3 h-3" /> Member since {new Date(profile.created_at).getFullYear()}</span>}
+                {profile?.created_at && <span className="text-xs text-gray-500 flex items-center gap-1"><Calendar className="w-3 h-3" /> Member since {new Date(profile.created_at).getFullYear()}</span>}
               </div>
-              <p className="text-gray-600 leading-relaxed text-sm md:text-base">{profile.bio || "No bio added yet."}</p>
+              <p className="text-gray-600 leading-relaxed text-sm md:text-base">{profile?.bio || "No bio added yet."}</p>
             </div>
 
             {/* Impact & Graph */}
@@ -502,10 +494,10 @@ export default function VolunteerProfile() {
               <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-4 opacity-10"><Trophy className="w-24 h-24" /></div>
                 <h3 className="text-sm font-medium text-slate-300 uppercase tracking-wide mb-1">Impact Score</h3>
-                <div className="text-4xl font-bold mb-4">{profile.impact_score || 0}</div>
+                <div className="text-4xl font-bold mb-4">{profile?.impact_score || 0}</div>
                 <div className="flex gap-4">
-                  <div><span className="text-xs text-slate-400 block">Reliability</span><span className="font-semibold text-emerald-400">{profile.reliability_score || 100}%</span></div>
-                  <div><span className="text-xs text-slate-400 block">Rank</span><span className="font-semibold text-amber-400">{profile.total_hours > 50 ? 'Gold' : profile.total_hours > 10 ? 'Silver' : 'Bronze'}</span></div>
+                  <div><span className="text-xs text-slate-400 block">Reliability</span><span className="font-semibold text-emerald-400">{profile?.reliability_score || 100}%</span></div>
+                  <div><span className="text-xs text-slate-400 block">Rank</span><span className="font-semibold text-amber-400">{profile?.total_hours > 50 ? 'Gold' : profile?.total_hours > 10 ? 'Silver' : 'Bronze'}</span></div>
                 </div>
               </div>
 
@@ -526,13 +518,13 @@ export default function VolunteerProfile() {
             </div>
 
             {/* Action Gallery */}
-            <ActionGallery userId={profile.user_id} isOwnProfile={isOwnProfile} />
+            <ActionGallery userId={profile?.user_id} isOwnProfile={isOwnProfile} />
 
             {/* Testimonials */}
             <Testimonials journey={journey} />
 
             {/* Certificates */}
-            {profile.badges && profile.badges.length > 0 && (
+            {profile?.badges && profile.badges.length > 0 && (
               <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
                 <h3 className="text-lg font-bold text-gray-900 mb-4">Certificates & Badges</h3>
                 <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">

@@ -25,7 +25,7 @@ export default function EditProfile() {
   // ✅ TEAM MEMBER STATE
   const [teamName, setTeamName] = useState("")
   const [teamRole, setTeamRole] = useState("")
-  const [teamImage, setTeamImage] = useState("") // Stores the uploaded URL
+  const [teamImage, setTeamImage] = useState("") 
   const [isUploadingTeam, setIsUploadingTeam] = useState(false)
   const teamFileInputRef = useRef<HTMLInputElement>(null)
 
@@ -33,9 +33,9 @@ export default function EditProfile() {
   const [achTitle, setAchTitle] = useState("")
   const [achDate, setAchDate] = useState("")
   const [achDesc, setAchDesc] = useState("")
-  const [achLink, setAchLink] = useState("") // External Link (Read More)
+  const [achLink, setAchLink] = useState("") 
   const [achImgSource, setAchImgSource] = useState<'upload' | 'url'>('upload')
-  const [achImageUrl, setAchImageUrl] = useState("") // Stores the final image URL
+  const [achImageUrl, setAchImageUrl] = useState("") 
   const [isUploadingAch, setIsUploadingAch] = useState(false)
   const achFileInputRef = useRef<HTMLInputElement>(null)
 
@@ -86,7 +86,7 @@ export default function EditProfile() {
             website: p.website || '',
             linkedin: p.linkedin || '',
             instagram: p.instagram || '',
-            years_active: p.years_active || '',
+            years_active: p.years_active?.toString() || '',
             registration_number: p.registration_number || '',
             representative_name: p.representative_name || '',
             designation: p.designation || '',
@@ -105,15 +105,11 @@ export default function EditProfile() {
     fetchProfile()
   }, [])
 
-  // --- GENERIC UPLOAD HANDLER ---
   const handleNestedUpload = async (file: File, type: 'team' | 'achievement') => {
     try {
       if (type === 'team') setIsUploadingTeam(true)
       else setIsUploadingAch(true)
 
-      // We reuse the existing upload API. 
-      // 'avatar' type creates a smaller, profile-optimized image url.
-      // 'cover' type allows for larger images (good for achievements).
       const uploadType = type === 'team' ? 'avatar' : 'cover'; 
       const url = await api.uploadProfileImage(file, uploadType);
 
@@ -128,7 +124,6 @@ export default function EditProfile() {
     }
   }
 
-  // --- MAIN PROFILE UPLOAD ---
   const handleProfileImageUpload = async (file: File, type: 'avatar' | 'cover') => {
     try {
       if (type === 'avatar') setUploadingAvatar(true)
@@ -142,94 +137,87 @@ export default function EditProfile() {
     finally { setUploadingAvatar(false); setUploadingCover(false) }
   }
 
-  // --- LIST HANDLERS ---
   const handleAddItem = (field: 'skills' | 'interests', value: string, setValue: (s: string) => void) => {
     if (value.trim() && !formData[field]?.includes(value.trim())) {
       setFormData((prev: any) => ({ ...prev, [field]: [...(prev[field] || []), value.trim()] }))
       setValue("")
     }
   }
+  
   const handleRemoveItem = (field: 'skills' | 'interests', itemToRemove: string) => {
     setFormData((prev: any) => ({ ...prev, [field]: prev[field]?.filter((item: string) => item !== itemToRemove) || [] }))
   }
 
-  // ✅ TEAM LOGIC (Updated)
-  const addTeamMember = () => {
+  const addTeamMember = (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent form submission
     if (!teamName || !teamRole) return;
     const newMember = { 
         name: teamName, 
         role: teamRole, 
-        img: teamImage // Attach the uploaded URL
+        img: teamImage 
     };
     setFormData((prev: any) => ({ 
         ...prev, 
         team_members: [...(prev.team_members || []), newMember] 
     }));
-    // Reset inputs
     setTeamName(""); setTeamRole(""); setTeamImage("");
   }
-  const removeTeamMember = (idx: number) => {
+  
+  const removeTeamMember = (e: React.MouseEvent, idx: number) => {
+    e.preventDefault();
     setFormData((prev: any) => ({ ...prev, team_members: prev.team_members.filter((_: any, i: number) => i !== idx) }));
   }
 
-  // ✅ ACHIEVEMENT LOGIC (Updated)
-  const addAchievement = () => {
+  const addAchievement = (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent form submission
     if (!achTitle) return;
     const newAch = { 
         title: achTitle, 
         date: achDate, 
         description: achDesc,
-        image_url: achImageUrl, // Image (Proof/Certificate)
-        link: achLink // External Link (News Article)
+        image_url: achImageUrl, 
+        link: achLink 
     };
     setFormData((prev: any) => ({ 
         ...prev, 
         achievements: [...(prev.achievements || []), newAch] 
     }));
-    // Reset inputs
     setAchTitle(""); setAchDate(""); setAchDesc(""); setAchLink(""); setAchImageUrl("");
   }
-  const removeAchievement = (idx: number) => {
+  
+  const removeAchievement = (e: React.MouseEvent, idx: number) => {
+    e.preventDefault();
     setFormData((prev: any) => ({ ...prev, achievements: prev.achievements.filter((_: any, i: number) => i !== idx) }));
   }
 
   const handleSave = async () => {
     try {
       setSaving(true)
+      
+      // Clean up empty strings to avoid DB errors
+      const cleanedData = { ...formData };
+      Object.keys(cleanedData).forEach(key => {
+        if (cleanedData[key] === '') {
+            delete cleanedData[key];
+        }
+      });
+
       if (userType === 'volunteer') {
-        const volunteerPayload: any = { ...formData }
-        delete volunteerPayload.team_members; delete volunteerPayload.achievements;
-        Object.keys(volunteerPayload).forEach(key => { if (volunteerPayload[key] === undefined) delete volunteerPayload[key] })
+        const volunteerPayload: any = { ...cleanedData }
+        delete volunteerPayload.team_members; 
+        delete volunteerPayload.achievements;
         await api.updateVolunteerProfile(volunteerPayload)
       } else if (userType === 'organization') {
-        const orgPayload: any = {
-          name: formData.name,
-          tagline: formData.tagline,
-          mission_statement: formData.mission_statement,
-          intent_description: formData.intent_description,
-          area_locality: formData.area_locality,
-          email: formData.email,
-          phone: formData.phone,
-          website: formData.website,
-          linkedin: formData.linkedin,
-          instagram: formData.instagram,
-          registration_number: formData.registration_number,
-          representative_name: formData.representative_name,
-          designation: formData.designation,
-          years_active: formData.years_active ? parseInt(formData.years_active) : undefined,
-          logo_url: formData.logo_url,
-          cover_url: formData.cover_url,
-          
-          // Arrays
-          team_members: Array.isArray(formData.team_members) ? formData.team_members : [],
-          achievements: Array.isArray(formData.achievements) ? formData.achievements : []
+        const orgPayload: any = { ...cleanedData }
+        if (orgPayload.years_active) {
+            orgPayload.years_active = parseInt(orgPayload.years_active);
         }
-        Object.keys(orgPayload).forEach(key => { if (orgPayload[key] === undefined) delete orgPayload[key] })
         await api.updateOrgProfile(orgPayload)
       }
       router.back()
     } catch (err: any) {
-      console.error(err); alert("Update Failed");
+      console.error(err); 
+      alert("Update Failed: " + err.message);
     } finally {
       setSaving(false)
     }
@@ -258,7 +246,6 @@ export default function EditProfile() {
       <div className="max-w-3xl mx-auto px-4 pt-6">
         <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-200 mb-6">
           
-          {/* COVER & AVATAR SECTION */}
           <div className="relative h-48 bg-linear-to-r from-blue-50 to-slate-100 group">
             {formData.cover_url ? <img src={formData.cover_url} alt="Cover" className="w-full h-full object-cover" /> : <div className="absolute inset-0 opacity-[0.05] bg-[radial-gradient(#000_1px,transparent_1px)] bg-size-[16px_16px]" />}
             <div className="absolute inset-0 bg-black/10 group-hover:bg-black/30 transition-colors flex items-center justify-center cursor-pointer" onClick={() => coverInputRef.current?.click()}>
@@ -289,24 +276,35 @@ export default function EditProfile() {
               {/* === VOLUNTEER FORM === */}
               {userType === 'volunteer' && (
                  <>
-                   {/* ... Volunteer Fields (Hidden for brevity, keep your existing ones) ... */}
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <InputField label="Full Name" icon={<User className="w-4 h-4" />} value={formData.full_name} onChange={(v: any) => setFormData({ ...formData, full_name: v })} />
-                    <InputField label="Headline" icon={<Briefcase className="w-4 h-4" />} value={formData.headline} onChange={(v: any) => setFormData({ ...formData, headline: v })} />
+                    <InputField label="Full Name" icon={<User className="w-4 h-4" />} value={formData.full_name} onChange={(v: string) => setFormData({ ...formData, full_name: v })} />
+                    <InputField label="Headline" icon={<Briefcase className="w-4 h-4" />} value={formData.headline} onChange={(v: string) => setFormData({ ...formData, headline: v })} />
                    </div>
-                   <TextAreaField label="Bio" value={formData.bio} onChange={(v: any) => setFormData({ ...formData, bio: v })} />
+                   <TextAreaField label="Bio" value={formData.bio} onChange={(v: string) => setFormData({ ...formData, bio: v })} />
+                   
                    <div className="pt-4 border-t border-gray-100">
                     <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2"><MapPin className="w-4 h-4 text-blue-600" /> Contact & Location</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
-                        <InputField label="Email" icon={<Mail className="w-4 h-4" />} value={formData.email} onChange={(v: any) => setFormData({ ...formData, email: v })} />
-                        <InputField label="Phone" icon={<Phone className="w-4 h-4" />} value={formData.phone} onChange={(v: any) => setFormData({ ...formData, phone: v })} />
+                        <InputField label="Email" icon={<Mail className="w-4 h-4" />} value={formData.email} onChange={(v: string) => setFormData({ ...formData, email: v })} />
+                        <InputField label="Phone" icon={<Phone className="w-4 h-4" />} value={formData.phone} onChange={(v: string) => setFormData({ ...formData, phone: v })} />
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <InputField label="City" icon={<MapPin className="w-4 h-4" />} value={formData.city} onChange={(v: any) => setFormData({ ...formData, city: v })} />
-                        <InputField label="Address" icon={<Home className="w-4 h-4" />} value={formData.address} onChange={(v: any) => setFormData({ ...formData, address: v })} />
+                        <InputField label="City" icon={<MapPin className="w-4 h-4" />} value={formData.city} onChange={(v: string) => setFormData({ ...formData, city: v })} />
+                        <InputField label="Address" icon={<Home className="w-4 h-4" />} value={formData.address} onChange={(v: string) => setFormData({ ...formData, address: v })} />
                     </div>
                    </div>
-                   <TagInput label="Skills" items={formData.skills} newItem={newSkill} setNewItem={setNewSkill} onAdd={() => handleAddItem('skills', newSkill, setNewSkill)} onRemove={(item: string) => handleRemoveItem('skills', item)} />
+
+                   <div className="pt-4 border-t border-gray-100">
+                    <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2"><Globe className="w-4 h-4 text-purple-600" /> Social Links</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <InputField label="LinkedIn" icon={<Linkedin className="w-4 h-4" />} value={formData.linkedin} onChange={(v: string) => setFormData({ ...formData, linkedin: v })} />
+                        <InputField label="Instagram" icon={<Instagram className="w-4 h-4" />} value={formData.instagram} onChange={(v: string) => setFormData({ ...formData, instagram: v })} />
+                    </div>
+                  </div>
+
+                   <div className="pt-4 border-t border-gray-100">
+                    <TagInput label="Skills" items={formData.skills} newItem={newSkill} setNewItem={setNewSkill} onAdd={(e: any) => { e?.preventDefault(); handleAddItem('skills', newSkill, setNewSkill)}} onRemove={(item: string) => handleRemoveItem('skills', item)} />
+                   </div>
                  </>
               )}
 
@@ -314,38 +312,37 @@ export default function EditProfile() {
               {userType === 'organization' && (
                 <>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <InputField label="Organization Name" icon={<Building2 className="w-4 h-4" />} value={formData.name} onChange={(v: any) => setFormData({ ...formData, name: v })} />
-                    <InputField label="Tagline" value={formData.tagline} onChange={(v: any) => setFormData({ ...formData, tagline: v })} />
+                    <InputField label="Organization Name" icon={<Building2 className="w-4 h-4" />} value={formData.name} onChange={(v: string) => setFormData({ ...formData, name: v })} />
+                    <InputField label="Tagline" value={formData.tagline} onChange={(v: string) => setFormData({ ...formData, tagline: v })} />
                   </div>
-                  <TextAreaField label="Mission Statement" value={formData.mission_statement} onChange={(v: any) => setFormData({ ...formData, mission_statement: v })} />
-                  <TextAreaField label="About Us (Description)" value={formData.intent_description} onChange={(v: any) => setFormData({ ...formData, intent_description: v })} />
+                  <TextAreaField label="Mission Statement" value={formData.mission_statement} onChange={(v: string) => setFormData({ ...formData, mission_statement: v })} />
+                  <TextAreaField label="About Us (Description)" value={formData.intent_description} onChange={(v: string) => setFormData({ ...formData, intent_description: v })} />
 
                   <div className="pt-4 border-t border-gray-100">
                     <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2"><MapPin className="w-4 h-4 text-blue-600" /> Contact Details</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
-                      <InputField label="City" icon={<MapPin className="w-4 h-4" />} value={formData.area_locality} onChange={(v: any) => setFormData({ ...formData, area_locality: v })} />
-                      <InputField label="Website" icon={<Globe className="w-4 h-4" />} value={formData.website} onChange={(v: any) => setFormData({ ...formData, website: v })} />
+                      <InputField label="City" icon={<MapPin className="w-4 h-4" />} value={formData.area_locality} onChange={(v: string) => setFormData({ ...formData, area_locality: v })} />
+                      <InputField label="Website" icon={<Globe className="w-4 h-4" />} value={formData.website} onChange={(v: string) => setFormData({ ...formData, website: v })} />
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                      <InputField label="Email" icon={<Mail className="w-4 h-4" />} value={formData.email} onChange={(v: any) => setFormData({ ...formData, email: v })} />
-                      <InputField label="Phone" icon={<Phone className="w-4 h-4" />} value={formData.phone} onChange={(v: any) => setFormData({ ...formData, phone: v })} />
+                      <InputField label="Email" icon={<Mail className="w-4 h-4" />} value={formData.email} onChange={(v: string) => setFormData({ ...formData, email: v })} />
+                      <InputField label="Phone" icon={<Phone className="w-4 h-4" />} value={formData.phone} onChange={(v: string) => setFormData({ ...formData, phone: v })} />
                     </div>
                   </div>
 
                   <div className="pt-4 border-t border-gray-100">
                     <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2"><Globe className="w-4 h-4 text-purple-600" /> Social Links</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <InputField label="LinkedIn" icon={<Linkedin className="w-4 h-4" />} value={formData.linkedin} onChange={(v: any) => setFormData({ ...formData, linkedin: v })} />
-                        <InputField label="Instagram" icon={<Instagram className="w-4 h-4" />} value={formData.instagram} onChange={(v: any) => setFormData({ ...formData, instagram: v })} />
+                        <InputField label="LinkedIn" icon={<Linkedin className="w-4 h-4" />} value={formData.linkedin} onChange={(v: string) => setFormData({ ...formData, linkedin: v })} />
+                        <InputField label="Instagram" icon={<Instagram className="w-4 h-4" />} value={formData.instagram} onChange={(v: string) => setFormData({ ...formData, instagram: v })} />
                     </div>
                   </div>
 
-                  {/* ✅ KEY PEOPLE (With Avatar Upload) */}
+                  {/* ✅ KEY PEOPLE */}
                   <div className="pt-4 border-t border-gray-100">
                     <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2"><Users2 className="w-4 h-4 text-indigo-600" /> Key People</h3>
                     
                     <div className="flex flex-col md:flex-row gap-3 mb-3 bg-gray-50 p-3 rounded-xl border border-gray-200">
-                        {/* Avatar Upload */}
                         <div onClick={() => teamFileInputRef.current?.click()} className="w-10 h-10 rounded-full bg-gray-200 border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-gray-300 overflow-hidden shrink-0 relative">
                             {teamImage ? <img src={teamImage} className="w-full h-full object-cover" /> : <User className="w-5 h-5 text-gray-500" />}
                             {isUploadingTeam && <div className="absolute inset-0 bg-black/50 flex items-center justify-center"><Loader2 className="w-4 h-4 text-white animate-spin"/></div>}
@@ -364,13 +361,13 @@ export default function EditProfile() {
                                     <div className="w-8 h-8 rounded-full bg-gray-100 overflow-hidden">{m.img ? <img src={m.img} className="w-full h-full object-cover" /> : <User className="w-4 h-4 m-2 text-gray-400" />}</div>
                                     <div><p className="text-sm font-bold text-gray-900">{m.name}</p><p className="text-xs text-gray-500">{m.role}</p></div>
                                 </div>
-                                <button onClick={() => removeTeamMember(i)} className="text-gray-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
+                                <button onClick={(e) => removeTeamMember(e, i)} className="text-gray-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
                             </div>
                         ))}
                     </div>
                   </div>
 
-                  {/* ✅ ACHIEVEMENTS (With Image Upload/URL Toggle) */}
+                  {/* ✅ ACHIEVEMENTS */}
                   <div className="pt-4 border-t border-gray-100">
                     <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2"><Trophy className="w-4 h-4 text-amber-500" /> Wall of Fame</h3>
                     
@@ -380,16 +377,22 @@ export default function EditProfile() {
                             <input type="text" placeholder="Date (e.g. Jan 2024)" value={achDate} onChange={e => setAchDate(e.target.value)} className="bg-white border border-gray-200 px-3 py-2 rounded-lg text-sm outline-none" />
                         </div>
                         
-                        {/* Image Switcher */}
+                        {/* Image Switcher Fix */}
                         <div className="flex gap-4 text-xs font-medium text-gray-600">
-                            <label className="flex items-center gap-2 cursor-pointer"><input type="radio" checked={achImgSource === 'upload'} onChange={() => setAchImgSource('upload')} /> Upload Image</label>
-                            <label className="flex items-center gap-2 cursor-pointer"><input type="radio" checked={achImgSource === 'url'} onChange={() => setAchImgSource('url')} /> Image URL</label>
+                            <label className="flex items-center gap-2 cursor-pointer">
+                              <input type="radio" checked={achImgSource === 'upload'} onChange={() => setAchImgSource('upload')} /> 
+                              Upload Image
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer">
+                              <input type="radio" checked={achImgSource === 'url'} onChange={() => setAchImgSource('url')} /> 
+                              Image URL
+                            </label>
                         </div>
 
                         {achImgSource === 'upload' ? (
                             <div className="flex items-center gap-3">
                                 <div onClick={() => achFileInputRef.current?.click()} className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 text-sm text-gray-500 w-full">
-                                    <Upload className="w-4 h-4" /> {achImageUrl ? "Image Uploaded" : "Upload Certificate / Photo"}
+                                    <Upload className="w-4 h-4" /> {achImageUrl ? "Image Ready" : "Upload Certificate / Photo"}
                                 </div>
                                 <input ref={achFileInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleNestedUpload(e.target.files[0], 'achievement')} />
                                 {isUploadingAch && <Loader2 className="w-4 h-4 animate-spin text-blue-600" />}
@@ -415,7 +418,7 @@ export default function EditProfile() {
                                         {a.link && <a href={a.link} target="_blank" className="text-[10px] text-blue-600 hover:underline flex items-center gap-1 mt-1"><LinkIcon className="w-3 h-3"/> Read More</a>}
                                     </div>
                                 </div>
-                                <button onClick={() => removeAchievement(i)} className="text-gray-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
+                                <button onClick={(e) => removeAchievement(e, i)} className="text-gray-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
                             </div>
                         ))}
                     </div>
@@ -425,12 +428,12 @@ export default function EditProfile() {
                   <div className="pt-4 border-t border-gray-100">
                     <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2"><BadgeCheck className="w-4 h-4 text-emerald-600" /> Administrative Details</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
-                      <InputField label="Registration No." icon={<Hash className="w-4 h-4" />} value={formData.registration_number} onChange={(v: any) => setFormData({ ...formData, registration_number: v })} />
-                      <InputField label="Years Active" type="number" icon={<CalendarDays className="w-4 h-4" />} value={formData.years_active} onChange={(v: any) => setFormData({ ...formData, years_active: v })} />
+                      <InputField label="Registration No." icon={<Hash className="w-4 h-4" />} value={formData.registration_number} onChange={(v: string) => setFormData({ ...formData, registration_number: v })} />
+                      <InputField label="Years Active" type="number" icon={<CalendarDays className="w-4 h-4" />} value={formData.years_active} onChange={(v: string) => setFormData({ ...formData, years_active: v })} />
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                      <InputField label="Representative Name" icon={<UserCheck className="w-4 h-4" />} value={formData.representative_name} onChange={(v: any) => setFormData({ ...formData, representative_name: v })} />
-                      <InputField label="Designation" value={formData.designation} onChange={(v: any) => setFormData({ ...formData, designation: v })} />
+                      <InputField label="Representative Name" icon={<UserCheck className="w-4 h-4" />} value={formData.representative_name} onChange={(v: string) => setFormData({ ...formData, representative_name: v })} />
+                      <InputField label="Designation" value={formData.designation} onChange={(v: string) => setFormData({ ...formData, designation: v })} />
                     </div>
                   </div>
                 </>
@@ -443,10 +446,14 @@ export default function EditProfile() {
   )
 }
 
+// Subcomponents
+
 function InputField({ label, value, onChange, icon, type = "text", placeholder }: any) {
   return (
     <div>
-      <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2 items-center gap-1.5">{icon} {label}</label>
+      <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
+        {icon} {label}
+      </label>
       <input type={type} value={value || ''} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-black/5 transition-all outline-none placeholder:text-gray-400" />
     </div>
   )
@@ -455,7 +462,9 @@ function InputField({ label, value, onChange, icon, type = "text", placeholder }
 function TextAreaField({ label, value, onChange, placeholder }: any) {
   return (
     <div>
-      <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2"><FileText className="w-3 h-3 inline mr-1" /> {label}</label>
+      <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
+        <FileText className="w-3 h-3" /> {label}
+      </label>
       <textarea rows={4} value={value || ''} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-black/5 transition-all outline-none resize-none placeholder:text-gray-400" />
     </div>
   )
@@ -466,12 +475,12 @@ function TagInput({ label, items, newItem, setNewItem, onAdd, onRemove, placehol
     <div>
       <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">{label}</label>
       <div className="flex gap-2 mb-3">
-        <input type="text" value={newItem} onChange={(e) => setNewItem(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && onAdd()} placeholder={placeholder} className="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:bg-white focus:ring-2 focus:ring-black/5" />
+        <input type="text" value={newItem} onChange={(e) => setNewItem(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && onAdd(e)} placeholder={placeholder} className="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:bg-white focus:ring-2 focus:ring-black/5" />
         <button onClick={onAdd} className="bg-black text-white px-4 rounded-xl hover:bg-gray-800 transition-colors"><Plus className="w-5 h-5" /></button>
       </div>
       <div className="flex flex-wrap gap-2">
         {items?.map((item: string, idx: number) => (
-          <span key={idx} className="inline-flex items-center gap-1 px-3 py-1 bg-white text-gray-700 rounded-full text-xs font-medium border border-gray-200 shadow-sm">{item}<button onClick={() => onRemove(item)} className="p-0.5 hover:bg-gray-100 rounded-full"><X className="w-3 h-3 text-gray-400 hover:text-red-500 transition-colors" /></button></span>
+          <span key={idx} className="inline-flex items-center gap-1 px-3 py-1 bg-white text-gray-700 rounded-full text-xs font-medium border border-gray-200 shadow-sm">{item}<button onClick={(e) => { e.preventDefault(); onRemove(item); }} className="p-0.5 hover:bg-gray-100 rounded-full"><X className="w-3 h-3 text-gray-400 hover:text-red-500 transition-colors" /></button></span>
         ))}
       </div>
     </div>
