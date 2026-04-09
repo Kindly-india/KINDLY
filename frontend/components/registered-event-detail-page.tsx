@@ -239,12 +239,10 @@ export default function RegisteredEventDetailPage() {
           {/* Hero Image */}
           <div className="relative">
             <div className="relative h-[280px] md:h-[400px] md:rounded-2xl md:overflow-hidden bg-gray-100">
-              <Image 
+              <img
                 src={event.cover_image_url || "/placeholder.svg"} 
                 alt={event.title} 
-                fill 
-                className="object-cover" 
-                priority 
+                className="w-full h-full object-cover"
               />
 
               <div className="absolute top-4 left-4 right-4 flex justify-between items-center z-10">

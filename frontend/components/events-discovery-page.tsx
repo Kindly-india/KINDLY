@@ -66,7 +66,7 @@ export function EventsDiscoveryPage() {
     const [error, setError] = useState<string | null>(null)
     const [searchQuery, setSearchQuery] = useState("")
     const [menuOpen, setMenuOpen] = useState(false)
-    
+
     // Profile State
     const [profile, setProfile] = useState<any>(null)
 
@@ -75,7 +75,7 @@ export function EventsDiscoveryPage() {
     const [selectedCauses, setSelectedCauses] = useState<string[]>([])
     const [selectedTime, setSelectedTime] = useState<string | null>(null)
     const [selectedDuration, setSelectedDuration] = useState<string | null>(null)
-    const [locationFilter, setLocationFilter] = useState("") 
+    const [locationFilter, setLocationFilter] = useState("")
     const [showFilledEvents, setShowFilledEvents] = useState(true)
 
     const [sortBy, setSortBy] = useState("newest")
@@ -91,7 +91,7 @@ export function EventsDiscoveryPage() {
                     api.getPublicEvents(),
                     api.getUserProfile().catch(() => null)
                 ])
-                
+
                 setEvents(eventsRes.events || [])
                 if (profileRes?.profile) {
                     setProfile(profileRes.profile)
@@ -323,7 +323,7 @@ export function EventsDiscoveryPage() {
             const query = searchQuery.toLowerCase()
             const matchTitle = event.title?.toLowerCase().includes(query)
             const matchLocation = event.location?.toLowerCase().includes(query)
-            const matchOrg = event.org_name?.toLowerCase().includes(query) 
+            const matchOrg = event.org_name?.toLowerCase().includes(query)
             if (!matchTitle && !matchLocation && !matchOrg) return false
         }
 
@@ -401,16 +401,16 @@ export function EventsDiscoveryPage() {
             {/* ✅ NEW CONSISTENT NAVBAR */}
             <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-[#f5f5f7]">
                 <div className="max-w-350 mx-auto px-4 md:px-8 h-12 md:h-14 flex items-center justify-between relative">
-                    
+
                     {/* 1. Left: Logo */}
                     <Link href="/home" className="flex items-center shrink-0">
-                        <Image 
-                            src="/logo.png" 
-                            alt="Kindly" 
-                            width={100} 
-                            height={30} 
-                            className="h-5 md:h-6 w-auto" 
-                            priority 
+                        <Image
+                            src="/logo.png"
+                            alt="Kindly"
+                            width={100}
+                            height={30}
+                            className="h-5 md:h-6 w-auto"
+                            priority
                         />
                     </Link>
 
@@ -530,7 +530,7 @@ export function EventsDiscoveryPage() {
 
                 {/* Right Content Area */}
                 <main className="flex-1 bg-gradient-to-br from-[#fafafa] via-white to-[#f5f5f7] min-h-[calc(100vh-64px)]">
-                    
+
                     {/* ✅ MOVED SEARCH BAR HERE */}
                     <div className="px-3 md:px-6 pt-4 pb-2 bg-white/50 backdrop-blur-sm">
                         <div className="relative max-w-2xl mx-auto">
@@ -687,95 +687,95 @@ export function EventsDiscoveryPage() {
                                     const isAlmostFull = spotsLeft === 1
 
                                     return (
-                                        <div
+                                        <Link
                                             key={event.id}
-                                            className="bg-white rounded-xl md:rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 group border border-[#f5f5f7]"
+                                            href={`/events/${event.id}`}
+                                            className="bg-white rounded-xl md:rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 group border border-[#f5f5f7] block"
                                         >
-                                            {/* Image */}
-                                            <div className="relative aspect-4/3 md:aspect-video overflow-hidden">
-                                                {event.cover_image_url ? (
-                                                    <img
-                                                        src={event.cover_image_url}
-                                                        alt={event.title}
-                                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                                                    />
-                                                ) : (
-                                                    <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                                                        <Calendar className="w-12 h-12 text-gray-400" />
-                                                    </div>
-                                                )}
-                                                <div
-                                                    className={cn(
-                                                        "absolute top-1.5 md:top-3 left-1.5 md:left-3 px-1.5 md:px-3 py-0.5 md:py-1.5 rounded-full text-[8px] md:text-[11px] font-bold text-white backdrop-blur-sm shadow-lg capitalize",
-                                                        getCategoryColor(event.category),
-                                                    )}
-                                                >
-                                                    {event.category}
-                                                </div>
-                                                {isFastFilling && (
-                                                    <div className="absolute top-1.5 md:top-3 right-1.5 md:right-3 px-1.5 md:px-3 py-0.5 md:py-1.5 bg-[#ff6b6b] rounded-full text-[7px] md:text-[10px] font-bold text-white backdrop-blur-sm shadow-lg animate-pulse">
-                                                        {isAlmostFull ? 'Almost Full' : 'Fast'}
-                                                    </div>
-                                                )}
-                                                {event.is_urgent && (
-                                                    <div className="absolute bottom-2 left-2 px-2 py-0.5 bg-amber-500 text-white rounded text-[9px] md:text-[11px] font-semibold">
-                                                        Urgent
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            {/* Content */}
-                                            <div className="p-2 md:p-5">
-                                                <h3 className="text-[11px] md:text-[16px] font-bold text-[#1d1d1f] mb-1.5 md:mb-3 line-clamp-1 group-hover:text-[#ff6b6b] transition-colors">
-                                                    {event.title}
-                                                </h3>
-
-                                                <div className="space-y-1 md:space-y-2 mb-2 md:mb-4">
-                                                    <div className="flex items-center gap-1 md:gap-2 text-[#86868b]">
-                                                        <Calendar className="w-2.5 h-2.5 md:w-4 md:h-4 text-[#ff6b6b]" />
-                                                        <span className="text-[9px] md:text-[13px] font-medium">
-                                                            {formatDate(event.event_date)} • {formatTime(event.start_time)}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex items-center gap-1 md:gap-2 text-[#86868b]">
-                                                        <MapPin className="w-2.5 h-2.5 md:w-4 md:h-4 text-[#10b981]" />
-                                                        <span className="text-[9px] md:text-[13px] font-medium line-clamp-1">{event.location}</span>
-                                                    </div>
-                                                </div>
-
-                                                {/* Footer */}
-                                                <div className="flex items-center justify-between pt-2 md:pt-4 border-t border-[#f5f5f7]">
-                                                    <div className="flex items-center gap-1 md:gap-3">
-                                                        <div className="flex items-center gap-0.5 md:gap-1.5 text-[#10b981]">
-                                                            <Users className="w-2.5 h-2.5 md:w-4 md:h-4" />
-                                                            <span className="text-[9px] md:text-[12px] font-bold">{event.registered_count}</span>
+                                            <div className="bg-white rounded-xl md:rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 group border border-[#f5f5f7]">
+                                                {/* Image */}
+                                                <div className="relative aspect-4/3 md:aspect-video overflow-hidden">
+                                                    {event.cover_image_url ? (
+                                                        <img
+                                                            src={event.cover_image_url}
+                                                            alt={event.title}
+                                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                                                        />
+                                                    ) : (
+                                                        <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                                                            <Calendar className="w-12 h-12 text-gray-400" />
                                                         </div>
-                                                        {isRegistrationOpen(event.registration_deadline) && spotsLeft > 0 && (
-                                                            <span className="text-[8px] md:text-[11px] font-semibold text-[#ff6b6b] hidden md:inline">
-                                                                {spotsLeft} left
+                                                    )}
+                                                    <div
+                                                        className={cn(
+                                                            "absolute top-1.5 md:top-3 left-1.5 md:left-3 px-1.5 md:px-3 py-0.5 md:py-1.5 rounded-full text-[8px] md:text-[11px] font-bold text-white backdrop-blur-sm shadow-lg capitalize",
+                                                            getCategoryColor(event.category),
+                                                        )}
+                                                    >
+                                                        {event.category}
+                                                    </div>
+                                                    {isFastFilling && (
+                                                        <div className="absolute top-1.5 md:top-3 right-1.5 md:right-3 px-1.5 md:px-3 py-0.5 md:py-1.5 bg-[#ff6b6b] rounded-full text-[7px] md:text-[10px] font-bold text-white backdrop-blur-sm shadow-lg animate-pulse">
+                                                            {isAlmostFull ? 'Almost Full' : 'Fast'}
+                                                        </div>
+                                                    )}
+                                                    {event.is_urgent && (
+                                                        <div className="absolute bottom-2 left-2 px-2 py-0.5 bg-amber-500 text-white rounded text-[9px] md:text-[11px] font-semibold">
+                                                            Urgent
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* Content */}
+                                                <div className="p-2 md:p-5">
+                                                    <h3 className="text-[11px] md:text-[16px] font-bold text-[#1d1d1f] mb-1.5 md:mb-3 line-clamp-1 group-hover:text-[#ff6b6b] transition-colors">
+                                                        {event.title}
+                                                    </h3>
+
+                                                    <div className="space-y-1 md:space-y-2 mb-2 md:mb-4">
+                                                        <div className="flex items-center gap-1 md:gap-2 text-[#86868b]">
+                                                            <Calendar className="w-2.5 h-2.5 md:w-4 md:h-4 text-[#ff6b6b]" />
+                                                            <span className="text-[9px] md:text-[13px] font-medium">
+                                                                {formatDate(event.event_date)} • {formatTime(event.start_time)}
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex items-center gap-1 md:gap-2 text-[#86868b]">
+                                                            <MapPin className="w-2.5 h-2.5 md:w-4 md:h-4 text-[#10b981]" />
+                                                            <span className="text-[9px] md:text-[13px] font-medium line-clamp-1">{event.location}</span>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Footer */}
+                                                    <div className="flex items-center justify-between pt-2 md:pt-4 border-t border-[#f5f5f7]">
+                                                        <div className="flex items-center gap-1 md:gap-3">
+                                                            <div className="flex items-center gap-0.5 md:gap-1.5 text-[#10b981]">
+                                                                <Users className="w-2.5 h-2.5 md:w-4 md:h-4" />
+                                                                <span className="text-[9px] md:text-[12px] font-bold">{event.registered_count}</span>
+                                                            </div>
+                                                            {isRegistrationOpen(event.registration_deadline) && spotsLeft > 0 && (
+                                                                <span className="text-[8px] md:text-[11px] font-semibold text-[#ff6b6b] hidden md:inline">
+                                                                    {spotsLeft} left
+                                                                </span>
+                                                            )}
+                                                        </div>
+
+                                                        {!isRegistrationOpen(event.registration_deadline) ? (
+                                                            <span className="px-2 md:px-3 py-1 md:py-1.5 bg-gray-100 text-gray-600 rounded-full text-[9px] md:text-[11px] font-semibold">
+                                                                Closed
+                                                            </span>
+                                                        ) : spotsLeft <= 0 ? (
+                                                            <span className="px-2 md:px-3 py-1 md:py-1.5 bg-amber-100 text-amber-700 rounded-full text-[9px] md:text-[11px] font-semibold">
+                                                                Full
+                                                            </span>
+                                                        ) : (
+                                                            <span>
+                                                                Book
                                                             </span>
                                                         )}
                                                     </div>
-
-                                                    {!isRegistrationOpen(event.registration_deadline) ? (
-                                                        <span className="px-2 md:px-3 py-1 md:py-1.5 bg-gray-100 text-gray-600 rounded-full text-[9px] md:text-[11px] font-semibold">
-                                                            Closed
-                                                        </span>
-                                                    ) : spotsLeft <= 0 ? (
-                                                        <span className="px-2 md:px-3 py-1 md:py-1.5 bg-amber-100 text-amber-700 rounded-full text-[9px] md:text-[11px] font-semibold">
-                                                            Full
-                                                        </span>
-                                                    ) : (
-                                                        <Link
-                                                            href={`/events/${event.id}`}
-                                                            className="px-2 py-1 md:px-5 md:py-2 bg-gradient-to-r from-[#1d1d1f] to-[#3d3d3f] hover:from-[#ff6b6b] hover:to-[#ff8e53] rounded-full text-[9px] md:text-[12px] font-bold text-white transition-all shadow-md hover:shadow-lg"
-                                                        >
-                                                            Book
-                                                        </Link>
-                                                    )}
                                                 </div>
                                             </div>
-                                        </div>
+                                        </Link>
                                     )
                                 })
                             )}

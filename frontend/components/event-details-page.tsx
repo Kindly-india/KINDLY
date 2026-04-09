@@ -40,17 +40,26 @@ export default function EventDetailsPage() {
         setLoading(true)
         const response = await api.getPublicEventById(eventId)
         setEvent(response.event)
+
+        // Check if current user is already registered
+        try {
+          const registrations = await api.getMyRegistrations()
+          const alreadyRegistered = registrations?.events?.some(
+            (r: any) => r.id === eventId
+          )
+          setIsRegistered(!!alreadyRegistered)
+        } catch {
+          // Not logged in or no registrations — leave isRegistered as false
+        }
+
       } catch (err: any) {
         setError(err.message || 'Failed to load event')
-        console.error('Error fetching event:', err)
       } finally {
         setLoading(false)
       }
     }
 
-    if (eventId) {
-      fetchEvent()
-    }
+    if (eventId) fetchEvent()
   }, [eventId])
 
   // Handle registration
@@ -204,17 +213,19 @@ export default function EventDetailsPage() {
 
             {/* Organizer Row */}
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-full overflow-hidden bg-gradient-to-br from-orange-400 to-rose-500 flex items-center justify-center text-white font-semibold">
-                  {event.organization_profiles?.name?.charAt(0) || 'O'}
+              <Link href={`/organizations/${event.organization_id}`}>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-full overflow-hidden bg-gradient-to-br from-orange-400 to-rose-500 flex items-center justify-center text-white font-semibold">
+                    {event.organization_profiles?.name?.charAt(0) || 'O'}
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm font-medium text-gray-900">
+                      {event.organization_profiles?.name || 'Organization'}
+                    </span>
+                    <CheckCircle2 className="w-4 h-4 text-blue-500 fill-blue-500" />
+                  </div>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-sm font-medium text-gray-900">
-                    {event.organization_profiles?.name || 'Organization'}
-                  </span>
-                  <CheckCircle2 className="w-4 h-4 text-blue-500 fill-blue-500" />
-                </div>
-              </div>
+              </Link>
             </div>
           </div>
 

@@ -331,7 +331,7 @@ export function EventHistoryPage() {
                 }`}
             >
               <div className="w-14 h-14 md:w-16 md:h-16 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
-                <Image
+                <img
                   src={event.image || "/placeholder.svg"}
                   alt={event.title}
                   width={64}
