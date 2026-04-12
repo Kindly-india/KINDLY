@@ -43,7 +43,7 @@ export class OrganizationController {
   @UseGuards(JwtAuthGuard)
   @Get(':id/volunteers')
   async getOrgVolunteers(@Param('id') id: string, @Request() req: any) {
-    return this.organizationService.getOrgVolunteers(id, req.user.id);
+    return this.organizationService.getOrgVolunteers(id);
   }
 
   // Update own profile

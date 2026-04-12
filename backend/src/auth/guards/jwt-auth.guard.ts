@@ -3,7 +3,7 @@ import { SupabaseService } from '../../supabase/supabase.service';
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
-  constructor(private supabaseService: SupabaseService) {}
+  constructor(private supabaseService: SupabaseService) { }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
@@ -17,7 +17,7 @@ export class JwtAuthGuard implements CanActivate {
 
     try {
       const supabase = this.supabaseService.getClient();
-      
+
       // Verify token with Supabase
       const { data: { user }, error } = await supabase.auth.getUser(token);
 
@@ -29,6 +29,7 @@ export class JwtAuthGuard implements CanActivate {
       request.user = user;
       return true;
     } catch (error) {
+      if (error instanceof UnauthorizedException) throw error;
       throw new UnauthorizedException('Invalid or expired token');
     }
   }

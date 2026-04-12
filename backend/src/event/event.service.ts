@@ -679,60 +679,24 @@ export class EventService {
   async registerForEvent(userId: string, eventId: string) {
     const supabase = this.supabaseService.getClient();
 
-    const { data: volunteerProfile, error: profileError } = await supabase
-      .from('volunteer_profiles')
-      .select('id')
-      .eq('user_id', userId)
-      .single();
+    const { data, error } = await supabase.rpc('register_for_event', {
+      p_user_id: userId,
+      p_event_id: eventId,
+    });
 
-    if (profileError || !volunteerProfile) {
-      throw new NotFoundException('Volunteer profile not found');
+    if (error) {
+      const msg = error.message;
+      if (msg.includes('VOLUNTEER_NOT_FOUND')) throw new NotFoundException('Volunteer profile not found');
+      if (msg.includes('EVENT_NOT_FOUND')) throw new NotFoundException('Event not found');
+      if (msg.includes('DEADLINE_PASSED')) throw new BadRequestException('Registration deadline has passed');
+      if (msg.includes('EVENT_FULL')) throw new BadRequestException('Event is already full');
+      if (msg.includes('ALREADY_REGISTERED')) throw new BadRequestException('Already registered for this event');
+      throw error;
     }
-
-    const { data: event, error: eventError } = await supabase
-      .from('events')
-      .select('*')
-      .eq('id', eventId)
-      .eq('status', 'published')
-      .single();
-
-    if (eventError || !event) {
-      throw new NotFoundException('Event not found');
-    }
-
-    if (new Date(event.registration_deadline) < new Date()) {
-      throw new BadRequestException('Registration deadline has passed');
-    }
-
-    if (event.registered_count >= event.total_slots) {
-      throw new BadRequestException('Event is already full');
-    }
-
-    const { data: existing } = await supabase
-      .from('event_registrations')
-      .select('id')
-      .eq('event_id', eventId)
-      .eq('volunteer_id', volunteerProfile.id)
-      .single();
-
-    if (existing) {
-      throw new BadRequestException('Already registered for this event');
-    }
-
-    const { data: registration, error: regError } = await supabase
-      .from('event_registrations')
-      .insert({
-        event_id: eventId,
-        volunteer_id: volunteerProfile.id,
-      })
-      .select()
-      .single();
-
-    if (regError) throw regError;
 
     return {
       message: 'Successfully registered for event',
-      registration,
+      registration: data,
     };
   }
 
@@ -960,10 +924,10 @@ export class EventService {
   // Add this method
   async getVolunteerReview(userId: string, eventId: string) {
     const supabase = this.supabaseService.getClient();
-    
+
     const { data: volProfile } = await supabase
       .from('volunteer_profiles').select('id').eq('user_id', userId).single();
-      
+
     if (!volProfile) return null;
 
     const { data: review } = await supabase

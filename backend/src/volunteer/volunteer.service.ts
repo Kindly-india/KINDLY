@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { UpdateVolunteerProfileDto } from './dto/update-volunteer-profile.dto';
+import { validateImageFile } from 'src/common/file-validation.util';
 
 @Injectable()
 export class VolunteerService {
@@ -247,6 +248,7 @@ export class VolunteerService {
 
   // 2. Add Photo to Gallery
   async addToGallery(userId: string, file: Express.Multer.File, caption?: string) {
+    validateImageFile(file);
     const client = this.supabase.getClient();
     
     // 1. Upload Image to Supabase Storage
