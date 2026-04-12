@@ -11,9 +11,15 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: "KINDLY",
-  description: "Join our social community to make the world a better place.",
-  generator: "v0.app",
+  title: {
+    default: "KINDLY | Make a Real Impact",
+    template: "%s | KINDLY",
+  },
+  description: "Bridge the gap between intention and action. Connect with verified community organizations, discover local volunteering events, and build your digital impact resume.",
+  generator: "Next.js",
+  applicationName: "KINDLY",
+  keywords: ["volunteering", "community organizations", "NGO", "social impact", "community service", "Nashik", "KINDLY"],
+  authors: [{ name: "KINDLY Team" }],
   icons: {
     icon: [
       {
