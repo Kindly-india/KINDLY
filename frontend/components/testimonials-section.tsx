@@ -2,24 +2,24 @@ import { Quote } from "lucide-react"
 
 const testimonials = [
   {
-    quote: "Kindly helped me find my purpose. I've met incredible people and contributed to causes I truly care about.",
-    name: "Priya Sharma",
-    role: "Volunteer since 2023",
-    avatar: "/indian-woman-professional-headshot.png",
+    quote: "I started KINDLY because I saw incredible people wanting to help, but no easy way to connect them with local causes. We are finally bridging the gap between good intentions and real, measurable community action.",
+    name: "Manas DHivare",
+    role: "Founder - Kindly",
+    avatar: "/KINDLY/frontend/public/F550D71A-C3B3-4E55-9AC4-21C04BDC4675_4_5005_c.jpeg",
   },
   {
     quote:
-      "As an organisation, we've connected with over 200 dedicated volunteers through this platform. It's been transformative.",
-    name: "Rahul Mehta",
-    role: "Director, Green Earth NGO",
-    avatar: "/indian-man-headshot.png",
+      "Our goal was to build technology that removes all friction from social work. Seeing NGOs ditch chaotic WhatsApp groups to seamlessly manage hundreds of volunteers on our platform is incredibly fulfilling.",
+    name: "Aditya Dhongade",
+    role: "Co Founder - Kindly",
+    avatar: "/KINDLY/frontend/public/8F851C78-4111-4552-9B4D-C35481F80A44_4_5005_c.jpeg",
   },
   {
     quote:
-      "The experience of giving back has enriched my life in ways I never expected. Every weekend now has meaning.",
-    name: "Ananya Patel",
+      "Finding weekend volunteering drives in Nashik used to be so difficult. Now, I not only discover great local causes instantly, but I also get to build a verified digital resume of my impact.",
+    name: "Tony Stark",
     role: "Student Volunteer",
-    avatar: "/young-indian-woman-student-headshot.jpg",
+    avatar: "/KINDLY/frontend/public/596DF1EC-B153-4626-9C23-DFA8243249FB_4_5005_c.jpeg",
   },
 ]
 

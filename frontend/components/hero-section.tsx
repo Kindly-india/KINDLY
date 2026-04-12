@@ -351,7 +351,7 @@ export function HeroSection() {
       </h1>
 
       <p className="text-sm md:text-xl text-gray-500 text-center mt-3 md:mt-6 mb-6 md:mb-12 max-w-sm md:max-w-2xl">
-        Join 10,000+ volunteers making an impact in their communities.
+        Join a growing community of volunteers making a real impact.
       </p>
 
       {/* User Type Cards */}
