@@ -11,8 +11,8 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: "VolunteerHub - Make a Difference",
-  description: "Join our community of volunteers and organizations making the world a better place.",
+  title: "KINDLY",
+  description: "Join our social community to make the world a better place.",
   generator: "v0.app",
   icons: {
     icon: [
