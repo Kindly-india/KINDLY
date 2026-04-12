@@ -6,6 +6,7 @@ import { VolunteerModule } from './volunteer/volunteer.module';
 import { OrganizationModule } from './organization/organization.module';
 import { EventModule } from './event/event.module'; // Add this
 import { SocialModule } from './social/social.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 
 @Module({
@@ -19,7 +20,7 @@ import { SocialModule } from './social/social.module';
     SocialModule,
     OrganizationModule,
     EventModule,
-    VolunteerModule, 
+    AnalyticsModule,
   ],
 })
 export class AppModule {}
