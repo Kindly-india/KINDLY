@@ -25,8 +25,7 @@ export function LoginPage() {
                         className="h-6 object-contain"
                     />
                 </div>
-
-                <div className="w-[60px]" />
+                
             </header>
 
             <main className="flex-1 flex items-start md:items-center justify-center px-4 md:px-6 pt-2 md:pt-0 pb-8 md:pb-20 relative">

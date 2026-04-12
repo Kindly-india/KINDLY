@@ -115,8 +115,15 @@ export class AnalyticsService {
         history.forEach(r => {
             const status = (r.status || '').toLowerCase();
             if (status === 'completed' || status === 'checked_in') {
+                const now = new Date();
                 const d = new Date(r.event_date);
-                const monthIndex = 5 - (new Date().getMonth() - d.getMonth());
+
+                const monthsAgo =
+                    (now.getFullYear() - d.getFullYear()) * 12 +
+                    (now.getMonth() - d.getMonth());
+
+                const monthIndex = 5 - monthsAgo;
+
                 if (monthIndex >= 0 && monthIndex < 6) {
                     monthlyActivity[monthIndex].hours += (r.hours_contributed || 1);
                 }
@@ -138,26 +145,26 @@ export class AnalyticsService {
     }
 
     async getOrgAnalytics(userId: string) {
-    console.log("🔍 ORG ANALYTICS: Starting for User:", userId);
+        console.log("🔍 ORG ANALYTICS: Starting for User:", userId);
 
-    const client = this.supabase.getClient();
+        const client = this.supabase.getClient();
 
-    // 1. Get Org Profile
-    const { data: org } = await client
-      .from('organization_profiles')
-      .select('id')
-      .eq('user_id', userId)
-      .single();
+        // 1. Get Org Profile
+        const { data: org } = await client
+            .from('organization_profiles')
+            .select('id')
+            .eq('user_id', userId)
+            .single();
 
-    if (!org) {
-        console.log("❌ No Org Profile Found");
-        return null;
-    }
+        if (!org) {
+            console.log("❌ No Org Profile Found");
+            return null;
+        }
 
-    // 2. Fetch Events & Registrations
-    const { data: events } = await client
-      .from('events')
-      .select(`
+        // 2. Fetch Events & Registrations
+        const { data: events } = await client
+            .from('events')
+            .select(`
         id,
         title,
         event_date,
@@ -171,102 +178,123 @@ export class AnalyticsService {
           volunteer_profiles ( full_name )
         )
       `)
-      .eq('organization_id', org.id);
+            .eq('organization_id', org.id);
 
-    console.log(`📊 Found ${events?.length || 0} events.`);
+        console.log(`📊 Found ${events?.length || 0} events.`);
 
-    // --- CALCULATIONS ---
-    let totalHours = 0;
-    let totalVolunteers = new Set();
-    let checkedInCount = 0;
-    let registeredTotal = 0;
-    let cancelledCount = 0;
+        // --- CALCULATIONS ---
+        let totalHours = 0;
+        let totalVolunteers = new Set();
+        let checkedInCount = 0;
+        let registeredTotal = 0;
+        let cancelledCount = 0;
 
-    const volunteerStats = new Map<string, { name: string, hours: number, role: string }>();
-    const monthlyGrowth = new Array(6).fill(0).map((_, i) => {
-        const d = new Date();
-        d.setMonth(d.getMonth() - (5 - i));
-        return { name: d.toLocaleString('default', { month: 'short' }), monthIdx: d.getMonth(), value: 0 };
-    });
+        const volunteerStats = new Map<string, { name: string, hours: number, role: string }>();
+        const monthlyGrowth = new Array(6).fill(0).map((_, i) => {
+            const d = new Date();
+            d.setMonth(d.getMonth() - (5 - i));
+            return { name: d.toLocaleString('default', { month: 'short' }), monthIdx: d.getMonth(), value: 0 };
+        });
 
-    events?.forEach(e => {
-       const regs = e.event_registrations || [];
-       registeredTotal += regs.length;
+        events?.forEach(e => {
+            const regs = e.event_registrations || [];
+            registeredTotal += regs.length;
 
-       // Calculate Default Duration from Event Times (The Fix!)
-       let eventDuration = 0;
-       if (e.start_time && e.end_time) {
-           const [sh, sm] = e.start_time.split(':').map(Number);
-           const [eh, em] = e.end_time.split(':').map(Number);
-           eventDuration = Math.max(0, (eh * 60 + em) - (sh * 60 + sm)) / 60;
-       }
-
-       const eDate = new Date(e.event_date);
-       const monthEntry = monthlyGrowth.find(m => m.monthIdx === eDate.getMonth());
-
-       regs.forEach(r => {
-         const reg = r as any;
-         const status = (reg.status || '').toLowerCase();
-         const volName = reg.volunteer_profiles?.full_name || 'Volunteer';
-         const volId = reg.volunteer_id;
-
-         // ✅ FIX: If hours_contributed is missing, use Event Duration
-         const hours = reg.hours_contributed || eventDuration || 0;
-
-         console.log(`   -> Reg: ${status} | Hours: ${hours} (Calc from ${e.start_time}-${e.end_time})`);
-
-         if (status === 'completed' || status === 'checked_in') {
-            totalHours += hours;
-            checkedInCount++;
-            if (volId) totalVolunteers.add(volId);
-
-            if (monthEntry) monthEntry.value += hours;
-
-            if (volId) {
-                const existing = volunteerStats.get(volId) || { name: volName, hours: 0, role: 'Volunteer' };
-                existing.hours += hours;
-                
-                if (existing.hours > 20) existing.role = 'Super Volunteer';
-                else if (existing.hours > 10) existing.role = 'Regular';
-                
-                volunteerStats.set(volId, existing);
+            // Calculate Default Duration from Event Times (The Fix!)
+            let eventDuration = 0;
+            if (e.start_time && e.end_time) {
+                const [sh, sm] = e.start_time.split(':').map(Number);
+                const [eh, em] = e.end_time.split(':').map(Number);
+                eventDuration = Math.max(0, (eh * 60 + em) - (sh * 60 + sm)) / 60;
             }
-         } else if (status === 'cancelled') {
-             cancelledCount++;
-         }
-       });
-    });
 
-    console.log(`🏁 FINAL ORG STATS: Hours=${totalHours}, Vols=${totalVolunteers.size}`);
+            const eDate = new Date(e.event_date);
+            const monthEntry = monthlyGrowth.find(m => m.monthIdx === eDate.getMonth());
 
-    const turnoutRate = registeredTotal > 0 ? Math.round((checkedInCount / registeredTotal) * 100) : 0;
-    
-    const topVolunteers = Array.from(volunteerStats.values())
-        .sort((a, b) => b.hours - a.hours)
-        .slice(0, 5);
+            regs.forEach(r => {
+                const reg = r as any;
+                const status = (reg.status || '').toLowerCase();
+                const volName = reg.volunteer_profiles?.full_name || 'Volunteer';
+                const volId = reg.volunteer_id;
 
-    const eventPerformance = events?.map(e => ({
-       title: e.title,
-       date: e.event_date,
-       volunteers: e.event_registrations.filter(r => ['completed', 'checked_in'].includes((r.status||'').toLowerCase())).length,
-       success: e.registered_count > 0 
-         ? Math.round((e.event_registrations.filter(r => ['completed', 'checked_in'].includes((r.status||'').toLowerCase())).length / e.registered_count) * 100) 
-         : 0
-    })).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
+                // ✅ FIX: If hours_contributed is missing, use Event Duration
+                const hours = reg.hours_contributed || eventDuration || 0;
 
-    return {
-      totalHoursGenerated: Math.round(totalHours * 10) / 10, // Round to 1 decimal
-      uniqueVolunteers: totalVolunteers.size,
-      turnoutRate,
-      eventsHosted: events?.length || 0,
-      monthlyGrowth,
-      statusBreakdown: [
-          { name: 'Attended', value: checkedInCount },
-          { name: 'No-Show', value: Math.max(0, registeredTotal - checkedInCount - cancelledCount) },
-          { name: 'Cancelled', value: cancelledCount }
-      ],
-      topVolunteers,
-      eventPerformance
-    };
-  }
+                console.log(`   -> Reg: ${status} | Hours: ${hours} (Calc from ${e.start_time}-${e.end_time})`);
+
+                if (status === 'completed' || status === 'checked_in') {
+                    totalHours += hours;
+                    checkedInCount++;
+                    if (volId) totalVolunteers.add(volId);
+
+                    if (monthEntry) monthEntry.value += hours;
+
+                    if (volId) {
+                        const existing = volunteerStats.get(volId) || { name: volName, hours: 0, role: 'Volunteer' };
+                        existing.hours += hours;
+
+                        if (existing.hours > 20) existing.role = 'Super Volunteer';
+                        else if (existing.hours > 10) existing.role = 'Regular';
+
+                        volunteerStats.set(volId, existing);
+                    }
+                } else if (status === 'cancelled') {
+                    cancelledCount++;
+                }
+            });
+        });
+
+        console.log(`🏁 FINAL ORG STATS: Hours=${totalHours}, Vols=${totalVolunteers.size}`);
+
+        const turnoutRate = registeredTotal > 0 ? Math.round((checkedInCount / registeredTotal) * 100) : 0;
+
+        const topVolunteers = Array.from(volunteerStats.values())
+            .sort((a, b) => b.hours - a.hours)
+            .slice(0, 5);
+
+        const eventPerformance = events?.map(e => ({
+            title: e.title,
+            date: e.event_date,
+            volunteers: e.event_registrations.filter(r => ['completed', 'checked_in'].includes((r.status || '').toLowerCase())).length,
+            success: e.registered_count > 0
+                ? Math.round((e.event_registrations.filter(r => ['completed', 'checked_in'].includes((r.status || '').toLowerCase())).length / e.registered_count) * 100)
+                : 0
+        })).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
+
+        return {
+            totalHoursGenerated: Math.round(totalHours * 10) / 10, // Round to 1 decimal
+            uniqueVolunteers: totalVolunteers.size,
+            turnoutRate,
+            eventsHosted: events?.length || 0,
+            monthlyGrowth,
+            statusBreakdown: [
+                { name: 'Attended', value: checkedInCount },
+                { name: 'No-Show', value: Math.max(0, registeredTotal - checkedInCount - cancelledCount) },
+                { name: 'Cancelled', value: cancelledCount }
+            ],
+            topVolunteers,
+            eventPerformance
+        };
+    }
+
+    async getPlatformStats() {
+        const client = this.supabase.getClient();
+
+        const [
+            { count: volunteers },
+            { count: organisations },
+            { data: hoursData },
+            { data: citiesData },
+        ] = await Promise.all([
+            client.from('volunteer_profiles').select('*', { count: 'exact', head: true }),
+            client.from('organization_profiles').select('*', { count: 'exact', head: true }).eq('approval_status', 'approved'),
+            client.from('volunteer_profiles').select('total_hours'),
+            client.from('volunteer_profiles').select('city'),
+        ]);
+
+        const hours = hoursData?.reduce((sum, v) => sum + (v.total_hours || 0), 0) ?? 0;
+        const cities = new Set(citiesData?.map(v => v.city).filter(Boolean)).size;
+
+        return { volunteers, organisations, hours, cities };
+    }
 }

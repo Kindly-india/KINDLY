@@ -55,7 +55,7 @@ const PRIVATE_ORG_FIELDS = PUBLIC_ORG_FIELDS + ', registration_number, pan_card_
 
 @Injectable()
 export class OrganizationService {
-  constructor(private readonly supabase: SupabaseService) {}
+  constructor(private readonly supabase: SupabaseService) { }
 
   async getPublicProfile(orgId: string, viewerId?: string) {
     const client = this.supabase.getClient();
@@ -242,14 +242,27 @@ export class OrganizationService {
     const { data, error } = await client
       .from('event_registrations')
       .select(`
-        *,
-        volunteer_profiles (*),
-        events!inner (organization_id)
-      `)
+      volunteer_id,
+      status,
+      volunteer_profiles (
+        id, full_name, avatar_url, city, headline, total_hours
+      ),
+      events!inner (organization_id)
+    `)
       .eq('events.organization_id', orgId);
 
     if (error) return { volunteers: [] };
-    return { volunteers: data };
+
+    // Deduplicate by volunteer_id, prioritise checked_in over registered
+    const seen = new Map();
+    for (const reg of data ?? []) {
+      const id = reg.volunteer_id;
+      if (!seen.has(id) || reg.status === 'checked_in') {
+        seen.set(id, reg.volunteer_profiles);
+      }
+    }
+
+    return { volunteers: Array.from(seen.values()) };
   }
 
   async addReview(userId: string, dto: AddReviewDto) {

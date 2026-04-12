@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { UpdateVolunteerProfileDto } from './dto/update-volunteer-profile.dto';
-import { validateImageFile } from 'src/common/file-validation.util';
+import { validateImageFile } from '../common/file-validation.util';
 
 @Injectable()
 export class VolunteerService {

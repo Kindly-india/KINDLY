@@ -52,9 +52,18 @@ export class AuthService {
       .single();
 
     if (profileError) {
-      // Rollback: Delete the auth user if profile creation fails to prevent orphan users
-      await supabase.auth.admin.deleteUser(authData.user.id);
-      throw new BadRequestException('Failed to create volunteer profile');
+      try {
+        await supabase.auth.admin.deleteUser(authData.user.id);
+      } catch (rollbackError) {
+        // Log for manual cleanup — the profile failure is the real error
+        console.error(
+          `CRITICAL: Failed to rollback auth user ${authData.user.id} after profile creation failure.`,
+          rollbackError
+        );
+      }
+      throw new BadRequestException(
+        'Failed to create volunteer profile. Please try again or contact support.'
+      );
     }
 
     return {

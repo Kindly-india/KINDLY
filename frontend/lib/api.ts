@@ -528,21 +528,96 @@ export const api = {
 
   // Self Check-in
   selfCheckIn: async (data: { eventId: string; code: string; latitude: number; longitude: number }) => {
-    const token = localStorage.getItem('token')
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
     const response = await fetch(`${API_URL}/events/self-check-in`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${session.access_token}`,
       },
       body: JSON.stringify(data),
-    })
+    });
 
-    const resData = await response.json()
-    if (!response.ok) {
-      throw new Error(resData.message || 'Check-in failed')
+    const resData = await response.json();
+    if (!response.ok) throw new Error(resData.message || 'Check-in failed');
+    return resData;
+  },
+
+  getEventBroadcasts: async (eventId: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
+
+    try {
+      const response = await fetch(`${API_URL}/events/${eventId}/broadcasts`, {
+        headers: session ? { Authorization: `Bearer ${session.access_token}` } : {},
+      });
+      if (!response.ok) return { broadcasts: [] };
+      return response.json();
+    } catch (e) {
+      console.error('Network error fetching broadcasts:', e);
+      return { broadcasts: [], error: 'Network error. Please refresh.' };
     }
-    return resData
+  },
+
+  getVolunteerPublicProfile: async (volunteerId: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
+
+    const response = await fetch(`${API_URL}/volunteers/${volunteerId}/profile`, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(session && { Authorization: `Bearer ${session.access_token}` }),
+      },
+    });
+
+    if (!response.ok) throw new Error('Failed to fetch profile');
+    return response.json();
+  },
+
+  getOrgPublicProfile: async (orgId: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
+
+    const response = await fetch(`${API_URL}/organizations/${orgId}/profile`, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(session && { Authorization: `Bearer ${session.access_token}` }),
+      },
+    });
+
+    if (!response.ok) throw new Error('Failed to fetch organization profile');
+    return response.json();
+  },
+
+  getFollowStatus: async (targetUserId: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return { isFollowing: false };
+
+    const response = await fetch(`${API_URL}/social/follow/status/${targetUserId}?t=${Date.now()}`, {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+
+    if (!response.ok) return { isFollowing: false };
+    return response.json();
+  },
+
+  getVolunteerImpact: async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const res = await fetch(`${API_URL}/analytics/volunteer`, {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    return res.json();
+  },
+
+  getOrgAnalytics: async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const res = await fetch(`${API_URL}/analytics/org`, {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    return res.json();
   },
 
   sendBroadcast: async (eventId: string, message: string) => {
@@ -563,22 +638,6 @@ export const api = {
       throw new Error(error.message || 'Failed to send broadcast');
     }
     return response.json();
-  },
-
-  getEventBroadcasts: async (eventId: string) => {
-    const { data: { session } } = await supabase.auth.getSession();
-    const token = session?.access_token || localStorage.getItem('token');
-
-    const headers: any = {};
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-
-    try {
-      const response = await fetch(`${API_URL}/events/${eventId}/broadcasts`, { headers });
-      if (!response.ok) return { broadcasts: [] };
-      return response.json();
-    } catch (e) {
-      return { broadcasts: [] };
-    }
   },
 
   deleteBroadcast: async (eventId: string, broadcastId: string) => {
@@ -657,22 +716,6 @@ export const api = {
     return response.json();
   },
 
-  // ============ VOLUNTEER PROFILE ============
-  getVolunteerPublicProfile: async (volunteerId: string) => {
-    const token = localStorage.getItem('token');
-    const headers: any = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-
-    const response = await fetch(`${API_URL}/volunteers/${volunteerId}/profile`, {
-      headers
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch profile');
-    }
-    return response.json();
-  },
-
   getVolunteerJourney: async (volunteerId: string) => {
     const response = await fetch(`${API_URL}/volunteers/${volunteerId}/journey`);
     if (!response.ok) throw new Error('Failed to fetch journey');
@@ -741,20 +784,6 @@ export const api = {
 
     if (!response.ok) throw new Error('Delete failed');
     return true;
-  },
-
-  // ============ ORGANIZATION PROFILE ============
-  getOrgPublicProfile: async (orgId: string) => {
-    const token = localStorage.getItem('token');
-    const headers: any = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-
-    const response = await fetch(`${API_URL}/organizations/${orgId}/profile`, {
-      headers
-    });
-
-    if (!response.ok) throw new Error('Failed to fetch organization profile');
-    return response.json();
   },
 
   getOrgEvents: async (orgId: string) => {
@@ -933,38 +962,6 @@ export const api = {
     return response.json();
   },
 
-  // ✅ FIX: Add cache-busting timestamp
-  // In src/lib/api.ts
-  getFollowStatus: async (targetUserId: string) => {
-    const { data: { session } } = await supabase.auth.getSession();
-    const headers: any = {};
-
-    // Prefer Session token, fallback to localStorage if needed
-    const token = session?.access_token || localStorage.getItem('token');
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-
-    if (!token) return { isFollowing: false };
-
-    // ⚡ THE IMPORTANT PART: ?t=${Date.now()}
-    const response = await fetch(`${API_URL}/social/follow/status/${targetUserId}?t=${Date.now()}`, {
-      headers
-    });
-
-    if (!response.ok) return { isFollowing: false };
-    return response.json();
-  },
-
-  getVolunteerImpact: async () => {
-    const token = localStorage.getItem('token');
-    const res = await fetch(`${API_URL}/analytics/volunteer`, { headers: { Authorization: `Bearer ${token}` } });
-    return res.json();
-  },
-  getOrgAnalytics: async () => {
-    const token = localStorage.getItem('token');
-    const res = await fetch(`${API_URL}/analytics/org`, { headers: { Authorization: `Bearer ${token}` } });
-    return res.json();
-  },
-
   submitEventReview: async (eventId: string, rating: number, comment: string) => {
     const { data: { session } } = await supabase.auth.getSession();
     const token = session?.access_token;
@@ -994,12 +991,12 @@ export const api = {
     const res = await fetch(`${API_URL}/events/${eventId}/review/me`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
-    
+
     if (!res.ok) return null;
     return res.json();
   },
 
-getPlatformStats: async () => {
+  getPlatformStats: async () => {
     try {
       // Ensure your backend has this endpoint, or create it to return { volunteers, organisations, hours, cities }
       const response = await fetch(`${API_URL}/analytics/platform`);

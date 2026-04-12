@@ -15,7 +15,7 @@ import { FileInterceptor } from '@nestjs/platform-express'; // ✅ Helper for pa
 import { VolunteerService } from './volunteer.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UpdateVolunteerProfileDto } from './dto/update-volunteer-profile.dto';
-import { OptionalAuthGuard } from 'src/auth/guards/optional-auth.guard';
+import { OptionalAuthGuard } from '../auth/guards/optional-auth.guard';
 
 @Controller('volunteers')
 export class VolunteerController {
