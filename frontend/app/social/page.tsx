@@ -164,140 +164,36 @@ export default function SocialDiscoveryPage() {
   return (
     <div className="min-h-screen bg-[#f8f9fa] pb-20">
 
-      {/* =========================================================
-          CONDITIONAL NAVBAR
-         ========================================================= */}
-
-      {userType === 'org' ? (
-        <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-[#f5f5f7]">
-          <div className="w-full px-6 md:px-10 h-16 flex items-center justify-between">
-            <Link href="/org-home" className="flex items-center shrink-0">
-              <Image src="/logo.png" alt="Kindly" width={100} height={30} className="h-5 md:h-6 w-auto" priority />
-            </Link>
-            <div className="hidden md:flex gap-6">
-              <Link href="/org-events" className={`text-[13px] md:text-[15px] transition-colors ${isActive('/org-events')}`}>My Events</Link>
-              <Link href="/social" className={`text-[13px] md:text-[15px] transition-colors ${isActive('/social')}`}>Social</Link>
-              <Link href="/org-analytics" className={`text-[13px] md:text-[15px] transition-colors ${isActive('/org-analytics')}`}>Analytics</Link>
-            </div>
-            <Link href={`/organizations/${profile?.id}`} className="hidden md:block">
-              <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-[#f5f5f7] hover:ring-[#0066cc] transition-all bg-gray-100 flex items-center justify-center text-[#0066cc] font-bold">
-                {displayImage ? <img src={displayImage} alt={displayName} className="w-full h-full object-cover" /> : <span>{displayInitial}</span>}
-              </div>
-            </Link>
-            <div className="relative md:hidden">
-              <button onClick={() => setMenuOpen(!menuOpen)} className="w-9 h-9 rounded-full bg-[#f5f5f7] flex items-center justify-center hover:bg-[#e5e5e7] transition-colors">
-                {menuOpen ? <X className="w-5 h-5 text-[#1d1d1f]" /> : <Menu className="w-5 h-5 text-[#1d1d1f]" />}
-              </button>
-              {menuOpen && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
-                  <div className="absolute right-0 top-12 z-50 w-56 bg-white rounded-xl shadow-xl border border-[#e5e5e7] overflow-hidden">
-                    <Link href={`/organizations/${profile?.id}`} onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-[#f5f5f7] transition-colors border-b border-[#f5f5f7]">
-                      <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
-                        {displayImage ? <img src={displayImage} alt="Profile" className="w-full h-full object-cover" /> : <span className="text-xs font-bold">{displayInitial}</span>}
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-[13px] font-medium text-[#1d1d1f]">View Profile</span>
-                        <span className="text-[10px] text-gray-500 truncate max-w-[120px]">{displayName}</span>
-                      </div>
-                    </Link>
-                    <Link href="/org-events" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-[#f5f5f7] transition-colors border-b border-[#f5f5f7]">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#e0f2fe] to-[#bae6fd] flex items-center justify-center"><Calendar className="w-4 h-4 text-[#0284c7]" /></div>
-                      <span className="text-[13px] font-medium text-[#1d1d1f]">My Events</span>
-                    </Link>
-                    <Link href="/org-volunteers" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-[#f5f5f7] transition-colors border-b border-[#f5f5f7]">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#e8f5e9] to-[#c8e6c9] flex items-center justify-center"><Users className="w-4 h-4 text-[#2e7d32]" /></div>
-                      <span className="text-[13px] font-medium text-[#1d1d1f]">Volunteers</span>
-                    </Link>
-                    <Link href="/org-analytics" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-[#f5f5f7] transition-colors">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#f3e8ff] to-[#d8b4fe] flex items-center justify-center"><BarChart3 className="w-4 h-4 text-[#9333ea]" /></div>
-                      <span className="text-[13px] font-medium text-[#1d1d1f]">Analytics</span>
-                    </Link>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        </nav>
-      ) : (
-        <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-[#e5e5e7]">
-          <div className="w-full px-6 md:px-10 h-16 flex items-center justify-between">
-            <Link href="/home" className="flex items-center shrink-0">
-              <Image src="/logo.png" alt="Kindly" width={100} height={30} className="h-5 md:h-6 w-auto" priority />
-            </Link>
-            <div className="hidden md:flex items-center gap-8 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-              <Link href="/events" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors font-medium">Events</Link>
-              <Link href="/history" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors font-medium">History</Link>
-              <Link href="/social" className="text-[13px] md:text-[15px] text-[#0066cc] font-semibold transition-colors">Social</Link>
-              <Link href="/volunteer-impact" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors font-medium">Impact</Link>
-            </div>
-            <div className="flex items-center gap-4 shrink-0">
-              <Link href={profile?.id ? `/volunteers/${profile.id}` : '#'} className="hidden md:block group">
-                <div className="w-9 h-9 md:w-10 md:h-10 rounded-full overflow-hidden border border-gray-200 group-hover:border-gray-400 group-active:scale-95 transition-all bg-gray-50 flex items-center justify-center shadow-sm">
-                  {displayImage ? <img src={displayImage} alt="Profile" className="w-full h-full object-cover" /> : <span className="font-bold text-gray-500 group-hover:text-gray-900 transition-colors">{displayInitial}</span>}
-                </div>
-              </Link>
-              <div className="relative md:hidden">
-                <button onClick={() => setMenuOpen(!menuOpen)} className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-[#f5f5f7] flex items-center justify-center hover:bg-[#e5e5e7] transition-colors">
-                  {menuOpen ? <X className="w-4 h-4 md:w-5 md:h-5 text-[#1d1d1f]" /> : <Menu className="w-4 h-4 md:w-5 md:h-5 text-[#1d1d1f]" />}
-                </button>
-                {menuOpen && (
-                  <>
-                    <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
-                    <div className="absolute right-0 top-10 md:top-12 z-50 w-44 md:w-48 bg-white rounded-xl shadow-xl border border-[#e5e5e7] overflow-hidden">
-                      <Link href="/profile" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-3 md:px-4 py-2.5 md:py-3 hover:bg-[#f5f5f7] transition-colors border-b border-[#f5f5f7]">
-                        <span className="text-[12px] md:text-[13px] font-medium text-[#1d1d1f]">Profile</span>
-                      </Link>
-                      <Link href="/home" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-3 md:px-4 py-2.5 md:py-3 hover:bg-[#f5f5f7] transition-colors border-b border-[#f5f5f7]">
-                        <span className="text-[12px] md:text-[13px] font-medium text-[#1d1d1f]">Home</span>
-                      </Link>
-                      <Link href="/events" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-3 md:px-4 py-2.5 md:py-3 hover:bg-[#f5f5f7] transition-colors border-b border-[#f5f5f7]">
-                        <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-gradient-to-br from-[#fef3c7] to-[#fde68a] flex items-center justify-center">
-                          <Sparkles className="w-3.5 h-3.5 md:w-4 md:h-4 text-[#f59e0b]" />
-                        </div>
-                        <span className="text-[12px] md:text-[13px] font-medium text-[#1d1d1f]">Discover Events</span>
-                      </Link>
-                      <Link href="/volunteer-impact" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-3 md:px-4 py-2.5 md:py-3 hover:bg-[#f5f5f7] transition-colors">
-                        <span className="text-[12px] md:text-[13px] font-medium text-[#1d1d1f]">Impact</span>
-                      </Link>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        </nav>
-      )}
 
       {/* =========================================================
-          MAIN CONTENT AREA
+          MAIN CONTENT AREA (Mobile Optimized)
          ========================================================= */}
-      <div className="max-w-2xl mx-auto px-4 py-6">
+      <div className="max-w-2xl mx-auto px-2 sm:px-4 pt-4 pb-24">
 
         {/* SEARCH BAR */}
-        <div className="mb-8">
+        <div className="mb-6 px-2">
           <form onSubmit={handleSearch} className="relative group w-full">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-black transition-colors" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-gray-400 group-focus-within:text-black transition-colors" />
             <input
               type="text"
-              placeholder="Search volunteers, organizations..."
+              placeholder="Search volunteers, orgs..."
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value)
                 if (e.target.value === '') { setIsSearching(false); setResults([]) }
               }}
-              className="w-full h-12 pl-12 pr-4 bg-white border border-gray-200 shadow-sm rounded-full text-[15px] outline-none focus:border-gray-400 focus:shadow-md transition-all placeholder:text-gray-500"
+              className="w-full h-11 md:h-12 pl-11 pr-4 bg-white border border-gray-200 shadow-sm rounded-2xl md:rounded-full text-[14px] md:text-[15px] outline-none focus:border-gray-400 focus:shadow-md transition-all placeholder:text-gray-400"
             />
           </form>
 
           {isSearching && (
-            <div className="flex gap-2 mt-3 animate-in fade-in slide-in-from-top-2 ml-4">
+            <div className="flex gap-2 mt-3 animate-in fade-in slide-in-from-top-2 ml-2">
               {['all', 'volunteers', 'orgs'].map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab as any)}
                   className={cn(
-                    "px-4 py-1.5 rounded-full text-xs font-semibold capitalize transition-all",
+                    "px-4 py-1.5 rounded-full text-[11px] md:text-xs font-semibold capitalize transition-all",
                     activeTab === tab ? "bg-black text-white shadow-md" : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
                   )}
                 >
@@ -318,24 +214,24 @@ export default function SocialDiscoveryPage() {
 
         {/* SEARCH RESULTS */}
         {!loading && isSearching && displayedResults.length > 0 && (
-          <div className="space-y-2">
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 px-2">Top Results</h3>
-            <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
+          <div className="space-y-2 px-2">
+            <h3 className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Top Results</h3>
+            <div className="bg-white rounded-[20px] border border-gray-200 overflow-hidden shadow-sm">
               {displayedResults.map((item, idx) => (
                 <Link
                   key={idx}
                   href={item.type === 'volunteer' ? `/volunteers/${item.id}` : `/organizations/${item.id}`}
-                  className="flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0"
+                  className="flex items-center gap-3 md:gap-4 p-3 md:p-4 hover:bg-gray-50 active:bg-gray-100 transition-colors border-b border-gray-100 last:border-0"
                 >
                   <div className="w-10 h-10 rounded-full bg-gray-100 overflow-hidden shrink-0 border border-gray-200 flex items-center justify-center">
                     {item.image ? <img src={item.image} className="w-full h-full object-cover" /> : <User className="w-5 h-5 text-gray-400" />}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
-                      <h4 className="font-semibold text-gray-900 truncate text-[15px]">{item.name}</h4>
+                      <h4 className="font-semibold text-gray-900 truncate text-[14px] md:text-[15px]">{item.name}</h4>
                       {item.verified && <CheckCircle2 className="w-4 h-4 text-blue-500 fill-blue-50" />}
                     </div>
-                    <p className="text-xs text-gray-500 truncate">{item.subtitle}</p>
+                    <p className="text-[11px] md:text-xs text-gray-500 truncate">{item.subtitle}</p>
                   </div>
                   <ArrowUpRight className="w-4 h-4 text-gray-300" />
                 </Link>
@@ -347,52 +243,51 @@ export default function SocialDiscoveryPage() {
         {/* NO RESULTS STATE */}
         {!loading && isSearching && displayedResults.length === 0 && (
           <div className="text-center py-12 text-gray-500">
-            <p>No results found for "{searchQuery}"</p>
+            <p className="text-[13px] md:text-sm">No results found for "{searchQuery}"</p>
           </div>
         )}
 
         {/* DEFAULT FEED: REAL IMPACT STORIES */}
         {!isSearching && !loading && (
-          <div className="space-y-8 animate-in fade-in duration-500">
+          <div className="space-y-6 animate-in fade-in duration-500">
 
             {/* Header */}
-            <div className="flex items-center justify-between px-1">
+            <div className="flex items-center justify-between px-2 md:px-1">
               <div>
-                <h1 className="text-2xl font-bold text-[#1d1d1f] tracking-tight">Discover Impact</h1>
+                <h1 className="text-xl md:text-2xl font-bold text-[#1d1d1f] tracking-tight">Discover Impact</h1>
                 {!storiesLoading && (
-                  <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1">
+                  <p className="text-[11px] md:text-xs text-gray-400 mt-0.5 flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block animate-pulse" />
-                    Live news · Updated just now
+                    Live news
                   </p>
                 )}
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-medium text-gray-500 bg-white px-3 py-1 rounded-full border border-gray-200 shadow-sm">
+                <span className="hidden md:inline-block text-xs font-medium text-gray-500 bg-white px-3 py-1 rounded-full border border-gray-200 shadow-sm">
                   {new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long' })}
                 </span>
                 <button
                   onClick={loadStories}
                   disabled={storiesLoading}
                   title="Refresh stories"
-                  className="w-8 h-8 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center hover:bg-gray-50 transition-all disabled:opacity-40"
+                  className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center active:scale-95 hover:bg-gray-50 transition-all disabled:opacity-40"
                 >
-                  <RefreshCw className={cn("w-3.5 h-3.5 text-gray-500", storiesLoading && "animate-spin")} />
+                  <RefreshCw className={cn("w-3.5 h-3.5 md:w-4 md:h-4 text-gray-500", storiesLoading && "animate-spin")} />
                 </button>
               </div>
             </div>
 
-            {/* SKELETON LOADING */}
+            {/* SKELETON LOADING (Updated aspect ratios) */}
             {storiesLoading && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                 {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="bg-white rounded-3xl border border-gray-200/60 overflow-hidden animate-pulse">
-                    <div className="aspect-[4/3] w-full bg-gray-200" />
-                    <div className="p-5 space-y-3">
+                  <div key={i} className="bg-white rounded-[24px] border border-gray-200/60 overflow-hidden animate-pulse">
+                    <div className="aspect-video md:aspect-[4/3] w-full bg-gray-200" />
+                    <div className="p-4 space-y-3">
                       <div className="h-3 bg-gray-200 rounded w-1/3" />
                       <div className="h-5 bg-gray-200 rounded w-full" />
                       <div className="h-5 bg-gray-200 rounded w-4/5" />
-                      <div className="h-3 bg-gray-100 rounded w-2/3" />
-                      <div className="h-3 bg-gray-100 rounded w-1/2" />
+                      <div className="h-3 bg-gray-100 rounded w-2/3 mt-4" />
                     </div>
                   </div>
                 ))}
@@ -402,22 +297,22 @@ export default function SocialDiscoveryPage() {
             {/* STORIES GRID */}
             {!storiesLoading && (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                   {stories.map((story, idx) => (
                     <div
                       key={idx}
-                      className="group cursor-pointer flex flex-col h-full bg-white rounded-3xl border border-gray-200/60 overflow-hidden hover:shadow-xl hover:shadow-gray-200/50 hover:-translate-y-1 transition-all duration-300"
+                      className="group flex flex-col h-full bg-white rounded-[24px] border border-gray-200/80 overflow-hidden shadow-sm active:scale-[0.98] transition-all duration-200"
                     >
                       {/* Card Image */}
-                      <div className="aspect-[4/3] w-full overflow-hidden relative">
+                      <div className="aspect-video md:aspect-[4/3] w-full overflow-hidden relative bg-gray-100">
                         <img
                           src={getImageForStory(story.title, story.category)}
                           alt={story.title}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-60" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-80" />
                         <span className={cn(
-                          "absolute top-3 left-3 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider backdrop-blur-md shadow-sm",
+                          "absolute top-3 left-3 px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider backdrop-blur-md",
                           getCategoryColor(story.category)
                         )}>
                           {story.category}
@@ -429,23 +324,23 @@ export default function SocialDiscoveryPage() {
                       </div>
 
                       {/* Card Content */}
-                      <div className="p-5 flex flex-col flex-1">
-                        <div className="flex items-center gap-2 text-[11px] font-medium text-gray-400 mb-3">
-                          <span className="truncate max-w-[130px]">{story.author}</span>
+                      <div className="p-4 flex flex-col flex-1">
+                        <div className="flex items-center gap-2 text-[10px] md:text-[11px] font-medium text-gray-400 mb-2">
+                          <span className="truncate max-w-[130px] text-[#1d1d1f]">{story.author}</span>
                           <span className="w-1 h-1 rounded-full bg-gray-300 shrink-0" />
                           <span className="shrink-0">{story.date}</span>
                         </div>
 
-                        <h3 className="text-lg font-bold text-gray-900 leading-snug mb-3 group-hover:text-[#0066cc] transition-colors line-clamp-2">
+                        <h3 className="text-base md:text-lg font-bold text-gray-900 leading-snug mb-2 group-hover:text-[#0066cc] transition-colors line-clamp-2">
                           {story.title}
                         </h3>
 
-                        <p className="text-sm text-gray-600 line-clamp-3 mb-4 leading-relaxed">
+                        <p className="text-[13px] md:text-sm text-gray-600 line-clamp-2 md:line-clamp-3 mb-4 leading-relaxed">
                           {story.excerpt}
                         </p>
 
-                        <div className="mt-auto flex items-center justify-between border-t border-gray-100 pt-4">
-                          <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                        <div className="mt-auto flex items-center justify-between border-t border-gray-50 pt-3">
+                          <div className="flex items-center gap-1.5 text-[11px] md:text-xs text-gray-500 font-medium">
                             <Clock className="w-3.5 h-3.5" />
                             {story.readTime}
                           </div>
@@ -455,13 +350,13 @@ export default function SocialDiscoveryPage() {
                               target="_blank"
                               rel="noopener noreferrer"
                               onClick={(e) => e.stopPropagation()}
-                              className="text-xs font-bold text-[#1d1d1f] hover:text-[#0066cc] flex items-center gap-1 transition-colors"
+                              className="h-8 px-3 bg-[#f5f5f7] hover:bg-gray-200 rounded-full text-[11px] md:text-xs font-bold text-[#1d1d1f] flex items-center gap-1 transition-colors"
                             >
-                              Read Story <ExternalLink className="w-3 h-3" />
+                              Read <ExternalLink className="w-3 h-3 md:hidden" /> <span className="hidden md:inline">Story</span>
                             </a>
                           ) : (
-                            <span className="text-xs font-bold text-[#1d1d1f] group-hover:translate-x-1 transition-transform flex items-center gap-1">
-                              Read Story <ChevronRight className="w-3 h-3" />
+                            <span className="h-8 px-3 bg-[#f5f5f7] rounded-full text-[11px] md:text-xs font-bold text-[#1d1d1f] flex items-center gap-1">
+                              Read <ChevronRight className="w-3 h-3" />
                             </span>
                           )}
                         </div>
@@ -470,11 +365,11 @@ export default function SocialDiscoveryPage() {
                   ))}
                 </div>
 
-                <div className="py-8 text-center">
+                <div className="py-6 text-center">
                   <button
                     onClick={loadStories}
                     disabled={storiesLoading}
-                    className="text-sm font-medium text-gray-500 hover:text-black transition-colors border-b border-transparent hover:border-black pb-0.5 flex items-center gap-2 mx-auto disabled:opacity-40"
+                    className="text-[13px] font-medium text-gray-500 active:text-black transition-colors flex items-center gap-2 mx-auto disabled:opacity-40"
                   >
                     <RefreshCw className="w-3.5 h-3.5" />
                     Load fresh stories

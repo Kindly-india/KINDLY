@@ -3,6 +3,8 @@ import type { Metadata, Viewport } from "next"
 import { Inter } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
+import { MobileNav } from "@/components/mobile-nav"
+import { TopNav } from "@/components/top-nav"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -40,9 +42,11 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: "#000000",
+  themeColor: "#ffffff",
   width: "device-width",
   initialScale: 1,
+  maximumScale: 1,     // <-- Stops iOS from zooming in on inputs
+  userScalable: false, // <-- Stops pinch-to-zoom completely
 }
 
 export default function RootLayout({
@@ -53,7 +57,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={inter.variable}>
       <body className="font-sans antialiased">
+        <TopNav />
         {children}
+        <MobileNav /> {/* <-- ADD THIS HERE */}
         <Analytics />
       </body>
     </html>

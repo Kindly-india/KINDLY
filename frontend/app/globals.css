@@ -2,11 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Prevent horizontal scroll on mobile */
+/* Prevent horizontal scroll on mobile & stop pull-to-refresh bounce */
 html,
 body {
   overflow-x: hidden;
   max-width: 100vw;
+  overscroll-behavior-y: none;
 }
 
 /* Apple-inspired LIGHT theme */
@@ -89,5 +90,23 @@ body {
   body {
     background-color: var(--background);
     color: var(--foreground);
+  }
+}
+
+@layer utilities {
+  /* Hides ugly scrollbars on mobile but keeps functionality */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+
+  /* Stops users from accidentally highlighting UI text when tapping buttons */
+  .prevent-select {
+    -webkit-user-select: none; /* Safari */
+    -ms-user-select: none; /* IE 10 and IE 11 */
+    user-select: none; /* Standard syntax */
   }
 }

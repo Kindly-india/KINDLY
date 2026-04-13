@@ -250,74 +250,7 @@ export function VolunteerHomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Sticky Top Navbar */}
-      <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-[#f5f5f7]">
-        <div className="max-w-300 mx-auto px-4 md:px-8 h-12 md:h-14 flex items-center justify-between relative">
-          
-          {/* 1. Left: Logo (UPDATED) */}
-            <Image 
-                src="/logo.png" 
-                alt="Kindly" 
-                width={100} 
-                height={30} 
-                className="h-5 md:h-6 w-auto" 
-                priority 
-            />
-
-          {/* 2. Center: Navigation Links */}
-          <div className="hidden md:flex items-center gap-8 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-            <Link href="/events" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors font-medium">
-              Events
-            </Link>
-            <Link href="/history" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors font-medium">
-              History
-            </Link>
-            <Link href="/social" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors font-medium">
-              Social
-            </Link>
-            <Link href="/volunteer-impact" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors font-medium flex items-center gap-1.5">
-              Impact
-            </Link>
-          </div>
-
-          {/* 3. Right: Profile & Mobile Menu */}
-          <div className="flex items-center gap-4 shrink-0">
-            <Link
-              href={profile?.id ? `/volunteers/${profile.id}` : '#'}
-              className="hidden md:block group"
-            >
-              <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-200 group-hover:border-gray-400 group-active:scale-95 transition-all bg-gray-50 flex items-center justify-center shadow-sm">
-                {displayImage ? (
-                  <img
-                    src={displayImage}
-                    alt="Profile"
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="font-bold text-gray-500 group-hover:text-gray-900 transition-colors">
-                    {displayInitial}
-                  </span>
-                )}
-              </div>
-            </Link>
-
-            <div className="relative md:hidden">
-              <button onClick={() => setMenuOpen(!menuOpen)} className="w-9 h-9 rounded-full bg-[#f5f5f7] flex items-center justify-center hover:bg-[#e5e5e7]">
-                {menuOpen ? <X className="w-5 h-5 text-[#1d1d1f]" /> : <Menu className="w-5 h-5 text-[#1d1d1f]" />}
-              </button>
-              {menuOpen && (
-                <div className="absolute right-0 top-12 z-50 w-48 bg-white rounded-xl shadow-xl border border-[#e5e5e7] overflow-hidden">
-                  <Link href={`/volunteers/${profile.id}`} className="flex items-center gap-3 px-4 py-3 border-b border-[#f5f5f7]">Profile</Link>
-                  <Link href="/events" className="flex items-center gap-3 px-4 py-3 border-b border-[#f5f5f7]">Events</Link>
-                  <Link href="/social" className="flex items-center gap-3 px-4 py-3 border-b border-[#f5f5f7]">Social</Link>
-                  <Link href="/volunteer-impact" className="flex items-center gap-3 px-4 py-3 border-b border-[#f5f5f7]">Impact</Link>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </nav>
+<div className="min-h-screen bg-white">
 
       {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-[#fef5f0] via-[#fff8f5] to-[#f5fcf8] py-8 md:py-16 overflow-hidden">
