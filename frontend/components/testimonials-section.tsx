@@ -3,7 +3,7 @@ import { Quote } from "lucide-react"
 const testimonials = [
   {
     quote: "I started KINDLY because I saw incredible people wanting to help, but no easy way to connect them with local causes. We are finally bridging the gap between good intentions and real, measurable community action.",
-    name: "Manas DHivare",
+    name: "Manas Dhivare",
     role: "Founder - Kindly",
     avatar: "/KINDLY/frontend/public/F550D71A-C3B3-4E55-9AC4-21C04BDC4675_4_5005_c.jpeg",
   },
@@ -17,7 +17,7 @@ const testimonials = [
   {
     quote:
       "Finding weekend volunteering drives in Nashik used to be so difficult. Now, I not only discover great local causes instantly, but I also get to build a verified digital resume of my impact.",
-    name: "Tony Stark",
+    name: "Ananya Patel",
     role: "Student Volunteer",
     avatar: "/KINDLY/frontend/public/596DF1EC-B153-4626-9C23-DFA8243249FB_4_5005_c.jpeg",
   },
