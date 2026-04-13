@@ -27,13 +27,11 @@ export function EventsSection() {
     fetchEvents()
   }, [])
 
-  // Helper to format date
   const formatDate = (dateStr: string) => {
     if (!dateStr) return "TBD"
     return new Date(dateStr).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
   }
 
-  // Helper to format time
   const formatTime = (timeStr: string) => {
     if (!timeStr) return ""
     const [h, m] = timeStr.split(':')
@@ -42,43 +40,40 @@ export function EventsSection() {
     return `${hour % 12 || 12}:${m} ${ampm}`
   }
 
-  // Handle sign up button click
   const handleSignUpClick = (e: React.MouseEvent) => {
     e.preventDefault()
-    
-    // Check if we're on the home page
     if (window.location.pathname === '/' || window.location.pathname === '') {
-      // Scroll to hero section (signup area)
       const heroSection = document.querySelector('#hero') || document.querySelector('main')
       if (heroSection) {
         heroSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
       }
     } else {
-      // Navigate to home page with hash
       router.push('/#hero')
     }
   }
 
   return (
-    <section id="events" className="bg-gradient-to-b from-purple-50 to-purple-100 py-10 md:py-24">
-      <div className="max-w-7xl mx-auto px-4 md:px-6">
-        {/* Header */}
-        <div className="flex items-end justify-between mb-5 md:mb-12">
+    // Boosted mobile padding for better breathing room
+    <section id="events" className="bg-gradient-to-b from-purple-50 to-purple-100 py-16 md:py-24">
+      <div className="max-w-7xl mx-auto px-6 md:px-6">
+        
+        {/* Header - Centered on mobile for better balance */}
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-8 md:mb-12 gap-4">
           <div>
-            <p className="text-purple-600 text-xs md:text-sm font-medium mb-1 md:mb-2">Events</p>
-            <h2 className="text-xl md:text-5xl font-semibold text-gray-900 tracking-tight leading-tight">
+            <p className="text-purple-600 text-[12px] md:text-sm font-medium mb-1 md:mb-2 uppercase tracking-wide">Events</p>
+            <h2 className="text-[28px] md:text-5xl font-semibold text-gray-900 tracking-tight leading-tight">
               Explore upcoming
               <br className="hidden md:block" />
-              <span className="md:hidden"> </span>opportunities.
+              <span> opportunities.</span>
             </h2>
           </div>
-          <Link href="#hero">
+          <Link href="#hero" className="hidden md:block">
             <Button
               variant="outline"
-              className="inline-flex items-center text-purple-600 text-xs hover:underline bg-transparent border-0 hover:bg-transparent"
+              className="inline-flex items-center text-purple-600 text-sm hover:underline bg-transparent border-0 hover:bg-transparent p-0"
             >
               view all events
-              <ChevronRight className="w-3.5 h-3.5 ml-0.5" />
+              <ChevronRight className="w-4 h-4 ml-0.5" />
             </Button>
           </Link>
         </div>
@@ -88,14 +83,15 @@ export function EventsSection() {
             <Loader2 className="w-8 h-8 text-purple-600 animate-spin" />
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 md:gap-5">
+          /* Grid: 1 column on mobile (Stacked), 4 columns on desktop. Increased gap to 6 for mobile */
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 md:gap-5">
             {events.length > 0 ? (
               events.map((event) => (
                 <div
                   key={event.id}
-                  className="group bg-white rounded-xl md:rounded-2xl overflow-hidden hover:shadow-xl hover:shadow-purple-600/10 transition-all duration-300 border border-transparent hover:border-purple-600/20 flex flex-col"
+                  className="group bg-white rounded-2xl md:rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:shadow-purple-600/10 transition-all duration-300 border border-gray-100 md:border-transparent hover:border-purple-600/20 flex flex-col"
                 >
-                  {/* Image - Clickable to details */}
+                  {/* Image: Stays 4/3 but is now full width on mobile */}
                   <Link href={`/events/${event.id}`} className="aspect-4/3 overflow-hidden bg-gray-100 block">
                     {event.cover_image_url ? (
                       <img
@@ -110,42 +106,41 @@ export function EventsSection() {
                     )}
                   </Link>
 
-                  {/* Content */}
-                  <div className="p-2.5 md:p-5 flex flex-col flex-1">
+                  {/* Content: Boosted padding to p-5 for mobile */}
+                  <div className="p-5 md:p-5 flex flex-col flex-1">
                     <Link href={`/events/${event.id}`}>
-                      <h3 className="text-xs md:text-lg font-semibold text-gray-900 mb-1.5 md:mb-3 line-clamp-2 hover:text-purple-600 transition-colors">
+                      <h3 className="text-lg md:text-lg font-semibold text-gray-900 mb-3 md:mb-3 line-clamp-2 hover:text-purple-600 transition-colors">
                         {event.title}
                       </h3>
                     </Link>
 
-                    <div className="space-y-0.5 md:space-y-1.5 mb-2.5 md:mb-5">
-                      <div className="flex items-center gap-1 md:gap-2 text-xs md:text-sm text-gray-500">
-                        <Calendar className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 shrink-0" />
+                    <div className="space-y-2 md:space-y-1.5 mb-5 md:mb-5">
+                      <div className="flex items-center gap-2 md:gap-2 text-sm md:text-sm text-gray-500">
+                        <Calendar className="w-4 h-4 md:w-3.5 md:h-3.5 shrink-0" />
                         <span className="truncate">{formatDate(event.event_date)}</span>
                       </div>
-                      <div className="flex items-center gap-1 md:gap-2 text-xs md:text-sm text-gray-500">
-                        <Clock className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 shrink-0" />
+                      <div className="flex items-center gap-2 md:gap-2 text-sm md:text-sm text-gray-500">
+                        <Clock className="w-4 h-4 md:w-3.5 md:h-3.5 shrink-0" />
                         <span>{formatTime(event.start_time)}</span>
                       </div>
-                      <div className="flex items-center gap-1 md:gap-2 text-xs md:text-sm text-gray-500">
-                        <MapPin className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 shrink-0" />
+                      <div className="flex items-center gap-2 md:gap-2 text-sm md:text-sm text-gray-500">
+                        <MapPin className="w-4 h-4 md:w-3.5 md:h-3.5 shrink-0" />
                         <span className="truncate">{event.location}</span>
                       </div>
                     </div>
 
-                    {/* Registered count badge */}
                     {event.registered_count > 0 && (
-                      <div className="mb-2 md:mb-3">
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
+                      <div className="mb-4 md:mb-3">
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700">
                           {event.registered_count} registered
                         </span>
                       </div>
                     )}
 
-                    {/* Sign up button that scrolls to signup section */}
+                    {/* Button: Increased height to h-11 on mobile for better tap accessibility */}
                     <button
                       onClick={handleSignUpClick}
-                      className="mt-auto w-full h-7 md:h-9 text-xs md:text-sm text-purple-600 border border-purple-600 hover:bg-purple-600 hover:text-white rounded-full bg-transparent px-2 md:px-4 transition-colors"
+                      className="mt-auto w-full h-11 md:h-9 text-sm md:text-sm text-purple-600 border border-purple-600 font-bold hover:bg-purple-600 hover:text-white rounded-xl bg-transparent px-4 transition-colors active:scale-[0.98]"
                     >
                       Sign up to book
                     </button>
@@ -153,22 +148,22 @@ export function EventsSection() {
                 </div>
               ))
             ) : (
-              <div className="col-span-full text-center py-8 text-gray-500 text-sm">
+              <div className="col-span-full text-center py-12 text-gray-500 text-sm font-medium">
                 No upcoming events found.
               </div>
             )}
           </div>
         )}
 
-        {/* Mobile View All Link */}
-        <div className="md:hidden mt-4 text-center">
+        {/* Mobile View All Link: Styled as a proper footer button for mobile */}
+        <div className="md:hidden mt-8 text-center">
           <Link href="/events">
             <Button
               variant="outline"
-              className="inline-flex items-center text-purple-600 text-xs hover:underline bg-transparent border-0"
+              className="inline-flex items-center text-purple-600 text-sm font-bold hover:underline bg-white border border-purple-100 w-full h-12 rounded-xl shadow-sm"
             >
-              view all events
-              <ChevronRight className="w-3.5 h-3.5 ml-0.5" />
+              View all events
+              <ChevronRight className="w-4 h-4 ml-1" />
             </Button>
           </Link>
         </div>

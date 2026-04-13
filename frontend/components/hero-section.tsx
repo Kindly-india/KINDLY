@@ -31,58 +31,41 @@ export function HeroSection() {
 
   if (selectedType === "volunteer") {
     return (
-      <section id="hero" className="min-h-screen bg-gradient-to-b from-orange-50 via-white to-green-50 relative overflow-x-hidden">
-        {/* Header */}
-        <header className="md:hidden pt-4 pb-3 text-center px-4">
-          <div></div>
-        </header>
-
-        <div className="absolute top-20 left-4 md:top-28 md:left-20 w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-white shadow-lg flex items-center justify-center z-10">
-          <Heart className="w-5 h-5 md:w-7 md:h-7 text-red-400" />
+      <section id="hero" className="min-h-screen bg-white md:bg-gradient-to-b md:from-orange-50 md:via-white md:to-green-50 relative overflow-x-hidden">
+        
+        {/* Hide floating icons on mobile for a cleaner form experience */}
+        <div className="hidden md:flex absolute top-28 left-20 w-14 h-14 rounded-2xl bg-white shadow-lg items-center justify-center z-10">
+          <Heart className="w-7 h-7 text-red-400" />
         </div>
-        <div className="absolute top-32 right-4 md:top-40 md:right-24 w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-white shadow-lg flex items-center justify-center z-10">
-          <Sparkles className="w-5 h-5 md:w-7 md:h-7 text-amber-500" />
-        </div>
-        <div className="hidden md:flex absolute bottom-40 left-32 w-14 h-14 rounded-2xl bg-white shadow-lg items-center justify-center z-10">
-          <Users className="w-7 h-7 text-blue-500" />
-        </div>
-        <div className="hidden md:flex absolute bottom-32 right-40 w-14 h-14 rounded-2xl bg-white shadow-lg items-center justify-center z-10">
-          <Star className="w-7 h-7 text-emerald-500" />
+        <div className="hidden md:flex absolute top-40 right-24 w-14 h-14 rounded-2xl bg-white shadow-lg items-center justify-center z-10">
+          <Sparkles className="w-7 h-7 text-amber-500" />
         </div>
 
-        <div className="flex items-start md:items-center justify-center px-4 md:px-6 pt-2 md:pt-24 pb-8 md:pb-20">
+        <div className="flex items-start md:items-center justify-center px-4 md:px-6 pt-12 md:pt-24 pb-12 md:pb-20">
           <div className="w-full max-w-lg md:max-w-xl relative">
-            {/* Decorative blur elements */}
-            <div className="absolute -top-8 -left-8 md:-top-10 md:-left-10 w-16 h-16 md:w-24 md:h-24 bg-gradient-to-br from-orange-200/40 to-red-200/40 rounded-full blur-2xl" />
-            <div className="absolute -bottom-8 -right-8 md:-bottom-10 md:-right-10 w-20 h-20 md:w-28 md:h-28 bg-gradient-to-br from-emerald-200/40 to-pink-200/40 rounded-full blur-2xl" />
-
-            <div className="mt-3 relative bg-white/80 backdrop-blur-sm rounded-2xl md:rounded-3xl p-5 md:p-10 shadow-xl">
+            
+            <div className="relative bg-white md:bg-white/80 md:backdrop-blur-sm rounded-none md:rounded-3xl p-0 md:p-10 md:shadow-xl">
               {/* Back button */}
               <button
                 onClick={() => setSelectedType(null)}
-                className="absolute top-4 left-4 md:top-6 md:left-6 text-gray-500 hover:text-gray-900 transition-colors text-xs md:text-sm flex items-center gap-1"
+                className="flex items-center gap-1 text-sm font-bold text-gray-400 hover:text-gray-900 mb-6 md:mb-8 active:scale-95 transition-all p-2 -ml-2"
               >
-                <ChevronRight className="w-3 h-3 md:w-4 md:h-4 rotate-180" />
+                <ChevronRight className="w-4 h-4 rotate-180" />
                 Back
               </button>
 
-              <h1 className="text-2xl md:text-3xl font-semibold text-gray-900 tracking-tight text-center mt-4 md:mt-0">
+              <h1 className="text-[28px] md:text-3xl font-bold text-gray-900 tracking-tight text-center">
                 Join as a Volunteer
               </h1>
-              <p className="text-xs md:text-base text-gray-500 text-center mt-1 md:mt-3 mb-4 md:mb-10">
+              <p className="text-[15px] md:text-base text-gray-500 text-center mt-2 mb-8 md:mb-10">
                 Find opportunities that match your passion.
               </p>
 
               <form
                 onSubmit={async (e) => {
                   e.preventDefault();
-                  if (!agreedToTerms) {
-                    alert('Please agree to the terms and conditions');
-                    return;
-                  }
-
+                  if (!agreedToTerms) { alert('Please agree to terms'); return; }
                   const formData = new FormData(e.currentTarget);
-
                   try {
                     await api.signupVolunteer({
                       fullName: formData.get('name') as string,
@@ -92,214 +75,109 @@ export function HeroSection() {
                       city,
                       interests: selectedInterests,
                     });
-
-                    alert('Account created successfully! You can now log in.');
+                    alert('Account created successfully!');
                     window.location.href = '/login';
-                  } catch (error: any) {
-                    alert(error.message || 'Signup failed. Please try again.');
-                  }
+                  } catch (error: any) { alert(error.message || 'Signup failed.'); }
                 }}
-                className="space-y-2.5 md:space-y-5"
+                className="space-y-5"
               >
-                {/* Full Name */}
-                <div className="space-y-0.5 md:space-y-2">
-                  <Label htmlFor="name" className="text-xs text-gray-500 font-normal">
-                    Full Name
-                  </Label>
-                  <Input
-                    id="name"
-                    name="name"
-                    type="text"
-                    placeholder="John Doe"
-                    required
-                    className="h-9 md:h-12 bg-gray-100 border-0 rounded-lg md:rounded-xl text-sm md:text-base text-gray-900 placeholder:text-gray-400 focus-visible:ring-2 focus-visible:ring-red-400"
-                  />
+                {/* Inputs: h-12 and text-[16px] for mobile optimization */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="name" className="text-[11px] font-bold text-gray-400 uppercase tracking-wider ml-1">Full Name</Label>
+                  <Input id="name" name="name" type="text" placeholder="John Doe" required className="h-12 md:h-12 bg-gray-50 md:bg-gray-100 border-0 rounded-xl text-[16px] md:text-base px-4" />
                 </div>
 
-                {/* Email */}
-                <div className="space-y-0.5 md:space-y-2">
-                  <Label htmlFor="email" className="text-xs text-gray-500 font-normal">
-                    Email
-                  </Label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    placeholder="name@example.com"
-                    required
-                    className="h-9 md:h-12 bg-gray-100 border-0 rounded-lg md:rounded-xl text-sm md:text-base text-gray-900 placeholder:text-gray-400 focus-visible:ring-2 focus-visible:ring-red-400"
-                  />
+                <div className="space-y-1.5">
+                  <Label htmlFor="email" className="text-[11px] font-bold text-gray-400 uppercase tracking-wider ml-1">Email</Label>
+                  <Input id="email" name="email" type="email" placeholder="name@example.com" required className="h-12 md:h-12 bg-gray-50 md:bg-gray-100 border-0 rounded-xl text-[16px] md:text-base px-4" />
                 </div>
 
-                {/* Phone Number with +91 */}
-                <div className="space-y-0.5 md:space-y-2">
-                  <Label htmlFor="phone" className="text-xs text-gray-500 font-normal">
-                    Phone Number
-                  </Label>
-                  <div className="flex gap-1.5 md:gap-2">
-                    <div className="h-9 md:h-12 px-2.5 md:px-4 bg-gray-100 rounded-lg md:rounded-xl flex items-center text-gray-500 text-xs md:text-base font-medium shrink-0">
-                      +91
-                    </div>
-                    <Input
-                      id="phone"
-                      name="phone"
-                      type="tel"
-                      placeholder="9876543210"
-                      required
-                      pattern="[0-9]{10}"
-                      className="flex-1 h-9 md:h-12 bg-gray-100 border-0 rounded-lg md:rounded-xl text-sm md:text-base text-gray-900 placeholder:text-gray-400 focus-visible:ring-2 focus-visible:ring-red-400"
-                    />
+                <div className="space-y-1.5">
+                  <Label htmlFor="phone" className="text-[11px] font-bold text-gray-400 uppercase tracking-wider ml-1">Phone Number</Label>
+                  <div className="flex gap-2">
+                    <div className="h-12 md:h-12 px-4 bg-gray-50 md:bg-gray-100 rounded-xl flex items-center text-gray-500 font-bold shrink-0">+91</div>
+                    <Input id="phone" name="phone" type="tel" placeholder="9876543210" required pattern="[0-9]{10}" className="flex-1 h-12 md:h-12 bg-gray-50 md:bg-gray-100 border-0 rounded-xl text-[16px] md:text-base px-4" />
                   </div>
                 </div>
 
-                {/* Password */}
-                <div className="space-y-0.5 md:space-y-2">
-                  <Label htmlFor="password" className="text-xs text-gray-500 font-normal">
-                    Password
-                  </Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="password" className="text-[11px] font-bold text-gray-400 uppercase tracking-wider ml-1">Password</Label>
                   <div className="relative">
-                    <Input
-                      id="password"
-                      name="password"
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Create a password"
-                      required
-                      minLength={6}
-                      className="h-9 md:h-12 bg-gray-100 border-0 rounded-lg md:rounded-xl text-sm md:text-base text-gray-900 placeholder:text-gray-400 pr-9 md:pr-12 focus-visible:ring-2 focus-visible:ring-red-400"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-2.5 md:right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-900"
-                    >
-                      {showPassword ? (
-                        <EyeOff className="w-3.5 h-3.5 md:w-5 md:h-5" />
-                      ) : (
-                        <Eye className="w-3.5 h-3.5 md:w-5 md:h-5" />
-                      )}
-                    </button>
+                    <Input id="password" name="password" type={showPassword ? "text" : "password"} placeholder="Create a password" required minLength={6} className="h-12 md:h-12 bg-gray-50 md:bg-gray-100 border-0 rounded-xl text-[16px] md:text-base pl-4 pr-12" />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 p-2">{showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}</button>
                   </div>
                 </div>
 
-                {/* City Dropdown */}
-                <div className="space-y-0.5 md:space-y-2">
-                  <Label htmlFor="city" className="text-xs text-gray-500 font-normal">
-                    City
-                  </Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="city" className="text-[11px] font-bold text-gray-400 uppercase tracking-wider ml-1">City</Label>
                   <Select value={city} onValueChange={setCity}>
-                    <SelectTrigger className="h-9 md:h-12 bg-gray-100 border-0 rounded-lg md:rounded-xl text-sm md:text-base text-gray-900 focus:ring-2 focus:ring-red-400">
+                    <SelectTrigger className="h-12 md:h-12 bg-gray-50 md:bg-gray-100 border-0 rounded-xl text-[16px] md:text-base px-4">
                       <SelectValue placeholder="Select your city" />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
                       {cities.map((c) => (
-                        <SelectItem key={c} value={c} className="text-sm md:text-base rounded-lg">
-                          {c}
-                        </SelectItem>
+                        <SelectItem key={c} value={c} className="text-[16px] md:text-base rounded-lg">{c}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
 
-                <div className="space-y-1.5 md:space-y-3 pt-0.5 md:pt-2">
-                  <Label className="text-xs text-gray-500 font-normal">Causes I care about</Label>
-                  <div className="flex flex-wrap gap-1 md:gap-2">
-                    {interests.map((interest) => {
-                      const isSelected = selectedInterests.includes(interest)
-                      return (
-                        <button
-                          key={interest}
-                          type="button"
-                          onClick={() => toggleInterest(interest)}
-                          className={cn(
-                            "px-2 md:px-4 py-0.5 md:py-2 rounded-full text-xs md:text-base font-medium transition-all duration-200",
-                            isSelected
-                              ? "bg-gradient-to-r from-red-400 to-red-500 text-white shadow-md shadow-red-400/25"
-                              : "bg-transparent border border-gray-300 text-gray-500 hover:border-red-400 hover:text-red-400",
-                          )}
-                        >
-                          {interest}
-                        </button>
-                      )
-                    })}
+                <div className="space-y-3">
+                  <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-wider ml-1">Causes I care about</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {interests.map((interest) => (
+                      <button
+                        key={interest}
+                        type="button"
+                        onClick={() => toggleInterest(interest)}
+                        className={cn(
+                          "px-4 py-2 rounded-full text-[13px] md:text-sm font-bold transition-all",
+                          selectedInterests.includes(interest) ? "bg-black text-white shadow-md" : "bg-gray-50 md:bg-transparent border border-gray-200 text-gray-500"
+                        )}
+                      >
+                        {interest}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
-                {/* Terms Checkbox */}
-                <div className="flex items-start gap-2 md:gap-3 pt-0.5 md:pt-2">
+                <div className="flex items-start gap-3 pt-2">
                   <Checkbox
                     id="terms"
                     checked={agreedToTerms}
                     onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
-                    className="mt-0.5 rounded border-gray-300 data-[state=checked]:bg-red-400 data-[state=checked]:border-red-400 w-3.5 h-3.5 md:w-4.5 md:h-4.5"
+                    className="mt-1 rounded border-gray-300 data-[state=checked]:bg-black data-[state=checked]:border-black w-5 h-5"
                   />
-                  <Label
-                    htmlFor="terms"
-                    className="text-xs md:text-sm text-gray-500 leading-relaxed cursor-pointer"
-                  >
-                    I agree to the{" "}
-                    <a href="#" className="text-red-400 hover:underline">
-                      Terms & Liability Waiver
-                    </a>
+                  <Label htmlFor="terms" className="text-[13px] md:text-sm text-gray-500 leading-relaxed cursor-pointer">
+                    I agree to the <a href="#" className="text-black font-bold hover:underline">Terms & Liability Waiver</a>
                   </Label>
                 </div>
 
-                <Button
-                  type="submit"
-                  disabled={!agreedToTerms}
-                  className="w-full h-9 md:h-12 bg-gradient-to-r from-red-400 to-red-500 hover:from-red-500 hover:to-red-600 text-white text-sm md:text-base font-medium rounded-full mt-2 md:mt-4 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-red-400/25"
-                >
+                <Button type="submit" disabled={!agreedToTerms} className="w-full h-12 md:h-14 bg-black text-white font-bold rounded-xl mt-4 active:scale-[0.98] transition-all">
                   Create Account
                 </Button>
               </form>
 
-              {/* Social logins */}
-              <div className="mt-4 md:mt-8">
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-200"></div>
-                  </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="bg-white/80 px-3 md:px-4 text-gray-500 text-xs md:text-sm">
-                      Or continue with
-                    </span>
-                  </div>
+              <div className="mt-8">
+                <div className="relative flex justify-center text-sm mb-6">
+                  <span className="bg-white px-4 text-[#86868b] text-[11px] font-bold uppercase tracking-wider">Or continue with</span>
+                  <div className="absolute inset-0 flex items-center -z-10"><div className="w-full border-t border-gray-100"></div></div>
                 </div>
 
-                <div className="flex justify-center gap-2 md:gap-4 mt-3 md:mt-6">
-                  <button
-                    type="button"
-                    className="h-8 md:h-11 px-3 md:px-5 rounded-full bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md flex items-center justify-center gap-1.5 md:gap-2 transition-all"
-                  >
-                    <Image
-                      src="/google.jpg"
-                      alt="Google"
-                      width={18}
-                      height={18}
-                      className="object-contain"
-                    />
-                    <span className="text-xs md:text-sm text-gray-900 font-medium">Google</span>
+                <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
+                  <button className="h-12 w-full rounded-xl bg-white border border-[#d2d2d7] flex items-center justify-center gap-3 active:scale-[0.98] transition-all">
+                    <Image src="/google.jpg" alt="Google" width={20} height={20} className="object-contain" />
+                    <span className="text-[15px] text-[#1d1d1f] font-bold">Google</span>
                   </button>
-                  <button
-                    type="button"
-                    className="h-8 md:h-11 px-3 md:px-5 rounded-full bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md flex items-center justify-center gap-1.5 md:gap-2 transition-all"
-                  >
-                    <svg
-                      className="w-3.5 h-3.5 md:w-4.5 md:h-4.5 text-gray-900"
-                      fill="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
-                    </svg>
-                    <span className="text-xs md:text-sm text-gray-900 font-medium">Apple</span>
+                  <button className="h-12 w-full rounded-xl bg-white border border-[#d2d2d7] flex items-center justify-center gap-3 active:scale-[0.98] transition-all">
+                    <svg className="w-5 h-5 text-[#1d1d1f]" fill="currentColor" viewBox="0 0 24 24"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" /></svg>
+                    <span className="text-[15px] text-[#1d1d1f] font-bold">Apple</span>
                   </button>
                 </div>
               </div>
 
-              <p className="text-center mt-4 md:mt-8 text-xs md:text-sm text-gray-500">
-                Already a member?{" "}
-                <Link href="/login" className="text-red-400 hover:underline font-medium">
-                  Log in
-                </Link>
+              <p className="text-center mt-8 text-[14px] text-gray-500 pb-6">
+                Already a member? <Link href="/login" className="text-black font-bold hover:underline">Log in</Link>
               </p>
             </div>
           </div>
@@ -308,94 +186,53 @@ export function HeroSection() {
     )
   }
 
-  // Organisation Sign-up (Full Wizard)
   if (selectedType === "organisation") {
     return <OrgSignupWizard onBack={() => setSelectedType(null)} />
   }
 
-  // Default: User Type Selection
+  // DEFAULT VIEW
   return (
-    <section
-      id="hero"
-      className="min-h-screen bg-gradient-to-b from-orange-50 via-white to-green-50 flex flex-col items-center justify-center px-4 md:px-6 py-8 md:py-20 relative overflow-x-hidden"
-    >
-      <div className="absolute top-16 left-4 md:top-24 md:left-24 w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-white shadow-lg flex items-center justify-center z-10">
-        <Heart className="w-5 h-5 md:w-7 md:h-7 text-red-400" />
-      </div>
-      <div className="absolute top-24 right-4 md:top-32 md:right-28 w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-white shadow-lg flex items-center justify-center z-10">
-        <Sparkles className="w-5 h-5 md:w-7 md:h-7 text-amber-500" />
-      </div>
-      <div className="hidden md:flex absolute bottom-32 left-36 w-14 h-14 rounded-2xl bg-white shadow-lg items-center justify-center z-10">
-        <Users className="w-7 h-7 text-blue-500" />
-      </div>
-      <div className="hidden md:flex absolute bottom-40 right-32 w-14 h-14 rounded-2xl bg-white shadow-lg items-center justify-center z-10">
-        <Star className="w-7 h-7 text-emerald-500" />
-      </div>
-
-      {/* ✅ UPDATED: Logo 2 with NO query string */}
+    <section id="hero" className="min-h-screen bg-white md:bg-gradient-to-b md:from-orange-50 md:via-white md:to-green-50 flex flex-col items-center justify-center px-4 md:px-6 py-12 md:py-20 relative overflow-x-hidden">
+      
       <div className="mb-6 md:mb-8 animate-in fade-in zoom-in duration-500">
-        <Image
-          src="/logoblack.png"
-          alt="Kindly Icon"
-          width={60}
-          height={60}
-          className="w-12 h-12 md:w-20 md:h-20"
-          priority
-        />
+        <Image src="/logoblack.png" alt="Kindly Icon" width={80} height={80} className="w-16 h-16 md:w-20 md:h-20" priority />
       </div>
 
-      <h1 className="text-3xl md:text-6xl font-semibold text-gray-900 tracking-tight text-center leading-tight">
+      <h1 className="text-[40px] md:text-6xl font-bold text-gray-900 tracking-tight text-center leading-[1.1]">
         Make a difference.
         <br />
-        <span className="bg-gradient-to-r from-red-400 to-red-500 bg-clip-text text-transparent">Start today.</span>
+        <span className="text-red-400">Start today.</span>
       </h1>
 
-      <p className="text-sm md:text-xl text-gray-500 text-center mt-3 md:mt-6 mb-6 md:mb-12 max-w-sm md:max-w-2xl">
+      <p className="text-base md:text-xl text-gray-500 text-center mt-4 md:mt-6 mb-10 md:mb-12 max-w-sm md:max-w-2xl font-medium">
         Join a growing community of volunteers making a real impact.
       </p>
 
-      {/* User Type Cards */}
-      <div className="grid grid-cols-2 gap-3 md:gap-6 w-full max-w-lg md:max-w-4xl">
-        {/* Volunteer Card */}
+      {/* Grid: 1 column on mobile for full-width cards, 2 columns on desktop */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 w-full max-w-lg md:max-w-4xl">
         <button
           onClick={() => setSelectedType("volunteer")}
-          className="group relative bg-white rounded-xl md:rounded-3xl p-4 md:p-8 shadow-lg hover:shadow-2xl hover:shadow-red-400/20 transition-all duration-300 text-left border border-transparent hover:border-red-400/20"
+          className="group bg-white rounded-2xl md:rounded-3xl p-6 md:p-8 shadow-sm md:shadow-lg border border-gray-100 hover:border-red-400/20 active:scale-[0.98] transition-all text-left"
         >
-          <div className="w-10 h-10 md:w-14 md:h-14 rounded-lg md:rounded-2xl bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center mb-3 md:mb-6 group-hover:scale-110 transition-transform">
-            <Heart className="w-5 h-5 md:w-7 md:h-7 text-red-400" />
-          </div>
-          <h3 className="text-sm md:text-xl font-semibold text-gray-900 mb-1 md:mb-2">I'm a Volunteer</h3>
-          <p className="text-xs md:text-base text-gray-500 leading-relaxed line-clamp-2">
-            Find meaningful opportunities to give back.
-          </p>
-          <div className="flex items-center gap-1 mt-2 md:mt-4 text-red-400 text-xs md:text-base font-medium">
-            Get started <ChevronRight className="w-3 h-3 md:w-4 md:h-4" />
-          </div>
+          <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl bg-red-50 flex items-center justify-center mb-4 md:mb-6"><Heart className="w-6 h-6 md:w-7 md:h-7 text-red-400" /></div>
+          <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-1">I'm a Volunteer</h3>
+          <p className="text-sm md:text-base text-gray-500 leading-snug">Find meaningful opportunities to give back.</p>
+          <div className="flex items-center gap-1 mt-4 text-red-400 font-bold">Get started <ChevronRight className="w-4 h-4" /></div>
         </button>
 
-        {/* Organisation Card */}
         <button
           onClick={() => setSelectedType("organisation")}
-          className="group relative bg-white rounded-xl md:rounded-3xl p-4 md:p-8 shadow-lg hover:shadow-2xl hover:shadow-emerald-500/20 transition-all duration-300 text-left border border-transparent hover:border-emerald-500/20"
+          className="group bg-white rounded-2xl md:rounded-3xl p-6 md:p-8 shadow-sm md:shadow-lg border border-gray-100 hover:border-emerald-400/20 active:scale-[0.98] transition-all text-left"
         >
-          <div className="w-10 h-10 md:w-14 md:h-14 rounded-lg md:rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100 flex items-center justify-center mb-3 md:mb-6 group-hover:scale-110 transition-transform">
-            <Building2 className="w-5 h-5 md:w-7 md:h-7 text-emerald-500" />
-          </div>
-          <h3 className="text-sm md:text-xl font-semibold text-gray-900 mb-1 md:mb-2">I'm an Organisation</h3>
-          <p className="text-xs md:text-base text-gray-500 leading-relaxed line-clamp-2">
-            Connect with passionate volunteers.
-          </p>
-          <div className="flex items-center gap-1 mt-2 md:mt-4 text-emerald-500 text-xs md:text-base font-medium">
-            Get started <ChevronRight className="w-3 h-3 md:w-4 md:h-4" />
-          </div>
+          <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl bg-emerald-50 flex items-center justify-center mb-4 md:mb-6"><Building2 className="w-6 h-6 md:w-7 md:h-7 text-emerald-500" /></div>
+          <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-1">I'm an Organisation</h3>
+          <p className="text-sm md:text-base text-gray-500 leading-snug">Connect with passionate volunteers.</p>
+          <div className="flex items-center gap-1 mt-2 md:mt-4 text-emerald-500 font-bold">Get started <ChevronRight className="w-4 h-4" /></div>
         </button>
       </div>
 
-      <p className="text-center mt-6 md:mt-10 text-xs md:text-base text-gray-500">
-        Already have an account?{" "}
-        <Link href="/login" className="text-red-400 hover:underline font-medium">
-          Log in
-        </Link>
+      <p className="mt-10 text-[14px] md:text-base text-gray-500 font-bold">
+        Already have an account? <Link href="/login" className="text-red-400 hover:underline">Log in</Link>
       </p>
     </section>
   )
