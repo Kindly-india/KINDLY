@@ -45,8 +45,10 @@ export const viewport: Viewport = {
   themeColor: "#ffffff",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,     // <-- Stops iOS from zooming in on inputs
-  userScalable: false, // <-- Stops pinch-to-zoom completely
+  maximumScale: 1,
+  userScalable: false,
+  // This ensures the viewport doesn't shrink weirdly in Chrome
+  viewportFit: "cover", 
 }
 
 export default function RootLayout({
@@ -56,10 +58,17 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={inter.variable}>
-      <body className="font-sans antialiased">
+      {/* Change: Add 'flex flex-col min-h-screen' to the body. 
+         This forces the body to at least be the size of the phone screen, 
+         which helps the browser understand that there is content to scroll through.
+      */}
+      <body className="font-sans antialiased flex flex-col min-h-screen">
         <TopNav />
-        {children}
-        <MobileNav /> {/* <-- ADD THIS HERE */}
+        {/* Wrap children in a div that grows to fill the space */}
+        <main className="flex-1 w-full">
+          {children}
+        </main>
+        <MobileNav />
         <Analytics />
       </body>
     </html>
