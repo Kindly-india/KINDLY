@@ -125,13 +125,13 @@ export function ContactSection() {
         <div className="pt-4 md:pt-8 flex flex-col md:flex-row items-center justify-between gap-2 md:gap-4">
           <p className="text-[9px] md:text-xs text-[#86868b]">Copyright © 2025 Kindly. All rights reserved.</p>
           <div className="flex items-center gap-3 md:gap-6">
-            <a href="#" className="text-[9px] md:text-xs text-[#86868b] hover:text-white transition-colors">
+            <a href="/legal/privacy" className="text-[9px] md:text-xs text-[#86868b] hover:text-white transition-colors">
               Privacy Policy
             </a>
-            <a href="#" className="text-[9px] md:text-xs text-[#86868b] hover:text-white transition-colors">
+            <a href="/legal/terms" className="text-[9px] md:text-xs text-[#86868b] hover:text-white transition-colors">
               Terms of Use
             </a>
-            <a href="#" className="text-[9px] md:text-xs text-[#86868b] hover:text-white transition-colors">
+            <a href="/legal/cookies" className="text-[9px] md:text-xs text-[#86868b] hover:text-white transition-colors">
               Cookie Policy
             </a>
           </div>

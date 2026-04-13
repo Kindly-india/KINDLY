@@ -52,8 +52,8 @@ export async function GET() {
   // Try multiple queries so we always get enough results
   const queries = [
     "NGO volunteering India 2026",
-    "social impact charity India",
-    "volunteer drive India NGO",
+    "Maharashtra social Organisations",
+    "India environment news",
   ]
 
   const allStories: any[] = []
