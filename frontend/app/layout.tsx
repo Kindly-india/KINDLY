@@ -58,16 +58,18 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={inter.variable}>
-      {/* Change: Add 'flex flex-col min-h-screen' to the body. 
-         This forces the body to at least be the size of the phone screen, 
-         which helps the browser understand that there is content to scroll through.
-      */}
       <body className="font-sans antialiased flex flex-col min-h-screen">
         <TopNav />
-        {/* Wrap children in a div that grows to fill the space */}
-        <main className="flex-1 w-full">
+        
+        {/* FIX: Added 'pb-24' (padding-bottom). 
+          This ensures that on mobile, the content ends 96px before the actual bottom, 
+          leaving exactly enough room for the MobileNav to sit without covering anything.
+          'md:pb-0' removes this padding on desktop where the bottom nav isn't visible.
+        */}
+        <main className="flex-1 w-full pb-14 md:pb-0">
           {children}
         </main>
+
         <MobileNav />
         <Analytics />
       </body>
