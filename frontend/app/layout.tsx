@@ -54,7 +54,7 @@ export default function RootLayout({
         <NavbarManager />
         
         {/* pb-24 ensures space for the bottom navbars on mobile */}
-        <main className="flex-1 w-full pb-2 md:pb-0">
+        <main className="flex-1 w-full pb-20 md:pb-0">
           {children}
         </main>
 
