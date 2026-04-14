@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, Sparkles, Globe, User, BarChart3 } from "lucide-react"
+import { Home, Sparkles, Globe, User, History } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState, useEffect } from "react"
 import { api } from "@/lib/api"
@@ -37,14 +37,14 @@ export function VolunteerMobileNav() {
           <Sparkles className={cn("w-6 h-6 transition-colors", isActive("/events") ? "text-[#0066cc]" : "text-gray-400")} />
           <span className={cn("text-[10px] font-medium", isActive("/events") ? "text-[#0066cc]" : "text-gray-400")}>Discover</span>
         </Link>
-        {/* NEW IMPACT TAB */}
-        <Link href="/volunteer-impact" className="flex flex-col items-center justify-center w-full h-full space-y-1 prevent-select">
-          <BarChart3 className={cn("w-6 h-6 transition-colors", isActive("/volunteer-impact") ? "text-[#0066cc]" : "text-gray-400")} />
-          <span className={cn("text-[10px] font-medium", isActive("/volunteer-impact") ? "text-[#0066cc]" : "text-gray-400")}>Impact</span>
-        </Link>
         <Link href="/social" className="flex flex-col items-center justify-center w-full h-full space-y-1 prevent-select">
           <Globe className={cn("w-6 h-6 transition-colors", isActive("/social") ? "text-[#0066cc]" : "text-gray-400")} />
           <span className={cn("text-[10px] font-medium", isActive("/social") ? "text-[#0066cc]" : "text-gray-400")}>Social</span>
+        </Link>
+        {/* 3. History (Replaced Impact) */}
+        <Link href="/history" className="flex flex-col items-center justify-center w-full h-full space-y-1 prevent-select">
+          <History className={cn("w-6 h-6 transition-colors", isActive("/history") ? "text-[#0066cc]" : "text-gray-400")} />
+          <span className={cn("text-[10px] font-medium", isActive("/history") ? "text-[#0066cc]" : "text-gray-400")}>History</span>
         </Link>
         <Link href={profileLink} className="flex flex-col items-center justify-center w-full h-full space-y-1 prevent-select">
           <User className={cn("w-6 h-6 transition-colors", pathname.startsWith('/volunteers/') ? "text-[#0066cc]" : "text-gray-400")} />
