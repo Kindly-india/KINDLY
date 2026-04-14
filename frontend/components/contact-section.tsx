@@ -2,8 +2,24 @@
 
 import { Mail, Phone, MapPin, ChevronRight, Heart } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { useRouter } from "next/navigation"
 
 export function ContactSection() {
+  const router = useRouter()
+
+  // Smooth scroll handler
+  const handleSignUpClick = (e: React.MouseEvent) => {
+    e.preventDefault()
+    if (window.location.pathname === '/' || window.location.pathname === '') {
+      const heroSection = document.querySelector('#hero') || document.querySelector('main')
+      if (heroSection) {
+        heroSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+    } else {
+      router.push('/#hero')
+    }
+  }
+
   return (
     // Increased mobile padding (py-16) so it doesn't feel like an afterthought
     <section id="contact" className="bg-[#1d1d1f] py-16 md:py-16">
@@ -26,13 +42,11 @@ export function ContactSection() {
           </p>
           {/* Button: h-12 for a better mobile tap target */}
           <Button
-            asChild
+            onClick={handleSignUpClick}
             className="h-12 md:h-11 px-8 md:px-6 bg-gradient-to-r from-[#ff6b6b] to-[#f59e0b] hover:from-[#ff5252] hover:to-[#e68a00] text-white text-[15px] md:text-[15px] font-bold rounded-full border-0 active:scale-95 transition-all"
           >
-            <a href="#hero">
-              Get started
-              <ChevronRight className="w-4 h-4 md:w-4 md:h-4 ml-1" />
-            </a>
+            Get started
+            <ChevronRight className="w-4 h-4 md:w-4 md:h-4 ml-1" />
           </Button>
         </div>
 

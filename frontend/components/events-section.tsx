@@ -40,6 +40,7 @@ export function EventsSection() {
     return `${hour % 12 || 12}:${m} ${ampm}`
   }
 
+  // This handles the smooth scroll back to the hero section
   const handleSignUpClick = (e: React.MouseEvent) => {
     e.preventDefault()
     if (window.location.pathname === '/' || window.location.pathname === '') {
@@ -67,15 +68,17 @@ export function EventsSection() {
               <span> opportunities.</span>
             </h2>
           </div>
-          <Link href="#hero" className="hidden md:block">
+          {/* Desktop View All Link */}
+          <div className="hidden md:block">
             <Button
+              onClick={handleSignUpClick}
               variant="outline"
               className="inline-flex items-center text-purple-600 text-sm hover:underline bg-transparent border-0 hover:bg-transparent p-0"
             >
               view all events
               <ChevronRight className="w-4 h-4 ml-0.5" />
             </Button>
-          </Link>
+          </div>
         </div>
 
         {loading ? (
@@ -157,15 +160,14 @@ export function EventsSection() {
 
         {/* Mobile View All Link: Styled as a proper footer button for mobile */}
         <div className="md:hidden mt-8 text-center">
-          <Link href="/events">
-            <Button
-              variant="outline"
-              className="inline-flex items-center text-purple-600 text-sm font-bold hover:underline bg-white border border-purple-100 w-full h-12 rounded-xl shadow-sm"
-            >
-              View all events
-              <ChevronRight className="w-4 h-4 ml-1" />
-            </Button>
-          </Link>
+          <Button
+            onClick={handleSignUpClick}
+            variant="outline"
+            className="inline-flex items-center text-purple-600 text-sm font-bold hover:underline bg-white border border-purple-100 w-full h-12 rounded-xl shadow-sm"
+          >
+            View all events
+            <ChevronRight className="w-4 h-4 ml-1" />
+          </Button>
         </div>
       </div>
     </section>
