@@ -7,8 +7,6 @@ import {
   MapPin,
   Users,
   Sparkles,
-  Menu,
-  X,
   Heart,
   ChevronRight,
   ChevronLeft,
@@ -21,14 +19,13 @@ import {
   Building2,
   AlertTriangle,
   Loader2,
-  BarChart3 // ✅ Added Icon for Analytics
+  BarChart3
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { api } from "@/lib/api"
 import Image from "next/image"
 
 export function OrgHomePage() {
-  const [menuOpen, setMenuOpen] = useState(false)
   const eventsRef = useRef<HTMLDivElement>(null)
 
   // --- Real-Time Data State ---
@@ -188,7 +185,8 @@ export function OrgHomePage() {
 
   return (
     <div className="min-h-screen bg-white overflow-x-hidden">
-      {/* Sticky Top Navbar */}
+      
+      {/* RESTORED: Sticky Top Navbar (with mobile 3-lines removed) */}
       <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-[#f5f5f7]">
         <div className="max-w-300 mx-auto px-4 md:px-8 h-12 md:h-14 flex items-center justify-between">
 
@@ -201,6 +199,7 @@ export function OrgHomePage() {
             priority
           />
 
+          {/* Desktop Links - Preserved */}
           <div className="hidden md:flex gap-4">
             <Link href="/org-events" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors">
               My Events
@@ -208,12 +207,12 @@ export function OrgHomePage() {
             <Link href="/social" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors">
               Social
             </Link>
-            {/* ✅ ADDED ANALYTICS LINK DESKTOP */}
             <Link href="/org-analytics" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors">
               Analytics
             </Link>
           </div>
 
+          {/* Desktop Profile Icon - Preserved */}
           <Link href={`/organizations/${profile?.id}`} className="hidden md:block">
             <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-[#f5f5f7] hover:ring-[#0066cc] transition-all bg-gray-100 flex items-center justify-center text-[#0066cc] font-bold">
               {profile?.logo_url ? (
@@ -224,47 +223,12 @@ export function OrgHomePage() {
             </div>
           </Link>
 
-          <div className="relative md:hidden">
-            <button onClick={() => setMenuOpen(!menuOpen)} className="w-9 h-9 rounded-full bg-[#f5f5f7] flex items-center justify-center hover:bg-[#e5e5e7] transition-colors">
-              {menuOpen ? <X className="w-5 h-5 text-[#1d1d1f]" /> : <Menu className="w-5 h-5 text-[#1d1d1f]" />}
-            </button>
-            {menuOpen && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
-                <div className="absolute right-0 top-12 z-50 w-48 bg-white rounded-xl shadow-xl border border-[#e5e5e7] overflow-hidden">
-                  <Link href={`/organizations/${profile?.id}`} onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-[#f5f5f7] transition-colors border-b border-[#f5f5f7]">
-                    <div className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-[#f5f5f7] bg-gray-100 flex items-center justify-center">
-                      <span className="text-xs font-bold">{profile?.name?.charAt(0)}</span>
-                    </div>
-                    <span className="text-[13px] font-medium text-[#1d1d1f]">View Profile</span>
-                  </Link>
-                  <Link href="/org-events" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-[#f5f5f7] transition-colors border-b border-[#f5f5f7]">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#e0f2fe] to-[#bae6fd] flex items-center justify-center">
-                      <Calendar className="w-4 h-4 text-[#0284c7]" />
-                    </div>
-                    <span className="text-[13px] font-medium text-[#1d1d1f]">My Events</span>
-                  </Link>
-                  <Link href="/org-volunteers" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-[#f5f5f7] transition-colors border-b border-[#f5f5f7]">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#e8f5e9] to-[#c8e6c9] flex items-center justify-center">
-                      <Users className="w-4 h-4 text-[#2e7d32]" />
-                    </div>
-                    <span className="text-[13px] font-medium text-[#1d1d1f]">Volunteers</span>
-                  </Link>
-                  {/* ✅ ADDED ANALYTICS LINK MOBILE */}
-                  <Link href="/org-analytics" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-[#f5f5f7] transition-colors">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#f3e8ff] to-[#d8b4fe] flex items-center justify-center">
-                      <BarChart3 className="w-4 h-4 text-[#9333ea]" />
-                    </div>
-                    <span className="text-[13px] font-medium text-[#1d1d1f]">Analytics</span>
-                  </Link>
-                </div>
-              </>
-            )}
-          </div>
+          {/* The <div className="relative md:hidden"> that contained the 3 lines menu was surgically removed here. */}
+
         </div>
       </nav>
 
-      {/* Hero Section (Unchanged) */}
+      {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-[#f0f7ff] via-[#f5faff] to-[#f0fdf4] py-8 md:py-16 overflow-hidden">
         <div className="absolute top-4 left-4 md:top-8 md:left-20 w-8 h-8 md:w-12 md:h-12 bg-white rounded-xl shadow-lg flex items-center justify-center">
           <Building2 className="w-4 h-4 md:w-5 md:h-5 text-[#0066cc]" />

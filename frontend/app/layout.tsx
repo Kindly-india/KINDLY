@@ -3,8 +3,7 @@ import type { Metadata, Viewport } from "next"
 import { Inter } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
-import { MobileNav } from "@/components/mobile-nav"
-import { TopNav } from "@/components/top-nav"
+import { NavbarManager } from "@/components/navbar-manager"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -24,18 +23,9 @@ export const metadata: Metadata = {
   authors: [{ name: "KINDLY Team" }],
   icons: {
     icon: [
-      {
-        url: "/icon-light-32x32.png",
-        media: "(prefers-color-scheme: light)",
-      },
-      {
-        url: "/icon-dark-32x32.png",
-        media: "(prefers-color-scheme: dark)",
-      },
-      {
-        url: "/icon.svg",
-        type: "image/svg+xml",
-      },
+      { url: "/icon-light-32x32.png", media: "(prefers-color-scheme: light)" },
+      { url: "/icon-dark-32x32.png", media: "(prefers-color-scheme: dark)" },
+      { url: "/icon.svg", type: "image/svg+xml" },
     ],
     apple: "/apple-icon.png",
   },
@@ -47,7 +37,6 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  // This ensures the viewport doesn't shrink weirdly in Chrome
   viewportFit: "cover", 
 }
 
@@ -59,18 +48,15 @@ export default function RootLayout({
   return (
     <html lang="en" className={inter.variable}>
       <body className="font-sans antialiased flex flex-col min-h-screen">
-        <TopNav />
         
-        {/* FIX: Added 'pb-24' (padding-bottom). 
-          This ensures that on mobile, the content ends 96px before the actual bottom, 
-          leaving exactly enough room for the MobileNav to sit without covering anything.
-          'md:pb-0' removes this padding on desktop where the bottom nav isn't visible.
-        */}
-        <main className="flex-1 w-full pb-14 md:pb-0">
+        {/* The Traffic Cop: Decides which navbars to show */}
+        <NavbarManager />
+        
+        {/* pb-24 ensures space for the bottom navbars on mobile */}
+        <main className="flex-1 w-full pb-24 md:pb-0">
           {children}
         </main>
 
-        <MobileNav />
         <Analytics />
       </body>
     </html>

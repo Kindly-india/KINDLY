@@ -14,9 +14,6 @@ import {
   Eye,
   Edit,
   Trash2,
-  Menu, // Added for Navbar
-  X,    // Added for Navbar
-  BarChart3 // Added for Navbar
 } from "lucide-react"
 import { api } from "@/lib/api"
 import Image from "next/image"
@@ -45,7 +42,6 @@ export function OrgEventManagement() {
   const pathname = usePathname()
 
   // --- Navbar State ---
-  const [menuOpen, setMenuOpen] = useState(false)
   const [profile, setProfile] = useState<any>(null)
 
   // --- Page State ---
@@ -185,56 +181,8 @@ export function OrgEventManagement() {
             </div>
           </Link>
 
-          {/* Mobile Menu Button */}
-          <div className="relative md:hidden">
-            <button
-              onClick={() => setMenuOpen(!menuOpen)}
-              className="w-9 h-9 rounded-full bg-[#f5f5f7] flex items-center justify-center hover:bg-[#e5e5e7] transition-colors"
-            >
-              {menuOpen ? <X className="w-5 h-5 text-[#1d1d1f]" /> : <Menu className="w-5 h-5 text-[#1d1d1f]" />}
-            </button>
-
-            {/* Mobile Dropdown */}
-            {menuOpen && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
-                <div className="absolute right-0 top-12 z-50 w-56 bg-white rounded-xl shadow-xl border border-[#e5e5e7] overflow-hidden">
-                  <Link href={`/organizations/${profile?.id}`} onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-[#f5f5f7] transition-colors border-b border-[#f5f5f7]">
-                    <div className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-[#f5f5f7] bg-gray-100 flex items-center justify-center">
-                      {profile?.logo_url ? (
-                        <img src={profile.logo_url} alt="Profile" className="w-full h-full object-cover" />
-                      ) : (
-                        <span className="text-xs font-bold">{profile?.name?.charAt(0) || "O"}</span>
-                      )}
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-[13px] font-medium text-[#1d1d1f]">View Profile</span>
-                      <span className="text-[10px] text-gray-500 truncate max-w-[120px]">{profile?.name}</span>
-                    </div>
-                  </Link>
-
-                  <Link href="/org-events" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-[#f5f5f7] transition-colors border-b border-[#f5f5f7]">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#e0f2fe] to-[#bae6fd] flex items-center justify-center">
-                      <Calendar className="w-4 h-4 text-[#0284c7]" />
-                    </div>
-                    <span className="text-[13px] font-medium text-[#1d1d1f]">My Events</span>
-                  </Link>
-                  <Link href="/org-volunteers" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-[#f5f5f7] transition-colors border-b border-[#f5f5f7]">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#e8f5e9] to-[#c8e6c9] flex items-center justify-center">
-                      <Users className="w-4 h-4 text-[#2e7d32]" />
-                    </div>
-                    <span className="text-[13px] font-medium text-[#1d1d1f]">Volunteers</span>
-                  </Link>
-                  <Link href="/org-analytics" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-[#f5f5f7] transition-colors">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#f3e8ff] to-[#d8b4fe] flex items-center justify-center">
-                      <BarChart3 className="w-4 h-4 text-[#9333ea]" />
-                    </div>
-                    <span className="text-[13px] font-medium text-[#1d1d1f]">Analytics</span>
-                  </Link>
-                </div>
-              </>
-            )}
-          </div>
+          {/* The mobile 3-lines menu was surgically removed from here. Desktop UI remains completely untouched. */}
+          
         </div>
       </nav>
       {/* --- INTEGRATED NAVBAR END --- */}

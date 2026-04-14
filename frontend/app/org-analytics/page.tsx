@@ -3,12 +3,12 @@
 import { useEffect, useState } from "react"
 import { api } from "@/lib/api"
 import Link from "next/link"
-import { usePathname } from "next/navigation" // ✅ Added for active link detection
+import { usePathname } from "next/navigation" 
 import {
    Loader2, Users, Clock, CalendarCheck,
    DollarSign, ArrowUpRight, ArrowDownRight, Download,
    Award, Filter, ArrowLeft,
-   Menu, X, Calendar, BarChart3 // ✅ Added Navbar icons
+   Calendar, BarChart3 
 } from "lucide-react"
 import Image from "next/image"
 import {
@@ -22,8 +22,7 @@ export default function OrgAnalyticsPage() {
    const pathname = usePathname()
    const [loading, setLoading] = useState(true)
 
-   // --- Navbar State ---
-   const [menuOpen, setMenuOpen] = useState(false)
+   // --- Navbar State (Preserved for desktop profile icon) ---
    const [profile, setProfile] = useState<any>(null)
 
    // --- Analytics State ---
@@ -187,7 +186,7 @@ export default function OrgAnalyticsPage() {
       <div className="min-h-screen bg-gray-50 pb-20">
 
          {/* =========================================================
-          ORGANIZATION NAVBAR (Integrated)
+          ORGANIZATION NAVBAR (Integrated - Desktop Only)
          ========================================================= */}
          <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-[#f5f5f7]">
             <div className="max-w-[1400px] mx-auto px-4 md:px-8 h-12 md:h-14 flex items-center justify-between">
@@ -200,7 +199,7 @@ export default function OrgAnalyticsPage() {
                   priority
                />
 
-               {/* Desktop Links */}
+               {/* Desktop Links - Preserved */}
                <div className="hidden md:flex gap-6">
                   <Link href="/org-events" className={`text-[13px] md:text-[15px] transition-colors ${isActive('/org-events')}`}>
                      My Events
@@ -213,7 +212,7 @@ export default function OrgAnalyticsPage() {
                   </Link>
                </div>
 
-               {/* Desktop Profile Icon */}
+               {/* Desktop Profile Icon - Preserved */}
                <Link href={`/organizations/${profile?.id}`} className="hidden md:block">
                   <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-[#f5f5f7] hover:ring-[#0066cc] transition-all bg-gray-100 flex items-center justify-center text-[#0066cc] font-bold">
                      {displayImage ? (
@@ -224,56 +223,8 @@ export default function OrgAnalyticsPage() {
                   </div>
                </Link>
 
-               {/* Mobile Menu Button */}
-               <div className="relative md:hidden">
-                  <button
-                     onClick={() => setMenuOpen(!menuOpen)}
-                     className="w-9 h-9 rounded-full bg-[#f5f5f7] flex items-center justify-center hover:bg-[#e5e5e7] transition-colors"
-                  >
-                     {menuOpen ? <X className="w-5 h-5 text-[#1d1d1f]" /> : <Menu className="w-5 h-5 text-[#1d1d1f]" />}
-                  </button>
-
-                  {/* Mobile Dropdown */}
-                  {menuOpen && (
-                     <>
-                        <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
-                        <div className="absolute right-0 top-12 z-50 w-56 bg-white rounded-xl shadow-xl border border-[#e5e5e7] overflow-hidden">
-                           <Link href={`/organizations/${profile?.id}`} onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-[#f5f5f7] transition-colors border-b border-[#f5f5f7]">
-                              <div className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-[#f5f5f7] bg-gray-100 flex items-center justify-center">
-                                 {displayImage ? (
-                                    <img src={displayImage} alt="Profile" className="w-full h-full object-cover" />
-                                 ) : (
-                                    <span className="text-xs font-bold">{displayInitial}</span>
-                                 )}
-                              </div>
-                              <div className="flex flex-col">
-                                 <span className="text-[13px] font-medium text-[#1d1d1f]">View Profile</span>
-                                 <span className="text-[10px] text-gray-500 truncate max-w-[120px]">{displayName}</span>
-                              </div>
-                           </Link>
-
-                           <Link href="/org-events" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-[#f5f5f7] transition-colors border-b border-[#f5f5f7]">
-                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#e0f2fe] to-[#bae6fd] flex items-center justify-center">
-                                 <Calendar className="w-4 h-4 text-[#0284c7]" />
-                              </div>
-                              <span className="text-[13px] font-medium text-[#1d1d1f]">My Events</span>
-                           </Link>
-                           <Link href="/org-volunteers" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-[#f5f5f7] transition-colors border-b border-[#f5f5f7]">
-                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#e8f5e9] to-[#c8e6c9] flex items-center justify-center">
-                                 <Users className="w-4 h-4 text-[#2e7d32]" />
-                              </div>
-                              <span className="text-[13px] font-medium text-[#1d1d1f]">Volunteers</span>
-                           </Link>
-                           <Link href="/org-analytics" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-[#f5f5f7] transition-colors">
-                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#f3e8ff] to-[#d8b4fe] flex items-center justify-center">
-                                 <BarChart3 className="w-4 h-4 text-[#9333ea]" />
-                              </div>
-                              <span className="text-[13px] font-medium text-[#1d1d1f]">Analytics</span>
-                           </Link>
-                        </div>
-                     </>
-                  )}
-               </div>
+               {/* The mobile 3-lines menu was surgically removed from here. */}
+               
             </div>
          </nav>
 
