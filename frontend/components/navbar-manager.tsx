@@ -3,7 +3,9 @@
 import { usePathname } from "next/navigation"
 import { useState, useEffect } from "react"
 import { api } from "@/lib/api"
+
 import { TopNav } from "./top-nav"
+import { OrgTopNav } from "./org-top-nav"
 import { VolunteerMobileNav } from "./volunteer-mobile-nav"
 import { OrgMobileNav } from "./org-mobile-nav"
 
@@ -11,7 +13,7 @@ export function NavbarManager() {
   const pathname = usePathname()
   const [userType, setUserType] = useState<'volunteer' | 'org' | null>(null)
 
-  // 1. Ask the backend: "Who is this?"
+  // 1. Check who is logged in
   useEffect(() => {
     const fetchRole = async () => {
       try {
@@ -30,7 +32,7 @@ export function NavbarManager() {
 
   if (!pathname) return null
 
-  // 2. Hide Navbars entirely on Landing, Login, Signup, and Static Content
+  // 2. Hide ALL navbars on Landing, Login, Signup, etc.
   const isStaticOrAuth = 
     pathname === "/" || 
     pathname === "/login" || 
@@ -42,20 +44,17 @@ export function NavbarManager() {
 
   if (isStaticOrAuth) return null
 
-  // 3. Fallback logic: Match YOUR exact folder structure (/org-home, /org-events, etc.)
+  // 3. Determine if the user belongs to the Org portal
   const isOrgRoute = pathname.startsWith('/org-') || pathname.startsWith('/organizations')
-
-  // The ultimate decision: Show Org nav if API says they are an org, 
-  // OR if API hasn't loaded yet but the URL strongly suggests they are an org.
-  const showOrgNav = userType === 'org' || (userType === null && isOrgRoute)
+  const isOrgUser = userType === 'org' || (userType === null && isOrgRoute)
 
   return (
     <>
-      {/* Show TopNav ONLY for Volunteers */}
-      {!showOrgNav && <TopNav />}
+      {/* TOP NAV: OrgTopNav for Orgs, TopNav for Volunteers */}
+      {isOrgUser ? <OrgTopNav /> : <TopNav />}
 
-      {/* Switch Bottom Navs based on true identity */}
-      {showOrgNav ? <OrgMobileNav /> : <VolunteerMobileNav />}
+      {/* BOTTOM NAV: OrgMobileNav for Orgs, VolunteerMobileNav for Volunteers */}
+      {isOrgUser ? <OrgMobileNav /> : <VolunteerMobileNav />}
     </>
   )
 }

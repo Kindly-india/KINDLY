@@ -185,49 +185,7 @@ export default function OrgAnalyticsPage() {
    return (
       <div className="min-h-screen bg-gray-50 pb-20">
 
-         {/* =========================================================
-          ORGANIZATION NAVBAR (Integrated - Desktop Only)
-         ========================================================= */}
-         <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-[#f5f5f7]">
-            <div className="max-w-[1400px] mx-auto px-4 md:px-8 h-12 md:h-14 flex items-center justify-between">
-               <Image
-                  src="/logo.png"
-                  alt="Kindly"
-                  width={100}
-                  height={30}
-                  className="h-5 md:h-6 w-auto"
-                  priority
-               />
-
-               {/* Desktop Links - Preserved */}
-               <div className="hidden md:flex gap-6">
-                  <Link href="/org-events" className={`text-[13px] md:text-[15px] transition-colors ${isActive('/org-events')}`}>
-                     My Events
-                  </Link>
-                  <Link href="/social" className={`text-[13px] md:text-[15px] transition-colors ${isActive('/social')}`}>
-                     Social
-                  </Link>
-                  <Link href="/org-analytics" className={`text-[13px] md:text-[15px] transition-colors ${isActive('/org-analytics')}`}>
-                     Analytics
-                  </Link>
-               </div>
-
-               {/* Desktop Profile Icon - Preserved */}
-               <Link href={`/organizations/${profile?.id}`} className="hidden md:block">
-                  <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-[#f5f5f7] hover:ring-[#0066cc] transition-all bg-gray-100 flex items-center justify-center text-[#0066cc] font-bold">
-                     {displayImage ? (
-                        <img src={displayImage} alt={displayName} className="w-full h-full object-cover" />
-                     ) : (
-                        <span>{displayInitial}</span>
-                     )}
-                  </div>
-               </Link>
-
-               {/* The mobile 3-lines menu was surgically removed from here. */}
-               
-            </div>
-         </nav>
-
+         
          {/* =========================================================
           PAGE CONTENT
          ========================================================= */}

@@ -187,46 +187,7 @@ export function OrgHomePage() {
     <div className="min-h-screen bg-white overflow-x-hidden">
       
       {/* RESTORED: Sticky Top Navbar (with mobile 3-lines removed) */}
-      <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-[#f5f5f7]">
-        <div className="max-w-300 mx-auto px-4 md:px-8 h-12 md:h-14 flex items-center justify-between">
-
-          <Image
-            src="/logo.png"
-            alt="Kindly"
-            width={100}
-            height={30}
-            className="h-5 md:h-6 w-auto"
-            priority
-          />
-
-          {/* Desktop Links - Preserved */}
-          <div className="hidden md:flex gap-4">
-            <Link href="/org-events" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors">
-              My Events
-            </Link>
-            <Link href="/social" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors">
-              Social
-            </Link>
-            <Link href="/org-analytics" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors">
-              Analytics
-            </Link>
-          </div>
-
-          {/* Desktop Profile Icon - Preserved */}
-          <Link href={`/organizations/${profile?.id}`} className="hidden md:block">
-            <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-[#f5f5f7] hover:ring-[#0066cc] transition-all bg-gray-100 flex items-center justify-center text-[#0066cc] font-bold">
-              {profile?.logo_url ? (
-                <img src={profile.logo_url} alt={profile.name} className="w-full h-full object-cover" />
-              ) : (
-                <span>{profile?.name?.charAt(0) || "O"}</span>
-              )}
-            </div>
-          </Link>
-
-          {/* The <div className="relative md:hidden"> that contained the 3 lines menu was surgically removed here. */}
-
-        </div>
-      </nav>
+      
 
       {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-[#f0f7ff] via-[#f5faff] to-[#f0fdf4] py-8 md:py-16 overflow-hidden">

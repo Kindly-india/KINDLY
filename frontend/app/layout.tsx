@@ -5,6 +5,7 @@ import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 import { NavbarManager } from "@/components/navbar-manager"
 
+
 const inter = Inter({
   subsets: ["latin"],
   display: "swap",

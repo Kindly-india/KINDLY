@@ -18,7 +18,6 @@ export function OrgTopNav() {
     "/how-it-works",
     "/for-volunteers",
     "/for-organisations",
-    "/social" // <-- This guarantees it disappears for Orgs on the social page!
   ]
   
   const isStaticSection = 
