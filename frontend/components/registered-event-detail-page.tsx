@@ -21,12 +21,30 @@ import {
   Calendar as CalendarIcon,
   QrCode,
   X,
-  Camera
+  Camera,
+  Coffee, // Added for The Connect
+  ShieldCheck, // Added for verification
+  Sparkles, // Added for premium feel
+  Info,
+  AlertCircle,
+  Phone,
+  MessageSquare
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { api } from "@/lib/api"
+import { cn } from "@/lib/utils"
 
-// Define formats outside to prevent re-renders
+/**
+ * RegisteredEventDetailPage Component
+ * * This is the high-fidelity management view for a volunteer who has already
+ * joined an event. It prioritizes "Day-of" logistics:
+ * 1. The Connect (Social after-party details)
+ * 2. Point of Contact (Who to call on site)
+ * 3. QR Check-in (Self-service attendance)
+ * 4. Organizer Updates (Real-time broadcasts)
+ */
+
+// Define formats outside to prevent re-renders in the scanner
 const QR_FORMATS: any = ['qr_code']
 
 export default function RegisteredEventDetailPage() {
@@ -34,15 +52,21 @@ export default function RegisteredEventDetailPage() {
   const router = useRouter()
   const eventId = params?.id as string
 
+  // --- UI & DATA STATE ---
   const [loading, setLoading] = useState(true)
   const [event, setEvent] = useState<any>(null)
   const [broadcasts, setBroadcasts] = useState<any[]>([])
   const [isSaved, setIsSaved] = useState(false)
   const [showFullDescription, setShowFullDescription] = useState(false)
   
+  // --- SCANNER & CHECK-IN STATE ---
   const [showScanner, setShowScanner] = useState(false)
   const [checkingIn, setCheckingIn] = useState(false)
 
+  /**
+   * loadData
+   * Pulls the comprehensive event object and the list of broadcasts.
+   */
   useEffect(() => {
     const loadData = async () => {
       if (!eventId) return
@@ -64,17 +88,21 @@ export default function RegisteredEventDetailPage() {
     loadData()
   }, [eventId])
 
-  // --- Handlers ---
+  // --- HANDLERS ---
+
+  /**
+   * handleScan
+   * Processes the QR result, validates the event ID, fetches high-accuracy GPS,
+   * and verifies the volunteer's presence at the venue via the backend.
+   */
   const handleScan = useCallback(async (results: any[]) => {
-    // 1. Safety Checks
     if (!results || results.length === 0 || checkingIn) return;
     const rawText = results[0]?.rawValue;
     if (!rawText) return;
 
-    setCheckingIn(true) // Lock scanning
+    setCheckingIn(true); // Prevent concurrent check-in attempts
       
     try {
-      // 2. Parse Code
       let qrData;
       try {
           qrData = JSON.parse(rawText);
@@ -86,13 +114,13 @@ export default function RegisteredEventDetailPage() {
           throw new Error("This QR code is for a different event.");
       }
 
-      // 3. Get Location
-      if (!navigator.geolocation) throw new Error("Geolocation is required to verify you are at the venue.");
+      if (!navigator.geolocation) {
+          throw new Error("Geolocation is required to verify your arrival.");
+      }
       
       navigator.geolocation.getCurrentPosition(
           async (position) => {
               try {
-                  // 4. Send to Backend
                   await api.selfCheckIn({
                       eventId: eventId,
                       code: qrData.code,
@@ -105,11 +133,11 @@ export default function RegisteredEventDetailPage() {
                   window.location.reload(); 
               } catch (apiError: any) {
                   alert(apiError.message || "Check-in failed.");
-                  setTimeout(() => setCheckingIn(false), 3000); // Wait 3s before retry
+                  setTimeout(() => setCheckingIn(false), 3000);
               }
           },
           (geoError) => {
-              alert("Location access denied. We need your location to verify you are at the venue.");
+              alert("Location access denied. We need GPS to confirm you're at the venue.");
               setCheckingIn(false);
           },
           { enableHighAccuracy: true }
@@ -123,7 +151,7 @@ export default function RegisteredEventDetailPage() {
 
   const handleAddToCalendar = () => {
     if (!event) return
-    const title = encodeURIComponent(event.title)
+    const title = encodeURIComponent(`KINDLY: ${event.title}`)
     const details = encodeURIComponent(event.description || "")
     const location = encodeURIComponent(event.location || "")
     const startDate = new Date(`${event.event_date}T${event.start_time || '00:00'}`).toISOString().replace(/-|:|\.\d\d\d/g, "")
@@ -137,7 +165,7 @@ export default function RegisteredEventDetailPage() {
       try {
         await navigator.share({
           title: event.title,
-          text: `Join me at ${event.title}!`,
+          text: `I'm volunteering for ${event.title} in Nashik! Join me?`,
           url: window.location.href,
         })
       } catch (err) {
@@ -149,9 +177,16 @@ export default function RegisteredEventDetailPage() {
     }
   }
 
+  // --- FORMATTING HELPERS ---
+
   const formatDate = (dateStr: string) => {
     if (!dateStr) return ""
-    return new Date(dateStr).toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' })
+    return new Date(dateStr).toLocaleDateString('en-US', { 
+        weekday: 'short', 
+        day: 'numeric', 
+        month: 'short',
+        year: 'numeric'
+    })
   }
 
   const formatTime = (timeStr: string) => {
@@ -162,369 +197,440 @@ export default function RegisteredEventDetailPage() {
     return `${hour % 12 || 12}:${m} ${ampm}`
   }
 
+  // --- RENDER LOGIC ---
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-emerald-600 animate-spin" />
+      <div className="min-h-screen bg-[#F9F9F9] flex flex-col items-center justify-center">
+        <div className="text-center">
+            <Loader2 className="w-10 h-10 text-emerald-600 animate-spin mb-4 mx-auto" />
+            <p className="text-xs font-bold text-gray-400 tracking-widest uppercase">Securing Logistics...</p>
+        </div>
       </div>
     )
   }
 
-  if (!event) return <div>Event not found</div>
+  if (!event) {
+    return (
+        <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6">
+            <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
+            <h2 className="text-xl font-bold text-gray-900">Event Not Found</h2>
+            <Link href="/home" className="mt-4 text-emerald-600 font-medium hover:underline">Return to Dashboard</Link>
+        </div>
+    )
+  }
 
   const shortDescription = event.description?.slice(0, 150) + "..." || ""
 
   return (
-    <div className="min-h-screen bg-white pb-24 md:pb-8 relative">
+    <div className="min-h-screen bg-white pb-24 md:pb-12 relative overflow-x-hidden">
       
-      {/* --- SCANNER MODAL --- */}
+      {/* --- SCANNER OVERLAY MODAL --- */}
       {showScanner && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-md p-4">
           <div className="w-full max-w-sm relative">
             <button 
               onClick={() => { setShowScanner(false); setCheckingIn(false); }}
-              className="absolute -top-12 right-0 p-2 text-white hover:text-gray-300"
+              className="absolute -top-14 right-0 p-3 bg-white/10 rounded-full text-white hover:bg-white/20 transition-all"
             >
-              <X className="w-8 h-8" />
+              <X className="w-6 h-6" />
             </button>
             
-            <div className="bg-white rounded-2xl overflow-hidden shadow-2xl relative">
-                <div className="p-4 bg-emerald-600 text-white text-center">
-                    <h3 className="font-bold text-lg">Scan Event QR</h3>
-                    <p className="text-xs opacity-90">Find the QR code on the Organizer's screen</p>
+            <div className="bg-white rounded-[32px] overflow-hidden shadow-2xl relative border border-gray-100">
+                <div className="p-6 bg-[#064e3b] text-white text-center">
+                    <div className="w-12 h-12 bg-emerald-500/20 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                        <QrCode className="w-6 h-6 text-emerald-400" />
+                    </div>
+                    <h3 className="font-black text-xl tracking-tight">Arrival Check-In</h3>
+                    <p className="text-xs text-emerald-200 mt-1">Scan the code provided by the organizer</p>
                 </div>
                 
-                <div className="h-[300px] relative bg-black">
-                    {/* Scanner Component - Props Fixed */}
+                <div className="h-[320px] relative bg-black">
                     <Scanner
                         onScan={handleScan}
                         formats={QR_FORMATS}
                         styles={{
-                            container: { height: 300, width: '100%' },
+                            container: { height: 320, width: '100%' },
                             video: { objectFit: 'cover' }
                         }}
                     />
                     
-                    {/* Loading Overlay when checking in */}
                     {checkingIn && (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-20">
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-30">
                             <Loader2 className="w-12 h-12 text-emerald-500 animate-spin mb-4" />
-                            <p className="text-white text-sm">Verifying Location...</p>
+                            <p className="text-white text-sm font-bold tracking-tight">Verifying Location...</p>
                         </div>
                     )}
                     
-                    {/* Visual Frame */}
-                    <div className="absolute inset-0 border-[40px] border-black/50 pointer-events-none flex items-center justify-center z-10">
-                        <div className="w-48 h-48 border-2 border-emerald-500/50 rounded-lg animate-pulse relative">
-                            <div className="absolute top-0 left-0 w-4 h-4 border-t-4 border-l-4 border-emerald-500 -mt-1 -ml-1"></div>
-                            <div className="absolute top-0 right-0 w-4 h-4 border-t-4 border-r-4 border-emerald-500 -mt-1 -mr-1"></div>
-                            <div className="absolute bottom-0 left-0 w-4 h-4 border-b-4 border-l-4 border-emerald-500 -mb-1 -ml-1"></div>
-                            <div className="absolute bottom-0 right-0 w-4 h-4 border-b-4 border-r-4 border-emerald-500 -mb-1 -mr-1"></div>
+                    {/* UI Guide Frame */}
+                    <div className="absolute inset-0 border-[50px] border-black/40 pointer-events-none flex items-center justify-center z-10">
+                        <div className="w-52 h-52 border-2 border-emerald-500/50 rounded-3xl animate-pulse relative">
+                            <div className="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-emerald-500 -mt-1 -ml-1 rounded-tl-xl"></div>
+                            <div className="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 border-emerald-500 -mt-1 -mr-1 rounded-tr-xl"></div>
+                            <div className="absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 border-emerald-500 -mb-1 -ml-1 rounded-bl-xl"></div>
+                            <div className="absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 border-emerald-500 -mb-1 -mr-1 rounded-br-xl"></div>
                         </div>
                     </div>
                 </div>
 
-                <div className="p-4 text-center text-xs text-gray-500">
-                    Ensure your GPS is enabled. You must be within 200m of the venue.
+                <div className="p-6 bg-gray-50 text-center">
+                    <div className="flex items-center justify-center gap-2 text-xs font-bold text-emerald-700 uppercase tracking-widest">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        Geo-Lock Active (200m)
+                    </div>
                 </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Desktop Layout Container */}
-      <div className="md:flex md:max-w-6xl md:mx-auto md:gap-8 md:py-8 md:px-6">
-        {/* Left Content Column */}
+      {/* --- MAIN LAYOUT --- */}
+      <div className="md:flex md:max-w-6xl md:mx-auto md:gap-10 md:py-10 md:px-8">
+        
+        {/* LEFT CONTENT COLUMN */}
         <div className="md:flex-1">
-          {/* Hero Image */}
+          
+          {/* HERO IMAGE SECTION */}
           <div className="relative">
-            <div className="relative h-[280px] md:h-[400px] md:rounded-2xl md:overflow-hidden bg-gray-100">
+            <div className="relative h-72 md:h-110 md:rounded-[40px] md:overflow-hidden md:shadow-2xl md:border border-gray-100">
               <img
                 src={event.cover_image_url || "/placeholder.svg"} 
                 alt={event.title} 
                 className="w-full h-full object-cover"
               />
 
-              <div className="absolute top-4 left-4 right-4 flex justify-between items-center z-10">
+              {/* NAVIGATION OVERLAYS */}
+              <div className="absolute top-4 left-4 right-4 flex justify-between items-center z-20">
                 <Link href="/home">
-                  <button className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-white/80 backdrop-blur-md flex items-center justify-center shadow-lg hover:bg-white transition-colors">
-                    <ArrowLeft className="w-4 h-4 md:w-5 md:h-5 text-gray-800" />
+                  <button className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-white/90 backdrop-blur-xl flex items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition-all">
+                    <ArrowLeft className="w-5 h-5 text-gray-900" />
                   </button>
                 </Link>
 
                 <div className="flex gap-2">
-                  <button onClick={handleShare} className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-white/80 backdrop-blur-md flex items-center justify-center shadow-lg hover:bg-white transition-colors">
-                    <Share2 className="w-4 h-4 md:w-5 md:h-5 text-gray-800" />
+                  <button onClick={handleShare} className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-white/90 backdrop-blur-xl flex items-center justify-center shadow-xl hover:scale-105 transition-all">
+                    <Share2 className="w-5 h-5 text-gray-900" />
                   </button>
                   <button
                     onClick={() => setIsSaved(!isSaved)}
-                    className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-white/80 backdrop-blur-md flex items-center justify-center shadow-lg hover:bg-white transition-colors"
+                    className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-white/90 backdrop-blur-xl flex items-center justify-center shadow-xl hover:scale-105 transition-all"
                   >
                     <Heart
-                      className={`w-4 h-4 md:w-5 md:h-5 transition-colors ${isSaved ? "fill-red-500 text-red-500" : "text-gray-800"}`}
+                      className={`w-5 h-5 transition-colors ${isSaved ? "fill-red-500 text-red-500" : "text-gray-900"}`}
                     />
                   </button>
                 </div>
               </div>
 
-              <div className="absolute bottom-4 left-4 right-4 flex justify-center">
-                <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white rounded-full shadow-lg">
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span className="text-sm font-semibold">You're Registered!</span>
+              {/* CONFIRMATION BADGE */}
+              <div className="absolute bottom-6 left-0 right-0 flex justify-center">
+                <div className="flex items-center gap-2.5 px-6 py-3 bg-emerald-500 text-white rounded-full shadow-2xl border-2 border-white/20 backdrop-blur-sm animate-in fade-in slide-in-from-bottom-4 duration-700">
+                  <CheckCircle2 className="w-5 h-5" />
+                  <span className="text-sm font-black tracking-tight uppercase">Reservation Secured</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Title & Info */}
-          <div className="px-4 md:px-0 pt-5 pb-4">
-            <h1 className="text-xl md:text-2xl font-bold text-gray-900 leading-tight mb-3">{event.title}</h1>
-
-            <div className="flex items-center gap-2 mb-4">
-              <span className="px-2.5 py-1 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full capitalize">
-                {event.category}
-              </span>
-              {event.is_urgent && (
-                <span className="px-2.5 py-1 bg-red-100 text-red-600 text-xs font-medium rounded-full flex items-center gap-1">
-                  <Bell className="w-3 h-3" />
-                  Urgent
-                </span>
-              )}
+          {/* HEADER INFO */}
+          <div className="px-5 md:px-0 pt-8 pb-6 border-b border-gray-100 md:border-0">
+            <div className="flex flex-col gap-1 mb-2">
+                <div className="flex items-center gap-2">
+                    <span className="px-3 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-bold rounded-full uppercase tracking-widest border border-emerald-100">
+                        {event.category}
+                    </span>
+                    {event.is_urgent && (
+                        <span className="px-3 py-1 bg-red-50 text-red-600 text-[10px] font-bold rounded-full uppercase tracking-widest border border-red-100 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        Urgent
+                        </span>
+                    )}
+                </div>
+                <h1 className="text-2xl md:text-4xl font-black text-gray-900 leading-tight mt-2">
+                    {event.title}
+                </h1>
             </div>
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center text-gray-500 font-bold">
-                   {event.organization_profiles?.logo_url ? (
-                      <Image
-                        src={event.organization_profiles.logo_url}
-                        alt={event.organization_profiles?.name}
-                        width={36}
-                        height={36}
-                        className="object-cover"
-                      />
-                   ) : (
-                      event.organization_profiles?.name?.charAt(0) || "O"
-                   )}
+            {/* ORGANIZER PROFILE CARD */}
+            <div className="flex items-center justify-between mt-4">
+              <Link href={`/organizations/${event.organization_id}`}>
+                <div className="flex items-center gap-3 group">
+                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl overflow-hidden bg-gradient-to-br from-orange-400 to-rose-500 flex items-center justify-center text-white font-bold text-lg shadow-md group-hover:scale-105 transition-transform">
+                    {event.organization_profiles?.name?.charAt(0) || 'O'}
+                  </div>
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-1.5">
+                        <span className="text-sm md:text-base font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+                        {event.organization_profiles?.name || 'Organization'}
+                        </span>
+                        <ShieldCheck className="w-4 h-4 text-blue-500 fill-blue-50" />
+                    </div>
+                    <span className="text-[10px] text-gray-500 font-medium uppercase tracking-tight">Verified Host</span>
+                  </div>
                 </div>
-                <Link href={`/organizations/${event.organization_id}`} className="flex items-center gap-1.5 hover:opacity-70 transition-opacity">
-                  <span className="text-sm font-medium text-gray-900">{event.organization_profiles?.name || "Organization"}</span>
-                  <CheckCircle2 className="w-4 h-4 text-blue-500 fill-blue-500" />
-                </Link>
-              </div>
+              </Link>
             </div>
           </div>
 
-          {/* Know Before You Go */}
-          <div className="px-4 md:px-0 pb-5">
-            <div className="bg-[#F5F5F7] rounded-xl p-4">
-              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Know Before You Go</h3>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-sm">
-                    <Clock className="w-4 h-4 text-teal-600" />
+          {/* LOGISTICS GRID (Know Before You Go) */}
+          <div className="px-5 md:px-0 py-6">
+            <div className="bg-[#F5F5F7] rounded-[32px] p-6 md:p-10 border border-gray-100">
+              <div className="flex items-center justify-between mb-8">
+                 <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.25em]">Mission Logistics</h3>
+                 <Sparkles className="w-5 h-5 text-amber-500 opacity-50" />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 mb-10">
+                {/* TIMELINE */}
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-sm border border-gray-100 shrink-0">
+                    <Clock className="w-6 h-6 text-teal-600" />
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500">When</p>
-                    <p className="text-sm font-medium text-gray-900">
-                      {formatDate(event.event_date)} • {formatTime(event.start_time)}
+                    <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Timeline</p>
+                    <p className="text-base font-bold text-gray-900">
+                      {formatDate(event.event_date)}
+                    </p>
+                    <p className="text-sm text-gray-500 font-medium">
+                        {formatTime(event.start_time)} — {formatTime(event.end_time)}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-sm">
-                    <MapPin className="w-4 h-4 text-coral-500" style={{ color: "#FF6B6B" }} />
+                {/* VENUE */}
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-sm border border-gray-100 shrink-0">
+                    <MapPin className="w-6 h-6 text-rose-500" />
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500">Where</p>
-                    <p className="text-sm font-medium text-gray-900 truncate max-w-[120px]">{event.location}</p>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Venue</p>
+                    <p className="text-base font-bold text-gray-900 truncate max-w-[180px]">{event.location}</p>
+                    <p className="text-sm text-gray-500 font-medium">Nashik, Maharashtra</p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-sm">
-                    <Footprints className="w-4 h-4 text-amber-500" />
+                {/* ON-SITE HOST (The Concierge Addition) */}
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-sm border border-gray-100 shrink-0">
+                    <User className="w-6 h-6 text-purple-500" />
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500">Dress</p>
-                    <p className="text-sm font-medium text-gray-900">{event.dress_code || "Casual"}</p>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">On-Site Host</p>
+                    <p className="text-base font-bold text-gray-900">
+                        {event.point_of_contact || "Event Coordinator"}
+                    </p>
+                    <p className="text-sm text-gray-500 font-medium italic">Look for this person</p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-sm">
-                    <User className="w-4 h-4 text-purple-500" />
+                {/* DRESS CODE */}
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-sm border border-gray-100 shrink-0">
+                    <Footprints className="w-6 h-6 text-amber-500" />
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500">Age</p>
-                    <p className="text-sm font-medium text-gray-900">{event.minimum_age ? `${event.minimum_age}+` : "All Ages"}</p>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Dress Code</p>
+                    <p className="text-base font-bold text-gray-900">{event.dress_code || "Comfortable / Casual"}</p>
+                    <p className="text-sm text-gray-500 font-medium">Prepare accordingly</p>
                   </div>
                 </div>
+              </div>
+
+              {/* MAP EMBED (Fixed Standard Embed) */}
+              <div className="rounded-[24px] overflow-hidden h-44 relative group border border-gray-200 shadow-inner bg-gray-100">
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full h-full"
+                >
+                  <iframe
+                    width="100%"
+                    height="100%"
+                    frameBorder="0"
+                    style={{ border: 0 }}
+                    src={`http://googleusercontent.com/maps.google.com/maps?q=${encodeURIComponent(event.location)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+                    className="absolute inset-0 w-full h-full pointer-events-none opacity-80 group-hover:opacity-100 transition-opacity"
+                  ></iframe>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
+                  <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-md px-5 py-2.5 rounded-2xl text-xs font-black text-gray-900 shadow-2xl flex items-center gap-2 hover:bg-white transition-all transform group-hover:translate-y-[-2px]">
+                    <Navigation className="w-4 h-4 text-blue-600" />
+                    Launch Directions
+                  </div>
+                </a>
               </div>
             </div>
           </div>
 
-          {/* Description */}
-          <div className="px-4 md:px-0 pb-5">
-            <h3 className="text-sm font-semibold text-gray-900 mb-2">About This Event</h3>
-            <p className="text-sm text-gray-600 leading-relaxed">
+          {/* --- THE CONNECT: KINDLY EXCLUSIVE --- */}
+          {event.proposed_connect && (
+            <div className="px-5 md:px-0 pb-10 mt-4">
+                <div className="bg-[#064e3b] rounded-[40px] p-8 md:p-12 shadow-2xl relative overflow-hidden border border-emerald-800">
+                    <div className="absolute -top-8 -right-8 opacity-10">
+                        <Coffee className="w-44 h-44 text-emerald-400" />
+                    </div>
+                    
+                    <div className="flex items-center gap-4 mb-6">
+                        <div className="w-12 h-12 bg-emerald-500/20 rounded-2xl flex items-center justify-center border border-emerald-700/50">
+                            <Coffee className="w-6 h-6 text-emerald-400" />
+                        </div>
+                        <div>
+                            <h3 className="text-2xl font-black text-white tracking-tight">The Connect</h3>
+                            <p className="text-emerald-400/80 text-[10px] font-bold uppercase tracking-widest">KINDLY Exclusive Social</p>
+                        </div>
+                    </div>
+
+                    <p className="text-emerald-50 text-base md:text-lg leading-relaxed font-medium mb-8">
+                        {event.proposed_connect}
+                    </p>
+
+                    <div className="flex items-center gap-2 text-[11px] font-black text-emerald-400 uppercase tracking-[0.15em] bg-emerald-950/50 w-fit px-5 py-2.5 rounded-2xl border border-emerald-800">
+                        <Sparkles className="w-4 h-4" />
+                        Curated Experience
+                    </div>
+                </div>
+            </div>
+          )}
+
+          {/* DESCRIPTION SECTION */}
+          <div className="px-5 md:px-0 pb-10">
+            <h3 className="text-lg font-black text-gray-900 mb-4 flex items-center gap-3">
+              <Info className="w-6 h-6 text-blue-500" />
+              The Story & Mission
+            </h3>
+            <p className="text-base text-gray-600 leading-[1.9] font-medium">
               {showFullDescription ? event.description : shortDescription}
             </p>
-            <button
-              onClick={() => setShowFullDescription(!showFullDescription)}
-              className="text-sm font-medium text-blue-600 hover:text-blue-700 mt-1"
-            >
-              {showFullDescription ? "Show Less" : "Read More"}
-            </button>
+            {event.description?.length > 150 && (
+                <button
+                onClick={() => setShowFullDescription(!showFullDescription)}
+                className="text-sm font-black text-blue-600 hover:text-blue-700 mt-4 underline underline-offset-4 decoration-2"
+                >
+                {showFullDescription ? "Show Less" : "Read Full Mission"}
+                </button>
+            )}
           </div>
 
-          {/* Broadcasts */}
-          <div className="px-4 md:px-0 pb-5">
-            <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-5 border border-amber-100">
-              <div className="flex items-center gap-2.5 mb-4">
-                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-sm">
-                  <Megaphone className="w-4 h-4 text-white" />
+          {/* ORGANIZER BROADCAST UPDATES */}
+          <div className="px-5 md:px-0 pb-12">
+            <div className="bg-gradient-to-br from-[#fffbeb] to-[#fef3c7] rounded-[32px] p-8 border border-amber-200 shadow-sm">
+              <div className="flex items-center gap-4 mb-8">
+                <div className="w-12 h-12 rounded-[20px] bg-amber-400 flex items-center justify-center shadow-lg border-2 border-white/50">
+                  <Megaphone className="w-6 h-6 text-amber-900" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-900">Organizer Updates</h3>
-                  <p className="text-xs text-gray-600">Important messages from {event.organization_profiles?.name}</p>
+                  <h3 className="text-lg font-black text-amber-900 tracking-tight">Mission Briefings</h3>
+                  <p className="text-xs text-amber-800/70 font-bold uppercase tracking-wider">From {event.organization_profiles?.name}</p>
                 </div>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {broadcasts.length > 0 ? (
                   broadcasts.map((broadcast) => (
                     <div
                       key={broadcast.id}
-                      className={`p-3.5 rounded-lg border transition-all ${
+                      className={cn(
+                        "p-5 rounded-2xl border transition-all",
                         broadcast.is_important
-                          ? "bg-white border-amber-200 shadow-sm"
-                          : "bg-amber-50/50 border-amber-100/50"
-                      }`}
+                          ? "bg-white border-amber-300 shadow-md"
+                          : "bg-amber-50/60 border-amber-200/50"
+                      )}
                     >
-                      <div className="flex items-start gap-2 mb-2">
+                      <div className="flex items-start gap-3">
                         {broadcast.is_important && (
-                          <div className="mt-0.5">
-                            <Bell className="w-3.5 h-3.5 text-amber-600" />
+                          <div className="mt-1">
+                            <Bell className="w-4 h-4 text-amber-600 fill-amber-500" />
                           </div>
                         )}
-                        <p className="text-sm text-gray-900 leading-relaxed flex-1">{broadcast.message}</p>
+                        <p className="text-sm md:text-base text-gray-900 leading-relaxed font-bold flex-1">{broadcast.message}</p>
                       </div>
-                      <p className="text-xs text-gray-500 ml-5">
-                        {new Date(broadcast.created_at).toLocaleString([], { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short'})}
-                      </p>
+                      <div className="flex items-center gap-2 mt-4 ml-7 text-xs font-bold text-amber-600/60 uppercase tracking-tighter">
+                          <Clock className="w-3 h-3" />
+                          {new Date(broadcast.created_at).toLocaleString([], { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short'})}
+                      </div>
                     </div>
                   ))
                 ) : (
-                  <div className="text-center py-6">
-                    <Megaphone className="w-8 h-8 text-amber-200 mx-auto mb-2 opacity-50" />
-                    <p className="text-sm text-gray-500">No updates yet</p>
-                    <p className="text-xs text-gray-400 mt-1">Check back later for messages</p>
+                  <div className="text-center py-10 bg-white/40 rounded-2xl border border-dashed border-amber-300/50">
+                    <Megaphone className="w-10 h-10 text-amber-200 mx-auto mb-3" />
+                    <p className="text-sm font-bold text-amber-800/60">No new updates yet.</p>
                   </div>
                 )}
               </div>
             </div>
           </div>
 
-          {/* Location Map */}
-          <div className="px-4 md:px-0 pb-5">
-            <h3 className="text-sm font-semibold text-gray-900 mb-2">Location</h3>
-            
-            <a 
-              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block relative rounded-xl overflow-hidden h-[160px] md:h-[200px] group transition-all hover:shadow-lg border border-gray-100"
-            >
-              <iframe
-                width="100%"
-                height="100%"
-                frameBorder="0"
-                scrolling="no"
-                marginHeight={0}
-                marginWidth={0}
-                src={`https://maps.google.com/maps?q=${encodeURIComponent(event.location)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
-                className="absolute inset-0 w-full h-full pointer-events-none opacity-90 group-hover:opacity-100 transition-opacity"
-              ></iframe>
-
-              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
-              
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-5 py-2.5 bg-white rounded-full shadow-lg group-hover:scale-105 transition-transform z-10">
-                <Navigation className="w-4 h-4 text-blue-600 fill-blue-600" />
-                <span className="text-sm font-bold text-gray-900">Get Directions</span>
-              </div>
-            </a>
-          </div>
-
         </div>
 
-        {/* Right Sidebar */}
-        <div className="hidden md:block md:w-[340px]">
-          <div className="sticky top-8 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-            <div className="p-5 bg-gradient-to-br from-emerald-50 to-teal-50 border-b border-emerald-100">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 rounded-full bg-emerald-500 flex items-center justify-center">
-                  <CheckCircle2 className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-emerald-700">Registration Confirmed</p>
-                  <p className="text-xs text-emerald-600">ID: {event.id.substring(0,8).toUpperCase()}</p>
-                </div>
+        {/* --- RIGHT SIDEBAR: BOOKING STATUS (Desktop) --- */}
+        <div className="hidden md:block md:w-96">
+          <div className="sticky top-10 bg-white rounded-[40px] shadow-2xl border border-gray-100 overflow-hidden">
+            
+            {/* Status Header */}
+            <div className="p-10 bg-gradient-to-br from-emerald-50 to-teal-50 border-b border-emerald-100 text-center">
+              <div className="w-16 h-16 rounded-3xl bg-emerald-500 flex items-center justify-center mx-auto mb-4 shadow-xl border-4 border-white/30">
+                <CheckCircle2 className="w-8 h-8 text-white" />
               </div>
-
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Event Date</span>
-                  <span className="font-semibold text-gray-900">{formatDate(event.event_date)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Start Time</span>
-                  <span className="font-semibold text-gray-900">{formatTime(event.start_time)}</span>
-                </div>
-              </div>
+              <h2 className="text-2xl font-black text-emerald-900 tracking-tight mb-1">Confirmed</h2>
+              <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em]">Registration ID: {event.id.substring(0,8)}</p>
             </div>
 
-            <div className="p-5 space-y-3">
-              <Button onClick={handleAddToCalendar} className="w-full h-11 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold rounded-full text-sm shadow-lg shadow-blue-500/25">
-                <CalendarIcon className="w-4 h-4 mr-2" />
+            {/* Quick Actions */}
+            <div className="p-10 space-y-4">
+              <Button 
+                onClick={handleAddToCalendar} 
+                variant="outline"
+                className="w-full h-14 border-gray-200 rounded-2xl font-black text-gray-900 hover:bg-gray-50 flex items-center justify-center gap-3 transition-all"
+              >
+                <CalendarIcon className="w-5 h-5 text-emerald-600" />
                 Add to Calendar
               </Button>
 
               <Button
                 onClick={() => setShowScanner(true)}
-                className="w-full h-11 bg-[#1d1d1f] hover:bg-[#323235] text-white font-semibold rounded-full text-sm shadow-md flex items-center justify-center"
+                className="w-full h-16 bg-gray-900 hover:bg-black text-white font-black rounded-2xl text-lg shadow-2xl flex items-center justify-center gap-3 group transition-all active:scale-95"
               >
-                <Camera className="w-4 h-4 mr-2" />
+                <Camera className="w-6 h-6 group-hover:rotate-12 transition-transform" />
                 Scan to Check In
               </Button>
 
-              <p className="text-center text-xs text-gray-500 pt-2">Scan the Organizer's QR code when you arrive</p>
+              <p className="text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest pt-4">
+                Scan arrival QR to log hours
+              </p>
             </div>
 
-            <div className="px-5 pb-5">
-              <div className="p-3.5 bg-blue-50 rounded-xl border border-blue-100">
-                <p className="text-xs font-medium text-blue-800 mb-1">Need Help?</p>
-                <p className="text-xs text-blue-600">Contact {event.organization_profiles?.email || "the organizer"} for queries</p>
+            {/* Support Block */}
+            <div className="px-10 pb-10">
+              <div className="p-6 bg-blue-50 rounded-[28px] border border-blue-100 flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shrink-0">
+                    <MessageSquare className="w-5 h-5 text-blue-500" />
+                </div>
+                <div>
+                  <p className="text-xs font-black text-blue-900 uppercase tracking-tight mb-0.5">Need Help?</p>
+                  <p className="text-[11px] text-blue-700 font-medium">Contact organization at {event.organization_profiles?.email || "the help desk"}</p>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Mobile Sticky Footer */}
-      <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-r from-emerald-500 to-teal-500 shadow-[0_-4px_20px_rgba(0,0,0,0.12)] z-50 md:hidden">
-        <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-2.5">
-            <CheckCircle2 className="w-5 h-5 text-white" />
-            <div>
-              <p className="text-xs text-white/90 font-medium">Confirmed</p>
-              <p className="text-sm font-bold text-white">{formatDate(event.event_date)}</p>
-            </div>
+      {/* --- MOBILE STICKY NAVIGATION (High Impact) --- */}
+      <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-r from-emerald-600 to-teal-600 shadow-[0_-12px_40px_rgba(0,0,0,0.15)] z-50 md:hidden">
+        <div className="flex items-center justify-between px-6 py-5">
+          <div className="flex flex-col">
+            <p className="text-[10px] text-white/70 font-black uppercase tracking-[0.2em] mb-1 leading-none">Arrival Time</p>
+            <p className="text-xl font-black text-white leading-none tracking-tight">
+                {formatTime(event.start_time)}
+            </p>
           </div>
-          <Button onClick={() => setShowScanner(true)} className="h-10 px-4 bg-white hover:bg-gray-50 text-emerald-600 font-semibold rounded-full text-sm shadow-lg flex items-center">
-            <Camera className="w-4 h-4 mr-1.5" />
-            Scan Check In
+          
+          <Button 
+            onClick={() => setShowScanner(true)} 
+            className="h-14 px-8 bg-white hover:bg-gray-100 text-emerald-700 font-black rounded-2xl text-sm shadow-2xl flex items-center gap-3 transition-all active:scale-95"
+          >
+            <Camera className="w-5 h-5" />
+            CHECK IN
           </Button>
         </div>
       </div>
