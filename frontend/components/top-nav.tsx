@@ -18,6 +18,7 @@ export function TopNav() {
     "/how-it-works",
     "/for-volunteers",
     "/for-organisations",
+    "/update-password",
   ]
   
   // Also hide if the path starts with company, resources, or legal

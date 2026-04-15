@@ -1047,4 +1047,44 @@ export const api = {
     }
     return response.json();
   },
+
+  // --- PASSWORD RESET ---
+  async resetPassword(email: string) {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/auth/reset-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || 'Failed to send reset link');
+    }
+    
+    return response.json();
+  },
+
+// --- UPDATE PASSWORD ---
+  async updatePassword(newPassword: string, hash: string) {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/auth/update-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      // Now we pass the safely stored hash from the frontend state
+      body: JSON.stringify({ 
+        password: newPassword,
+        hash: hash 
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || 'Failed to update password');
+    }
+    
+    return response.json();
+  },
 };

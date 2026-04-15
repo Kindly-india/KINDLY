@@ -144,4 +144,57 @@ export class AuthService {
       },
     };
   }
+
+  async resetPassword(email: string) {
+    const supabase = this.supabaseService.getClient();
+    
+    // Supabase built-in magic to send the reset email
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: process.env.FRONTEND_URL ? `${process.env.FRONTEND_URL}/update-password` : 'http://localhost:3000/update-password',
+    });
+
+    if (error) {
+      throw new BadRequestException(error.message);
+    }
+
+    return { message: 'Password reset link sent successfully' };
+  }
+
+  async updatePassword(password: string, hash: string) {
+    const supabase = this.supabaseService.getClient();
+
+    // 1. Extract the secure tokens from the frontend URL hash
+    // The hash looks like #access_token=123&refresh_token=456
+    const params = new URLSearchParams(hash.replace('#', ''));
+    const accessToken = params.get('access_token');
+    const refreshToken = params.get('refresh_token');
+
+    if (!accessToken || !refreshToken) {
+      throw new BadRequestException('Invalid or expired reset link. Please request a new one.');
+    }
+
+    // 2. Temporarily set the session using those tokens
+    const { error: sessionError } = await supabase.auth.setSession({
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    });
+
+    if (sessionError) {
+      throw new BadRequestException('Session expired. Please request a new reset link.');
+    }
+
+    // 3. Update the user's password securely
+    const { error: updateError } = await supabase.auth.updateUser({
+      password: password,
+    });
+
+    if (updateError) {
+      throw new BadRequestException(updateError.message);
+    }
+
+    // 4. Force a sign out so they have to log in normally with the new password
+    await supabase.auth.signOut();
+
+    return { message: 'Password updated successfully' };
+  }
 }
