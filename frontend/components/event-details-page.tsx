@@ -377,42 +377,42 @@ export default function EventDetailsPage() {
             </div>
           </div>
 
-{/* --- THE CONNECT: KINDLY EXCLUSIVE --- */}
+          {/* --- THE CONNECT: KINDLY EXCLUSIVE --- */}
           {event.proposed_connect && (
             <div className="px-5 md:px-0 pb-10 mt-4">
-                <div className="bg-[#064e3b] rounded-[40px] p-8 md:p-12 shadow-2xl relative overflow-hidden border border-emerald-800">
-                    <div className="absolute -top-8 -right-8 opacity-10">
-                        <Coffee className="w-44 h-44 text-emerald-400" />
-                    </div>
-                    
-                    <div className="flex items-center gap-4 mb-5">
-                        <div className="w-12 h-12 bg-emerald-500/20 rounded-2xl flex items-center justify-center border border-emerald-700/50">
-                            <Coffee className="w-6 h-6 text-emerald-400" />
-                        </div>
-                        <div>
-                            <h3 className="text-2xl font-black text-white tracking-tight">The Connect</h3>
-                            {/* Clearer Subtitle */}
-                            <p className="text-emerald-400/90 text-[10px] font-bold uppercase tracking-widest">Official Post-Event Hangout</p>
-                        </div>
-                    </div>
-
-                    {/* Explainer Text so new users get the vibe */}
-                    <p className="text-emerald-200 text-sm italic mb-4 font-medium pr-4">
-                       Because the community is built after the work is done. Join your fellow volunteers to chill, network, and hang out.
-                    </p>
-
-                    {/* The actual activity wrapped in a distinct box */}
-                    <div className="bg-emerald-900/40 border border-emerald-700/50 rounded-2xl p-5 mb-6 shadow-inner">
-                        <p className="text-emerald-50 text-base md:text-lg leading-relaxed font-bold">
-                            {event.proposed_connect}
-                        </p>
-                    </div>
-
-                    <div className="flex items-center gap-2 text-[11px] font-black text-emerald-400 uppercase tracking-[0.15em] bg-emerald-950/50 w-fit px-5 py-2.5 rounded-2xl border border-emerald-800">
-                        <Sparkles className="w-4 h-4" />
-                        Curated Experience
-                    </div>
+              <div className="bg-[#064e3b] rounded-[40px] p-8 md:p-12 shadow-2xl relative overflow-hidden border border-emerald-800">
+                <div className="absolute -top-8 -right-8 opacity-10">
+                  <Coffee className="w-44 h-44 text-emerald-400" />
                 </div>
+
+                <div className="flex items-center gap-4 mb-5">
+                  <div className="w-12 h-12 bg-emerald-500/20 rounded-2xl flex items-center justify-center border border-emerald-700/50">
+                    <Coffee className="w-6 h-6 text-emerald-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-black text-white tracking-tight">The Connect</h3>
+                    {/* Clearer Subtitle */}
+                    <p className="text-emerald-400/90 text-[10px] font-bold uppercase tracking-widest">Official Post-Event Hangout</p>
+                  </div>
+                </div>
+
+                {/* Explainer Text so new users get the vibe */}
+                <p className="text-emerald-200 text-sm italic mb-4 font-medium pr-4">
+                  Because the community is built after the work is done. Join your fellow volunteers to chill, network, and hang out.
+                </p>
+
+                {/* The actual activity wrapped in a distinct box */}
+                <div className="bg-emerald-900/40 border border-emerald-700/50 rounded-2xl p-5 mb-6 shadow-inner">
+                  <p className="text-emerald-50 text-base md:text-lg leading-relaxed font-bold">
+                    {event.proposed_connect}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2 text-[11px] font-black text-emerald-400 uppercase tracking-[0.15em] bg-emerald-950/50 w-fit px-5 py-2.5 rounded-2xl border border-emerald-800">
+                  <Sparkles className="w-4 h-4" />
+                  Curated Experience
+                </div>
+              </div>
             </div>
           )}
 

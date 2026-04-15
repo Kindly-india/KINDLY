@@ -58,7 +58,7 @@ export function LoginPage() {
             {/* HEADER */}
             <header className="pt-6 md:pt-12 pb-3 md:pb-6 px-4 md:px-8 flex items-center justify-between relative z-20">
                 <button
-                    onClick={() => router.back()}
+                    onClick={() => router.push('/')}
                     className="flex items-center gap-1 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors p-2 -ml-2"
                 >
                     <ChevronLeft className="w-5 h-5" />

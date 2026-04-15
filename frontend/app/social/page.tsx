@@ -23,6 +23,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { api } from "@/lib/api"
+import { supabase } from "@/lib/supabase"
 
 // --- CATEGORY IMAGE MAP (Expanded for Variety) ---
 const CATEGORY_IMAGES: Record<string, string[]> = {
@@ -83,6 +84,40 @@ export default function SocialDiscoveryPage() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [profile, setProfile] = useState<any>(null)
   const [userType, setUserType] = useState<'volunteer' | 'org' | null>(null)
+
+  // --- INITIALIZATION & AUTH CHECK ---
+  useEffect(() => {
+    const initializePage = async () => {
+      // 1. Authenticate with Supabase
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+      // 2. Redirect to login if unauthorized
+      if (!user || authError) {
+        router.push('/login')
+        return // Stop execution, preventing unauthenticated API calls
+      }
+
+      // 3. If authenticated, fetch User Profile
+      try {
+        const res = await api.getUserProfile()
+        if (res?.profile) {
+          setProfile(res.profile)
+          if ('org_type' in res.profile) {
+            setUserType('org')
+          } else {
+            setUserType('volunteer')
+          }
+        }
+      } catch (e) {
+        console.error("Failed to fetch profile", e)
+      }
+
+      // 4. Finally, trigger the stories to load
+      loadStories()
+    }
+
+    initializePage()
+  }, [router])
 
   // --- FETCH REAL STORIES ---
   const loadStories = () => {

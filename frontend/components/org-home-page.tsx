@@ -24,9 +24,12 @@ import {
 import { cn } from "@/lib/utils"
 import { api } from "@/lib/api"
 import Image from "next/image"
+import { useRouter } from "next/navigation"
+import { supabase } from "@/lib/supabase"
 
 export function OrgHomePage() {
   const eventsRef = useRef<HTMLDivElement>(null)
+  const router = useRouter()
 
   // --- Real-Time Data State ---
   const [loading, setLoading] = useState(true)
@@ -46,6 +49,16 @@ export function OrgHomePage() {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
+        // 1. Authenticate with Supabase
+        const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+        // 2. Redirect to login if unauthorized
+        if (!user || authError) {
+          router.push('/login')
+          return // Stop execution here
+        }
+
+        // 3. Begin loading your existing data
         setLoading(true)
 
         const [profileRes, eventsRes, activityRes] = await Promise.all([
@@ -118,7 +131,7 @@ export function OrgHomePage() {
     }
 
     fetchDashboardData()
-  }, [])
+  }, [router])
 
   const scrollEvents = (direction: "left" | "right") => {
     if (eventsRef.current) {
