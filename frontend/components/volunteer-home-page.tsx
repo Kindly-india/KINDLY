@@ -314,7 +314,7 @@ export function VolunteerHomePage() {
         </div>
       </section>
 
-      {/* Main Event Feed */}
+{/* Main Event Feed */}
       <section className="bg-[#f5f5f7] py-6 md:py-12">
         <div className="max-w-300 mx-auto px-4 md:px-8">
           <div className="mb-4 md:mb-8 flex justify-between items-end">
@@ -335,32 +335,37 @@ export function VolunteerHomePage() {
           ) : (
             <div
               ref={eventsRef}
-              className="flex md:grid md:grid-cols-4 gap-3 md:gap-4 overflow-x-auto md:overflow-visible pb-4 md:pb-0 snap-x snap-mandatory scrollbar-hide"
+              /* Added items-stretch to force all cards in the row to be the exact same height */
+              className="flex md:grid md:grid-cols-4 gap-3 md:gap-4 overflow-x-auto md:overflow-visible pb-4 md:pb-0 snap-x snap-mandatory scrollbar-hide items-stretch"
             >
               {myEvents.map((event) => (
                 <Link
                   key={event.id}
                   href={`/events/${event.id}/registered`}
-                  className="shrink-0 w-64 md:w-auto snap-start group bg-white rounded-xl md:rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300"
+                  /* Added flex flex-col and self-stretch to fix Safari/iOS rendering bugs */
+                  className="shrink-0 w-64 md:w-auto snap-start group bg-white rounded-xl md:rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col self-stretch"
                 >
-                  <div className="relative aspect-4/3 overflow-hidden bg-gray-100">
+                  {/* Swapped aspect-4/3 to bulletproof 16:9 aspect ratio container */}
+                  <div className="relative aspect-video aspect-[16/9] w-full overflow-hidden bg-gray-100 shrink-0">
                     {event.cover_image_url ? (
                       <img
                         src={event.cover_image_url}
                         alt={event.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-300">
+                      <div className="absolute inset-0 w-full h-full flex items-center justify-center text-gray-300">
                         <Sparkles className="w-10 h-10" />
                       </div>
                     )}
 
-                    <div className={cn("absolute top-2 left-2 px-2 py-0.5 rounded text-[9px] md:text-[11px] font-semibold text-white capitalize", getCategoryColor(event.category))}>
+                    <div className={cn("absolute top-2 left-2 px-2 py-0.5 rounded text-[9px] md:text-[11px] font-semibold text-white capitalize z-10", getCategoryColor(event.category))}>
                       {event.category}
                     </div>
                   </div>
-                  <div className="p-3 md:p-4">
+                  
+                  {/* Added flex-1 and flex-col so the content area expands to fill empty space */}
+                  <div className="p-3 md:p-4 flex flex-col flex-1">
                     <h3 className="text-[13px] md:text-[15px] font-semibold text-[#1d1d1f] mb-1.5 line-clamp-1">{event.title}</h3>
                     <div className="space-y-0.5">
                       <div className="flex items-center gap-1.5 text-[#86868b]">
@@ -372,7 +377,9 @@ export function VolunteerHomePage() {
                         <span className="text-[10px] md:text-[12px] line-clamp-1">{event.location}</span>
                       </div>
                     </div>
-                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-[#f5f5f7]">
+                    
+                    {/* Added mt-auto and slightly more top padding to align badges at the absolute bottom */}
+                    <div className="flex items-center justify-between mt-auto pt-3 border-t border-[#f5f5f7]">
                       <div className={cn("text-[10px] md:text-[11px] font-medium px-2 py-1 rounded-full", "bg-blue-100 text-blue-700")}>
                         Registered
                       </div>
