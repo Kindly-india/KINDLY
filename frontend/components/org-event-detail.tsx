@@ -23,8 +23,10 @@ import {
   X,
   Trash2,
   Loader2,
-  Upload,   // ✅ Added
-  FileText  // ✅ Added
+  Upload,   
+  FileText,
+  Hourglass, // For pending view
+  Edit       // For pending view
 } from "lucide-react"
 import { api } from "@/lib/api"
 
@@ -59,7 +61,7 @@ export function OrgEventDetail() {
   const [sendingBroadcast, setSendingBroadcast] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
-  // ✅ State for Certificates
+  // Certificate State
   const [issuing, setIssuing] = useState(false)
   const [uploadingSig, setUploadingSig] = useState(false)
 
@@ -83,11 +85,6 @@ export function OrgEventDetail() {
           api.getEventRegistrations(eventId),
           api.getEventBroadcasts(eventId)
         ])
-
-        if (eventResponse.event?.status === 'completed') {
-          // If viewing completed event directly, we don't redirect here anymore so user can manage certs
-          // router.replace(`/org-events/${eventId}/report`) 
-        }
 
         setEvent(eventResponse.event)
         setRegistrations(registrationsResponse.registrations || [])
@@ -157,7 +154,6 @@ export function OrgEventDetail() {
     try {
       setCompleteLoading(true);
       await api.completeEvent(eventId);
-      // Reload to update UI state to completed
       window.location.reload();
     } catch (err: any) {
       alert(err.message || "Failed to complete event");
@@ -206,7 +202,6 @@ export function OrgEventDetail() {
     }
   }
 
-  // ✅ Certificate Handlers
   const handleIssueCertificates = async () => {
     if (!confirm("Are you sure? This will make certificates available to all checked-in volunteers.")) return;
     try {
@@ -241,6 +236,7 @@ export function OrgEventDetail() {
   }
 
   const formatTime = (timeString: string) => {
+    if (!timeString) return "";
     const [hours, minutes] = timeString.split(':')
     const hour = parseInt(hours)
     const ampm = hour >= 12 ? 'PM' : 'AM'
@@ -272,6 +268,50 @@ export function OrgEventDetail() {
     )
   }
 
+  // --- PENDING APPROVAL VIEW ---
+  if (event.status === 'pending') {
+    return (
+        <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-orange-50 flex flex-col items-center justify-center p-6">
+            <div className="max-w-md w-full bg-white rounded-3xl p-8 shadow-xl border border-amber-100 text-center relative overflow-hidden">
+                <div className="absolute -top-10 -right-10 opacity-5">
+                    <Hourglass className="w-40 h-40" />
+                </div>
+                
+                <div className="w-20 h-20 bg-amber-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                    <Hourglass className="w-10 h-10 text-amber-600 animate-pulse" />
+                </div>
+
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Review in Progress</h2>
+                <p className="text-gray-500 text-sm mb-8">
+                    Your event <span className="font-bold text-gray-900">"{event.title}"</span> is currently being reviewed by our team. Once approved, it will be published to the volunteer discovery feed.
+                </p>
+
+                <div className="space-y-3">
+                    <Link
+                        href={`/edit-event/${eventId}`}
+                        className="w-full h-12 bg-amber-500 text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-amber-600 transition-all shadow-lg shadow-amber-200"
+                    >
+                        <Edit className="w-4 h-4" />
+                        Edit Details
+                    </Link>
+                    <Link
+                        href="/org-events"
+                        className="w-full h-12 bg-white text-gray-600 border border-gray-200 rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition-all"
+                    >
+                        <ChevronLeft className="w-4 h-4" />
+                        Back to Dashboard
+                    </Link>
+                </div>
+
+                <div className="mt-8 pt-6 border-t border-gray-100 flex items-center justify-center gap-2 text-amber-600 text-xs font-semibold uppercase tracking-widest">
+                    <Sparkles className="w-4 h-4" />
+                    <span>Concierge Approval Enabled</span>
+                </div>
+            </div>
+        </div>
+    )
+  }
+
   const filteredRoster = registrations.filter((reg) =>
     reg.volunteer_profiles.full_name.toLowerCase().includes(volunteerSearch.toLowerCase())
   )
@@ -281,9 +321,9 @@ export function OrgEventDetail() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 relative">
 
-      {/* --- QR CODE MODAL --- */}
+      {/* QR CODE MODAL */}
       {showQR && (
-        <div className="fixed inset-0 z-100 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-8 max-w-sm w-full text-center relative shadow-2xl">
             <button
               onClick={() => setShowQR(false)}
@@ -441,13 +481,11 @@ export function OrgEventDetail() {
                   {filteredRoster.map((registration) => (
                     <div key={registration.id} className="flex items-center justify-between p-3 md:p-4 bg-white rounded-xl shadow-sm border border-gray-100">
                       <div className="flex items-center gap-3">
-                        {/* Avatar Circle */}
                         <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-teal-400 to-emerald-400 flex items-center justify-center text-white font-semibold">
                           {registration.volunteer_profiles.full_name.charAt(0).toUpperCase()}
                         </div>
 
                         <div>
-                          {/* 👇 UPDATED: Wrapped name in Link component */}
                           <Link
                             href={`/volunteers/${registration.volunteer_profiles.id}`}
                             className="font-medium text-gray-900 text-sm md:text-base hover:text-teal-600 hover:underline cursor-pointer transition-colors"
@@ -588,7 +626,7 @@ export function OrgEventDetail() {
 
                 <div className="mt-4 rounded-xl overflow-hidden h-40 relative group border border-gray-100 bg-gray-50">
                   <a
-                    href={`http://googleusercontent.com/maps.google.com/5{encodeURIComponent(event.location)}`}
+                    href={`http://googleusercontent.com/maps.google.com/maps?q=${encodeURIComponent(event.location)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="block w-full h-full"
@@ -598,7 +636,7 @@ export function OrgEventDetail() {
                       height="100%"
                       frameBorder="0"
                       style={{ border: 0 }}
-                      src={`http://googleusercontent.com/maps.google.com/6{encodeURIComponent(event.location)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+                      src={`https://maps.google.com/maps?q=${encodeURIComponent(event.location)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
                       className="absolute inset-0 w-full h-full pointer-events-none opacity-90 group-hover:opacity-100 transition-opacity"
                     ></iframe>
                     <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent pointer-events-none group-hover:bg-transparent transition-colors" />
@@ -610,7 +648,6 @@ export function OrgEventDetail() {
                 </div>
               </div>
 
-              {/* ✅ NEW: Certificate Management Section (Only if Completed) */}
               {event.status === 'completed' && (
                 <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-5 border border-amber-100">
                   <div className="flex items-center gap-3 mb-4">
@@ -624,7 +661,6 @@ export function OrgEventDetail() {
                   </div>
 
                   <div className="space-y-4">
-                    {/* Step 1: Upload Signature */}
                     <div className="bg-white p-4 rounded-lg border border-amber-200">
                       <label className="block text-sm font-medium text-gray-700 mb-2">1. Organization Stamp/Signature</label>
                       <div className="flex items-center gap-3">
@@ -637,7 +673,6 @@ export function OrgEventDetail() {
                       </div>
                     </div>
 
-                    {/* Step 2: Issue Button */}
                     <button
                       onClick={handleIssueCertificates}
                       disabled={event.certificates_issued || issuing}
@@ -664,7 +699,6 @@ export function OrgEventDetail() {
                 </div>
               )}
 
-              {/* Action Buttons for Active Events */}
               {event.status !== 'cancelled' && event.status !== 'completed' && (
                 <div className="flex flex-col gap-3">
                   <button onClick={handleCompleteEvent} disabled={completeLoading || !eventStarted} className={`w-full h-12 rounded-xl font-medium transition-colors flex items-center justify-center gap-2 shadow-md ${!eventStarted ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20'}`}><CheckCircle2 className="w-5 h-5" />{completeLoading ? "Completing..." : "Mark as Completed"}</button>
@@ -672,7 +706,6 @@ export function OrgEventDetail() {
                 </div>
               )}
 
-              {/* Status Display for Completed/Cancelled */}
               {(event.status === 'cancelled' || event.status === 'completed') && (
                 <div className="text-center py-4 bg-gray-50 rounded-xl">
                   <p className="text-gray-500 text-sm">This event has been {event.status}</p>

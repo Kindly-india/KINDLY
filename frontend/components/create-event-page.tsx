@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import {
     ChevronLeft,
     ImageIcon,
@@ -31,6 +32,7 @@ const categories = [
 ]
 
 export function CreateEventPage() {
+    const router = useRouter()
     const [step, setStep] = useState(1)
     const [isUrgent, setIsUrgent] = useState(false)
     const [showSuccess, setShowSuccess] = useState(false)
@@ -41,7 +43,7 @@ export function CreateEventPage() {
 
     const [formData, setFormData] = useState({
         title: '',
-        description: '',
+        description: '', // UI Label: The Cause
         category: '',
         eventDate: '',
         startTime: '',
@@ -49,6 +51,10 @@ export function CreateEventPage() {
         location: '',
         dressCode: '',
         thingsToBring: '',
+        // --- NEW FIELDS ---
+        pointOfContact: '',
+        proposedConnect: '',
+        // ------------------
         totalSlots: 50,
         registrationDeadline: '', 
         minimumAge: undefined as number | undefined,
@@ -78,12 +84,18 @@ export function CreateEventPage() {
         try {
             // Validate required fields
             if (!formData.title || !formData.description || !formData.category) {
-                alert('Please fill in all required fields');
+                alert('Please fill in all required fields in Step 1');
                 return;
             }
 
             if (!formData.eventDate || !formData.startTime || !formData.endTime || !formData.location) {
-                alert('Please complete schedule and location details');
+                alert('Please complete schedule and location details in Step 2');
+                return;
+            }
+
+            // New validation for Contact
+            if (!formData.pointOfContact) {
+                alert('Please provide a Point of Contact in Step 3');
                 return;
             }
 
@@ -92,7 +104,6 @@ export function CreateEventPage() {
                 return;
             }
 
-            // --- Validate Registration Deadline Logic ---
             if (!formData.registrationDeadline) {
                 alert('Please set a registration deadline');
                 return;
@@ -102,27 +113,22 @@ export function CreateEventPage() {
             const eventEndDateTime = new Date(`${formData.eventDate}T${formData.endTime}`);
             const regDeadline = new Date(formData.registrationDeadline);
             
-            // Check: End time after Start time
             if (eventEndDateTime <= eventStartDateTime) {
                 alert('Event end time must be after start time');
                 return;
             }
 
-            // Check: Deadline in the past
             if (regDeadline < new Date()) {
                 alert('Registration deadline cannot be in the past');
                 return;
             }
 
-            // Check: Deadline after Event Start (Strict Logic)
-            // We enforce at least 1 hour buffer
             const oneHourBeforeStart = new Date(eventStartDateTime.getTime() - 60 * 60 * 1000);
             
             if (regDeadline > oneHourBeforeStart) {
                 alert('Registration deadline must be at least 1 hour before the event starts.');
                 return;
             }
-            // ---
 
             let coverUrl = coverImageUrl;
             if (coverImage) {
@@ -151,6 +157,8 @@ export function CreateEventPage() {
                 location: formData.location,
                 dressCode: formData.dressCode,
                 thingsToBring: formData.thingsToBring,
+                pointOfContact: formData.pointOfContact,
+                proposedConnect: formData.proposedConnect,
                 totalSlots: formData.totalSlots,
                 registrationDeadline: deadlineISO,
                 minimumAge: formData.minimumAge,
@@ -158,7 +166,7 @@ export function CreateEventPage() {
 
             setShowSuccess(true);
         } catch (error: any) {
-            alert(error.message || 'Failed to create event');
+            alert(error.message || 'Failed to submit event for approval');
         }
     };
 
@@ -178,20 +186,20 @@ export function CreateEventPage() {
                     <Calendar className="w-5 h-5 md:w-6 md:h-6 text-blue-500" />
                 </div>
 
-                <div className="text-center max-w-md">
+                <div className="text-center max-w-lg">
                     <div className="w-20 h-20 md:w-24 md:h-24 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
                         <CheckCircle className="w-10 h-10 md:w-12 md:h-12 text-white" />
                     </div>
-                    <h1 className="text-2xl md:text-4xl font-bold text-[#1d1d1f] mb-3">Event Published!</h1>
+                    <h1 className="text-2xl md:text-4xl font-bold text-[#1d1d1f] mb-3">Event Submitted!</h1>
                     <p className="text-[#86868b] text-sm md:text-base mb-8">
-                        Your event is now live and visible to volunteers in your area.
+                        Your event has been submitted for review. Our team will verify the details and may suggest an exciting post-event activity to help volunteers connect before making it live!
                     </p>
                     <div className="flex flex-col sm:flex-row gap-3 justify-center">
                         <Link
                             href="/org-events"
                             className="px-6 py-3 bg-[#1d1d1f] text-white rounded-xl font-medium hover:bg-[#424245] transition-colors"
                         >
-                            View My Events
+                            View Pending Events
                         </Link>
                         <Link
                             href="/org-home"
@@ -240,7 +248,7 @@ export function CreateEventPage() {
                         {[
                             { num: 1, label: "Details" },
                             { num: 2, label: "Schedule" },
-                            { num: 3, label: "Capacity" },
+                            { num: 3, label: "Logistics" }, // Label updated here!
                         ].map((s, i) => (
                             <div key={s.num} className="flex items-center flex-1">
                                 <div className="flex items-center gap-2 flex-1">
@@ -290,7 +298,6 @@ export function CreateEventPage() {
                                     onChange={(e) => {
                                         const file = e.target.files?.[0];
                                         if (file) {
-                                            // 2MB Size Limit
                                             if (file.size > 2 * 1024 * 1024) { 
                                                 alert("File size exceeds 2MB limit. Please upload a smaller image.");
                                                 return;
@@ -383,9 +390,10 @@ export function CreateEventPage() {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-semibold text-[#1d1d1f] mb-3">Description</label>
+                            <label className="block text-sm font-semibold text-[#1d1d1f] mb-1">The Cause (Description)</label>
+                            <p className="text-xs text-[#86868b] mb-3">Why are you doing this? What impact will volunteers have?</p>
                             <textarea
-                                placeholder="What will volunteers be doing? What's the cause? Share the details..."
+                                placeholder="Share the story behind this event..."
                                 rows={5}
                                 value={formData.description}
                                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -437,7 +445,6 @@ export function CreateEventPage() {
                             />
                         </div>
 
-                        {/* --- UPDATED PRECISE LOCATION SECTION --- */}
                         <div>
                             <label className="block text-sm font-semibold text-[#1d1d1f] mb-3">
                                 <MapPin className="w-4 h-4 inline mr-2 text-emerald-500" />
@@ -466,7 +473,6 @@ export function CreateEventPage() {
                                 </button>
                             </div>
 
-                            {/* Map Preview Embed */}
                             <div className="aspect-2/1 bg-[#f5f5f7] rounded-xl overflow-hidden border border-[#e5e5e7] shadow-inner">
                                 {formData.location ? (
                                     <iframe
@@ -524,12 +530,45 @@ export function CreateEventPage() {
 
                 {step === 3 && (
                     <div className="space-y-6 md:space-y-8">
+                        
+                        {/* --- THE NEW CLUB FIELDS YOU WERE MISSING! --- */}
+                        <div>
+                            <label className="block text-sm font-semibold text-[#1d1d1f] mb-1">
+                                Point of Contact
+                            </label>
+                            <p className="text-xs text-[#86868b] mb-3">Who should volunteers look for or call when they arrive?</p>
+                            <input
+                                type="text"
+                                placeholder="e.g., Rahul Verma (9876543210)"
+                                value={formData.pointOfContact}
+                                onChange={(e) => setFormData({ ...formData, pointOfContact: e.target.value })}
+                                className="w-full h-12 md:h-14 px-4 bg-[#f5f5f7] rounded-xl border-0 text-[#1d1d1f] placeholder:text-[#86868b] focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all text-sm md:text-base"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-semibold text-[#1d1d1f] mb-1">
+                                Proposed Connect Activity
+                                <span className="text-xs text-[#86868b] font-normal ml-2">(Optional)</span>
+                            </label>
+                            <p className="text-xs text-[#86868b] mb-3">Are you planning a post-event hangout? (e.g., Coffee, breakfast nearby). If left blank, our team may suggest one.</p>
+                            <input
+                                type="text"
+                                placeholder="e.g., Grabbing breakfast at Roastery Coffee after!"
+                                value={formData.proposedConnect}
+                                onChange={(e) => setFormData({ ...formData, proposedConnect: e.target.value })}
+                                className="w-full h-12 md:h-14 px-4 bg-[#f5f5f7] rounded-xl border-0 text-[#1d1d1f] placeholder:text-[#86868b] focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all text-sm md:text-base"
+                            />
+                        </div>
+
+                        <hr className="border-[#f5f5f7] my-6" />
+                        {/* --------------------------------------------- */}
+
                         <div>
                             <label className="block text-sm font-semibold text-[#1d1d1f] mb-3">
                                 <Users className="w-4 h-4 inline mr-2 text-emerald-500" />
                                 Total Volunteer Slots
                             </label>
-                            {/* ✅ UPDATED: Added min="1" and an onKeyDown blocker to prevent -, e, and . */}
                             <input
                                 type="number"
                                 min="1"
@@ -543,7 +582,6 @@ export function CreateEventPage() {
                             />
                         </div>
 
-                        {/* --- NEW REGISTRATION DEADLINE SECTION --- */}
                         <div>
                             <label className="block text-sm font-semibold text-[#1d1d1f] mb-3">
                                 <Clock className="w-4 h-4 inline mr-2 text-emerald-500" />
@@ -554,7 +592,6 @@ export function CreateEventPage() {
                                 value={formData.registrationDeadline}
                                 onChange={(e) => setFormData({ ...formData, registrationDeadline: e.target.value })}
                                 min={new Date(new Date().getTime() + 60 * 60 * 1000).toISOString().slice(0, 16)}
-                                // Add max attribute if date and start time are set
                                 max={formData.eventDate && formData.startTime ? `${formData.eventDate}T${formData.startTime}` : undefined}
                                 className="w-full h-12 md:h-14 px-4 bg-[#f5f5f7] rounded-xl border-0 text-[#1d1d1f] focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all text-sm md:text-base"
                             />
@@ -562,14 +599,12 @@ export function CreateEventPage() {
                                 Must be at least 1 hour before event start time
                             </p>
                         </div>
-                        {/* -------------------------------------- */}
 
                         <div>
                             <label className="block text-sm font-semibold text-[#1d1d1f] mb-3">
                                 Minimum Age
                                 <span className="text-xs text-[#86868b] font-normal ml-2">(Optional)</span>
                             </label>
-                            {/* ✅ UPDATED: Added min="1" and an onKeyDown blocker to prevent -, e, and . */}
                             <input
                                 type="number"
                                 min="1"
@@ -680,7 +715,7 @@ export function CreateEventPage() {
                         }}
                         className="flex-1 h-12 md:h-14 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-semibold hover:opacity-90 transition-opacity shadow-lg text-sm md:text-base"
                     >
-                        {step === 3 ? "Publish Event" : "Continue"}
+                        {step === 3 ? "Submit for Approval" : "Continue"}
                     </button>
                 </div>
             </footer>

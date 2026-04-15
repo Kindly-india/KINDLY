@@ -47,6 +47,8 @@ export interface CreateEventData {
   registrationDeadline: string;
   minimumAge?: number;
   gallery_images?: string[];
+  pointOfContact: string;
+  proposedConnect?: string;
 }
 
 export interface UpdateVolunteerProfileDto {
@@ -1006,5 +1008,43 @@ export const api = {
       console.error('Failed to fetch platform stats:', error);
       return null;
     }
+  },
+
+  // --- ADMIN ROUTES ---
+
+  getPendingEvents: async () => {
+    // Make sure API_URL is defined at the top of your file like your other routes!
+    const token = localStorage.getItem('token'); // Adjust this if you get your token differently
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/events/admin/pending`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || 'Failed to fetch pending events');
+    }
+    return response.json();
+  },
+
+  adminApproveEvent: async (eventId: string, eventData: any) => {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/events/admin/approve/${eventId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      },
+      body: JSON.stringify(eventData),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || 'Failed to approve event');
+    }
+    return response.json();
   },
 };

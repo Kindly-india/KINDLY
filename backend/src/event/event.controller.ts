@@ -11,6 +11,25 @@ import { FileInterceptor } from '@nestjs/platform-express';
 export class EventController {
   constructor(private eventService: EventService) { }
 
+    // ==========================================
+  // ADMIN "GHOST MODE" ROUTES
+  // ==========================================
+
+  // 1. Fetch all pending events
+  @Get('admin/pending')
+  async getPendingEvents() {
+    return this.eventService.getPendingEvents();
+  }
+
+  // 2. Approve and update an event simultaneously
+  @Patch('admin/approve/:id')
+  async adminApproveEvent(
+    @Param('id') eventId: string,
+    @Body() updateData: any // Using 'any' or 'Partial<CreateEventDto>' here since you're the admin overriding it
+  ) {
+    return this.eventService.adminApproveEvent(eventId, updateData);
+  }
+
   // ==========================================
   // 🟢 PUBLIC ROUTES (No Token Needed)
   // ==========================================
@@ -196,4 +215,5 @@ export class EventController {
   async getMyReview(@Request() req: any, @Param('id') eventId: string) {
     return this.eventService.getVolunteerReview(req.user.id, eventId);
   }
+
 }

@@ -31,7 +31,7 @@ export class EventService {
     return publicUrl;
   }
 
-  async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
+async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
     const supabase = this.supabaseService.getClient();
 
     // 1. Verify Organization
@@ -87,6 +87,10 @@ export class EventService {
       location: dto.location,
       dress_code: dto.dressCode,
       things_to_bring: dto.thingsToBring,
+      // --- NEW CLUB FIELDS ---
+      point_of_contact: dto.pointOfContact,
+      proposed_connect: dto.proposedConnect,
+      // -----------------------
       total_slots: dto.totalSlots,
       registration_deadline: dto.registrationDeadline,
       minimum_age: dto.minimumAge,
@@ -663,10 +667,14 @@ export class EventService {
         location: dto.location,
         dress_code: dto.dressCode,
         things_to_bring: dto.thingsToBring,
+        // --- NEW CLUB FIELDS ---
+        point_of_contact: dto.pointOfContact,
+        proposed_connect: dto.proposedConnect,
+        // -----------------------
         total_slots: dto.totalSlots,
         registration_deadline: dto.registrationDeadline,
         minimum_age: dto.minimumAge,
-        status: 'published',
+        status: 'pending', // <--- CHANGED FROM 'published' TO 'pending'
       })
       .select()
       .single();
@@ -938,5 +946,68 @@ export class EventService {
       .single();
 
     return { review };
+  }
+
+  // --- ADMIN GOD MODE APIs ---
+
+  // Get all pending events
+  async getPendingEvents() {
+    const supabase = this.supabaseService.getClient();
+
+    const { data: events, error } = await supabase
+      .from('events')
+      .select(`
+      *,
+      organization_profiles (
+        name,
+        email,
+        phone
+      )
+    `)
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    return { events };
+  }
+
+  // Admin route to forcefully approve and edit an event
+  async adminApproveEvent(eventId: string, updateData: Partial<CreateEventDto>) {
+    const supabase = this.supabaseService.getClient();
+
+    // Map the incoming DTO back to the database format
+    const dbUpdateData: any = {
+      status: 'published', // Force status to published
+      title: updateData.title,
+      description: updateData.description,
+      category: updateData.category,
+      event_date: updateData.eventDate,
+      start_time: updateData.startTime,
+      end_time: updateData.endTime,
+      location: updateData.location,
+      point_of_contact: updateData.pointOfContact,
+      proposed_connect: updateData.proposedConnect, // You can override this here
+      // ... we map the rest of the fields we care about tweaking
+      updated_at: new Date().toISOString(),
+    };
+
+    // Remove undefined fields so we don't accidentally wipe data
+    Object.keys(dbUpdateData).forEach(key => {
+      if (dbUpdateData[key] === undefined) {
+        delete dbUpdateData[key];
+      }
+    });
+
+    const { data: updatedEvent, error } = await supabase
+      .from('events')
+      .update(dbUpdateData)
+      .eq('id', eventId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return { message: 'Event approved and published!', event: updatedEvent };
   }
 }

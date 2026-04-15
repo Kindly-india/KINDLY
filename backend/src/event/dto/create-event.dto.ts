@@ -44,6 +44,14 @@ export class CreateEventDto {
   @IsString()
   thingsToBring?: string;
 
+  @IsString()
+  @IsNotEmpty()
+  pointOfContact: string;
+
+  @IsOptional()
+  @IsString()
+  proposedConnect?: string;
+
   @IsInt()
   @Min(1)
   totalSlots: number;

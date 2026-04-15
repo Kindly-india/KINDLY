@@ -14,11 +14,14 @@ import {
   Eye,
   Edit,
   Trash2,
+  Hourglass, // Added for pending state
 } from "lucide-react"
 import { api } from "@/lib/api"
+import { cn } from "@/lib/utils"
 import Image from "next/image"
 
-type EventTab = "active" | "completed"
+// --- UPDATED TAB TYPE ---
+type EventTab = "pending" | "active" | "completed"
 
 interface Event {
   id: string
@@ -33,7 +36,7 @@ interface Event {
   total_slots: number
   registered_count: number
   checked_in_count: number
-  status: string
+  status: string // 'pending', 'published', 'completed', 'cancelled'
   created_at: string
 }
 
@@ -48,7 +51,7 @@ export function OrgEventManagement() {
   const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<EventTab>("active")
+  const [activeTab, setActiveTab] = useState<EventTab>("active") // Default to active
   const [deletingEventId, setDeletingEventId] = useState<string | null>(null)
 
   useEffect(() => {
@@ -58,7 +61,6 @@ export function OrgEventManagement() {
   const fetchData = async () => {
     try {
       setLoading(true)
-      // Fetch both Events AND Profile (for the navbar)
       const [eventsRes, profileRes] = await Promise.all([
         api.getMyEvents(),
         api.getUserProfile()
@@ -83,7 +85,6 @@ export function OrgEventManagement() {
     try {
       setDeletingEventId(eventId)
       await api.cancelEvent(eventId)
-      // Refresh only events
       const response = await api.getMyEvents()
       setEvents(response.events || [])
       alert('Event cancelled successfully')
@@ -104,6 +105,7 @@ export function OrgEventManagement() {
   }
 
   const formatTime = (timeString: string) => {
+    if (!timeString) return ""
     const [hours, minutes] = timeString.split(':')
     const hour = parseInt(hours)
     const ampm = hour >= 12 ? 'PM' : 'AM'
@@ -119,10 +121,11 @@ export function OrgEventManagement() {
   }
 
   const getRegistrationPercentage = (event: Event) => {
+    if (!event.total_slots) return 0
     return Math.round((event.registered_count / event.total_slots) * 100)
   }
 
-  // Navbar Helper: Check active link
+  // Navbar Helper
   const isActive = (path: string) =>
     pathname === path ? "text-[#0066cc] font-medium" : "text-[#1d1d1f] hover:text-[#0066cc]"
 
@@ -137,14 +140,19 @@ export function OrgEventManagement() {
     )
   }
 
-  const activeEvents = events.filter(e => !isEventCompleted(e) && e.status !== 'cancelled')
-  const completedEvents = events.filter(e => isEventCompleted(e) || e.status === 'completed')
-  const displayEvents = activeTab === "active" ? activeEvents : completedEvents
+  // --- UPDATED FILTERING LOGIC ---
+  const pendingEvents = events.filter(e => e.status === 'pending')
+  const activeEvents = events.filter(e => e.status === 'published' && !isEventCompleted(e))
+  const completedEvents = events.filter(e => e.status === 'completed' || (e.status === 'published' && isEventCompleted(e)))
+
+  let displayEvents: Event[] = []
+  if (activeTab === "pending") displayEvents = pendingEvents
+  else if (activeTab === "active") displayEvents = activeEvents
+  else displayEvents = completedEvents
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 pb-24">
 
-      {/* Decorative Background Elements */}
       <div className="fixed top-20 left-8 w-12 h-12 bg-white rounded-xl shadow-lg hidden md:flex items-center justify-center pointer-events-none">
         <Heart className="w-5 h-5 text-red-400" />
       </div>
@@ -163,11 +171,20 @@ export function OrgEventManagement() {
           <p className="text-[13px] md:text-base text-gray-600">Manage your volunteering events</p>
         </div>
 
-        {/* Tabs - Tighter on mobile */}
-        <div className="flex gap-2 md:gap-3 mb-4 md:mb-6">
+        {/* --- UPDATED TABS WITH PENDING SECTION --- */}
+        <div className="flex gap-2 md:gap-3 mb-4 md:mb-6 overflow-x-auto no-scrollbar pb-2">
+          <button
+            onClick={() => setActiveTab("pending")}
+            className={`px-4 py-1.5 md:px-6 md:py-2.5 rounded-full font-medium text-[12px] md:text-sm transition-all whitespace-nowrap ${activeTab === "pending"
+                ? "bg-amber-500 text-white shadow-md"
+                : "bg-white text-gray-600 border border-gray-200 md:border-transparent hover:bg-gray-50"
+              }`}
+          >
+            Pending {pendingEvents.length > 0 && `(${pendingEvents.length})`}
+          </button>
           <button
             onClick={() => setActiveTab("active")}
-            className={`px-4 py-1.5 md:px-6 md:py-2.5 rounded-full font-medium text-[12px] md:text-sm transition-all ${activeTab === "active"
+            className={`px-4 py-1.5 md:px-6 md:py-2.5 rounded-full font-medium text-[12px] md:text-sm transition-all whitespace-nowrap ${activeTab === "active"
                 ? "bg-orange-500 text-white shadow-md"
                 : "bg-white text-gray-600 border border-gray-200 md:border-transparent hover:bg-gray-50"
               }`}
@@ -176,7 +193,7 @@ export function OrgEventManagement() {
           </button>
           <button
             onClick={() => setActiveTab("completed")}
-            className={`px-4 py-1.5 md:px-6 md:py-2.5 rounded-full font-medium text-[12px] md:text-sm transition-all ${activeTab === "completed"
+            className={`px-4 py-1.5 md:px-6 md:py-2.5 rounded-full font-medium text-[12px] md:text-sm transition-all whitespace-nowrap ${activeTab === "completed"
                 ? "bg-orange-500 text-white shadow-md"
                 : "bg-white text-gray-600 border border-gray-200 md:border-transparent hover:bg-gray-50"
               }`}
@@ -194,12 +211,18 @@ export function OrgEventManagement() {
         {/* Event List */}
         {displayEvents.length === 0 ? (
           <div className="text-center py-10 md:py-16 bg-white rounded-2xl shadow-sm border border-gray-100">
-            <Calendar className="w-10 h-10 md:w-16 md:h-16 text-gray-300 mx-auto mb-3 md:mb-4" />
+            {activeTab === "pending" ? (
+              <Hourglass className="w-10 h-10 md:w-16 md:h-16 text-amber-300 mx-auto mb-3 md:mb-4" />
+            ) : (
+              <Calendar className="w-10 h-10 md:w-16 md:h-16 text-gray-300 mx-auto mb-3 md:mb-4" />
+            )}
             <h3 className="text-[15px] md:text-lg font-semibold text-gray-900 mb-1.5 md:mb-2">
               No {activeTab} events
             </h3>
             <p className="text-[13px] md:text-sm text-gray-500 mb-5 md:mb-6">
-              {activeTab === "active"
+              {activeTab === "pending" 
+                ? "When you create an event, it will appear here for review." 
+                : activeTab === "active"
                 ? "Create your first event to get started!"
                 : "Your completed events will appear here"}
             </p>
@@ -213,7 +236,6 @@ export function OrgEventManagement() {
             )}
           </div>
         ) : (
-          /* Reduced space-y for hyper-compact mobile list */
           <div className="space-y-2.5 md:space-y-4">
             {displayEvents.map((event) => (
               <div
@@ -222,7 +244,7 @@ export function OrgEventManagement() {
               >
                 <div className="flex flex-col md:flex-row">
                   
-                  {/* DESKTOP Image: Hidden entirely on mobile, big square on desktop */}
+                  {/* Desktop Image */}
                   <div className="hidden md:flex w-48 bg-gradient-to-br from-teal-400 to-emerald-400 items-center justify-center shrink-0">
                     {event.cover_image_url ? (
                       <img
@@ -235,13 +257,10 @@ export function OrgEventManagement() {
                     )}
                   </div>
 
-                  {/* Content Container - Tight mobile padding */}
                   <div className="flex-1 p-3.5 md:p-6">
-                    
-                    {/* Mobile Top Row: Thumbnail + Title/Details side-by-side */}
                     <div className="flex gap-3 md:gap-0 md:block items-start mb-0 md:mb-3">
                       
-                      {/* MOBILE Image Thumbnail: Only visible on mobile */}
+                      {/* Mobile Image Thumbnail */}
                       <div className="w-16 h-16 md:hidden rounded-xl bg-gradient-to-br from-teal-400 to-emerald-400 flex items-center justify-center shrink-0 overflow-hidden shadow-sm">
                         {event.cover_image_url ? (
                           <img
@@ -259,12 +278,24 @@ export function OrgEventManagement() {
                           <h3 className="text-[15px] md:text-xl font-bold text-gray-900 truncate leading-tight mt-0.5 md:mt-0">
                             {event.title}
                           </h3>
-                          <span className={`px-2 py-0.5 md:px-3 md:py-1 text-[9px] md:text-xs font-semibold rounded-full shrink-0 border ${event.status === 'completed' ? 'bg-gray-50 text-gray-600 border-gray-200' : 'bg-emerald-50 text-emerald-600 border-emerald-100'}`}>
-                            {event.status === 'completed' || isEventCompleted(event) ? 'Completed' : 'Published'}
+                          
+                          {/* --- UPDATED STATUS BADGES --- */}
+                          <span className={cn(
+                            "px-2 py-0.5 md:px-3 md:py-1 text-[9px] md:text-xs font-bold rounded-full shrink-0 border uppercase tracking-wider",
+                            event.status === 'pending' 
+                              ? "bg-amber-50 text-amber-600 border-amber-100" 
+                              : (event.status === 'completed' || isEventCompleted(event))
+                              ? "bg-gray-50 text-gray-600 border-gray-200"
+                              : "bg-emerald-50 text-emerald-600 border-emerald-100"
+                          )}>
+                            {event.status === 'pending' 
+                              ? 'Pending Review' 
+                              : (event.status === 'completed' || isEventCompleted(event)) 
+                              ? 'Completed' 
+                              : 'Published'}
                           </span>
                         </div>
                         
-                        {/* Date and Location Stack */}
                         <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-4 text-[11px] md:text-sm text-gray-500">
                           <div className="flex items-center gap-1.5 truncate">
                             <Calendar className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0 text-gray-400" />
@@ -295,7 +326,7 @@ export function OrgEventManagement() {
                       </div>
                     </div>
 
-                    {/* Action Buttons - Hyper compact on mobile */}
+                    {/* Action Buttons */}
                     <div className="flex flex-wrap gap-2 md:gap-2">
                       <Link
                         href={activeTab === "completed"
@@ -307,8 +338,8 @@ export function OrgEventManagement() {
                         View
                       </Link>
 
-                      {activeTab === "active" && (
-                        <>
+                      {/* --- OPTION C: Only show edit if pending --- */}
+                      {(activeTab === "pending" || event.status === 'pending') && (
                           <Link
                             href={`/edit-event/${event.id}`}
                             className="px-3 py-1.5 md:px-4 md:py-2 bg-blue-50 text-blue-600 rounded-lg text-[11px] md:text-sm font-semibold hover:bg-blue-100 transition-colors inline-flex items-center gap-1.5 md:gap-2 border border-blue-100/50"
@@ -316,7 +347,9 @@ export function OrgEventManagement() {
                             <Edit className="w-3.5 h-3.5 md:w-4 md:h-4" />
                             Edit
                           </Link>
+                      )}
 
+                      {(activeTab === "active" || activeTab === "pending") && (
                           <button
                             onClick={() => handleCancelEvent(event.id)}
                             disabled={deletingEventId === event.id}
@@ -325,7 +358,6 @@ export function OrgEventManagement() {
                             <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
                             {deletingEventId === event.id ? "Wait..." : "Cancel"}
                           </button>
-                        </>
                       )}
                     </div>
                   </div>

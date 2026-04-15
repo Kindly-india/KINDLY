@@ -16,15 +16,29 @@ import {
   Navigation,
   Calendar,
   AlertCircle,
+  Coffee, // Added for The Connect
+  ShieldCheck, // Added for Verification
+  Sparkles, // Added for Premium Feel
+  Info,
+  Loader2,
+  Users
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { api } from "@/lib/api"
+import { cn } from "@/lib/utils"
 
+/**
+ * EventDetailsPage Component
+ * * This page serves as the primary touchpoint for volunteers to discover
+ * and commit to social initiatives in Nashik. It displays full event details,
+ * logistics, and the curated "Connect" social activity.
+ */
 export default function EventDetailsPage() {
   const params = useParams()
   const router = useRouter()
   const eventId = params?.id as string
 
+  // --- STATE MANAGEMENT ---
   const [event, setEvent] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -33,27 +47,35 @@ export default function EventDetailsPage() {
   const [isRegistering, setIsRegistering] = useState(false)
   const [isRegistered, setIsRegistered] = useState(false)
 
-  // Fetch event data
+  /**
+   * Data Fetching Logic
+   * Fetches the event details and checks if the current user
+   * is already a participant in this specific event.
+   */
   useEffect(() => {
     const fetchEvent = async () => {
       try {
         setLoading(true)
+
+        // Fetch Public Event Data (includes proposed_connect from DB)
         const response = await api.getPublicEventById(eventId)
         setEvent(response.event)
 
-        // Check if current user is already registered
+        // Check if current user is already registered (Safe check)
         try {
           const registrations = await api.getMyRegistrations()
           const alreadyRegistered = registrations?.events?.some(
             (r: any) => r.id === eventId
           )
           setIsRegistered(!!alreadyRegistered)
-        } catch {
-          // Not logged in or no registrations — leave isRegistered as false
+        } catch (regError) {
+          // If the user isn't logged in, registration fetch will fail.
+          // We catch it here so the page still loads the public event data.
+          console.log("User not logged in; skipping registration check.")
         }
 
       } catch (err: any) {
-        setError(err.message || 'Failed to load event')
+        setError(err.message || 'Failed to load event details')
       } finally {
         setLoading(false)
       }
@@ -62,12 +84,16 @@ export default function EventDetailsPage() {
     if (eventId) fetchEvent()
   }, [eventId])
 
-  // Handle registration
+  /**
+   * handleBookSlot
+   * Manages the registration pipeline for the volunteer.
+   * Includes auth-check and local state updates for instant feedback.
+   */
   const handleBookSlot = async () => {
     try {
       setIsRegistering(true)
 
-      // Check if user is logged in
+      // 1. Verify Authentication
       const user = await api.getCurrentUser()
       if (!user) {
         alert('Please login to register for events')
@@ -75,13 +101,14 @@ export default function EventDetailsPage() {
         return
       }
 
+      // 2. API Call to Register
       await api.registerForEvent(eventId)
 
-      // Update local state
+      // 3. Update local state for reactive UI
       setIsRegistered(true)
       setEvent((prev: any) => ({
         ...prev,
-        registered_count: prev.registered_count + 1
+        registered_count: (prev.registered_count || 0) + 1
       }))
 
       alert('Successfully registered for the event! 🎉')
@@ -96,13 +123,21 @@ export default function EventDetailsPage() {
     }
   }
 
-  // Format helpers
+  // --- UI FORMATTING HELPERS ---
+
   const formatDate = (dateString: string) => {
+    if (!dateString) return ""
     const date = new Date(dateString)
-    return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+    return date.toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    })
   }
 
   const formatTime = (timeString: string) => {
+    if (!timeString) return ""
     const [hours, minutes] = timeString.split(':')
     const hour = parseInt(hours)
     const ampm = hour >= 12 ? 'PM' : 'AM'
@@ -110,12 +145,14 @@ export default function EventDetailsPage() {
     return `${displayHour}:${minutes} ${ampm}`
   }
 
+  // --- LOADING & ERROR STATES ---
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-[#F9F9F9]">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
-          <p className="text-sm text-gray-600">Loading event...</p>
+          <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mb-4"></div>
+          <p className="text-sm font-medium text-gray-500 tracking-wide">CURATING DETAILS...</p>
         </div>
       </div>
     )
@@ -123,37 +160,52 @@ export default function EventDetailsPage() {
 
   if (error || !event) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-sm text-red-600 mb-4">{error || 'Event not found'}</p>
-          <Link href="/events" className="text-sm text-blue-600 hover:underline">
-            Back to Events
+      <div className="min-h-screen flex items-center justify-center bg-white p-6">
+        <div className="text-center max-w-sm">
+          <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <AlertCircle className="w-8 h-8 text-red-500" />
+          </div>
+          <p className="text-lg font-bold text-gray-900 mb-2">{error || 'Event not found'}</p>
+          <p className="text-sm text-gray-500 mb-6">The event might have been cancelled or the link is invalid.</p>
+          <Link href="/events">
+            <Button className="w-full bg-gray-900 text-white rounded-xl">
+              Explore Other Events
+            </Button>
           </Link>
         </div>
       </div>
     )
   }
 
+  // --- LOGIC CALCULATIONS ---
 
-  const isRegistrationOpen = event?.registration_deadline ? new Date(event.registration_deadline) > new Date() : true // ADD THIS LINE
-  const slotsLeft = event.total_slots - event.registered_count
+  const isRegistrationOpen = event?.registration_deadline
+    ? new Date(event.registration_deadline) > new Date()
+    : true
+
+  const slotsLeft = Math.max(0, event.total_slots - (event.registered_count || 0))
   const isFull = slotsLeft <= 0
-  const canRegister = isRegistrationOpen && !isFull && !isRegistered // ADD THIS LINE
+  const canRegister = isRegistrationOpen && !isFull && !isRegistered
 
   const shortDescription = event.description?.length > 150
     ? event.description.slice(0, 150) + "..."
     : event.description
 
-
   return (
-    <div className="min-h-screen bg-white pb-24 md:pb-8">
-      {/* Desktop Layout Container */}
-      <div className="md:flex md:max-w-6xl md:mx-auto md:gap-8 md:py-8 md:px-6">
-        {/* Left Content Column */}
+    <div className="min-h-screen bg-white pb-24 md:pb-12">
+
+      {/* LAYOUT STRUCTURE:
+          - Left Column (md:flex-1): Visuals, Logistics, Description, The Connect.
+          - Right Sidebar (md:w-85): Fixed Booking Widget.
+      */}
+      <div className="md:flex md:max-w-6xl md:mx-auto md:gap-10 md:py-10 md:px-8">
+
+        {/* --- LEFT CONTENT COLUMN --- */}
         <div className="md:flex-1">
-          {/* Hero Image with Overlay Navigation */}
+
+          {/* HERO IMAGE SECTION */}
           <div className="relative">
-            <div className="relative h-70 md:h-100 md:rounded-2xl md:overflow-hidden">
+            <div className="relative h-72 md:h-110 md:rounded-[32px] md:overflow-hidden md:shadow-2xl md:border border-gray-100">
               {event.cover_image_url ? (
                 <img
                   src={event.cover_image_url}
@@ -161,134 +213,147 @@ export default function EventDetailsPage() {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                  <Calendar className="w-16 h-16 text-gray-400" />
+                <div className="w-full h-full bg-gradient-to-br from-[#f5f5f7] to-[#e5e5e7] flex items-center justify-center">
+                  <Calendar className="w-20 h-20 text-gray-300" />
                 </div>
               )}
 
-              {/* Overlay Navigation Buttons */}
-              <div className="absolute top-4 left-4 right-4 flex justify-between items-center z-10">
-                {/* Back Button */}
+              {/* OVERLAY NAVIGATION */}
+              <div className="absolute top-4 left-4 right-4 flex justify-between items-center z-20">
                 <Link href="/events">
-                  <button className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-white/80 backdrop-blur-md flex items-center justify-center shadow-lg hover:bg-white transition-colors">
-                    <ArrowLeft className="w-4 h-4 md:w-5 md:h-5 text-gray-800" />
+                  <button className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-white/90 backdrop-blur-xl flex items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition-all">
+                    <ArrowLeft className="w-5 h-5 text-gray-900" />
                   </button>
                 </Link>
 
-                {/* Share & Save Buttons */}
                 <div className="flex gap-2">
-                  <button className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-white/80 backdrop-blur-md flex items-center justify-center shadow-lg hover:bg-white transition-colors">
-                    <Share2 className="w-4 h-4 md:w-5 md:h-5 text-gray-800" />
+                  <button className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-white/90 backdrop-blur-xl flex items-center justify-center shadow-xl hover:scale-105 transition-all">
+                    <Share2 className="w-5 h-5 text-gray-900" />
                   </button>
                   <button
                     onClick={() => setIsSaved(!isSaved)}
-                    className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-white/80 backdrop-blur-md flex items-center justify-center shadow-lg hover:bg-white transition-colors"
+                    className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-white/90 backdrop-blur-xl flex items-center justify-center shadow-xl hover:scale-105 transition-all"
                   >
                     <Heart
-                      className={`w-4 h-4 md:w-5 md:h-5 transition-colors ${isSaved ? "fill-red-500 text-red-500" : "text-gray-800"}`}
+                      className={`w-5 h-5 transition-colors ${isSaved ? "fill-red-500 text-red-500" : "text-gray-900"}`}
                     />
                   </button>
                 </div>
               </div>
+
+              {/* Image Overlay Gradient for mobile title legibility */}
+              <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/20 to-transparent md:hidden" />
             </div>
           </div>
 
-          {/* Title & Main Info Block */}
-          <div className="px-4 md:px-0 pt-5 pb-4">
-            {/* Title */}
-            <h1 className="text-xl md:text-2xl font-bold text-gray-900 leading-tight mb-3">{event.title}</h1>
-
-            {/* Badges Row */}
-            <div className="flex items-center gap-2 mb-4">
-              <span className="px-2.5 py-1 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full capitalize">
-                {event.category}
-              </span>
-              {event.is_urgent && (
-                <span className="px-2.5 py-1 bg-red-100 text-red-600 text-xs font-medium rounded-full flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3" />
-                  Urgent
+          {/* MAIN HEADER INFO */}
+          <div className="px-5 md:px-0 pt-6 pb-6 border-b border-gray-100 md:border-0">
+            <div className="flex flex-col gap-1 mb-2">
+              <div className="flex items-center gap-2">
+                <span className="px-3 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-bold rounded-full uppercase tracking-widest border border-emerald-100">
+                  {event.category}
                 </span>
-              )}
+                {event.is_urgent && (
+                  <span className="px-3 py-1 bg-red-50 text-red-600 text-[10px] font-bold rounded-full uppercase tracking-widest border border-red-100 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    Urgent
+                  </span>
+                )}
+              </div>
+              <h1 className="text-2xl md:text-4xl font-black text-gray-900 leading-tight mt-2">
+                {event.title}
+              </h1>
             </div>
 
-            {/* Organizer Row */}
-            <div className="flex items-center justify-between">
+            {/* ORGANIZER PROFILE */}
+            <div className="flex items-center justify-between mt-4">
               <Link href={`/organizations/${event.organization_id}`}>
-                <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-full overflow-hidden bg-gradient-to-br from-orange-400 to-rose-500 flex items-center justify-center text-white font-semibold">
+                <div className="flex items-center gap-3 group">
+                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl overflow-hidden bg-gradient-to-br from-orange-400 to-rose-500 flex items-center justify-center text-white font-bold text-lg shadow-md group-hover:scale-105 transition-transform">
                     {event.organization_profiles?.name?.charAt(0) || 'O'}
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-sm font-medium text-gray-900">
-                      {event.organization_profiles?.name || 'Organization'}
-                    </span>
-                    <CheckCircle2 className="w-4 h-4 text-blue-500 fill-blue-500" />
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-sm md:text-base font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+                        {event.organization_profiles?.name || 'Organization'}
+                      </span>
+                      <ShieldCheck className="w-4 h-4 text-blue-500 fill-blue-50" />
+                    </div>
+                    <span className="text-[10px] text-gray-500 font-medium uppercase tracking-tight">Verified Organization</span>
                   </div>
                 </div>
               </Link>
             </div>
           </div>
 
-          {/* Know Before You Go Grid */}
-          <div className="px-4 md:px-0 pb-5">
-            <div className="bg-[#F5F5F7] rounded-xl p-4">
-              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Know Before You Go</h3>
-              <div className="grid grid-cols-2 gap-3 mb-4">
-                {/* Date & Time */}
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-sm">
-                    <Clock className="w-4 h-4 text-teal-600" />
+          {/* LOGISTICS & INFO GRID */}
+          <div className="px-5 md:px-0 py-6">
+            <div className="bg-[#F5F5F7] rounded-[24px] p-6 md:p-8">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">Know Before You Go</h3>
+                <Sparkles className="w-4 h-4 text-amber-500 opacity-50" />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
+                {/* DATE LOGISTIC */}
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm border border-gray-100 shrink-0">
+                    <Clock className="w-5 h-5 text-teal-600" />
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500">When</p>
-                    <p className="text-sm font-medium text-gray-900">
-                      {formatDate(event.event_date)} • {formatTime(event.start_time)}
+                    <p className="text-[10px] font-bold text-gray-400 uppercase mb-0.5">Timeline</p>
+                    <p className="text-sm font-bold text-gray-900">
+                      {formatDate(event.event_date)}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {formatTime(event.start_time)} — {formatTime(event.end_time)}
                     </p>
                   </div>
                 </div>
 
-                {/* Location */}
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-sm">
-                    <MapPin className="w-4 h-4 text-coral-500" style={{ color: "#FF6B6B" }} />
+                {/* LOCATION LOGISTIC */}
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm border border-gray-100 shrink-0">
+                    <MapPin className="w-5 h-5 text-rose-500" />
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500">Where</p>
-                    <p className="text-sm font-medium text-gray-900 truncate max-w-30">{event.location}</p>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase mb-0.5">Location</p>
+                    <p className="text-sm font-bold text-gray-900 truncate max-w-[180px]">{event.location}</p>
+                    <p className="text-xs text-gray-500">Tap map for directions</p>
                   </div>
                 </div>
 
-                {/* Dress Code */}
+                {/* DRESS CODE LOGISTIC */}
                 {event.dress_code && (
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-sm">
-                      <Footprints className="w-4 h-4 text-amber-500" />
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm border border-gray-100 shrink-0">
+                      <Footprints className="w-5 h-5 text-amber-500" />
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500">Dress</p>
-                      <p className="text-sm font-medium text-gray-900">{event.dress_code}</p>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase mb-0.5">Dress Code</p>
+                      <p className="text-sm font-bold text-gray-900">{event.dress_code}</p>
                     </div>
                   </div>
                 )}
 
-                {/* Age Limit */}
-                {event.minimum_age && (
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-sm">
-                      <User className="w-4 h-4 text-purple-500" />
+                {/* POINT OF CONTACT LOGISTIC (Added for Concierge flow) */}
+                {event.point_of_contact && (
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm border border-gray-100 shrink-0">
+                      <User className="w-5 h-5 text-purple-500" />
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500">Age</p>
-                      <p className="text-sm font-medium text-gray-900">{event.minimum_age}+ Only</p>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase mb-0.5">On-Site Host</p>
+                      <p className="text-sm font-bold text-gray-900">{event.point_of_contact}</p>
                     </div>
                   </div>
                 )}
               </div>
 
-              {/* --- ADDED MAP PREVIEW --- */}
-              <div className="rounded-lg overflow-hidden h-32 relative group border border-gray-200">
+              {/* MAP EMBED */}
+              <div className="rounded-2xl overflow-hidden h-40 relative group border border-gray-200 shadow-inner">
                 <a
-                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}`}
+                  href={`https://maps.google.com/maps?q=${encodeURIComponent(event.location)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="block w-full h-full"
@@ -298,140 +363,199 @@ export default function EventDetailsPage() {
                     height="100%"
                     frameBorder="0"
                     style={{ border: 0 }}
+                    // Standard free embed URL
                     src={`https://maps.google.com/maps?q=${encodeURIComponent(event.location)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
-                    className="absolute inset-0 w-full h-full pointer-events-none opacity-90 group-hover:opacity-100 transition-opacity"
+                    className="absolute inset-0 w-full h-full pointer-events-none opacity-80 group-hover:opacity-100 transition-opacity"
                   ></iframe>
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent pointer-events-none group-hover:bg-transparent transition-colors" />
-                  <div className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-lg text-xs font-medium text-gray-700 shadow-sm flex items-center gap-1.5 hover:bg-white transition-colors">
-                    <Navigation className="w-3 h-3 text-blue-600" />
-                    Get Directions
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
+                  <div className="absolute bottom-3 left-3 bg-white/95 backdrop-blur-md px-4 py-2 rounded-xl text-xs font-bold text-gray-900 shadow-xl flex items-center gap-2 hover:bg-white transition-all transform group-hover:translate-y-[-2px]">
+                    <Navigation className="w-3.5 h-3.5 text-blue-600" />
+                    Open Maps
                   </div>
                 </a>
               </div>
-
             </div>
           </div>
 
-          {/* Description */}
+          {/* --- THE CONNECT: KINDLY EXCLUSIVE SECTION --- */}
+          {event.proposed_connect && (
+            <div className="px-5 md:px-0 pb-8 mt-2">
+              <div className="bg-[#064e3b] rounded-[32px] p-8 shadow-2xl relative overflow-hidden border border-emerald-800">
+                {/* Decorative Elements */}
+                <div className="absolute -top-6 -right-6 opacity-10">
+                  <Coffee className="w-32 h-32 text-emerald-400" />
+                </div>
+
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 bg-emerald-500/20 rounded-2xl flex items-center justify-center">
+                    <Coffee className="w-5 h-5 text-emerald-400" />
+                  </div>
+                  <h3 className="text-xl font-black text-white tracking-tight">The Connect</h3>
+                </div>
+
+                <p className="text-emerald-100 text-sm md:text-base leading-relaxed font-medium mb-6">
+                  {event.proposed_connect}
+                </p>
+
+                <div className="flex items-center gap-2 text-[10px] font-bold text-emerald-400 uppercase tracking-widest bg-emerald-950/40 w-fit px-4 py-2 rounded-full border border-emerald-800/50">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  A KINDLY Exclusive Hangout
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* DESCRIPTION SECTION */}
           {event.description && (
-            <div className="px-4 md:px-0 pb-5">
-              <h3 className="text-sm font-semibold text-gray-900 mb-2">About This Event</h3>
-              <p className="text-sm text-gray-600 leading-relaxed">
+            <div className="px-5 md:px-0 pb-8 border-b border-gray-100 md:border-0">
+              <h3 className="text-lg font-black text-gray-900 mb-3 flex items-center gap-2">
+                <Info className="w-5 h-5 text-blue-500" />
+                The Cause
+              </h3>
+              <p className="text-base text-gray-600 leading-[1.8] font-medium">
                 {showFullDescription ? event.description : shortDescription}
               </p>
               {event.description.length > 150 && (
                 <button
                   onClick={() => setShowFullDescription(!showFullDescription)}
-                  className="text-sm font-medium text-blue-600 hover:text-blue-700 mt-1"
+                  className="text-sm font-bold text-blue-600 hover:text-blue-700 mt-3 underline underline-offset-4"
                 >
-                  {showFullDescription ? "Show Less" : "Read More"}
+                  {showFullDescription ? "Show Less" : "Read Full Story"}
                 </button>
               )}
             </div>
           )}
 
-          {/* Things to Bring */}
+          {/* THINGS TO BRING SECTION */}
           {event.things_to_bring && (
-            <div className="px-4 md:px-0 pb-5">
-              <h3 className="text-sm font-semibold text-gray-900 mb-2">Things to Bring</h3>
-              <p className="text-sm text-gray-600">{event.things_to_bring}</p>
+            <div className="px-5 md:px-0 pb-8 pt-6">
+              <h3 className="text-sm font-bold text-gray-900 uppercase tracking-widest mb-3">Logistics Check</h3>
+              <div className="p-5 bg-gray-50 rounded-2xl border border-gray-100">
+                <p className="text-sm text-gray-600 font-medium leading-relaxed">
+                  <span className="text-gray-900 font-bold block mb-1">Items to bring:</span>
+                  {event.things_to_bring}
+                </p>
+              </div>
             </div>
           )}
         </div>
 
-        {/* Right Sidebar - Desktop Booking Card */}
-        <div className="hidden md:block md:w-85">
-          <div className="sticky top-8 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-            {/* Card Header */}
-            <div className="p-5 border-b border-gray-100">
-              <div className="flex items-center justify-between mb-4">
+        {/* --- RIGHT SIDEBAR: DESKTOP BOOKING CARD --- */}
+        <div className="hidden md:block md:w-96">
+          <div className="sticky top-10 bg-white rounded-[32px] shadow-2xl border border-gray-100 overflow-hidden">
+
+            <div className="p-8 border-b border-gray-50">
+              <div className="flex items-center justify-between mb-6">
                 <div>
                   {!isFull && (
-                    <p className="text-xs text-red-500 font-medium mb-0.5">
+                    <p className="text-[10px] text-red-500 font-black uppercase tracking-widest mb-1 animate-pulse">
                       Only {slotsLeft} slot{slotsLeft !== 1 ? 's' : ''} left!
                     </p>
                   )}
-                  <p className="text-2xl font-bold text-gray-900">{formatDate(event.event_date)}</p>
+                  <p className="text-3xl font-black text-gray-900">{formatDate(event.event_date).split(',')[1]}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs text-gray-500">Starts at</p>
-                  <p className="text-lg font-semibold text-gray-900">{formatTime(event.start_time)}</p>
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Arrival</p>
+                  <p className="text-xl font-black text-gray-900">{formatTime(event.start_time)}</p>
                 </div>
               </div>
 
-              {/* Progress Bar */}
+              {/* PARTICIPATION PROGRESS */}
               <div className="mb-2">
-                <div className="flex justify-between text-xs text-gray-500 mb-1">
-                  <span>{event.registered_count} joined</span>
-                  <span>{event.total_slots} total</span>
+                <div className="flex justify-between text-[11px] font-bold text-gray-500 mb-2 uppercase tracking-tight">
+                  <span className="flex items-center gap-1">
+                    <Users className="w-3.5 h-3.5" />
+                    {event.registered_count || 0} Joined
+                  </span>
+                  <span>Goal: {event.total_slots}</span>
                 </div>
-                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-gradient-to-r from-teal-400 to-teal-500 rounded-full transition-all"
-                    style={{ width: `${(event.registered_count / event.total_slots) * 100}%` }}
+                    className="h-full bg-gradient-to-r from-teal-400 to-emerald-500 rounded-full transition-all duration-700 ease-out shadow-inner"
+                    style={{ width: `${((event.registered_count || 0) / event.total_slots) * 100}%` }}
                   />
                 </div>
               </div>
             </div>
 
-            {/* Card Body */}
-            <div className="p-5">
+            {/* ACTION CENTER */}
+            <div className="p-8 bg-gray-50/50">
               <Button
                 onClick={handleBookSlot}
                 disabled={isRegistering || !canRegister}
-                className="w-full h-12 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold rounded-full text-base shadow-lg shadow-blue-500/25 disabled:opacity-50 disabled:cursor-not-allowed"
+                className={cn(
+                  "w-full h-14 text-white font-black rounded-2xl text-lg shadow-2xl transition-all active:scale-95 disabled:opacity-50",
+                  isRegistered
+                    ? "bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/20"
+                    : "bg-gray-900 hover:bg-black shadow-gray-900/30"
+                )}
               >
-                {isRegistering ? 'Booking...'
-                  : isRegistered ? 'Registered ✓'
-                    : !isRegistrationOpen ? 'Registration Closed'
+                {isRegistering ? <Loader2 className="w-5 h-5 animate-spin" />
+                  : isRegistered ? 'Joined! ✓'
+                    : !isRegistrationOpen ? 'Entry Closed'
                       : isFull ? 'Event Full'
-                        : 'Book Your Slot'}
+                        : 'Book My Slot'}
               </Button>
 
-              <p className="text-center text-xs text-gray-500 mt-3">
-                {isFull ? 'No slots available' : 'Free to join • Instant confirmation'}
-              </p>
+              <div className="flex flex-col gap-2 mt-6">
+                <div className="flex items-center gap-2 text-xs text-gray-500 justify-center">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                  <span>Free Access</span>
+                  <span className="w-1 h-1 bg-gray-300 rounded-full mx-1"></span>
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                  <span>Instant Entry</span>
+                </div>
 
-              {!isRegistrationOpen && (
-                <p className="text-center text-xs text-red-600 mt-2">
-                  Registration closed on {new Date(event.registration_deadline).toLocaleString('en-IN', {
-                    dateStyle: 'medium',
-                    timeStyle: 'short'
-                  })}
-                </p>
-              )}
+                {!isRegistrationOpen && (
+                  <div className="p-3 bg-red-50 rounded-xl border border-red-100 mt-2">
+                    <p className="text-center text-[10px] font-bold text-red-600 uppercase tracking-tighter">
+                      Registration ended on {new Date(event.registration_deadline).toLocaleDateString()}
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
 
-            {/* Card Footer */}
-            <div className="px-5 pb-5">
-              <div className="flex items-center gap-3 p-3 bg-amber-50 rounded-xl">
-                <Calendar className="w-5 h-5 text-amber-600" />
-                <div>
-                  <p className="text-xs font-medium text-amber-800">Add to Calendar</p>
-                  <p className="text-xs text-amber-600">Get reminded before the event</p>
+            {/* CALENDAR ADDER */}
+            <div className="px-8 pb-8 bg-gray-50/50">
+              <button className="w-full flex items-center gap-4 p-4 bg-white rounded-2xl border border-gray-100 hover:border-blue-200 hover:bg-blue-50/30 transition-all group">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center group-hover:bg-blue-100 transition-colors">
+                  <Calendar className="w-5 h-5 text-blue-600" />
                 </div>
-              </div>
+                <div className="text-left">
+                  <p className="text-xs font-bold text-gray-900 uppercase tracking-tight">Sync to Calendar</p>
+                  <p className="text-[10px] text-gray-500">Get notified 1h before start</p>
+                </div>
+              </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Mobile Sticky Footer */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] z-50 md:hidden">
-        <div className="flex items-center justify-between px-4 py-3">
-          <div>
+      {/* --- MOBILE STICKY FOOTER --- */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-gray-100 shadow-[0_-8px_30px_rgba(0,0,0,0.12)] z-50 md:hidden">
+        <div className="flex items-center justify-between px-6 py-4">
+          <div className="flex flex-col">
             {!isFull && (
-              <p className="text-xs text-red-500 font-medium">{slotsLeft} Slot{slotsLeft !== 1 ? 's' : ''} Left</p>
+              <p className="text-[10px] text-red-500 font-black uppercase tracking-widest leading-none mb-1">
+                {slotsLeft} Slot{slotsLeft !== 1 ? 's' : ''} Left
+              </p>
             )}
-            <p className="text-base font-bold text-gray-900">{formatDate(event.event_date)}</p>
+            <p className="text-lg font-black text-gray-900 leading-none">
+              {formatDate(event.event_date).split(',')[0]}
+            </p>
+            <p className="text-xs text-gray-500 font-medium">{formatTime(event.start_time)}</p>
           </div>
           <Button
             onClick={handleBookSlot}
             disabled={isRegistering || !canRegister}
-            className="h-11 px-8 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold rounded-full text-sm shadow-lg shadow-blue-500/25 disabled:opacity-50"
+            className={cn(
+              "h-14 px-8 text-white font-black rounded-2xl text-sm shadow-xl transition-all active:scale-95 disabled:opacity-50",
+              isRegistered ? "bg-emerald-500" : "bg-gray-900"
+            )}
           >
-            {isRegistering ? 'Booking...'
-              : isRegistered ? 'Registered ✓'
+            {isRegistering ? <Loader2 className="w-4 h-4 animate-spin" />
+              : isRegistered ? 'Joined! ✓'
                 : !isRegistrationOpen ? 'Closed'
                   : isFull ? 'Full'
                     : 'Book Slot'}

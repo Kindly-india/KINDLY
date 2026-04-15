@@ -15,7 +15,8 @@ import {
   Type,
   AlertTriangle,
   Search,
-  Navigation
+  Navigation,
+  Lock // Added Lock icon for the "Option C" error state
 } from "lucide-react"
 import { api } from "@/lib/api"
 
@@ -40,6 +41,9 @@ export default function EditEventPage() {
   // New State for Location Feature
   const [gettingLocation, setGettingLocation] = useState(false)
 
+  // OPTION C State: Lock editing if not pending
+  const [isLocked, setIsLocked] = useState(false)
+
   // Form State
   const [formData, setFormData] = useState({
     title: "",
@@ -52,6 +56,10 @@ export default function EditEventPage() {
     location: "",
     dressCode: "",
     thingsToBring: "",
+    // --- NEW CLUB FIELDS ---
+    pointOfContact: "",
+    proposedConnect: "",
+    // -----------------------
     totalSlots: "",
     registrationDeadline: "", // Updated default
     minimumAge: "",
@@ -69,6 +77,13 @@ export default function EditEventPage() {
         setLoading(true)
         const response = await api.getEventById(eventId)
         const event = response.event
+
+        // OPTION C CHECK: If the event is already approved/live, lock the page.
+        if (event.status !== 'pending') {
+          setIsLocked(true)
+          setLoading(false)
+          return
+        }
 
         // Helper to safely format datetime for input
         let formattedDeadline = ""
@@ -93,6 +108,10 @@ export default function EditEventPage() {
           location: event.location || "",
           dressCode: event.dress_code || "",
           thingsToBring: event.things_to_bring || "",
+          // --- POPULATE NEW FIELDS ---
+          pointOfContact: event.point_of_contact || "",
+          proposedConnect: event.proposed_connect || "",
+          // ---------------------------
           totalSlots: event.total_slots?.toString() || "",
           registrationDeadline: formattedDeadline,
           minimumAge: event.minimum_age?.toString() || "",
@@ -124,7 +143,6 @@ export default function EditEventPage() {
         (position) => {
             const { latitude, longitude } = position.coords;
             setGettingLocation(false);
-            // In a real app, you'd reverse geocode here. For now, we simulate success.
             alert(`Location detected (${latitude.toFixed(4)}, ${longitude.toFixed(4)}). Please type the specific building name or street address to confirm on the map.`);
         },
         () => {
@@ -160,6 +178,10 @@ export default function EditEventPage() {
       setError(null)
 
       // --- LOGIC CHECKS ---
+      if (!formData.pointOfContact) {
+        throw new Error("Point of Contact is required.");
+      }
+
       const eventStartDateTime = new Date(`${formData.eventDate}T${formData.startTime}`);
       const eventEndDateTime = new Date(`${formData.eventDate}T${formData.endTime}`);
       const deadlineDateTime = new Date(formData.registrationDeadline);
@@ -170,7 +192,6 @@ export default function EditEventPage() {
       }
 
       // 2. Check if Registration Deadline is AFTER Event Start
-      // Allow a small buffer or enforce 1 hour rule strictly
       const oneHourBeforeStart = new Date(eventStartDateTime.getTime() - 60 * 60 * 1000);
       
       if (deadlineDateTime > oneHourBeforeStart) {
@@ -196,6 +217,10 @@ export default function EditEventPage() {
         location: formData.location,
         dressCode: formData.dressCode || undefined,
         thingsToBring: formData.thingsToBring || undefined,
+        // --- SEND NEW FIELDS ---
+        pointOfContact: formData.pointOfContact,
+        proposedConnect: formData.proposedConnect || undefined,
+        // -----------------------
         totalSlots: parseInt(formData.totalSlots),
         registrationDeadline: formData.registrationDeadline, 
         minimumAge: formData.minimumAge ? parseInt(formData.minimumAge) : undefined,
@@ -205,7 +230,7 @@ export default function EditEventPage() {
       router.push(`/org-events/${eventId}`)
     } catch (err: any) {
       setError(err.message || "Failed to update event")
-      window.scrollTo(0, 0); // Scroll to top to show error
+      window.scrollTo(0, 0); 
     } finally {
       setSubmitting(false)
     }
@@ -221,6 +246,31 @@ export default function EditEventPage() {
       </div>
     )
   }
+
+  // --- OPTION C LOCKOUT SCREEN ---
+  if (isLocked) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4">
+        <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 max-w-md w-full text-center">
+          <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Lock className="w-8 h-8 text-amber-500" />
+          </div>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Event is Live</h2>
+          <p className="text-sm text-gray-600 mb-6">
+            This event has already been approved and is currently live. To ensure consistency for our volunteers, live events cannot be edited directly. 
+            If you need to make critical changes, please cancel the event or contact support.
+          </p>
+          <Link
+            href="/org-events"
+            className="block w-full py-3 bg-gray-900 text-white rounded-xl font-medium hover:bg-gray-800 transition-colors"
+          >
+            Return to Dashboard
+          </Link>
+        </div>
+      </div>
+    )
+  }
+  // ------------------------------
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 pb-20">
@@ -314,10 +364,10 @@ export default function EditEventPage() {
               />
             </div>
 
-            {/* Description */}
+            {/* Description - Rebranded for culture */}
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide">
-                Description
+                The Cause (Description)
               </label>
               <textarea
                 required
@@ -483,8 +533,42 @@ export default function EditEventPage() {
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 space-y-6">
             <h2 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
               <Users className="w-4 h-4 text-purple-500" />
-              Requirements
+              Logistics & Requirements
             </h2>
+
+            {/* --- NEW: POINT OF CONTACT --- */}
+            <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide">
+                    Point of Contact
+                </label>
+                <input
+                    type="text"
+                    required
+                    placeholder="e.g., Rahul Verma (9876543210)"
+                    value={formData.pointOfContact}
+                    onChange={(e) => setFormData({ ...formData, pointOfContact: e.target.value })}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                />
+            </div>
+
+            {/* --- NEW: PROPOSED CONNECT --- */}
+            <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide">
+                    Proposed Connect Activity (Optional)
+                </label>
+                <input
+                    type="text"
+                    placeholder="e.g., Grabbing breakfast at Roastery Coffee after!"
+                    value={formData.proposedConnect}
+                    onChange={(e) => setFormData({ ...formData, proposedConnect: e.target.value })}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                />
+                <p className="text-xs text-gray-400 mt-2">
+                    Are you planning a post-event hangout? If left blank, our team may suggest one.
+                </p>
+            </div>
+
+            <hr className="border-gray-100" />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -514,7 +598,7 @@ export default function EditEventPage() {
               </div>
             </div>
 
-            {/* Registration Deadline - UPDATED with MAX DATE Logic */}
+            {/* Registration Deadline */}
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide">
                 <Clock className="w-3 h-3 inline mr-1 text-teal-500" />
@@ -527,7 +611,6 @@ export default function EditEventPage() {
                 onChange={(e) => setFormData({ ...formData, registrationDeadline: e.target.value })}
                 // Min time: current time
                 min={new Date().toISOString().slice(0, 16)}
-                // Max time: The selected Event Start Time (prevents selecting a date AFTER event)
                 max={formData.eventDate && formData.startTime ? `${formData.eventDate}T${formData.startTime}` : undefined}
                 className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent"
               />
