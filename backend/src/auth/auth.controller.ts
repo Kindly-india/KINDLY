@@ -1,4 +1,4 @@
-import { Controller, Post, Body, ValidationPipe } from '@nestjs/common';
+import { Controller, Post, Body, ValidationPipe, BadRequestException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { VolunteerSignupDto } from './dto/volunteer-signup.dto';
 import { OrganizationSignupDto } from './dto/organization-signup.dto';
@@ -18,5 +18,18 @@ export class AuthController {
   @Post('signup/organization')
   async signupOrganization(@Body(ValidationPipe) dto: OrganizationSignupDto) {
     return this.authService.signupOrganization(dto);
+  }
+
+  @Post('reset-password')
+  async resetPassword(@Body('email') email: string) {
+    return this.authService.resetPassword(email);
+  }
+
+  @Post('update-password')
+  async updatePassword(@Body() body: { password: string; hash: string }) {
+    if (!body.password || !body.hash) {
+      throw new BadRequestException('Password and secure token are required');
+    }
+    return this.authService.updatePassword(body.password, body.hash);
   }
 }
