@@ -79,7 +79,7 @@ export default function EventsDiscoveryPage() {
 
     const [sortBy, setSortBy] = useState("newest")
     const [isFilterOpen, setIsFilterOpen] = useState(false)
-    const [visibleEvents, setVisibleEvents] = useState(6)
+    const [visibleEvents, setVisibleEvents] = useState(10) // Increased initial load for compact view
 
     // Fetch events & Profile
     useEffect(() => {
@@ -124,7 +124,7 @@ export default function EventsDiscoveryPage() {
         selectedDate || selectedCauses.length > 0 || selectedTime || selectedDuration || locationFilter
 
     const loadMore = () => {
-        setVisibleEvents((prev) => Math.min(prev + 6, filteredEvents.length))
+        setVisibleEvents((prev) => Math.min(prev + 10, filteredEvents.length))
     }
 
     const isRegistrationOpen = (deadline: string) => {
@@ -417,7 +417,7 @@ const FilterContent = () => (
                                 type="text"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                placeholder="Search by event name or location..."
+                                placeholder="Search events..."
                                 className="w-full h-11 md:h-12 pl-11 md:pl-12 pr-10 py-3 bg-white border border-[#e8e8ed] rounded-full text-[14px] md:text-[15px] text-[#1d1d1f] placeholder:text-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#ff6b6b]/20 focus:border-[#ff6b6b]/30 transition-all shadow-sm"
                             />
                             {searchQuery ? (
@@ -522,10 +522,10 @@ const FilterContent = () => (
                         </div>
                     )}
 
-                    {/* Events Grid - MOBILE OPTIMIZED */}
+                    {/* Events Grid - HYPER COMPACT MOBILE LIST, DESKTOP GRID */}
                     <div className="p-2 sm:p-4 md:p-6">
-                        {/* Changed grid-cols-2 to grid-cols-1 for mobile! */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5">
+                        {/* 1 col list on mobile, 2/3 cols on desktop */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2.5 md:gap-5">
                             {loading ? (
                                 <div className="col-span-full text-center py-12">
                                     <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#ff6b6b] mb-4"></div>
@@ -558,57 +558,73 @@ const FilterContent = () => (
                                         <Link
                                             key={event.id}
                                             href={`/events/${event.id}`}
-                                            className="group flex flex-col h-full bg-white rounded-[24px] overflow-hidden shadow-sm hover:shadow-xl border border-[#e8e8ed] active:scale-[0.98] transition-all duration-200"
+                                            className="group flex flex-row md:flex-col h-auto md:h-full bg-white rounded-[16px] md:rounded-[24px] overflow-hidden shadow-sm hover:shadow-xl border border-[#e8e8ed] active:scale-[0.98] transition-all duration-200"
                                         >
-                                            {/* Image: aspect-video (16:9) on mobile, 4:3 on desktop */}
-                                            <div className="relative aspect-video md:aspect-[4/3] overflow-hidden bg-gray-100">
-                                                {event.cover_image_url ? (
-                                                    <img
-                                                        src={event.cover_image_url}
-                                                        alt={event.title}
-                                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                                                    />
-                                                ) : (
-                                                    <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                                                        <Calendar className="w-12 h-12 text-gray-400" />
-                                                    </div>
-                                                )}
+                                            {/* IMAGE CONTAINER - Thumbnail on Mobile, Hero on Desktop */}
+                                            <div className="relative shrink-0 w-[100px] md:w-full aspect-square md:aspect-[4/3] bg-gray-100 p-2 md:p-0">
+                                                <div className="w-full h-full rounded-[12px] md:rounded-none overflow-hidden relative">
+                                                    {event.cover_image_url ? (
+                                                        <img
+                                                            src={event.cover_image_url}
+                                                            alt={event.title}
+                                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                                                        />
+                                                    ) : (
+                                                        <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                                                            <Calendar className="w-6 h-6 md:w-12 md:h-12 text-gray-400" />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                
+                                                {/* Desktop Badges - Hidden on mobile */}
                                                 <div
                                                     className={cn(
-                                                        "absolute top-3 left-3 px-3 py-1 rounded-full text-[10px] font-bold text-white backdrop-blur-sm shadow-sm capitalize",
+                                                        "hidden md:block absolute top-3 left-3 px-3 py-1 rounded-full text-[10px] font-bold text-white backdrop-blur-sm shadow-sm capitalize",
                                                         getCategoryColor(event.category),
                                                     )}
                                                 >
                                                     {event.category}
                                                 </div>
                                                 {isFastFilling && (
-                                                    <div className="absolute top-3 right-3 px-3 py-1 bg-[#ff6b6b] rounded-full text-[10px] font-bold text-white backdrop-blur-sm shadow-sm animate-pulse">
+                                                    <div className="hidden md:block absolute top-3 right-3 px-3 py-1 bg-[#ff6b6b] rounded-full text-[10px] font-bold text-white backdrop-blur-sm shadow-sm animate-pulse">
                                                         {isAlmostFull ? 'Almost Full' : 'Fast Filling'}
                                                     </div>
                                                 )}
                                             </div>
 
-                                            {/* Content */}
-                                            <div className="p-4 flex flex-col flex-1">
-                                                <h3 className="text-base md:text-lg font-bold text-[#1d1d1f] mb-3 line-clamp-2 group-hover:text-[#ff6b6b] transition-colors leading-tight">
+                                            {/* CONTENT CONTAINER */}
+                                            <div className="p-3 md:p-4 flex flex-col flex-1 min-w-0">
+                                                {/* Mobile Badge + Fast Filling - Shown only on mobile inline */}
+                                                <div className="flex md:hidden items-center gap-1.5 mb-1.5">
+                                                     <div className={cn("w-2 h-2 rounded-full", getCategoryColor(event.category))} />
+                                                     <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">{event.category}</span>
+                                                     {isFastFilling && (
+                                                        <span className="text-[10px] font-bold text-[#ff6b6b] ml-auto">
+                                                            {isAlmostFull ? '1 left' : 'Filling'}
+                                                        </span>
+                                                     )}
+                                                </div>
+
+                                                <h3 className="text-[14px] md:text-lg font-bold text-[#1d1d1f] mb-1.5 md:mb-3 line-clamp-2 md:line-clamp-2 group-hover:text-[#ff6b6b] transition-colors leading-tight">
                                                     {event.title}
                                                 </h3>
 
-                                                <div className="space-y-2 mb-4">
-                                                    <div className="flex items-center gap-2 text-[#6e6e73]">
-                                                        <Calendar className="w-4 h-4 text-[#ff6b6b]" />
-                                                        <span className="text-[13px] font-medium">
+                                                {/* Date & Location Details */}
+                                                <div className="space-y-1 md:space-y-2 mb-2 md:mb-4">
+                                                    <div className="flex items-center gap-1.5 md:gap-2 text-[#6e6e73]">
+                                                        <Calendar className="w-3.5 h-3.5 md:w-4 md:h-4 text-[#ff6b6b] shrink-0" />
+                                                        <span className="text-[11px] md:text-[13px] font-medium truncate">
                                                             {formatDate(event.event_date)} • {formatTime(event.start_time)}
                                                         </span>
                                                     </div>
-                                                    <div className="flex items-center gap-2 text-[#6e6e73]">
-                                                        <MapPin className="w-4 h-4 text-[#10b981]" />
-                                                        <span className="text-[13px] font-medium line-clamp-1">{event.location}</span>
+                                                    <div className="flex items-center gap-1.5 md:gap-2 text-[#6e6e73]">
+                                                        <MapPin className="w-3.5 h-3.5 md:w-4 md:h-4 text-[#10b981] shrink-0" />
+                                                        <span className="text-[11px] md:text-[13px] font-medium truncate">{event.location}</span>
                                                     </div>
                                                 </div>
 
-                                                {/* Footer - The Fat Thumb Fix */}
-                                                <div className="mt-auto flex items-center justify-between pt-4 border-t border-[#f5f5f7]">
+                                                {/* Desktop Footer (Hidden on mobile) */}
+                                                <div className="hidden md:flex mt-auto items-center justify-between pt-4 border-t border-[#f5f5f7]">
                                                     <div className="flex items-center gap-3">
                                                         <div className="flex items-center gap-1.5 text-[#10b981]">
                                                             <Users className="w-4 h-4" />
@@ -620,20 +636,9 @@ const FilterContent = () => (
                                                             </span>
                                                         )}
                                                     </div>
-
-                                                    {!isRegistrationOpen(event.registration_deadline) ? (
-                                                        <span className="h-8 px-4 bg-gray-100 text-gray-600 rounded-full text-[12px] font-bold flex items-center justify-center">
-                                                            Closed
-                                                        </span>
-                                                    ) : spotsLeft <= 0 ? (
-                                                        <span className="h-8 px-4 bg-amber-100 text-amber-700 rounded-full text-[12px] font-bold flex items-center justify-center">
-                                                            Full
-                                                        </span>
-                                                    ) : (
-                                                        <span className="h-8 px-5 bg-[#1d1d1f] text-white rounded-full text-[12px] font-bold flex items-center justify-center group-hover:bg-[#ff6b6b] transition-colors">
-                                                            Book
-                                                        </span>
-                                                    )}
+                                                    <span className="h-8 px-5 bg-[#1d1d1f] text-white rounded-full text-[12px] font-bold flex items-center justify-center group-hover:bg-[#ff6b6b] transition-colors">
+                                                        Book
+                                                    </span>
                                                 </div>
                                             </div>
                                         </Link>
@@ -644,10 +649,10 @@ const FilterContent = () => (
 
                         {/* Load More */}
                         {visibleEvents < filteredEvents.length && (
-                            <div className="flex justify-center mt-8">
+                            <div className="flex justify-center mt-6 md:mt-8">
                                 <Button
                                     onClick={loadMore}
-                                    className="px-8 py-6 bg-white border border-gray-200 text-[#1d1d1f] rounded-full text-[14px] font-bold shadow-sm hover:bg-gray-50 active:scale-95 transition-all"
+                                    className="px-6 py-5 md:px-8 md:py-6 bg-white border border-gray-200 text-[#1d1d1f] rounded-full text-[13px] md:text-[14px] font-bold shadow-sm hover:bg-gray-50 active:scale-95 transition-all"
                                 >
                                     Load More
                                 </Button>

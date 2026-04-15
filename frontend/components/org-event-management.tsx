@@ -142,9 +142,7 @@ export function OrgEventManagement() {
   const displayEvents = activeTab === "active" ? activeEvents : completedEvents
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
-
-      
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 pb-24">
 
       {/* Decorative Background Elements */}
       <div className="fixed top-20 left-8 w-12 h-12 bg-white rounded-xl shadow-lg hidden md:flex items-center justify-center pointer-events-none">
@@ -154,33 +152,33 @@ export function OrgEventManagement() {
         <Sparkles className="w-5 h-5 text-amber-500" />
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 md:px-8 py-6 md:py-8 relative">
-        <Link href="/org-home" className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors mb-4">
-          <ChevronLeft className="w-4 h-4" />
+      <div className="max-w-6xl mx-auto px-4 md:px-8 py-5 md:py-8 relative">
+        <Link href="/org-home" className="inline-flex items-center gap-1.5 text-xs md:text-sm text-gray-600 hover:text-gray-900 transition-colors mb-3 md:mb-4">
+          <ChevronLeft className="w-3.5 h-3.5 md:w-4 md:h-4" />
           Back to Dashboard
         </Link>
 
-        <div className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">My Events</h1>
-          <p className="text-gray-600">Manage your volunteering events</p>
+        <div className="mb-4 md:mb-6">
+          <h1 className="text-xl md:text-3xl font-bold text-gray-900 mb-1 md:mb-2">My Events</h1>
+          <p className="text-[13px] md:text-base text-gray-600">Manage your volunteering events</p>
         </div>
 
-        {/* Tabs */}
-        <div className="flex gap-3 mb-6">
+        {/* Tabs - Tighter on mobile */}
+        <div className="flex gap-2 md:gap-3 mb-4 md:mb-6">
           <button
             onClick={() => setActiveTab("active")}
-            className={`px-6 py-2.5 rounded-full font-medium text-sm transition-all ${activeTab === "active"
+            className={`px-4 py-1.5 md:px-6 md:py-2.5 rounded-full font-medium text-[12px] md:text-sm transition-all ${activeTab === "active"
                 ? "bg-orange-500 text-white shadow-md"
-                : "bg-white text-gray-600 hover:bg-gray-50"
+                : "bg-white text-gray-600 border border-gray-200 md:border-transparent hover:bg-gray-50"
               }`}
           >
             Active
           </button>
           <button
             onClick={() => setActiveTab("completed")}
-            className={`px-6 py-2.5 rounded-full font-medium text-sm transition-all ${activeTab === "completed"
+            className={`px-4 py-1.5 md:px-6 md:py-2.5 rounded-full font-medium text-[12px] md:text-sm transition-all ${activeTab === "completed"
                 ? "bg-orange-500 text-white shadow-md"
-                : "bg-white text-gray-600 hover:bg-gray-50"
+                : "bg-white text-gray-600 border border-gray-200 md:border-transparent hover:bg-gray-50"
               }`}
           >
             Completed
@@ -188,41 +186,44 @@ export function OrgEventManagement() {
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 text-sm">
             {error}
           </div>
         )}
 
         {/* Event List */}
         {displayEvents.length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-2xl">
-            <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+          <div className="text-center py-10 md:py-16 bg-white rounded-2xl shadow-sm border border-gray-100">
+            <Calendar className="w-10 h-10 md:w-16 md:h-16 text-gray-300 mx-auto mb-3 md:mb-4" />
+            <h3 className="text-[15px] md:text-lg font-semibold text-gray-900 mb-1.5 md:mb-2">
               No {activeTab} events
             </h3>
-            <p className="text-gray-500 mb-6">
+            <p className="text-[13px] md:text-sm text-gray-500 mb-5 md:mb-6">
               {activeTab === "active"
                 ? "Create your first event to get started!"
                 : "Your completed events will appear here"}
             </p>
             {activeTab === "active" && (
               <Link
-                href="/create-event"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-teal-500 to-emerald-500 text-white rounded-xl font-medium hover:shadow-lg transition-shadow"
+                href="/org-events/create"
+                className="inline-flex items-center gap-2 px-5 py-2 md:px-6 md:py-3 bg-gradient-to-r from-teal-500 to-emerald-500 text-white rounded-xl text-[13px] md:text-base font-medium hover:shadow-lg transition-shadow"
               >
                 Create Event
               </Link>
             )}
           </div>
         ) : (
-          <div className="space-y-4">
+          /* Reduced space-y for hyper-compact mobile list */
+          <div className="space-y-2.5 md:space-y-4">
             {displayEvents.map((event) => (
               <div
                 key={event.id}
-                className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow"
+                className="bg-white rounded-2xl md:rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow"
               >
                 <div className="flex flex-col md:flex-row">
-                  <div className="w-full md:w-48 h-48 md:h-auto bg-gradient-to-br from-teal-400 to-emerald-400 flex items-center justify-center shrink-0">
+                  
+                  {/* DESKTOP Image: Hidden entirely on mobile, big square on desktop */}
+                  <div className="hidden md:flex w-48 bg-gradient-to-br from-teal-400 to-emerald-400 items-center justify-center shrink-0">
                     {event.cover_image_url ? (
                       <img
                         src={event.cover_image_url}
@@ -234,76 +235,95 @@ export function OrgEventManagement() {
                     )}
                   </div>
 
-                  <div className="flex-1 p-5 md:p-6">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <h3 className="text-lg md:text-xl font-bold text-gray-900">
+                  {/* Content Container - Tight mobile padding */}
+                  <div className="flex-1 p-3.5 md:p-6">
+                    
+                    {/* Mobile Top Row: Thumbnail + Title/Details side-by-side */}
+                    <div className="flex gap-3 md:gap-0 md:block items-start mb-0 md:mb-3">
+                      
+                      {/* MOBILE Image Thumbnail: Only visible on mobile */}
+                      <div className="w-16 h-16 md:hidden rounded-xl bg-gradient-to-br from-teal-400 to-emerald-400 flex items-center justify-center shrink-0 overflow-hidden shadow-sm">
+                        {event.cover_image_url ? (
+                          <img
+                            src={event.cover_image_url}
+                            alt={event.title}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <Calendar className="w-6 h-6 text-white/50" />
+                        )}
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2 mb-1 md:mb-2">
+                          <h3 className="text-[15px] md:text-xl font-bold text-gray-900 truncate leading-tight mt-0.5 md:mt-0">
                             {event.title}
                           </h3>
-                          <span className={`px-3 py-1 text-xs font-medium rounded-full ${event.status === 'completed' ? 'bg-gray-100 text-gray-700' : 'bg-emerald-100 text-emerald-700'
-                            }`}>
+                          <span className={`px-2 py-0.5 md:px-3 md:py-1 text-[9px] md:text-xs font-semibold rounded-full shrink-0 border ${event.status === 'completed' ? 'bg-gray-50 text-gray-600 border-gray-200' : 'bg-emerald-50 text-emerald-600 border-emerald-100'}`}>
                             {event.status === 'completed' || isEventCompleted(event) ? 'Completed' : 'Published'}
                           </span>
                         </div>
-                        <div className="flex items-center gap-4 text-sm text-gray-600">
-                          <div className="flex items-center gap-1.5">
-                            <Calendar className="w-4 h-4" />
-                            {formatDate(event.event_date)} • {formatTime(event.start_time)}
+                        
+                        {/* Date and Location Stack */}
+                        <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-4 text-[11px] md:text-sm text-gray-500">
+                          <div className="flex items-center gap-1.5 truncate">
+                            <Calendar className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0 text-gray-400" />
+                            <span className="truncate">{formatDate(event.event_date)} • {formatTime(event.start_time)}</span>
                           </div>
-                          <div className="flex items-center gap-1.5">
-                            <MapPin className="w-4 h-4" />
-                            {event.location}
+                          <div className="flex items-center gap-1.5 truncate">
+                            <MapPin className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0 text-gray-400" />
+                            <span className="truncate">{event.location}</span>
                           </div>
                         </div>
                       </div>
                     </div>
 
-                    <div className="mb-4">
-                      <div className="flex items-center justify-between text-sm mb-2">
-                        <span className="text-gray-600">
-                          {event.registered_count}/{event.total_slots} Registered
+                    <div className="mb-3 md:mb-4 mt-3 md:mt-0">
+                      <div className="flex items-center justify-between text-[11px] md:text-sm mb-1.5 md:mb-2">
+                        <span className="text-gray-500">
+                          <span className="font-medium text-gray-900">{event.registered_count}</span>/{event.total_slots} Registered
                         </span>
-                        <span className="font-medium text-teal-600">
+                        <span className="font-bold text-teal-600">
                           {getRegistrationPercentage(event)}%
                         </span>
                       </div>
-                      <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="w-full h-1.5 md:h-2 bg-gray-100 rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-gradient-to-r from-teal-500 to-emerald-500 transition-all"
+                          className="h-full bg-gradient-to-r from-teal-500 to-emerald-500 transition-all rounded-full"
                           style={{ width: `${getRegistrationPercentage(event)}%` }}
                         />
                       </div>
                     </div>
 
-                    <div className="flex flex-wrap gap-2">
+                    {/* Action Buttons - Hyper compact on mobile */}
+                    <div className="flex flex-wrap gap-2 md:gap-2">
                       <Link
                         href={activeTab === "completed"
                           ? `/org-events/${event.id}/report`
                           : `/org-events/${event.id}`}
-                        className="px-4 py-2 bg-teal-50 text-teal-600 rounded-lg text-sm font-medium hover:bg-teal-100 transition-colors inline-flex items-center gap-2"
+                        className="px-3 py-1.5 md:px-4 md:py-2 bg-teal-50 text-teal-600 rounded-lg text-[11px] md:text-sm font-semibold hover:bg-teal-100 transition-colors inline-flex items-center gap-1.5 md:gap-2 border border-teal-100/50"
                       >
-                        <Eye className="w-4 h-4" />
-                        View Details
+                        <Eye className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                        View
                       </Link>
 
                       {activeTab === "active" && (
                         <>
                           <Link
                             href={`/edit-event/${event.id}`}
-                            className="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors inline-flex items-center gap-2"
+                            className="px-3 py-1.5 md:px-4 md:py-2 bg-blue-50 text-blue-600 rounded-lg text-[11px] md:text-sm font-semibold hover:bg-blue-100 transition-colors inline-flex items-center gap-1.5 md:gap-2 border border-blue-100/50"
                           >
-                            <Edit className="w-4 h-4" />
+                            <Edit className="w-3.5 h-3.5 md:w-4 md:h-4" />
                             Edit
                           </Link>
 
                           <button
                             onClick={() => handleCancelEvent(event.id)}
                             disabled={deletingEventId === event.id}
-                            className="px-4 py-2 bg-red-50 text-red-600 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors inline-flex items-center gap-2 disabled:opacity-50"
+                            className="px-3 py-1.5 md:px-4 md:py-2 bg-red-50 text-red-600 rounded-lg text-[11px] md:text-sm font-semibold hover:bg-red-100 transition-colors inline-flex items-center gap-1.5 md:gap-2 disabled:opacity-50 border border-red-100/50 ml-auto md:ml-0"
                           >
-                            <Trash2 className="w-4 h-4" />
-                            {deletingEventId === event.id ? "Cancelling..." : "Cancel Event"}
+                            <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                            {deletingEventId === event.id ? "Wait..." : "Cancel"}
                           </button>
                         </>
                       )}
