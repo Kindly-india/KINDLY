@@ -24,10 +24,13 @@ import {
   BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, 
   PieChart, Pie, Cell 
 } from "recharts"
+import { useRouter } from "next/navigation"
+import { supabase } from "@/lib/supabase"
 
 const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'];
 
 export default function VolunteerImpactPage() {
+  const router = useRouter()
   const [loading, setLoading] = useState(true)
   
   // ✅ Added for Navbar
@@ -46,9 +49,19 @@ export default function VolunteerImpactPage() {
     joinDate: new Date().toISOString()
   })
 
-  useEffect(() => {
+useEffect(() => {
     const fetchData = async () => {
       try {
+        // 1. Authenticate with Supabase
+        const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+        // 2. Redirect to login if unauthorized
+        if (!user || authError) {
+          router.push('/login')
+          return // Stop execution
+        }
+
+        // 3. Proceed with your existing data fetching
         // ✅ Fetch Profile & Registrations together
         const [profileRes, res] = await Promise.all([
             api.getUserProfile().catch(() => null),
@@ -130,8 +143,9 @@ export default function VolunteerImpactPage() {
         setLoading(false);
       }
     }
+    
     fetchData();
-  }, [])
+  }, [router]) // Added router as a dependency
 
   // ✅ Profile Display Logic
   const displayImage = profile?.avatar_url || profile?.logo_url

@@ -34,16 +34,6 @@ import { Button } from "@/components/ui/button"
 import { api } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
-/**
- * RegisteredEventDetailPage Component
- * * This is the high-fidelity management view for a volunteer who has already
- * joined an event. It prioritizes "Day-of" logistics:
- * 1. The Connect (Social after-party details)
- * 2. Point of Contact (Who to call on site)
- * 3. QR Check-in (Self-service attendance)
- * 4. Organizer Updates (Real-time broadcasts)
- */
-
 // Define formats outside to prevent re-renders in the scanner
 const QR_FORMATS: any = ['qr_code']
 
@@ -63,10 +53,6 @@ export default function RegisteredEventDetailPage() {
   const [showScanner, setShowScanner] = useState(false)
   const [checkingIn, setCheckingIn] = useState(false)
 
-  /**
-   * loadData
-   * Pulls the comprehensive event object and the list of broadcasts.
-   */
   useEffect(() => {
     const loadData = async () => {
       if (!eventId) return
@@ -449,7 +435,7 @@ export default function RegisteredEventDetailPage() {
                     height="100%"
                     frameBorder="0"
                     style={{ border: 0 }}
-                    src={`http://googleusercontent.com/maps.google.com/maps?q=${encodeURIComponent(event.location)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+                    src={`https://googleusercontent.com/maps.google.com/maps?q=${encodeURIComponent(event.location)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
                     className="absolute inset-0 w-full h-full pointer-events-none opacity-80 group-hover:opacity-100 transition-opacity"
                   ></iframe>
                   <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />

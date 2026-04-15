@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from "react"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
-import Image from "next/image"
 import {
   Clock,
   MapPin,
@@ -19,12 +18,11 @@ import {
   Users,
   Sparkles,
   Leaf,
-  Menu,
-  X,
-  Loader2,
-  BarChart3 
+  Loader2
 } from "lucide-react"
 import { api } from "@/lib/api"
+import { useRouter } from "next/navigation"
+import { supabase } from "@/lib/supabase"
 
 // --- STATIC STORIES (Unchanged) ---
 const stories = [
@@ -85,7 +83,9 @@ const stories = [
 ]
 
 export function VolunteerHomePage() {
-  const [menuOpen, setMenuOpen] = useState(false)
+
+  const router = useRouter()
+
   const storiesRef = useRef<HTMLDivElement>(null)
   const eventsRef = useRef<HTMLDivElement>(null)
 
@@ -114,14 +114,25 @@ export function VolunteerHomePage() {
     const endTotalMins = (endH * 60) + endM;
 
     const diffMins = Math.max(0, endTotalMins - startTotalMins);
-    return diffMins / 60; 
+    return diffMins / 60;
   }
 
   // --- Fetch Data ---
   useEffect(() => {
-    const loadData = async () => {
+    const checkAuthAndLoadData = async () => {
       try {
+        // 1. Auth Check (This does NOT affect your other cookies)
+        const { data: { user }, error } = await supabase.auth.getUser()
+
+        if (!user || error) {
+          router.push('/login')
+          return // Halts execution so the rest of the code doesn't run unauthenticated
+        }
+
+        // 2. Start Loading State
         setLoading(true)
+
+        // 3. Fetch Data (Your exact original API calls)
         const [profileRes, eventsRes] = await Promise.all([
           api.getUserProfile(),
           api.getMyRegistrations()
@@ -135,7 +146,7 @@ export function VolunteerHomePage() {
         const displayList = allEvents.filter((ev: any) => ev.registration_status === 'registered');
         setMyEvents(displayList)
 
-        // --- STATS CALCULATION ---
+        // --- STATS CALCULATION (Your exact original logic) ---
         let totalHours = 0
         let completed = 0
         let upcomingCount = 0
@@ -201,8 +212,9 @@ export function VolunteerHomePage() {
         setLoading(false)
       }
     }
-    loadData()
-  }, [])
+
+    checkAuthAndLoadData()
+  }, [router])
 
   const getCategoryColor = (category: string) => {
     const map: Record<string, string> = {
@@ -250,7 +262,7 @@ export function VolunteerHomePage() {
   }
 
   return (
-<div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white">
 
       {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-[#fef5f0] via-[#fff8f5] to-[#f5fcf8] py-8 md:py-16 overflow-hidden">
@@ -405,9 +417,9 @@ export function VolunteerHomePage() {
               <h3 className="text-[18px] md:text-[28px] font-bold text-[#1d1d1f]">{stats.hoursContributed} Volunteer Hours</h3>
               <p className="text-[13px] md:text-[15px] text-[#86868b] mt-0.5">Total Contribution</p>
               <p className="text-[13px] md:text-[15px] text-[#1d1d1f] mt-3 max-w-md">You're making a real difference in {profile?.city || "Nashik"}. Keep up the amazing work!</p>
-              
-              <Link 
-                href="/volunteer-impact" 
+
+              <Link
+                href="/volunteer-impact"
                 className="mt-6 inline-flex items-center gap-2 px-6 py-2.5 bg-[#10b981] text-white rounded-full font-semibold text-sm hover:bg-[#059669] transition-all shadow-sm shadow-emerald-200 hover:shadow-emerald-300 hover:-translate-y-0.5"
               >
                 View Full Impact Report <ChevronRight className="w-4 h-4" />

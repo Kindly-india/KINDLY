@@ -14,11 +14,15 @@ import {
   Loader2
 } from "lucide-react"
 import { api } from "@/lib/api"
+import { useRouter } from "next/navigation"
+import { supabase } from "@/lib/supabase"
 
 // ✅ Updated: Removed 'certificate' from types
 type FilterType = "all" | "attended" | "missed" | "registered"
 
 export function EventHistoryPage() {
+  const router = useRouter()
+
   const [historyEvents, setHistoryEvents] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -48,6 +52,16 @@ export function EventHistoryPage() {
   useEffect(() => {
     const fetchHistory = async () => {
       try {
+        // 1. Authenticate with Supabase
+        const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+        // 2. Redirect to login if unauthorized
+        if (!user || authError) {
+          router.push('/login')
+          return // Stop execution here
+        }
+
+        // 3. Begin loading your existing data
         setLoading(true)
 
         const [profileRes, response] = await Promise.all([
@@ -82,7 +96,7 @@ export function EventHistoryPage() {
       }
     }
     fetchHistory()
-  }, [])
+  }, [router]) // Make sure to add router here
 
   // ✅ UPDATED: Maps 'absent' from DB directly to 'missed' in UI
   const mapBackendStatusToUI = (regStatus: string, eventStatus: string) => {

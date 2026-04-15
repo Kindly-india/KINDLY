@@ -16,9 +16,9 @@ import {
   Navigation,
   Calendar,
   AlertCircle,
-  Coffee, // Added for The Connect
-  ShieldCheck, // Added for Verification
-  Sparkles, // Added for Premium Feel
+  Coffee,
+  ShieldCheck,
+  Sparkles,
   Info,
   Loader2,
   Users
@@ -27,12 +27,6 @@ import { Button } from "@/components/ui/button"
 import { api } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
-/**
- * EventDetailsPage Component
- * * This page serves as the primary touchpoint for volunteers to discover
- * and commit to social initiatives in Nashik. It displays full event details,
- * logistics, and the curated "Connect" social activity.
- */
 export default function EventDetailsPage() {
   const params = useParams()
   const router = useRouter()
@@ -45,32 +39,38 @@ export default function EventDetailsPage() {
   const [isSaved, setIsSaved] = useState(false)
   const [showFullDescription, setShowFullDescription] = useState(false)
   const [isRegistering, setIsRegistering] = useState(false)
+  
+  // New States for Auth & Registration logic
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isRegistered, setIsRegistered] = useState(false)
 
   /**
    * Data Fetching Logic
-   * Fetches the event details and checks if the current user
-   * is already a participant in this specific event.
    */
   useEffect(() => {
-    const fetchEvent = async () => {
+    const fetchEventData = async () => {
       try {
         setLoading(true)
 
-        // Fetch Public Event Data (includes proposed_connect from DB)
+        // 1. Fetch Public Event Data
         const response = await api.getPublicEventById(eventId)
         setEvent(response.event)
 
-        // Check if current user is already registered (Safe check)
+        // 2. Check Authentication & Registration Status
         try {
-          const registrations = await api.getMyRegistrations()
-          const alreadyRegistered = registrations?.events?.some(
-            (r: any) => r.id === eventId
-          )
-          setIsRegistered(!!alreadyRegistered)
-        } catch (regError) {
-          // If the user isn't logged in, registration fetch will fail.
-          // We catch it here so the page still loads the public event data.
+          const user = await api.getCurrentUser()
+          if (user) {
+            setIsAuthenticated(true)
+            const registrations = await api.getMyRegistrations()
+            const alreadyRegistered = registrations?.events?.some(
+              (r: any) => r.id === eventId
+            )
+            setIsRegistered(!!alreadyRegistered)
+          } else {
+            setIsAuthenticated(false)
+          }
+        } catch (authError) {
+          setIsAuthenticated(false)
           console.log("User not logged in; skipping registration check.")
         }
 
@@ -81,30 +81,24 @@ export default function EventDetailsPage() {
       }
     }
 
-    if (eventId) fetchEvent()
+    if (eventId) fetchEventData()
   }, [eventId])
 
   /**
-   * handleBookSlot
-   * Manages the registration pipeline for the volunteer.
-   * Includes auth-check and local state updates for instant feedback.
+   * Action Handler for the main button
    */
-  const handleBookSlot = async () => {
+  const handlePrimaryAction = async () => {
+    // Route to login if not authenticated
+    if (!isAuthenticated) {
+      router.push('/login')
+      return
+    }
+
+    // Otherwise, proceed with booking
     try {
       setIsRegistering(true)
-
-      // 1. Verify Authentication
-      const user = await api.getCurrentUser()
-      if (!user) {
-        alert('Please login to register for events')
-        router.push('/login')
-        return
-      }
-
-      // 2. API Call to Register
       await api.registerForEvent(eventId)
 
-      // 3. Update local state for reactive UI
       setIsRegistered(true)
       setEvent((prev: any) => ({
         ...prev,
@@ -113,18 +107,13 @@ export default function EventDetailsPage() {
 
       alert('Successfully registered for the event! 🎉')
     } catch (err: any) {
-      if (err.message.includes('login')) {
-        router.push('/login')
-      } else {
-        alert(err.message || 'Failed to register for event')
-      }
+      alert(err.message || 'Failed to register for event')
     } finally {
       setIsRegistering(false)
     }
   }
 
   // --- UI FORMATTING HELPERS ---
-
   const formatDate = (dateString: string) => {
     if (!dateString) return ""
     const date = new Date(dateString)
@@ -146,7 +135,6 @@ export default function EventDetailsPage() {
   }
 
   // --- LOADING & ERROR STATES ---
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#F9F9F9]">
@@ -178,14 +166,16 @@ export default function EventDetailsPage() {
   }
 
   // --- LOGIC CALCULATIONS ---
-
   const isRegistrationOpen = event?.registration_deadline
     ? new Date(event.registration_deadline) > new Date()
     : true
 
   const slotsLeft = Math.max(0, event.total_slots - (event.registered_count || 0))
   const isFull = slotsLeft <= 0
-  const canRegister = isRegistrationOpen && !isFull && !isRegistered
+  
+  // We disable the button if it's closed, full, already registered, or actively processing.
+  // We do NOT disable it if they just need to sign in.
+  const isButtonDisabled = isRegistering || !isRegistrationOpen || isFull || isRegistered
 
   const shortDescription = event.description?.length > 150
     ? event.description.slice(0, 150) + "..."
@@ -193,11 +183,6 @@ export default function EventDetailsPage() {
 
   return (
     <div className="min-h-screen bg-white pb-24 md:pb-12">
-
-      {/* LAYOUT STRUCTURE:
-          - Left Column (md:flex-1): Visuals, Logistics, Description, The Connect.
-          - Right Sidebar (md:w-85): Fixed Booking Widget.
-      */}
       <div className="md:flex md:max-w-6xl md:mx-auto md:gap-10 md:py-10 md:px-8">
 
         {/* --- LEFT CONTENT COLUMN --- */}
@@ -240,8 +225,6 @@ export default function EventDetailsPage() {
                   </button>
                 </div>
               </div>
-
-              {/* Image Overlay Gradient for mobile title legibility */}
               <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/20 to-transparent md:hidden" />
             </div>
           </div>
@@ -295,7 +278,6 @@ export default function EventDetailsPage() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
-                {/* DATE LOGISTIC */}
                 <div className="flex items-start gap-4">
                   <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm border border-gray-100 shrink-0">
                     <Clock className="w-5 h-5 text-teal-600" />
@@ -311,7 +293,6 @@ export default function EventDetailsPage() {
                   </div>
                 </div>
 
-                {/* LOCATION LOGISTIC */}
                 <div className="flex items-start gap-4">
                   <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm border border-gray-100 shrink-0">
                     <MapPin className="w-5 h-5 text-rose-500" />
@@ -323,7 +304,6 @@ export default function EventDetailsPage() {
                   </div>
                 </div>
 
-                {/* DRESS CODE LOGISTIC */}
                 {event.dress_code && (
                   <div className="flex items-start gap-4">
                     <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm border border-gray-100 shrink-0">
@@ -336,7 +316,6 @@ export default function EventDetailsPage() {
                   </div>
                 )}
 
-                {/* POINT OF CONTACT LOGISTIC (Added for Concierge flow) */}
                 {event.point_of_contact && (
                   <div className="flex items-start gap-4">
                     <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm border border-gray-100 shrink-0">
@@ -363,7 +342,6 @@ export default function EventDetailsPage() {
                     height="100%"
                     frameBorder="0"
                     style={{ border: 0 }}
-                    // Standard free embed URL
                     src={`https://maps.google.com/maps?q=${encodeURIComponent(event.location)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
                     className="absolute inset-0 w-full h-full pointer-events-none opacity-80 group-hover:opacity-100 transition-opacity"
                   ></iframe>
@@ -377,26 +355,22 @@ export default function EventDetailsPage() {
             </div>
           </div>
 
-          {/* --- THE CONNECT: KINDLY EXCLUSIVE SECTION --- */}
+          {/* --- THE CONNECT --- */}
           {event.proposed_connect && (
             <div className="px-5 md:px-0 pb-8 mt-2">
               <div className="bg-[#064e3b] rounded-[32px] p-8 shadow-2xl relative overflow-hidden border border-emerald-800">
-                {/* Decorative Elements */}
                 <div className="absolute -top-6 -right-6 opacity-10">
                   <Coffee className="w-32 h-32 text-emerald-400" />
                 </div>
-
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-10 h-10 bg-emerald-500/20 rounded-2xl flex items-center justify-center">
                     <Coffee className="w-5 h-5 text-emerald-400" />
                   </div>
                   <h3 className="text-xl font-black text-white tracking-tight">The Connect</h3>
                 </div>
-
                 <p className="text-emerald-100 text-sm md:text-base leading-relaxed font-medium mb-6">
                   {event.proposed_connect}
                 </p>
-
                 <div className="flex items-center gap-2 text-[10px] font-bold text-emerald-400 uppercase tracking-widest bg-emerald-950/40 w-fit px-4 py-2 rounded-full border border-emerald-800/50">
                   <Sparkles className="w-3.5 h-3.5" />
                   A KINDLY Exclusive Hangout
@@ -443,7 +417,6 @@ export default function EventDetailsPage() {
         {/* --- RIGHT SIDEBAR: DESKTOP BOOKING CARD --- */}
         <div className="hidden md:block md:w-96">
           <div className="sticky top-10 bg-white rounded-[32px] shadow-2xl border border-gray-100 overflow-hidden">
-
             <div className="p-8 border-b border-gray-50">
               <div className="flex items-center justify-between mb-6">
                 <div>
@@ -481,20 +454,23 @@ export default function EventDetailsPage() {
             {/* ACTION CENTER */}
             <div className="p-8 bg-gray-50/50">
               <Button
-                onClick={handleBookSlot}
-                disabled={isRegistering || !canRegister}
+                onClick={handlePrimaryAction}
+                disabled={isButtonDisabled}
                 className={cn(
                   "w-full h-14 text-white font-black rounded-2xl text-lg shadow-2xl transition-all active:scale-95 disabled:opacity-50",
                   isRegistered
                     ? "bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/20"
+                    : !isAuthenticated && isRegistrationOpen && !isFull
+                    ? "bg-blue-600 hover:bg-blue-700 shadow-blue-600/30"
                     : "bg-gray-900 hover:bg-black shadow-gray-900/30"
                 )}
               >
                 {isRegistering ? <Loader2 className="w-5 h-5 animate-spin" />
+                  : !isRegistrationOpen ? 'Entry Closed'
+                  : isFull ? 'Event Full'
+                  : !isAuthenticated ? 'Sign In to Register'
                   : isRegistered ? 'Joined! ✓'
-                    : !isRegistrationOpen ? 'Entry Closed'
-                      : isFull ? 'Event Full'
-                        : 'Book My Slot'}
+                  : 'Book My Slot'}
               </Button>
 
               <div className="flex flex-col gap-2 mt-6">
@@ -547,18 +523,23 @@ export default function EventDetailsPage() {
             <p className="text-xs text-gray-500 font-medium">{formatTime(event.start_time)}</p>
           </div>
           <Button
-            onClick={handleBookSlot}
-            disabled={isRegistering || !canRegister}
+            onClick={handlePrimaryAction}
+            disabled={isButtonDisabled}
             className={cn(
-              "h-14 px-8 text-white font-black rounded-2xl text-sm shadow-xl transition-all active:scale-95 disabled:opacity-50",
-              isRegistered ? "bg-emerald-500" : "bg-gray-900"
+              "h-14 px-6 text-white font-black rounded-2xl text-sm shadow-xl transition-all active:scale-95 disabled:opacity-50",
+              isRegistered
+                ? "bg-emerald-500"
+                : !isAuthenticated && isRegistrationOpen && !isFull
+                ? "bg-blue-600"
+                : "bg-gray-900"
             )}
           >
             {isRegistering ? <Loader2 className="w-4 h-4 animate-spin" />
+              : !isRegistrationOpen ? 'Closed'
+              : isFull ? 'Full'
+              : !isAuthenticated ? 'Sign In'
               : isRegistered ? 'Joined! ✓'
-                : !isRegistrationOpen ? 'Closed'
-                  : isFull ? 'Full'
-                    : 'Book Slot'}
+              : 'Book Slot'}
           </Button>
         </div>
       </div>
