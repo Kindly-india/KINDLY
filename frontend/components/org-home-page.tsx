@@ -282,7 +282,7 @@ export function OrgHomePage() {
         </div>
       </section>
 
-      {/* Your Events Section (Unchanged) */}
+{/* Your Events Section (Updated with 16:9 and Fixed Heights) */}
       <section className="bg-[#f5f5f7] py-6 md:py-12">
         <div className="max-w-300 mx-auto px-4 md:px-8">
           <div className="flex items-center justify-between mb-4 md:mb-6">
@@ -305,51 +305,96 @@ export function OrgHomePage() {
             </div>
           ) : (
             <>
-              <div ref={eventsRef} className="flex md:grid md:grid-cols-4 gap-3 md:gap-4 overflow-x-auto md:overflow-visible pb-4 md:pb-0 snap-x snap-mandatory scrollbar-hide">
+              {/* items-stretch forces all cards to equal height */}
+              <div 
+                ref={eventsRef} 
+                className="flex md:grid md:grid-cols-4 gap-3 md:gap-4 overflow-x-auto md:overflow-visible pb-4 md:pb-0 snap-x snap-mandatory scrollbar-hide items-stretch"
+              >
                 {events.map((event) => (
-                  <Link key={event.id} href={`/org-events/${event.id}`} className="shrink-0 w-64 md:w-auto snap-start group bg-white rounded-xl md:rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300">
-                    <div className="relative aspect-4/3 overflow-hidden">
+                  <Link 
+                    key={event.id} 
+                    href={`/org-events/${event.id}`} 
+                    className="shrink-0 w-64 md:w-auto snap-start group bg-white rounded-xl md:rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col self-stretch"
+                  >
+                    {/* Fixed 16:9 Image Container */}
+                    <div className="relative aspect-video aspect-[16/9] w-full overflow-hidden bg-gray-100 shrink-0">
                       {event.cover_image_url ? (
-                        <img src={event.cover_image_url} alt={event.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                        <img 
+                          src={event.cover_image_url} 
+                          alt={event.title} 
+                          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                        />
                       ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center"><Calendar className="w-12 h-12 text-gray-400" /></div>
+                        <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                          <Calendar className="w-12 h-12 text-gray-400" />
+                        </div>
                       )}
-                      <div className={cn("absolute top-2 left-2 px-2 py-0.5 rounded text-[9px] md:text-[11px] font-semibold text-white capitalize", getCategoryColor(event.category))}>
+                      
+                      <div className={cn("absolute top-2 left-2 px-2 py-0.5 rounded text-[9px] md:text-[11px] font-semibold text-white capitalize z-10", getCategoryColor(event.category))}>
                         {event.category}
                       </div>
-                      <div className={cn("absolute top-2 right-2 px-2 py-0.5 rounded text-[9px] md:text-[11px] font-semibold capitalize", event.status === "published" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700")}>
+                      
+                      <div className={cn("absolute top-2 right-2 px-2 py-0.5 rounded text-[9px] md:text-[11px] font-semibold capitalize z-10", event.status === "published" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700")}>
                         {event.status}
                       </div>
+                      
                       {event.is_urgent && (
-                        <div className="absolute bottom-2 left-2 px-2 py-0.5 bg-amber-500 text-white rounded text-[9px] md:text-[11px] font-semibold flex items-center gap-1">
+                        <div className="absolute bottom-2 left-2 px-2 py-0.5 bg-amber-500 text-white rounded text-[9px] md:text-[11px] font-semibold flex items-center gap-1 z-10">
                           <AlertTriangle className="w-3 h-3" /> Urgent
                         </div>
                       )}
                     </div>
-                    <div className="p-3 md:p-4">
-                      <h3 className="text-[13px] md:text-[15px] font-semibold text-[#1d1d1f] mb-1.5 line-clamp-1">{event.title}</h3>
-                      <div className="space-y-0.5">
-                        <div className="flex items-center gap-1.5 text-[#86868b]"><Clock className="w-3 h-3" /><span className="text-[10px] md:text-[12px]">{formatDate(event.event_date)} • {formatTime(event.start_time)}</span></div>
-                        <div className="flex items-center gap-1.5 text-[#86868b]"><MapPin className="w-3 h-3" /><span className="text-[10px] md:text-[12px] line-clamp-1">{event.location}</span></div>
+
+                    {/* Content area flex-1 pushes the progress bar to the bottom */}
+                    <div className="p-3 md:p-4 flex flex-col flex-1">
+                      <h3 className="text-[13px] md:text-[15px] font-semibold text-[#1d1d1f] mb-1.5 line-clamp-1">
+                        {event.title}
+                      </h3>
+                      
+                      <div className="space-y-0.5 mb-4">
+                        <div className="flex items-center gap-1.5 text-[#86868b]">
+                          <Clock className="w-3 h-3" />
+                          <span className="text-[10px] md:text-[12px]">{formatDate(event.event_date)} • {formatTime(event.start_time)}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-[#86868b]">
+                          <MapPin className="w-3 h-3" />
+                          <span className="text-[10px] md:text-[12px] line-clamp-1">{event.location}</span>
+                        </div>
                       </div>
-                      <div className="mt-2 pt-2 border-t border-[#f5f5f7]">
+
+                      {/* mt-auto ensures the progress section stays pinned to the bottom */}
+                      <div className="mt-auto pt-2 border-t border-[#f5f5f7]">
                         <div className="flex items-center justify-between text-[10px] md:text-[11px] mb-1">
                           <span className="text-[#86868b]">{event.registered_count}/{event.total_slots} registered</span>
                           <span className="font-medium text-[#10b981]">{Math.round((event.registered_count / event.total_slots) * 100) || 0}%</span>
                         </div>
                         <div className="h-1.5 bg-[#f5f5f7] rounded-full overflow-hidden">
-                          <div className="h-full bg-gradient-to-r from-[#10b981] to-[#34d399] rounded-full transition-all" style={{ width: `${(event.registered_count / event.total_slots) * 100}%` }} />
+                          <div 
+                            className="h-full bg-gradient-to-r from-[#10b981] to-[#34d399] rounded-full transition-all" 
+                            style={{ width: `${(event.registered_count / event.total_slots) * 100}%` }} 
+                          />
                         </div>
                       </div>
                     </div>
                   </Link>
                 ))}
               </div>
+              {/* Pagination section remains same */}
               {events.length > 4 && (
                 <div className="flex items-center justify-center gap-1.5 md:gap-2 mt-6 md:mt-10">
-                  <button onClick={() => scrollEvents("left")} className="w-8 h-8 md:w-10 md:h-10 rounded-full border border-[#d2d2d7] flex items-center justify-center hover:bg-white transition-colors"><ChevronLeft className="w-4 h-4 md:w-5 md:h-5 text-[#1d1d1f]" /></button>
-                  <div className="flex items-center gap-1">{[1, 2, 3].map((page) => (<button key={page} className={cn("w-7 h-7 md:w-8 md:h-8 rounded-full text-[11px] md:text-[13px] font-medium transition-colors", page === 1 ? "bg-[#1d1d1f] text-white" : "text-[#86868b] hover:bg-white")}>{page}</button>))}</div>
-                  <button onClick={() => scrollEvents("right")} className="w-8 h-8 md:w-10 md:h-10 rounded-full border border-[#d2d2d7] flex items-center justify-center hover:bg-white transition-colors"><ChevronRight className="w-4 h-4 md:w-5 md:h-5 text-[#1d1d1f]" /></button>
+                  <button onClick={() => scrollEvents("left")} className="w-8 h-8 md:w-10 md:h-10 rounded-full border border-[#d2d2d7] flex items-center justify-center hover:bg-white transition-colors">
+                    <ChevronLeft className="w-4 h-4 md:w-5 md:h-5 text-[#1d1d1f]" />
+                  </button>
+                  <div className="flex items-center gap-1">
+                    {[1, 2, 3].map((page) => (
+                      <button key={page} className={cn("w-7 h-7 md:w-8 md:h-8 rounded-full text-[11px] md:text-[13px] font-medium transition-colors", page === 1 ? "bg-[#1d1d1f] text-white" : "text-[#86868b] hover:bg-white")}>
+                        {page}
+                      </button>
+                    ))}
+                  </div>
+                  <button onClick={() => scrollEvents("right")} className="w-8 h-8 md:w-10 md:h-10 rounded-full border border-[#d2d2d7] flex items-center justify-center hover:bg-white transition-colors">
+                    <ChevronRight className="w-4 h-4 md:w-5 md:h-5 text-[#1d1d1f]" />
+                  </button>
                 </div>
               )}
             </>
