@@ -1,15 +1,18 @@
 import { Controller, Post, Get, Body, Delete, ValidationPipe, Request, UseGuards, Param, Patch, BadRequestException } from '@nestjs/common';
 import { EventService } from './event.service';
+import { CertificateService } from '../certificate/certificate.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { AdminGuard } from '../auth/guards/admin.guard';
 import { UploadedFile, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 
-// 🔴 NOTE: @UseGuards is REMOVED from here. 
-// We apply it only to specific methods below.
 @Controller('events')
 export class EventController {
-  constructor(private eventService: EventService) { }
+  constructor(
+    private eventService: EventService,
+    private certificateService: CertificateService,
+  ) { }
 
     // ==========================================
   // ADMIN "GHOST MODE" ROUTES
@@ -17,12 +20,14 @@ export class EventController {
 
   // 1. Fetch all pending events
   @Get('admin/pending')
+  @UseGuards(AdminGuard)
   async getPendingEvents() {
     return this.eventService.getPendingEvents();
   }
 
   // 2. Approve and update an event simultaneously
   @Patch('admin/approve/:id')
+  @UseGuards(AdminGuard)
   async adminApproveEvent(
     @Param('id') eventId: string,
     @Body() updateData: any // Using 'any' or 'Partial<CreateEventDto>' here since you're the admin overriding it
@@ -89,11 +94,18 @@ export class EventController {
     return this.eventService.uploadOrgSignature(req.user.id, file);
   }
 
-  // ✅ NEW: Issue Certificates for an Event
-  @Patch(':id/issue-certificates')
+  // Issue certificates for an event (org owner or admin)
+  @Post(':id/certificates/issue')
   @UseGuards(JwtAuthGuard)
   async issueCertificates(@Request() req: any, @Param('id') id: string) {
-    return this.eventService.issueCertificates(req.user.id, id);
+    return this.certificateService.issueForEvent(req.user.id, id);
+  }
+
+  // List all certificates for an event (org owner or admin)
+  @Get(':id/certificates')
+  @UseGuards(JwtAuthGuard)
+  async getEventCertificates(@Request() req: any, @Param('id') id: string) {
+    return this.certificateService.getCertificatesForEvent(req.user.id, id);
   }
 
   // This is the duplicate path some parts of your app might still use

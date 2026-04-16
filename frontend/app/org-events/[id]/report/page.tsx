@@ -1,22 +1,21 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useParams } from "next/navigation"
 import Link from "next/link"
-import Image from "next/image" // ✅ Added for Gallery
 import {
-  ArrowLeft, Users, Clock, Star, Download, Share2,
-  CheckCircle2, XCircle, Award, Loader2, Upload, Trash2, Plus // ✅ Added Icons
+  ArrowLeft, Users, Clock, Star, Share2,
+  CheckCircle2, XCircle, Award, Loader2, Upload, Trash2, Plus,
+  Download, RefreshCw
 } from "lucide-react"
-import { api } from "@/lib/api"
+import { api, EventCertificate } from "@/lib/api"
 
 export default function EventReportPage() {
   const params = useParams()
   const eventId = params?.id as string
-  const router = useRouter()
 
   const [loading, setLoading] = useState(true)
-  const [uploading, setUploading] = useState(false) // ✅ Upload state
+  const [uploading, setUploading] = useState(false)
   const [event, setEvent] = useState<any>(null)
   const [registrations, setRegistrations] = useState<any[]>([])
   const [stats, setStats] = useState({
@@ -25,6 +24,13 @@ export default function EventReportPage() {
     presentCount: 0,
     absentCount: 0
   })
+
+  // Certificate state
+  const [certs, setCerts] = useState<EventCertificate[]>([])
+  const [issuingCerts, setIssuingCerts] = useState(false)
+  const [issueResult, setIssueResult] = useState<{ issued: number; skipped: number; total: number } | null>(null)
+  const [issueError, setIssueError] = useState<string | null>(null)
+  const [downloadingId, setDownloadingId] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -38,7 +44,6 @@ export default function EventReportPage() {
         setEvent(eventRes.event)
         setRegistrations(regsRes.registrations || [])
 
-        // Calculate Stats
         const present = (regsRes.registrations || []).filter((r: any) => r.status === 'checked_in')
         const presentCount = present.length
         const totalRegs = (regsRes.registrations || []).length
@@ -50,9 +55,17 @@ export default function EventReportPage() {
         setStats({
           turnoutRate: totalRegs > 0 ? Math.round((presentCount / totalRegs) * 100) : 0,
           totalImpactHours: Math.round(presentCount * duration),
-          presentCount: presentCount,
+          presentCount,
           absentCount: totalRegs - presentCount
         })
+
+        // Load existing certificates
+        try {
+          const certRes = await api.getEventCertificates(eventId)
+          setCerts(certRes.certificates || [])
+        } catch {
+          // Not an org owner or no certs yet — silent
+        }
 
       } catch (error) {
         console.error("Failed to load report", error)
@@ -63,20 +76,14 @@ export default function EventReportPage() {
     fetchData()
   }, [eventId])
 
-  // ✅ HANDLE IMAGE UPLOAD
-  // ✅ HANDLE IMAGE UPLOAD
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+    const file = e.target.files?.[0]
+    if (!file) return
     try {
-      setUploading(true);
-      const publicUrl = await api.uploadEventImage(file); // ✅ Directly returns string URL
-
-      const currentGallery = event.gallery_images || [];
-      const updatedGallery = [...currentGallery, publicUrl];
-
-      // Map snake_case (DB) to camelCase (API)
+      setUploading(true)
+      const publicUrl = await api.uploadEventImage(file)
+      const currentGallery = event.gallery_images || []
+      const updatedGallery = [...currentGallery, publicUrl]
       const updatePayload = {
         title: event.title,
         description: event.description,
@@ -89,29 +96,22 @@ export default function EventReportPage() {
         totalSlots: event.total_slots,
         registrationDeadline: event.registration_deadline,
         coverImageUrl: event.cover_image_url,
-        galleryImages: updatedGallery // ✅ Use camelCase to match DTO
-      };
-
-      await api.updateEvent(eventId, updatePayload as any);
-      setEvent({ ...event, gallery_images: updatedGallery });
-
+        galleryImages: updatedGallery
+      }
+      await api.updateEvent(eventId, updatePayload as any)
+      setEvent({ ...event, gallery_images: updatedGallery })
     } catch (error: any) {
-      console.error("Upload failed", error);
-      alert(error.message || "Failed to upload image.");
+      alert(error.message || "Failed to upload image.")
     } finally {
-      setUploading(false);
+      setUploading(false)
     }
-  };
+  }
 
-  // ✅ HANDLE IMAGE DELETE (FIXED MAPPING)
   const removeImage = async (indexToRemove: number) => {
-    if (!confirm("Delete this image?")) return;
-
+    if (!confirm("Delete this image?")) return
     try {
-      const currentGallery = event.gallery_images || [];
-      const updatedGallery = currentGallery.filter((_: any, i: number) => i !== indexToRemove);
-
-      // 🔴 FIX: Same mapping here
+      const currentGallery = event.gallery_images || []
+      const updatedGallery = currentGallery.filter((_: any, i: number) => i !== indexToRemove)
       const updatePayload = {
         title: event.title,
         description: event.description,
@@ -125,12 +125,40 @@ export default function EventReportPage() {
         registrationDeadline: event.registration_deadline,
         coverImageUrl: event.cover_image_url,
         gallery_images: updatedGallery
-      };
+      }
+      await api.updateEvent(eventId, updatePayload as any)
+      setEvent({ ...event, gallery_images: updatedGallery })
+    } catch {
+      alert("Failed to delete image.")
+    }
+  }
 
-      await api.updateEvent(eventId, updatePayload as any);
-      setEvent({ ...event, gallery_images: updatedGallery });
-    } catch (error) {
-      alert("Failed to delete image.");
+  const handleIssueCertificates = async () => {
+    setIssuingCerts(true)
+    setIssueError(null)
+    setIssueResult(null)
+    try {
+      const result = await api.issueCertificatesForEvent(eventId)
+      setIssueResult({ issued: result.issued, skipped: result.skipped, total: result.total })
+      // Refresh certificate list
+      const certRes = await api.getEventCertificates(eventId)
+      setCerts(certRes.certificates || [])
+    } catch (err: any) {
+      setIssueError(err.message || "Failed to issue certificates")
+    } finally {
+      setIssuingCerts(false)
+    }
+  }
+
+  const handleDownload = async (certId: string) => {
+    setDownloadingId(certId)
+    try {
+      const { signedUrl } = await api.downloadCertificate(certId)
+      window.open(signedUrl, '_blank')
+    } catch (err: any) {
+      alert(err.message || "Failed to get download link")
+    } finally {
+      setDownloadingId(null)
     }
   }
 
@@ -196,7 +224,7 @@ export default function EventReportPage() {
           </div>
         </div>
 
-        {/* ✅ NEW: EVENT GALLERY SECTION */}
+        {/* Event Gallery */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden p-6">
           <div className="flex justify-between items-center mb-6">
             <div>
@@ -223,14 +251,9 @@ export default function EventReportPage() {
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {/* Existing Images */}
             {event?.gallery_images && event.gallery_images.map((img: string, idx: number) => (
               <div key={idx} className="relative group aspect-square rounded-xl overflow-hidden bg-gray-100 border border-gray-200">
-                <img
-                  src={img}
-                  alt={`Gallery ${idx}`}
-                  className="w-full h-full object-cover"
-                />
+                <img src={img} alt={`Gallery ${idx}`} className="w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                   <button
                     onClick={() => removeImage(idx)}
@@ -241,8 +264,6 @@ export default function EventReportPage() {
                 </div>
               </div>
             ))}
-
-            {/* Empty State */}
             {(!event?.gallery_images || event.gallery_images.length === 0) && (
               <div className="col-span-full py-10 flex flex-col items-center justify-center text-gray-400 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50">
                 <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mb-3 shadow-sm">
@@ -254,7 +275,7 @@ export default function EventReportPage() {
           </div>
         </div>
 
-        {/* Volunteer Attendance List */}
+        {/* Volunteer Attendance */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="p-6 border-b border-gray-100 flex justify-between items-center">
             <h2 className="font-bold text-gray-900">Volunteer Attendance</h2>
@@ -267,7 +288,6 @@ export default function EventReportPage() {
               </span>
             </div>
           </div>
-
           <div className="divide-y divide-gray-50 max-h-96 overflow-y-auto">
             {registrations.map((reg) => (
               <div key={reg.id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
@@ -285,7 +305,6 @@ export default function EventReportPage() {
                     <p className="text-xs text-gray-500">{reg.volunteer_profiles?.city || "Nashik"}</p>
                   </div>
                 </div>
-
                 {reg.status === 'checked_in' ? (
                   <div className="flex items-center gap-2 text-emerald-600 text-sm font-medium">
                     <CheckCircle2 className="w-4 h-4" />
@@ -303,25 +322,86 @@ export default function EventReportPage() {
         </div>
 
         {/* Certificates Section */}
-        <div className="bg-linear-to-r from-orange-50 to-amber-50 rounded-2xl border border-orange-100 p-6">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-white rounded-xl shadow-sm text-orange-500">
-                <Award className="w-8 h-8" />
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-amber-50 rounded-xl text-amber-500">
+                <Award className="w-6 h-6" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-gray-900">Certificates</h2>
-                <p className="text-sm text-gray-600">Issue participation certificates to {stats.presentCount} attendees.</p>
+                <h2 className="font-bold text-gray-900">Certificates</h2>
+                <p className="text-sm text-gray-500">
+                  {certs.length > 0
+                    ? `${certs.length} certificate${certs.length !== 1 ? 's' : ''} issued`
+                    : `${stats.presentCount} volunteer${stats.presentCount !== 1 ? 's' : ''} eligible`}
+                </p>
               </div>
             </div>
-
             <button
-              onClick={() => alert("Certificates generated and sent to volunteers!")}
-              className="w-full md:w-auto h-12 px-8 bg-linear-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white rounded-xl font-bold shadow-lg shadow-orange-500/20 transition-all active:scale-95"
+              onClick={handleIssueCertificates}
+              disabled={issuingCerts || stats.presentCount === 0}
+              className="flex items-center gap-2 px-5 py-2.5 bg-[#0F4F3F] hover:bg-[#0a3d30] disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-xl transition-colors"
             >
-              Design & Issue
+              {issuingCerts ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> Generating PDFs…</>
+              ) : certs.length > 0 ? (
+                <><RefreshCw className="w-4 h-4" /> Re-issue Missing</>
+              ) : (
+                <><Award className="w-4 h-4" /> Issue Certificates</>
+              )}
             </button>
           </div>
+
+          {/* Issue result banner */}
+          {issueResult && (
+            <div className="mx-6 mt-4 p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-sm text-emerald-800">
+              <span className="font-semibold">Done!</span> {issueResult.issued} new certificate{issueResult.issued !== 1 ? 's' : ''} generated
+              {issueResult.skipped > 0 && `, ${issueResult.skipped} already existed`}.
+            </div>
+          )}
+          {issueError && (
+            <div className="mx-6 mt-4 p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+              {issueError}
+            </div>
+          )}
+
+          {/* Certificate list */}
+          {certs.length > 0 ? (
+            <div className="divide-y divide-gray-50">
+              {certs.map((cert) => (
+                <div key={cert.id} className="px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
+                  <div className="flex items-center gap-3">
+                    {cert.volunteer_avatar ? (
+                      <img src={cert.volunteer_avatar} alt="" className="w-9 h-9 rounded-full object-cover" />
+                    ) : (
+                      <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center font-bold text-gray-500 text-sm">
+                        {cert.volunteer_name?.charAt(0) || "V"}
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">{cert.volunteer_name}</p>
+                      <p className="text-xs text-gray-500">{cert.hours_credited}h · {new Date(cert.issued_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleDownload(cert.id)}
+                    disabled={downloadingId === cert.id}
+                    className="flex items-center gap-1.5 text-xs font-semibold text-[#0F4F3F] hover:bg-emerald-50 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    {downloadingId === cert.id
+                      ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      : <Download className="w-3.5 h-3.5" />
+                    }
+                    Download
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="p-8 text-center text-gray-400 text-sm">
+              No certificates issued yet. Click <span className="font-semibold text-gray-600">Issue Certificates</span> to generate PDFs for all {stats.presentCount} present volunteer{stats.presentCount !== 1 ? 's' : ''}.
+            </div>
+          )}
         </div>
 
       </main>

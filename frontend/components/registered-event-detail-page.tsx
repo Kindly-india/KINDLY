@@ -22,16 +22,18 @@ import {
   QrCode,
   X,
   Camera,
-  Coffee, // Added for The Connect
-  ShieldCheck, // Added for verification
-  Sparkles, // Added for premium feel
+  Coffee,
+  ShieldCheck,
+  Sparkles,
   Info,
   AlertCircle,
   Phone,
-  MessageSquare
+  MessageSquare,
+  Award,
+  Download,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { api } from "@/lib/api"
+import { api, VolunteerCertificate } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
 // Define formats outside to prevent re-renders in the scanner
@@ -53,18 +55,26 @@ export default function RegisteredEventDetailPage() {
   const [showScanner, setShowScanner] = useState(false)
   const [checkingIn, setCheckingIn] = useState(false)
 
+  // --- CERTIFICATE STATE ---
+  const [cert, setCert] = useState<VolunteerCertificate | null>(null)
+  const [downloadingCert, setDownloadingCert] = useState(false)
+
   useEffect(() => {
     const loadData = async () => {
       if (!eventId) return
       try {
         setLoading(true)
-        const [eventRes, broadcastRes] = await Promise.all([
+        const [eventRes, broadcastRes, certRes] = await Promise.all([
           api.getEventById(eventId),
-          api.getEventBroadcasts(eventId)
+          api.getEventBroadcasts(eventId),
+          api.getMyCertificates().catch(() => ({ certificates: [] }))
         ])
 
         setEvent(eventRes.event)
         setBroadcasts(broadcastRes.broadcasts || [])
+
+        const myCert = certRes.certificates.find((c: VolunteerCertificate) => c.event_id === eventId)
+        if (myCert) setCert(myCert)
       } catch (error) {
         console.error("Failed to load event details", error)
       } finally {
@@ -134,6 +144,19 @@ export default function RegisteredEventDetailPage() {
       setTimeout(() => setCheckingIn(false), 3000);
     }
   }, [checkingIn, eventId]);
+
+  const handleCertDownload = async () => {
+    if (!cert) return
+    setDownloadingCert(true)
+    try {
+      const { signedUrl } = await api.downloadCertificate(cert.id)
+      window.open(signedUrl, '_blank')
+    } catch (err: any) {
+      alert(err.message || "Failed to get download link")
+    } finally {
+      setDownloadingCert(false)
+    }
+  }
 
   const handleAddToCalendar = () => {
     if (!event) return
@@ -592,6 +615,21 @@ export default function RegisteredEventDetailPage() {
               <p className="text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest pt-4">
                 Scan arrival QR to log hours
               </p>
+
+              {/* Certificate Download */}
+              {cert && (
+                <button
+                  onClick={handleCertDownload}
+                  disabled={downloadingCert}
+                  className="w-full h-14 flex items-center justify-center gap-3 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 font-black rounded-2xl transition-all disabled:opacity-60"
+                >
+                  {downloadingCert
+                    ? <Loader2 className="w-5 h-5 animate-spin" />
+                    : <Award className="w-5 h-5 text-amber-500" />
+                  }
+                  Download Certificate
+                </button>
+              )}
             </div>
 
             {/* Support Block */}
@@ -609,6 +647,23 @@ export default function RegisteredEventDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* --- MOBILE: CERTIFICATE BLOCK (shown above footer when cert exists) --- */}
+      {cert && (
+        <div className="mx-4 mb-4 md:hidden">
+          <button
+            onClick={handleCertDownload}
+            disabled={downloadingCert}
+            className="w-full flex items-center justify-center gap-3 py-4 bg-amber-50 border border-amber-200 rounded-2xl text-amber-800 font-black text-sm shadow-sm active:scale-95 transition-all disabled:opacity-60"
+          >
+            {downloadingCert
+              ? <Loader2 className="w-5 h-5 animate-spin" />
+              : <Download className="w-5 h-5 text-amber-500" />
+            }
+            Download My Certificate
+          </button>
+        </div>
+      )}
 
       {/* --- MOBILE STICKY NAVIGATION (High Impact) --- */}
       <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-r from-emerald-600 to-teal-600 shadow-[0_-12px_40px_rgba(0,0,0,0.15)] z-50 md:hidden">

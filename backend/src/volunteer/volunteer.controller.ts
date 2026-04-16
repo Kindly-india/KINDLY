@@ -13,13 +13,17 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express'; // ✅ Helper for parsing files
 import { VolunteerService } from './volunteer.service';
+import { CertificateService } from '../certificate/certificate.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UpdateVolunteerProfileDto } from './dto/update-volunteer-profile.dto';
 import { OptionalAuthGuard } from '../auth/guards/optional-auth.guard';
 
 @Controller('volunteers')
 export class VolunteerController {
-  constructor(private readonly volunteerService: VolunteerService) { }
+  constructor(
+    private readonly volunteerService: VolunteerService,
+    private readonly certificateService: CertificateService,
+  ) { }
 
   // 1. Get Own Profile (Private)
   @UseGuards(JwtAuthGuard)
@@ -82,5 +86,12 @@ export class VolunteerController {
     @Param('photoId') photoId: string
   ) {
     return this.volunteerService.deleteFromGallery(req.user.id, photoId);
+  }
+
+  // 8. My Certificates
+  @UseGuards(JwtAuthGuard)
+  @Get('me/certificates')
+  async getMyCertificates(@Request() req: any) {
+    return this.certificateService.getCertificatesForVolunteer(req.user.id);
   }
 }

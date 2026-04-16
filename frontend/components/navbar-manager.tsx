@@ -33,14 +33,16 @@ export function NavbarManager() {
   if (!pathname) return null
 
   // 2. Hide ALL navbars on Landing, Login, Signup, etc.
-  const isStaticOrAuth = 
-    pathname === "/" || 
-    pathname === "/login" || 
+  // Also hide on pages that render their own full navbar.
+  const isStaticOrAuth =
+    pathname === "/" ||
+    pathname === "/login" ||
     pathname === "/signup" ||
     pathname.startsWith("/company") ||
     pathname.startsWith("/resources") ||
     pathname.startsWith("/how-it-works") ||
-    pathname.startsWith("/for-")
+    pathname.startsWith("/for-") ||
+    /^\/events\/[^/]+\/showcase(\/.*)?$/.test(pathname)
 
   if (isStaticOrAuth) return null
 

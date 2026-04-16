@@ -90,6 +90,27 @@ export interface UpdateOrganizationProfileDto {
   cover_url?: string;
 }
 
+export interface VolunteerCertificate {
+  id: string;
+  verification_id: string;
+  issued_at: string;
+  hours_credited: number;
+  event_id: string;
+  event_title: string;
+  event_date: string;
+  org_name: string;
+}
+
+export interface EventCertificate {
+  id: string;
+  verification_id: string;
+  issued_at: string;
+  hours_credited: number;
+  volunteer_id: string;
+  volunteer_name: string;
+  volunteer_avatar: string | null;
+}
+
 export const api = {
   // Volunteer signup
   signupVolunteer: async (data: VolunteerSignupData) => {
@@ -699,12 +720,12 @@ export const api = {
     return response.json();
   },
 
-  issueCertificates: async (eventId: string) => {
+  issueCertificatesForEvent: async (eventId: string): Promise<{ message: string; issued: number; skipped: number; total: number }> => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error('Not authenticated');
 
-    const response = await fetch(`${API_URL}/events/${eventId}/issue-certificates`, {
-      method: 'PATCH',
+    const response = await fetch(`${API_URL}/events/${eventId}/certificates/issue`, {
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${session.access_token}`,
@@ -714,6 +735,51 @@ export const api = {
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.message || 'Failed to issue certificates');
+    }
+    return response.json();
+  },
+
+  getEventCertificates: async (eventId: string): Promise<{ certificates: EventCertificate[] }> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const response = await fetch(`${API_URL}/events/${eventId}/certificates`, {
+      headers: { 'Authorization': `Bearer ${session.access_token}` },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to fetch certificates');
+    }
+    return response.json();
+  },
+
+  downloadCertificate: async (certificateId: string): Promise<{ signedUrl: string }> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const response = await fetch(`${API_URL}/certificates/${certificateId}/download`, {
+      headers: { 'Authorization': `Bearer ${session.access_token}` },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to get download URL');
+    }
+    return response.json();
+  },
+
+  getMyCertificates: async (): Promise<{ certificates: VolunteerCertificate[] }> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const response = await fetch(`${API_URL}/volunteers/me/certificates`, {
+      headers: { 'Authorization': `Bearer ${session.access_token}` },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to fetch certificates');
     }
     return response.json();
   },
@@ -1013,13 +1079,14 @@ export const api = {
   // --- ADMIN ROUTES ---
 
   getPendingEvents: async () => {
-    // Make sure API_URL is defined at the top of your file like your other routes!
-    const token = localStorage.getItem('token'); // Adjust this if you get your token differently
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/events/admin/pending`, {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const response = await fetch(`${API_URL}/events/admin/pending`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        'Authorization': `Bearer ${session.access_token}`,
       },
     });
 
@@ -1031,12 +1098,14 @@ export const api = {
   },
 
   adminApproveEvent: async (eventId: string, eventData: any) => {
-    const token = localStorage.getItem('token');
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/events/admin/approve/${eventId}`, {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const response = await fetch(`${API_URL}/events/admin/approve/${eventId}`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
-        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        'Authorization': `Bearer ${session.access_token}`,
       },
       body: JSON.stringify(eventData),
     });

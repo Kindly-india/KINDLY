@@ -206,7 +206,7 @@ export function OrgEventDetail() {
     if (!confirm("Are you sure? This will make certificates available to all checked-in volunteers.")) return;
     try {
       setIssuing(true);
-      await api.issueCertificates(eventId);
+      await api.issueCertificatesForEvent(eventId);
       alert("Certificates have been issued successfully!");
       window.location.reload();
     } catch (err: any) {

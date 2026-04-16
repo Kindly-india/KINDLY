@@ -8,9 +8,9 @@ import {
   Calendar, MapPin, Users, Clock,
   Share2, CheckCircle2, Building2, Loader2,
   Download, Check, Menu, X, Sparkles,
-  Star
+  Star, Award
 } from "lucide-react"
-import { api } from "@/lib/api"
+import { api, VolunteerCertificate } from "@/lib/api"
 
 export default function EventShowcasePage() {
   const { id } = useParams()
@@ -27,6 +27,10 @@ export default function EventShowcasePage() {
   const [reviewText, setReviewText] = useState("")
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+
+  // Certificate state
+  const [cert, setCert] = useState<VolunteerCertificate | null>(null)
+  const [downloadingCert, setDownloadingCert] = useState(false)
 
   useEffect(() => {
     const loadData = async () => {
@@ -63,9 +67,10 @@ export default function EventShowcasePage() {
           // 4. Fetch Registration & Review Status
           if (currentUser && eventData) {
             try {
-              const [myRegs, myReviewRes] = await Promise.all([
+              const [myRegs, myReviewRes, certRes] = await Promise.all([
                 api.getVolunteerRegistrations(),
-                api.getMyReview(id as string) 
+                api.getMyReview(id as string),
+                api.getMyCertificates().catch(() => ({ certificates: [] })),
               ]);
 
               const thisEventReg = myRegs.events.find((e: any) => e.id === eventData.id);
@@ -76,6 +81,11 @@ export default function EventShowcasePage() {
                 setRating(myReviewRes.review.rating);
                 setReviewText(myReviewRes.review.comment);
               }
+
+              const myCert = certRes.certificates.find(
+                (c: VolunteerCertificate) => c.event_id === (id as string)
+              );
+              if (myCert) setCert(myCert);
 
             } catch (err) {
               console.log("Error fetching user data");
@@ -88,6 +98,19 @@ export default function EventShowcasePage() {
     }
     loadData()
   }, [id])
+
+  const handleCertDownload = async () => {
+    if (!cert) return
+    setDownloadingCert(true)
+    try {
+      const { signedUrl } = await api.downloadCertificate(cert.id)
+      window.open(signedUrl, '_blank')
+    } catch (err: any) {
+      alert(err.message || 'Failed to get download link')
+    } finally {
+      setDownloadingCert(false)
+    }
+  }
 
   const handleSubmitReview = async () => {
     if (rating === 0) return alert("Please select a rating star.");
@@ -232,49 +255,34 @@ export default function EventShowcasePage() {
                     </div>
                 </Link>
                 
-                {/* CERTIFICATE & REVIEW SECTION - ONLY IF ATTENDED */}
-                {event?.certificates_issued && (myRegistration?.registration_status === 'completed' || myRegistration?.registration_status === 'checked_in') ? (
+                {/* CERTIFICATE & REVIEW SECTION */}
+                {cert ? (
                   <div className="mt-6 pt-6 border-t border-gray-100">
                     <h2 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
-                        <Sparkles className="w-4 h-4 text-emerald-500"/> Your Certificate
+                      <Award className="w-4 h-4 text-amber-500" /> Your Certificate
                     </h2>
 
-                    {/* ✅ RESPONSIVE CERTIFICATE */}
-                    <div className="relative w-full rounded-xl border-[4px] border-double border-gray-900 bg-white p-4 shadow-sm mb-4 overflow-hidden">
-                      <div className="relative z-10 flex flex-col items-center text-center space-y-3">
-                        <div>
-                          <h2 className="text-xl font-serif font-bold text-gray-900">CERTIFICATE</h2>
-                          <p className="text-[8px] uppercase tracking-widest text-gray-500">OF VOLUNTEERING</p>
-                        </div>
-                        <div className="w-full">
-                          <p className="text-[10px] text-gray-500 italic mb-1">Presented to</p>
-                          <h3 className="text-lg font-bold text-blue-600 font-serif break-words">
-                            {profile?.full_name || 'Volunteer'}
-                          </h3>
-                        </div>
-                        {/* Signatures */}
-                        <div className="w-full flex justify-between items-end mt-2 pt-2 border-t border-gray-100">
-                            <div className="text-center">
-                                <p className="font-cursive text-xs text-gray-900">{orgName}</p>
-                                <p className="text-[6px] font-bold text-gray-400 uppercase">Organizer</p>
-                            </div>
-                            <div className="text-center">
-                                <p className="text-[8px] text-gray-400">{new Date().toLocaleDateString()}</p>
-                                <p className="text-[6px] font-bold text-gray-400 uppercase">Date</p>
-                            </div>
-                        </div>
-                      </div>
+                    {/* Certificate info */}
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
+                      <p className="text-xs font-semibold text-amber-900">{cert.event_title}</p>
+                      <p className="text-[10px] text-amber-700 mt-0.5">
+                        {cert.hours_credited}h · Issued {new Date(cert.issued_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </p>
+                      <p className="text-[9px] text-amber-600 font-mono mt-1">ID: {cert.verification_id?.substring(0, 16)}…</p>
                     </div>
 
-                    {/* Action Buttons */}
-                    <div className="grid grid-cols-2 gap-2 mb-4">
-                      <button onClick={() => window.print()} className="h-9 bg-blue-600 text-white rounded-lg font-semibold text-xs flex items-center justify-center gap-2 hover:bg-blue-700">
-                        <Download className="w-3.5 h-3.5" /> Download
-                      </button>
-                      <button className="h-9 bg-white border border-gray-200 text-gray-700 rounded-lg font-semibold text-xs flex items-center justify-center gap-2 hover:bg-gray-50">
-                        <Share2 className="w-3.5 h-3.5" /> Share
-                      </button>
-                    </div>
+                    {/* Download button */}
+                    <button
+                      onClick={handleCertDownload}
+                      disabled={downloadingCert}
+                      className="w-full h-10 bg-[#0F4F3F] hover:bg-[#0a3d30] disabled:opacity-60 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 mb-4 transition-colors"
+                    >
+                      {downloadingCert
+                        ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        : <Download className="w-3.5 h-3.5" />
+                      }
+                      Download PDF Certificate
+                    </button>
 
                     {/* Review Section */}
                     {submitted ? (

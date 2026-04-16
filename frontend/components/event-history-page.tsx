@@ -17,7 +17,6 @@ import { api } from "@/lib/api"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 
-// ✅ Updated: Removed 'certificate' from types
 type FilterType = "all" | "attended" | "missed" | "registered"
 
 export function EventHistoryPage() {
@@ -32,6 +31,10 @@ export function EventHistoryPage() {
 
   const [profile, setProfile] = useState<any>(null)
   const [volunteerName, setVolunteerName] = useState("Volunteer")
+
+  // cert_id keyed by event_id
+  const [certMap, setCertMap] = useState<Record<string, string>>({})
+  const [downloadingCertId, setDownloadingCertId] = useState<string | null>(null)
 
   // --- Helper to Calculate Exact Hours ---
   const calculateExactHours = (start: string, end: string) => {
@@ -64,9 +67,10 @@ export function EventHistoryPage() {
         // 3. Begin loading your existing data
         setLoading(true)
 
-        const [profileRes, response] = await Promise.all([
+        const [profileRes, response, certRes] = await Promise.all([
           api.getUserProfile(),
-          api.getVolunteerRegistrations()
+          api.getVolunteerRegistrations(),
+          api.getMyCertificates().catch(() => ({ certificates: [] }))
         ])
 
         if (profileRes?.profile) {
@@ -75,6 +79,13 @@ export function EventHistoryPage() {
             setVolunteerName(profileRes.profile.full_name)
           }
         }
+
+        // Build a map of event_id -> certificate_id
+        const map: Record<string, string> = {}
+        for (const cert of certRes.certificates) {
+          map[cert.event_id] = cert.id
+        }
+        setCertMap(map)
 
         const formattedEvents = response.events.map((ev: any) => ({
           id: ev.id,
@@ -85,7 +96,7 @@ export function EventHistoryPage() {
           status: mapBackendStatusToUI(ev.registration_status, ev.status),
           org: ev.organization_profiles?.name || "Organizer",
           hours: calculateExactHours(ev.start_time, ev.end_time),
-          hasCertificate: !!ev.certificates_issued && (ev.registration_status === 'completed' || ev.registration_status === 'checked_in')
+          certId: map[ev.id] || null,
         }))
 
         setHistoryEvents(formattedEvents)
@@ -120,16 +131,7 @@ export function EventHistoryPage() {
     return matchesSearch
   })
 
-  const getStatusBadge = (status: string, hasCertificate: boolean) => {
-    if (status === "attended" && hasCertificate) {
-      return (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 md:px-2.5 md:py-1 bg-[#FFFBEB] text-[#B45309] text-[9px] md:text-xs font-semibold rounded-full">
-          <Trophy className="w-2.5 h-2.5 md:w-3 md:h-3" />
-          Certificate Ready
-        </span>
-      )
-    }
-
+  const getStatusBadge = (status: string) => {
     switch (status) {
       case "attended":
         return (
@@ -154,8 +156,17 @@ export function EventHistoryPage() {
     }
   }
 
-  const handlePrint = () => {
-    window.print();
+  const handleDownload = async (e: React.MouseEvent, certId: string) => {
+    e.stopPropagation()
+    setDownloadingCertId(certId)
+    try {
+      const { signedUrl } = await api.downloadCertificate(certId)
+      window.open(signedUrl, '_blank')
+    } catch (err: any) {
+      alert(err.message || "Failed to get download link")
+    } finally {
+      setDownloadingCertId(null)
+    }
   }
 
   const displayImage = profile?.avatar_url || profile?.logo_url
@@ -229,43 +240,49 @@ export function EventHistoryPage() {
 
         <div className="space-y-2 md:space-y-3">
           {filteredEvents.map((event) => (
-            <button
+            <div
               key={event.id}
-              onClick={() => {
-                if (event.status === "attended" || event.hasCertificate) {
-                  window.location.href = `/events/${event.id}/showcase`;
-                }
-              }}
-              disabled={event.status === "missed" || event.status === "registered"}
-              className={`w-full bg-white rounded-xl p-3 md:p-4 shadow-sm border border-[#f5f5f7] flex items-center gap-3 md:gap-4 text-left transition-all ${(event.status === "attended" || event.hasCertificate) ? "hover:shadow-md hover:border-[#e5e5e7] cursor-pointer" : "opacity-90 cursor-default"
-                }`}
+              className="w-full bg-white rounded-xl p-3 md:p-4 shadow-sm border border-[#f5f5f7] flex items-center gap-3 md:gap-4 transition-all hover:shadow-md hover:border-[#e5e5e7]"
             >
-              <div className="w-14 h-14 md:w-16 md:h-16 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
-                <img
-                  src={event.image || "/placeholder.svg"}
-                  alt={event.title}
-                  width={64}
-                  height={64}
-                  className="w-full h-full object-cover"
-                />
-              </div>
+              <button
+                onClick={() => { if (event.status === "attended") window.location.href = `/events/${event.id}/showcase` }}
+                disabled={event.status === "missed" || event.status === "registered"}
+                className="flex items-center gap-3 md:gap-4 flex-1 min-w-0 text-left disabled:cursor-default"
+              >
+                <div className="w-14 h-14 md:w-16 md:h-16 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
+                  <img
+                    src={event.image || "/placeholder.svg"}
+                    alt={event.title}
+                    width={64}
+                    height={64}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-[13px] md:text-[15px] font-semibold text-[#1d1d1f] truncate">{event.title}</h3>
+                  <p className="text-[11px] md:text-[13px] text-[#86868b]">{event.date}</p>
+                </div>
+              </button>
 
-              <div className="flex-1 min-w-0">
-                <h3 className="text-[13px] md:text-[15px] font-semibold text-[#1d1d1f] truncate">{event.title}</h3>
-                <p className="text-[11px] md:text-[13px] text-[#86868b]">{event.date}</p>
-                {event.hasCertificate && (
-                  <span className="inline-flex items-center gap-1 text-[9px] md:text-[11px] text-[#b8860b] mt-0.5">
-                    <Download className="w-2.5 h-2.5 md:w-3 md:h-3" />
+              <div className="flex-shrink-0 flex items-center gap-2">
+                {getStatusBadge(event.status)}
+                {event.certId ? (
+                  <button
+                    onClick={(e) => handleDownload(e, event.certId)}
+                    disabled={downloadingCertId === event.certId}
+                    className="flex items-center gap-1 px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 text-[10px] md:text-xs font-semibold rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    {downloadingCertId === event.certId
+                      ? <Loader2 className="w-3 h-3 animate-spin" />
+                      : <Download className="w-3 h-3" />
+                    }
                     Certificate
-                  </span>
+                  </button>
+                ) : (
+                  event.status === "attended" && <ChevronRight className="w-4 h-4 md:w-5 md:h-5 text-[#86868b]" />
                 )}
               </div>
-
-              <div className="flex-shrink-0 flex items-center gap-1 md:gap-2">
-                {getStatusBadge(event.status, event.hasCertificate)}
-                {(event.status === "attended" || event.hasCertificate) && <ChevronRight className="w-4 h-4 md:w-5 md:h-5 text-[#86868b]" />}
-              </div>
-            </button>
+            </div>
           ))}
         </div>
 
