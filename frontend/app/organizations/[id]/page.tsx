@@ -172,13 +172,7 @@ export default function OrganizationProfile() {
         // Permissions Logic
         const isSelf = currentUser?.id === profileRes.profile.user_id;
         setIsOwnProfile(isSelf);
-
-        if (!isSelf && currentUser && profileRes.profile?.user_id) {
-          try {
-            const followRes = await api.getFollowStatus(profileRes.profile.user_id)
-            setIsFollowing(followRes.isFollowing)
-          } catch (err) { }
-        }
+        setIsFollowing(profileRes.profile.is_followed_by_current_user ?? false)
       } catch (err) {
         console.error(err)
       } finally {

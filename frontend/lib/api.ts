@@ -615,16 +615,67 @@ export const api = {
     return response.json();
   },
 
-  getFollowStatus: async (targetUserId: string) => {
+  getFollowStatus: async (targetUserId: string): Promise<{ followStatus: 'none' | 'pending' | 'accepted' }> => {
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return { isFollowing: false };
+    if (!session) return { followStatus: 'none' };
 
     const response = await fetch(`${API_URL}/social/follow/status/${targetUserId}?t=${Date.now()}`, {
       headers: { Authorization: `Bearer ${session.access_token}` },
     });
 
-    if (!response.ok) return { isFollowing: false };
+    if (!response.ok) return { followStatus: 'none' };
     return response.json();
+  },
+
+  acceptFollowRequest: async (requestId: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+    const res = await fetch(`${API_URL}/social/follow-requests/${requestId}/accept`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    if (!res.ok) { const e = await res.json(); throw new Error(e.message || 'Failed'); }
+    return res.json();
+  },
+
+  rejectFollowRequest: async (requestId: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+    const res = await fetch(`${API_URL}/social/follow-requests/${requestId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    if (!res.ok) { const e = await res.json(); throw new Error(e.message || 'Failed'); }
+    return res.json();
+  },
+
+  removeFollower: async (followerId: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+    const res = await fetch(`${API_URL}/social/followers/${followerId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    if (!res.ok) { const e = await res.json(); throw new Error(e.message || 'Failed'); }
+    return res.json();
+  },
+
+  getFollowers: async (userId: string): Promise<{ followers: any[] }> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const res = await fetch(`${API_URL}/social/${userId}/followers`, {
+      headers: { ...(session && { Authorization: `Bearer ${session.access_token}` }) },
+    });
+    if (!res.ok) return { followers: [] };
+    return res.json();
+  },
+
+  getFollowing: async (userId: string): Promise<{ following: any[] }> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const res = await fetch(`${API_URL}/social/${userId}/following`, {
+      headers: { ...(session && { Authorization: `Bearer ${session.access_token}` }) },
+    });
+    if (!res.ok) return { following: [] };
+    return res.json();
   },
 
   getVolunteerImpact: async () => {

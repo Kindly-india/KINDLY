@@ -93,6 +93,18 @@ export class OrganizationService {
 
     if (error || !profile) throw new NotFoundException('Organization not found');
 
+    // Check if current viewer follows this org (used to hydrate the Follow button)
+    let isFollowedByCurrentUser = false;
+    if (viewerId && !isOwner) {
+      const { data: followRecord } = await client
+        .from('follows')
+        .select('id')
+        .eq('follower_id', viewerId)
+        .eq('following_id', identity.user_id)
+        .maybeSingle();
+      isFollowedByCurrentUser = !!followRecord;
+    }
+
     const { count: followersCount } = await client
       .from('follows')
       .select('*', { count: 'exact', head: true })
@@ -110,6 +122,7 @@ export class OrganizationService {
       profile: {
         ...profile,
         is_owner: isOwner,
+        is_followed_by_current_user: isFollowedByCurrentUser,
         followers_count: followersCount ?? 0,
         total_hours_generated: stats?.total_hours ?? 0,
         volunteers_engaged: stats?.volunteers_engaged ?? 0,

@@ -32,12 +32,12 @@ export class VolunteerService {
        profile = profileById;
     }
 
-    // 2. Fetch Follow Stats
+    // 2. Fetch Follow Stats (accepted only)
     const { count: followersCount } = await client
-      .from('follows').select('*', { count: 'exact', head: true }).eq('following_id', profile.user_id);
+      .from('follows').select('*', { count: 'exact', head: true }).eq('following_id', profile.user_id).eq('status', 'accepted');
 
     const { count: followingCount } = await client
-      .from('follows').select('*', { count: 'exact', head: true }).eq('follower_id', profile.user_id);
+      .from('follows').select('*', { count: 'exact', head: true }).eq('follower_id', profile.user_id).eq('status', 'accepted');
 
     // 3. Fetch Registrations (With Events Join for calculations)
     const { data: registrations } = await client
@@ -163,16 +163,16 @@ export class VolunteerService {
 
     if (isAssociatedOrg) viewType = 'resume';
 
-    // Check if current viewer follows this profile (used to hydrate the Follow button)
-    let isFollowedByCurrentUser = false;
+    // Check follow relationship — returned to the frontend to hydrate the Follow button
+    let followStatus: 'none' | 'pending' | 'accepted' = 'none';
     if (viewerId && !isSelf) {
       const { data: followRecord } = await client
         .from('follows')
-        .select('id')
+        .select('status')
         .eq('follower_id', viewerId)
         .eq('following_id', profile.user_id)
         .maybeSingle();
-      isFollowedByCurrentUser = !!followRecord;
+      followStatus = (followRecord?.status as 'pending' | 'accepted') ?? 'none';
     }
 
     // ✅ FORCE SHOW CONTACT INFO: If Self, Resume Mode, or Private Mode
@@ -185,7 +185,7 @@ export class VolunteerService {
         phone: showContactInfo ? profile.phone : null,
         address: showContactInfo ? profile.address : null,
         view_type: viewType,
-        is_followed_by_current_user: isFollowedByCurrentUser,
+        follow_status: followStatus,
       }
     };
   }

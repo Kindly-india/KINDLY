@@ -6,7 +6,7 @@ import {
   ChevronLeft, Camera, Loader2, X, Plus, MapPin, User,
   Briefcase, FileText, Globe, Building2, Phone, Mail, Hash,
   CalendarDays, BadgeCheck, Linkedin, Instagram, Home, UserCheck,
-  Users2, Trophy, Trash2, Link as LinkIcon, Upload, Image as ImageIcon
+  Users2, Trophy, Trash2, Link as LinkIcon, Upload, Image as ImageIcon, Lock
 } from "lucide-react"
 import { api } from "@/lib/api"
 
@@ -71,7 +71,8 @@ export default function EditProfile() {
             interests: p.interests || [],
             availability_status: p.availability_status || '',
             avatar_url: p.avatar_url || '',
-            cover_url: p.cover_url || ''
+            cover_url: p.cover_url || '',
+            is_private: p.is_private ?? false,
           })
         } else if (profileData.userType === 'organization') {
           setFormData({
@@ -304,6 +305,25 @@ export default function EditProfile() {
 
                    <div className="pt-4 border-t border-gray-100">
                     <TagInput label="Skills" items={formData.skills} newItem={newSkill} setNewItem={setNewSkill} onAdd={(e: any) => { e?.preventDefault(); handleAddItem('skills', newSkill, setNewSkill)}} onRemove={(item: string) => handleRemoveItem('skills', item)} />
+                   </div>
+
+                   <div className="pt-4 border-t border-gray-100">
+                     <div className="flex items-center justify-between">
+                       <div>
+                         <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                           <Lock className="w-4 h-4 text-gray-500" /> Private Account
+                         </h3>
+                         <p className="text-xs text-gray-500 mt-0.5">Only approved followers can see your activity.</p>
+                       </div>
+                       <button
+                         type="button"
+                         onClick={() => setFormData((prev: any) => ({ ...prev, is_private: !prev.is_private }))}
+                         className={`relative w-11 h-6 rounded-full transition-colors duration-200 focus:outline-none ${formData.is_private ? 'bg-gray-900' : 'bg-gray-200'}`}
+                         aria-label="Toggle private account"
+                       >
+                         <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${formData.is_private ? 'translate-x-5' : 'translate-x-0'}`} />
+                       </button>
+                     </div>
                    </div>
                  </>
               )}

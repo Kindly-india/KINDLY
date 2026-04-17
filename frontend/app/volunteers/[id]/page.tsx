@@ -8,7 +8,7 @@ import {
   Sparkles, Trophy, Mail, Phone, UserPlus,
   UserMinus, Download, Share2, Linkedin, Instagram, Globe,
   Home, Check, Quote, Building2, Languages, GraduationCap,
-  Image as ImageIcon, Plus, Trash2, LogOut
+  Image as ImageIcon, Plus, Trash2, LogOut, Lock, Clock, X
 } from "lucide-react"
 import { api } from "@/lib/api"
 import { cn } from "@/lib/utils"
@@ -164,6 +164,168 @@ function ActionGallery({ userId, isOwnProfile }: { userId: string, isOwnProfile:
   )
 }
 
+// --- UNFOLLOW CONFIRM SHEET ---
+
+function UnfollowConfirmSheet({ name, onConfirm, onCancel }: {
+  name: string
+  onConfirm: () => void
+  onCancel: () => void
+}) {
+  return (
+    <div className="fixed inset-0 z-[60] flex items-end justify-center">
+      <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onCancel} />
+      <div className="relative w-full max-w-sm bg-white rounded-t-3xl px-6 pt-6 pb-10 shadow-2xl">
+        <div className="w-10 h-1 rounded-full bg-gray-200 mx-auto mb-5" />
+        <p className="text-center text-[15px] font-semibold text-gray-900 mb-1">Unfollow {name}?</p>
+        <p className="text-center text-[13px] text-gray-500 mb-6">Their posts will no longer appear in your feed.</p>
+        <button
+          onClick={onConfirm}
+          className="w-full py-3 bg-red-500 text-white rounded-2xl text-[15px] font-semibold mb-2.5 hover:bg-red-600 active:scale-95 transition-all"
+        >
+          Unfollow
+        </button>
+        <button
+          onClick={onCancel}
+          className="w-full py-3 bg-gray-100 text-gray-700 rounded-2xl text-[15px] font-semibold hover:bg-gray-200 active:scale-95 transition-all"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// --- FOLLOW LIST MODAL ---
+
+function FollowUserButton({ user, onStatusChange }: {
+  user: any
+  onStatusChange: (userId: string, newStatus: 'none' | 'pending' | 'accepted') => void
+}) {
+  const [status, setStatus] = useState<'none' | 'pending' | 'accepted'>(
+    user.requester_follow_status ?? 'none'
+  )
+  const [busy, setBusy] = useState(false)
+
+  const handle = async () => {
+    if (busy) return
+    setBusy(true)
+    try {
+      if (status === 'none') {
+        const res = await api.followUser(user.user_id)
+        const next = (res.status as 'pending' | 'accepted') ?? 'accepted'
+        setStatus(next)
+        onStatusChange(user.user_id, next)
+      } else {
+        await api.unfollowUser(user.user_id)
+        setStatus('none')
+        onStatusChange(user.user_id, 'none')
+      }
+    } catch { /* ignore */ } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <button
+      onClick={handle}
+      disabled={busy}
+      className={cn(
+        "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all active:scale-95 disabled:opacity-50",
+        status === 'accepted'
+          ? "bg-gray-100 text-gray-700 hover:bg-gray-200"
+          : status === 'pending'
+            ? "bg-gray-100 text-gray-400 cursor-default"
+            : "bg-gray-900 text-white hover:bg-gray-700"
+      )}
+    >
+      {status === 'accepted' ? 'Following' : status === 'pending' ? 'Requested' : 'Follow'}
+    </button>
+  )
+}
+
+function FollowListModal({ type, initialUsers, onClose, isOwnProfilePage }: {
+  type: 'followers' | 'following' | null
+  initialUsers: any[]
+  onClose: () => void
+  isOwnProfilePage: boolean
+}) {
+  const [users, setUsers] = useState(initialUsers)
+
+  if (!type) return null
+  const title = type === 'followers' ? 'Followers' : 'Following'
+
+  const handleRemove = async (followerId: string) => {
+    try {
+      await api.removeFollower(followerId)
+      setUsers(prev => prev.filter(u => u.user_id !== followerId))
+    } catch { /* ignore */ }
+  }
+
+  const handleStatusChange = (userId: string, newStatus: 'none' | 'pending' | 'accepted') => {
+    setUsers(prev => prev.map(u =>
+      u.user_id === userId ? { ...u, requester_follow_status: newStatus } : u
+    ))
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full sm:max-w-sm bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl max-h-[72vh] flex flex-col overflow-hidden">
+        {/* Handle pill */}
+        <div className="w-10 h-1 rounded-full bg-gray-200 mx-auto mt-3 shrink-0 sm:hidden" />
+
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
+          <h3 className="font-semibold text-[15px] text-gray-900">{title}</h3>
+          <button onClick={onClose} className="p-1.5 rounded-full hover:bg-gray-100 transition-colors">
+            <X className="w-4 h-4 text-gray-500" />
+          </button>
+        </div>
+
+        <div className="overflow-y-auto flex-1">
+          {users.length === 0 ? (
+            <div className="py-14 text-center text-gray-400 text-sm">No {title.toLowerCase()} yet.</div>
+          ) : (
+            users.map((u) => (
+              <div key={u.user_id} className="flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50 transition-colors">
+                <Link
+                  href={`/volunteers/${u.user_id}`}
+                  onClick={onClose}
+                  className="flex items-center gap-3 flex-1 min-w-0"
+                >
+                  <div className="w-10 h-10 rounded-full bg-gray-100 overflow-hidden shrink-0">
+                    {u.avatar_url
+                      ? <img src={u.avatar_url} className="w-full h-full object-cover" alt={u.full_name} />
+                      : <div className="w-full h-full flex items-center justify-center text-gray-400 font-bold text-sm">{u.full_name?.charAt(0)}</div>
+                    }
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 truncate">{u.full_name}</p>
+                    <p className="text-xs text-gray-500 truncate">{u.city || u.headline || 'Volunteer'}</p>
+                  </div>
+                </Link>
+
+                {/* Action button */}
+                {isOwnProfilePage && type === 'followers' ? (
+                  <button
+                    onClick={() => handleRemove(u.user_id)}
+                    className="px-3.5 py-1.5 bg-gray-100 text-gray-700 text-xs font-semibold rounded-lg hover:bg-red-50 hover:text-red-600 active:scale-95 transition-all shrink-0"
+                  >
+                    Remove
+                  </button>
+                ) : (
+                  <div className="shrink-0">
+                    <FollowUserButton user={u} onStatusChange={handleStatusChange} />
+                  </div>
+                )}
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // --- MAIN PAGE COMPONENT ---
 
 export default function VolunteerProfile() {
@@ -172,8 +334,10 @@ export default function VolunteerProfile() {
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState<any>(null)
   const [journey, setJourney] = useState<any[]>([])
-  const [isFollowing, setIsFollowing] = useState(false)
+  const [followStatus, setFollowStatus] = useState<'none' | 'pending' | 'accepted'>('none')
   const [isOwnProfile, setIsOwnProfile] = useState(false)
+  const [followModal, setFollowModal] = useState<{ type: 'followers' | 'following' | null; users: any[] }>({ type: null, users: [] })
+  const [showUnfollowConfirm, setShowUnfollowConfirm] = useState(false)
   const [activityData, setActivityData] = useState<any[]>([])
   const [isViewerOrg, setIsViewerOrg] = useState(false);
 
@@ -220,7 +384,7 @@ export default function VolunteerProfile() {
           setIsViewerOrg(true); 
         }
 
-        setIsFollowing(fetchedProfile.is_followed_by_current_user ?? false)
+        setFollowStatus(fetchedProfile.follow_status ?? 'none')
 
       } catch (err) {
         console.error("Profile fetch error:", err)
@@ -236,19 +400,50 @@ export default function VolunteerProfile() {
 
   const handleFollow = async () => {
     if (!profile?.user_id) return
+    if (followStatus === 'accepted') {
+      // Show confirmation sheet — actual unfollow happens in executeUnfollow
+      setShowUnfollowConfirm(true)
+      return
+    }
     try {
-      if (isFollowing) {
+      if (followStatus === 'pending') {
         await api.unfollowUser(profile.user_id)
-        setIsFollowing(false)
-        setProfile((prev: any) => ({ ...prev, followers_count: Math.max(0, (prev.followers_count || 0) - 1) }))
+        setFollowStatus('none')
       } else {
-        await api.followUser(profile.user_id)
-        setIsFollowing(true)
-        setProfile((prev: any) => ({ ...prev, followers_count: (prev.followers_count || 0) + 1 }))
+        const res = await api.followUser(profile.user_id)
+        const newStatus = (res.status as 'pending' | 'accepted') ?? 'accepted'
+        setFollowStatus(newStatus)
+        if (newStatus === 'accepted') {
+          setProfile((prev: any) => ({ ...prev, followers_count: (prev.followers_count || 0) + 1 }))
+        }
       }
     } catch (err: any) {
       alert(`Follow failed: ${err.message || "Unknown error"}`);
     }
+  }
+
+  const executeUnfollow = async () => {
+    setShowUnfollowConfirm(false)
+    try {
+      await api.unfollowUser(profile.user_id)
+      setFollowStatus('none')
+      setProfile((prev: any) => ({ ...prev, followers_count: Math.max(0, (prev.followers_count || 0) - 1) }))
+    } catch (err: any) {
+      alert(`Unfollow failed: ${err.message || "Unknown error"}`)
+    }
+  }
+
+  const handleOpenFollowList = async (type: 'followers' | 'following') => {
+    if (profile?.is_private && !isOwnProfile && followStatus !== 'accepted') return
+    try {
+      if (type === 'followers') {
+        const res = await api.getFollowers(profile.user_id)
+        setFollowModal({ type, users: res.followers })
+      } else {
+        const res = await api.getFollowing(profile.user_id)
+        setFollowModal({ type, users: res.following })
+      }
+    } catch { /* silently fail — modal just won't open */ }
   }
 
   const handleShare = async () => {
@@ -335,15 +530,19 @@ export default function VolunteerProfile() {
                   onClick={handleFollow}
                   className={cn(
                     "px-6 py-2 rounded-full text-sm font-bold transition-all shadow-sm active:scale-95 flex items-center gap-2",
-                    isFollowing
-                      ? "bg-white text-red-600 border border-red-200 hover:bg-red-50 hover:border-red-300"
-                      : "bg-black text-white hover:bg-gray-800" 
+                    followStatus === 'accepted'
+                      ? "bg-white text-gray-700 border border-gray-300 hover:border-red-300 hover:text-red-600"
+                      : followStatus === 'pending'
+                        ? "bg-gray-100 text-gray-500 border border-gray-200 cursor-default"
+                        : "bg-black text-white hover:bg-gray-800"
                   )}
                 >
-                  {isFollowing ? (
-                    <> <UserMinus className="w-4 h-4" /> Unfollow </>
+                  {followStatus === 'accepted' ? (
+                    <><UserMinus className="w-4 h-4" /> Following</>
+                  ) : followStatus === 'pending' ? (
+                    <><Clock className="w-4 h-4" /> Requested</>
                   ) : (
-                    <> <UserPlus className="w-4 h-4" /> Follow </>
+                    <><UserPlus className="w-4 h-4" /> Follow</>
                   )}
                 </button>
               )
@@ -397,14 +596,22 @@ export default function VolunteerProfile() {
               </div>
 
               <div className="grid grid-cols-3 gap-2 border-t border-b border-gray-100 py-4 mb-6">
-                <div className="text-center">
+                <button
+                  onClick={() => handleOpenFollowList('followers')}
+                  className="text-center hover:opacity-70 transition-opacity disabled:opacity-100 disabled:cursor-default"
+                  disabled={profile?.is_private && !isOwnProfile && followStatus !== 'accepted'}
+                >
                   <span className="block font-bold text-gray-900 text-lg">{profile?.followers_count || 0}</span>
                   <span className="text-xs text-gray-500 uppercase tracking-wide">Followers</span>
-                </div>
-                <div className="text-center border-l border-gray-100">
+                </button>
+                <button
+                  onClick={() => handleOpenFollowList('following')}
+                  className="text-center border-l border-gray-100 hover:opacity-70 transition-opacity disabled:opacity-100 disabled:cursor-default"
+                  disabled={profile?.is_private && !isOwnProfile && followStatus !== 'accepted'}
+                >
                   <span className="block font-bold text-gray-900 text-lg">{profile?.following_count || 0}</span>
                   <span className="text-xs text-gray-500 uppercase tracking-wide">Following</span>
-                </div>
+                </button>
                 <div className="text-center border-l border-gray-100">
                   <span className="block font-bold text-gray-900 text-lg">{profile?.total_hours || 0}</span>
                   <span className="text-xs text-gray-500 uppercase tracking-wide">Hours</span>
@@ -475,107 +682,142 @@ export default function VolunteerProfile() {
 
           {/* 4. MAIN CONTENT */}
           <div className="lg:col-span-8 space-y-6">
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold text-gray-900">About</h3>
-                {profile?.created_at && <span className="text-xs text-gray-500 flex items-center gap-1"><Calendar className="w-3 h-3" /> Member since {new Date(profile.created_at).getFullYear()}</span>}
-              </div>
-              <p className="text-gray-600 leading-relaxed text-sm md:text-base">{profile?.bio || "No bio added yet."}</p>
-            </div>
-
-            {/* Impact & Graph */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-4 opacity-10"><Trophy className="w-24 h-24" /></div>
-                <h3 className="text-sm font-medium text-slate-300 uppercase tracking-wide mb-1">Impact Score</h3>
-                <div className="text-4xl font-bold mb-4">{profile?.impact_score || 0}</div>
-                <div className="flex gap-4">
-                  <div><span className="text-xs text-slate-400 block">Reliability</span><span className="font-semibold text-emerald-400">{profile?.reliability_score || 100}%</span></div>
-                  <div><span className="text-xs text-slate-400 block">Rank</span><span className="font-semibold text-amber-400">{profile?.total_hours > 50 ? 'Gold' : profile?.total_hours > 10 ? 'Silver' : 'Bronze'}</span></div>
+            {profile?.is_private && !isOwnProfile && followStatus !== 'accepted' ? (
+              /* Privacy Lock */
+              <div className="flex flex-col items-center justify-center py-24 text-center bg-white rounded-2xl shadow-sm border border-gray-200">
+                <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+                  <Lock className="w-7 h-7 text-gray-400" />
                 </div>
+                <p className="text-[15px] font-semibold text-gray-900 mb-1">This account is private</p>
+                <p className="text-[13px] text-gray-500 max-w-xs">
+                  {followStatus === 'pending'
+                    ? 'Follow request sent. Waiting for approval.'
+                    : 'Follow them to see their activity.'
+                  }
+                </p>
               </div>
-
-              <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
-                <h3 className="text-sm font-bold text-gray-900 mb-4">Monthly Activity (Hours)</h3>
-                <div className="h-32">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={activityData}>
-                      <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} />
-                      <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '8px', fontSize: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
-                      <Bar dataKey="hours" radius={[4, 4, 0, 0]} barSize={20}>
-                        {activityData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.hours > 0 ? '#3b82f6' : '#e5e7eb'} />)}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
+            ) : (
+              <>
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-bold text-gray-900">About</h3>
+                    {profile?.created_at && <span className="text-xs text-gray-500 flex items-center gap-1"><Calendar className="w-3 h-3" /> Member since {new Date(profile.created_at).getFullYear()}</span>}
+                  </div>
+                  <p className="text-gray-600 leading-relaxed text-sm md:text-base">{profile?.bio || "No bio added yet."}</p>
                 </div>
-              </div>
-            </div>
 
-            {/* Action Gallery */}
-            <ActionGallery userId={profile?.user_id} isOwnProfile={isOwnProfile} />
-
-            {/* Testimonials */}
-            <Testimonials journey={journey} />
-
-            {/* Certificates */}
-            {profile?.badges && profile.badges.length > 0 && (
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Certificates & Badges</h3>
-                <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
-                  {profile.badges.map((badge: string, idx: number) => (
-                    <div key={idx} className="min-w-[140px] p-4 rounded-xl border border-amber-100 bg-amber-50/50 flex flex-col items-center justify-center text-center">
-                      <div className="w-12 h-12 bg-white rounded-full shadow-sm flex items-center justify-center mb-3">
-                        <Trophy className="w-6 h-6 text-amber-500" />
-                      </div>
-                      <h4 className="font-bold text-gray-900 text-sm">{badge}</h4>
-                      <p className="text-xs text-gray-500 mt-1">Earned via Activity</p>
+                {/* Impact & Graph */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-4 opacity-10"><Trophy className="w-24 h-24" /></div>
+                    <h3 className="text-sm font-medium text-slate-300 uppercase tracking-wide mb-1">Impact Score</h3>
+                    <div className="text-4xl font-bold mb-4">{profile?.impact_score || 0}</div>
+                    <div className="flex gap-4">
+                      <div><span className="text-xs text-slate-400 block">Reliability</span><span className="font-semibold text-emerald-400">{profile?.reliability_score || 100}%</span></div>
+                      <div><span className="text-xs text-slate-400 block">Rank</span><span className="font-semibold text-amber-400">{profile?.total_hours > 50 ? 'Gold' : profile?.total_hours > 10 ? 'Silver' : 'Bronze'}</span></div>
                     </div>
-                  ))}
-                </div>
-              </div>
-            )}
+                  </div>
 
-            {/* Journey */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-6">Volunteering History</h3>
-              {journey.length === 0 ? (
-                <div className="text-center py-10"><Calendar className="w-10 h-10 text-gray-300 mx-auto mb-3" /><p className="text-gray-500 text-sm">No history yet.</p></div>
-              ) : (
-                <div className="space-y-8 relative pl-2">
-                  <div className="absolute top-2 left-[27px] h-full w-0.5 bg-gray-200 -z-10" />
-                  {journey.map((item, idx) => (
-                    <div key={idx} className="flex gap-4 relative group">
-                      <div className="w-14 shrink-0 flex flex-col items-center">
-                        <div className="w-3 h-3 rounded-full bg-white border-2 border-blue-500 z-10 shadow-[0_0_0_4px_white] mb-2" />
-                        <span className="text-xs font-semibold text-gray-400">{formatDate(item.event_date).split(',')[0]}</span>
-                      </div>
-                      <div className="flex-1 bg-white border border-gray-100 rounded-xl p-4 hover:border-blue-200 hover:shadow-md transition-all">
-                        <div className="flex justify-between items-start mb-2">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-gray-50 border border-gray-200 flex items-center justify-center shrink-0">
-                              {item.organization_logo ? <img src={item.organization_logo} className="w-full h-full object-cover rounded-lg" /> : <Building2 className="w-5 h-5 text-gray-400" />}
-                            </div>
-                            <div>
-                              <h4 className="font-bold text-gray-900 text-sm md:text-base">{item.event_title}</h4>
-                              <p className="text-xs text-gray-500">{item.organization_name}</p>
-                            </div>
+                  <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+                    <h3 className="text-sm font-bold text-gray-900 mb-4">Monthly Activity (Hours)</h3>
+                    <div className="h-32">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={activityData}>
+                          <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} />
+                          <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '8px', fontSize: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+                          <Bar dataKey="hours" radius={[4, 4, 0, 0]} barSize={20}>
+                            {activityData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.hours > 0 ? '#3b82f6' : '#e5e7eb'} />)}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action Gallery */}
+                <ActionGallery userId={profile?.user_id} isOwnProfile={isOwnProfile} />
+
+                {/* Testimonials */}
+                <Testimonials journey={journey} />
+
+                {/* Certificates */}
+                {profile?.badges && profile.badges.length > 0 && (
+                  <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4">Certificates & Badges</h3>
+                    <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+                      {profile.badges.map((badge: string, idx: number) => (
+                        <div key={idx} className="min-w-[140px] p-4 rounded-xl border border-amber-100 bg-amber-50/50 flex flex-col items-center justify-center text-center">
+                          <div className="w-12 h-12 bg-white rounded-full shadow-sm flex items-center justify-center mb-3">
+                            <Trophy className="w-6 h-6 text-amber-500" />
                           </div>
-                          <span className={cn("px-2 py-1 border rounded text-xs font-medium whitespace-nowrap", item.hours_contributed > 0 ? "bg-green-50 text-green-700 border-green-100" : "bg-gray-50 text-gray-600 border-gray-200")}>{item.hours_contributed} hrs</span>
+                          <h4 className="font-bold text-gray-900 text-sm">{badge}</h4>
+                          <p className="text-xs text-gray-500 mt-1">Earned via Activity</p>
                         </div>
-                        {item.endorsements?.comment && (
-                          <div className="mt-3 bg-blue-50/50 p-3 rounded-lg border border-blue-100">
-                            <p className="text-sm text-gray-700 italic">"{item.endorsements.comment}"</p>
-                          </div>
-                        )}
-                      </div>
+                      ))}
                     </div>
-                  ))}
+                  </div>
+                )}
+
+                {/* Journey */}
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                  <h3 className="text-lg font-bold text-gray-900 mb-6">Volunteering History</h3>
+                  {journey.length === 0 ? (
+                    <div className="text-center py-10"><Calendar className="w-10 h-10 text-gray-300 mx-auto mb-3" /><p className="text-gray-500 text-sm">No history yet.</p></div>
+                  ) : (
+                    <div className="space-y-8 relative pl-2">
+                      <div className="absolute top-2 left-[27px] h-full w-0.5 bg-gray-200 -z-10" />
+                      {journey.map((item, idx) => (
+                        <div key={idx} className="flex gap-4 relative group">
+                          <div className="w-14 shrink-0 flex flex-col items-center">
+                            <div className="w-3 h-3 rounded-full bg-white border-2 border-blue-500 z-10 shadow-[0_0_0_4px_white] mb-2" />
+                            <span className="text-xs font-semibold text-gray-400">{formatDate(item.event_date).split(',')[0]}</span>
+                          </div>
+                          <div className="flex-1 bg-white border border-gray-100 rounded-xl p-4 hover:border-blue-200 hover:shadow-md transition-all">
+                            <div className="flex justify-between items-start mb-2">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-lg bg-gray-50 border border-gray-200 flex items-center justify-center shrink-0">
+                                  {item.organization_logo ? <img src={item.organization_logo} className="w-full h-full object-cover rounded-lg" /> : <Building2 className="w-5 h-5 text-gray-400" />}
+                                </div>
+                                <div>
+                                  <h4 className="font-bold text-gray-900 text-sm md:text-base">{item.event_title}</h4>
+                                  <p className="text-xs text-gray-500">{item.organization_name}</p>
+                                </div>
+                              </div>
+                              <span className={cn("px-2 py-1 border rounded text-xs font-medium whitespace-nowrap", item.hours_contributed > 0 ? "bg-green-50 text-green-700 border-green-100" : "bg-gray-50 text-gray-600 border-gray-200")}>{item.hours_contributed} hrs</span>
+                            </div>
+                            {item.endorsements?.comment && (
+                              <div className="mt-3 bg-blue-50/50 p-3 rounded-lg border border-blue-100">
+                                <p className="text-sm text-gray-700 italic">"{item.endorsements.comment}"</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              </>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Followers / Following Modal */}
+      <FollowListModal
+        type={followModal.type}
+        initialUsers={followModal.users}
+        isOwnProfilePage={isOwnProfile}
+        onClose={() => setFollowModal({ type: null, users: [] })}
+      />
+
+      {/* Unfollow Confirmation Sheet */}
+      {showUnfollowConfirm && (
+        <UnfollowConfirmSheet
+          name={profile?.full_name ?? 'this user'}
+          onConfirm={executeUnfollow}
+          onCancel={() => setShowUnfollowConfirm(false)}
+        />
+      )}
     </div>
   )
 }

@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsArray, IsUrl, IsIn } from 'class-validator';
+import { IsOptional, IsString, IsArray, IsUrl, IsIn, IsBoolean } from 'class-validator';
 
 export class UpdateVolunteerProfileDto {
   @IsOptional()
@@ -60,4 +60,8 @@ export class UpdateVolunteerProfileDto {
   @IsOptional()
   @IsUrl()
   cover_url?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  is_private?: boolean;
 }

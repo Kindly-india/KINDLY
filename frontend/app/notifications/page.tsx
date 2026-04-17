@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Bell, ArrowLeft, UserPlus } from "lucide-react"
+import { Bell, ArrowLeft, UserPlus, UserCheck, Check } from "lucide-react"
 import { api } from "@/lib/api"
 
 type Notification = {
@@ -17,6 +17,9 @@ type Notification = {
   created_at: string
 }
 
+// Per-notification state for follow_request actions
+type RequestState = 'idle' | 'loading' | 'accepted' | 'rejected'
+
 function timeAgo(iso: string) {
   const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
   if (diff < 60) return "just now"
@@ -26,10 +29,17 @@ function timeAgo(iso: string) {
 }
 
 function NotificationIcon({ type }: { type: string }) {
-  if (type === "new_follower") {
+  if (type === "new_follower" || type === "follow_accepted") {
     return (
       <div className="w-9 h-9 rounded-full bg-[#80242a]/10 flex items-center justify-center shrink-0">
         <UserPlus className="w-4 h-4 text-[#80242a]" />
+      </div>
+    )
+  }
+  if (type === "follow_request") {
+    return (
+      <div className="w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
+        <UserCheck className="w-4 h-4 text-blue-600" />
       </div>
     )
   }
@@ -40,10 +50,55 @@ function NotificationIcon({ type }: { type: string }) {
   )
 }
 
+function FollowRequestActions({
+  actorId,
+  state,
+  onAccept,
+  onReject,
+}: {
+  actorId: string
+  state: RequestState
+  onAccept: () => void
+  onReject: () => void
+}) {
+  if (state === 'accepted') {
+    return (
+      <span className="flex items-center gap-1 text-xs text-green-600 font-medium shrink-0">
+        <Check className="w-3.5 h-3.5" /> Accepted
+      </span>
+    )
+  }
+  if (state === 'rejected') {
+    return (
+      <span className="text-xs text-gray-400 font-medium shrink-0">Declined</span>
+    )
+  }
+  return (
+    <div className="flex items-center gap-2 shrink-0">
+      <button
+        onClick={onAccept}
+        disabled={state === 'loading'}
+        className="px-3 py-1.5 bg-[#80242a] text-white text-xs font-semibold rounded-lg hover:bg-[#6b1e23] active:scale-95 transition-all disabled:opacity-50"
+      >
+        Confirm
+      </button>
+      <button
+        onClick={onReject}
+        disabled={state === 'loading'}
+        className="px-3 py-1.5 bg-gray-100 text-gray-700 text-xs font-semibold rounded-lg hover:bg-gray-200 active:scale-95 transition-all disabled:opacity-50"
+      >
+        Delete
+      </button>
+    </div>
+  )
+}
+
 export default function NotificationsPage() {
   const router = useRouter()
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [loading, setLoading] = useState(true)
+  // Track the action state per notification id
+  const [requestStates, setRequestStates] = useState<Record<string, RequestState>>({})
 
   useEffect(() => {
     const load = async () => {
@@ -61,6 +116,26 @@ export default function NotificationsPage() {
     }
     load()
   }, [])
+
+  const handleAccept = async (notifId: string, actorId: string) => {
+    setRequestStates(prev => ({ ...prev, [notifId]: 'loading' }))
+    try {
+      await api.acceptFollowRequest(actorId)
+      setRequestStates(prev => ({ ...prev, [notifId]: 'accepted' }))
+    } catch {
+      setRequestStates(prev => ({ ...prev, [notifId]: 'idle' }))
+    }
+  }
+
+  const handleReject = async (notifId: string, actorId: string) => {
+    setRequestStates(prev => ({ ...prev, [notifId]: 'loading' }))
+    try {
+      await api.rejectFollowRequest(actorId)
+      setRequestStates(prev => ({ ...prev, [notifId]: 'rejected' }))
+    } catch {
+      setRequestStates(prev => ({ ...prev, [notifId]: 'idle' }))
+    }
+  }
 
   return (
     <div className="min-h-screen bg-white">
@@ -101,26 +176,43 @@ export default function NotificationsPage() {
           </div>
         ) : (
           <ul>
-            {notifications.map((n) => (
-              <li
-                key={n.id}
-                className={`flex items-start gap-3 px-4 py-3.5 border-b border-[#f5f5f7] transition-colors ${
-                  !n.read ? "bg-[#80242a]/[0.03]" : ""
-                }`}
-              >
-                <NotificationIcon type={n.type} />
-                <div className="flex-1 min-w-0 pt-0.5">
-                  <p className="text-[14px] text-[#1d1d1f] leading-snug">
-                    <span className="font-semibold">{n.actor_name ?? "Someone"}</span>{" "}
-                    {n.message}
-                  </p>
-                  <p className="text-[12px] text-[#86868b] mt-0.5">{timeAgo(n.created_at)}</p>
-                </div>
-                {!n.read && (
-                  <div className="w-2 h-2 rounded-full bg-[#80242a] shrink-0 mt-1.5" />
-                )}
-              </li>
-            ))}
+            {notifications.map((n) => {
+              const reqState = requestStates[n.id] ?? 'idle'
+              const isFollowRequest = n.type === 'follow_request'
+
+              return (
+                <li
+                  key={n.id}
+                  className={`flex items-start gap-3 px-4 py-3.5 border-b border-[#f5f5f7] transition-colors ${
+                    !n.read ? "bg-[#80242a]/[0.03]" : ""
+                  }`}
+                >
+                  <NotificationIcon type={n.type} />
+                  <div className="flex-1 min-w-0 pt-0.5">
+                    <p className="text-[14px] text-[#1d1d1f] leading-snug">
+                      <span className="font-semibold">{n.actor_name ?? "Someone"}</span>{" "}
+                      {n.message}
+                    </p>
+                    <p className="text-[12px] text-[#86868b] mt-0.5">{timeAgo(n.created_at)}</p>
+
+                    {/* Inline accept/reject for follow requests */}
+                    {isFollowRequest && n.actor_id && (
+                      <div className="mt-2">
+                        <FollowRequestActions
+                          actorId={n.actor_id}
+                          state={reqState}
+                          onAccept={() => handleAccept(n.id, n.actor_id!)}
+                          onReject={() => handleReject(n.id, n.actor_id!)}
+                        />
+                      </div>
+                    )}
+                  </div>
+                  {!n.read && !isFollowRequest && (
+                    <div className="w-2 h-2 rounded-full bg-[#80242a] shrink-0 mt-1.5" />
+                  )}
+                </li>
+              )
+            })}
           </ul>
         )}
       </div>

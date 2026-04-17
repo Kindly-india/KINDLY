@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { OrganizationService } from './organization.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { OptionalJwtAuthGuard } from '../auth/dto/optional-jwt-auth.guard'; // ✅ Use the custom guard you created
+import { OptionalAuthGuard } from '../auth/guards/optional-auth.guard';
 import { UpdateOrganizationProfileDto } from './dto/update-organization-profile.dto';
 import { AddReviewDto } from './dto/add-review.dto';
 
@@ -18,12 +18,11 @@ import { AddReviewDto } from './dto/add-review.dto';
 export class OrganizationController {
   constructor(private readonly organizationService: OrganizationService) { }
 
-  // ✅ UPDATED: Public profile with Security Check
-  // Uses OptionalJwtAuthGuard to allow both Guests and Logged-in users
-  @UseGuards(OptionalJwtAuthGuard)
+  // Uses OptionalAuthGuard (Supabase-validated) so req.user is always correct
+  // for Supabase tokens — consistent with the volunteer profile endpoint.
+  @UseGuards(OptionalAuthGuard)
   @Get(':id/profile')
   async getPublicProfile(@Param('id') id: string, @Request() req: any) {
-    // req.user might be null if guest, or contain {id: ...} if logged in
     return this.organizationService.getPublicProfile(id, req.user?.id);
   }
 
