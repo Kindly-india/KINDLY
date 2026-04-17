@@ -2,9 +2,10 @@ import { Module } from '@nestjs/common';
 import { OrganizationController } from './organization.controller';
 import { OrganizationService } from './organization.service';
 import { SupabaseModule } from '../supabase/supabase.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
-  imports: [SupabaseModule],
+  imports: [SupabaseModule, NotificationsModule],
   controllers: [OrganizationController],
   providers: [OrganizationService],
   exports: [OrganizationService]

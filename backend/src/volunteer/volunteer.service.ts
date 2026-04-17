@@ -163,6 +163,18 @@ export class VolunteerService {
 
     if (isAssociatedOrg) viewType = 'resume';
 
+    // Check if current viewer follows this profile (used to hydrate the Follow button)
+    let isFollowedByCurrentUser = false;
+    if (viewerId && !isSelf) {
+      const { data: followRecord } = await client
+        .from('follows')
+        .select('id')
+        .eq('follower_id', viewerId)
+        .eq('following_id', profile.user_id)
+        .maybeSingle();
+      isFollowedByCurrentUser = !!followRecord;
+    }
+
     // ✅ FORCE SHOW CONTACT INFO: If Self, Resume Mode, or Private Mode
     const showContactInfo = viewType === 'private' || viewType === 'resume' || isSelf;
 
@@ -172,7 +184,8 @@ export class VolunteerService {
         email: showContactInfo ? profile.email : null,
         phone: showContactInfo ? profile.phone : null,
         address: showContactInfo ? profile.address : null,
-        view_type: viewType
+        view_type: viewType,
+        is_followed_by_current_user: isFollowedByCurrentUser,
       }
     };
   }

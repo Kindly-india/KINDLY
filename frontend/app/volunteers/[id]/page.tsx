@@ -220,13 +220,7 @@ export default function VolunteerProfile() {
           setIsViewerOrg(true); 
         }
 
-        if (!isSelf && currentUser && fetchedProfile.user_id) {
-          api.getFollowStatus(fetchedProfile.user_id)
-            .then(res => {
-              if (isMounted) setIsFollowing(res.isFollowing);
-            })
-            .catch(err => console.error("Follow check error:", err));
-        }
+        setIsFollowing(fetchedProfile.is_followed_by_current_user ?? false)
 
       } catch (err) {
         console.error("Profile fetch error:", err)

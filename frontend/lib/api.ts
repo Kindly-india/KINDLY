@@ -1160,6 +1160,36 @@ export const api = {
     return response.json();
   },
 
+// --- NOTIFICATIONS ---
+  async getNotifications() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return { notifications: [] };
+    const response = await fetch(`${API_URL}/notifications`, {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    if (!response.ok) return { notifications: [] };
+    return response.json();
+  },
+
+  async getUnreadCount() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return { count: 0 };
+    const response = await fetch(`${API_URL}/notifications/unread-count`, {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    if (!response.ok) return { count: 0 };
+    return response.json();
+  },
+
+  async markAllNotificationsRead() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    await fetch(`${API_URL}/notifications/read-all`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+  },
+
 // --- UPDATE PASSWORD ---
   async updatePassword(newPassword: string, hash: string) {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/auth/update-password`, {

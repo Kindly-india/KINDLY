@@ -1,9 +1,13 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class SocialService {
-  constructor(private readonly supabase: SupabaseService) {}
+  constructor(
+    private readonly supabase: SupabaseService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   // --- GLOBAL SEARCH ---
   async globalSearch(query: string) {
@@ -66,11 +70,19 @@ export class SocialService {
        if (error.code === '23505') {
            return { message: 'Already following' }; // Success! Just don't add again.
        }
-       
-       console.error("Follow Error:", error); 
-       throw new BadRequestException(error.message); 
+
+       console.error("Follow Error:", error);
+       throw new BadRequestException(error.message);
     }
-    
+
+    // Fire-and-forget: notify the target they have a new follower
+    this.notifications.createNotification(
+      targetId,
+      followerId,
+      'new_follower',
+      'started following you.',
+    );
+
     return { message: 'Followed successfully' };
   }
 

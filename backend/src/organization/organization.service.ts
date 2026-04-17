@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { UpdateOrganizationProfileDto } from './dto/update-organization-profile.dto';
 import { AddReviewDto } from './dto/add-review.dto';
 
@@ -55,7 +56,10 @@ const PRIVATE_ORG_FIELDS = PUBLIC_ORG_FIELDS + ', registration_number, pan_card_
 
 @Injectable()
 export class OrganizationService {
-  constructor(private readonly supabase: SupabaseService) { }
+  constructor(
+    private readonly supabase: SupabaseService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   async getPublicProfile(orgId: string, viewerId?: string) {
     const client = this.supabase.getClient();
@@ -220,6 +224,24 @@ export class OrganizationService {
     });
 
     if (error) throw new Error(error.message);
+
+    // Fire-and-forget: notify the org they have a new follower.
+    // Look up the org's auth user_id (recipient_id must reference auth.users).
+    const { data: orgProfile } = await client
+      .from('organization_profiles')
+      .select('user_id')
+      .or(`id.eq.${targetUserId},user_id.eq.${targetUserId}`)
+      .maybeSingle();
+
+    if (orgProfile?.user_id) {
+      this.notifications.createNotification(
+        orgProfile.user_id,
+        currentUserId,
+        'new_follower',
+        'started following your organization.',
+      );
+    }
+
     return { isFollowing: true };
   }
 
