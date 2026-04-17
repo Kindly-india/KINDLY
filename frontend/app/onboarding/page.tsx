@@ -79,12 +79,12 @@ const screenVariants: Variants = {
     scale: 0.95,
     filter: "blur(8px)",
   }),
-  animate: { 
-    x: 0, 
-    opacity: 1, 
+  animate: {
+    x: 0,
+    opacity: 1,
     scale: 1,
     filter: "blur(0px)",
-    transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] } 
+    transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] }
   },
   exit: (dir: "forward" | "back") => ({
     x: dir === "forward" ? -60 : 60,
@@ -97,19 +97,19 @@ const screenVariants: Variants = {
 
 const staggerContainer: Variants = {
   hidden: { opacity: 0 },
-  visible: { 
-    opacity: 1, 
-    transition: { staggerChildren: 0.1, delayChildren: 0.2 } 
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1, delayChildren: 0.2 }
   },
 }
 
 const staggerItem: Variants = {
   hidden: { opacity: 0, y: 30, scale: 0.95 },
-  visible: { 
-    opacity: 1, 
-    y: 0, 
+  visible: {
+    opacity: 1,
+    y: 0,
     scale: 1,
-    transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] } 
+    transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] }
   },
 }
 
@@ -242,26 +242,26 @@ function InteractiveCard({
         transformStyle: "preserve-3d",
         perspective: 1000,
       }}
-      animate={{ 
+      animate={{
         scale: selected ? 1.05 : 1,
         zIndex: selected ? 20 : 10,
       }}
       whileTap={{ scale: 0.92 }}
       transition={{ type: "spring", stiffness: 400, damping: 25 }}
     >
-      <div 
+      <div
         className="absolute inset-0 rounded-[20px] overflow-hidden"
         style={{
-          boxShadow: selected 
-            ? "0 20px 40px -10px rgba(128,36,42,0.6)" 
+          boxShadow: selected
+            ? "0 20px 40px -10px rgba(128,36,42,0.6)"
             : "0 10px 30px -10px rgba(0,0,0,0.2)",
           border: selected ? "3px solid #80242a" : "1px solid rgba(0,0,0,0.05)",
           transition: "all 0.3s ease"
         }}
       >
         <ImageWithFallback src={card.photo} alt={card.label} selected={selected} />
-        
-        <motion.div 
+
+        <motion.div
           className="absolute inset-0 pointer-events-none mix-blend-overlay"
           style={{
             opacity: glareOpacity,
@@ -298,8 +298,8 @@ function InteractiveCard({
 function AnimatedMeshBackground() {
   return (
     <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-      <motion.div 
-        animate={{ 
+      <motion.div
+        animate={{
           x: [0, 50, 0, -50, 0],
           y: [0, -50, 50, 0, 0],
           scale: [1, 1.1, 0.9, 1.05, 1]
@@ -307,8 +307,8 @@ function AnimatedMeshBackground() {
         transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
         className="absolute -top-[20%] -left-[10%] w-[70vw] h-[70vw] rounded-full bg-[#80242a]/[0.03] blur-[100px]"
       />
-      <motion.div 
-        animate={{ 
+      <motion.div
+        animate={{
           x: [0, -60, 0, 40, 0],
           y: [0, 40, -60, 20, 0],
           scale: [1, 0.9, 1.1, 0.95, 1]
@@ -373,7 +373,7 @@ export default function OnboardingPage() {
         preferred_availability: availability!,
         social_preference: pref,
       }),
-      wait(1500), 
+      wait(1500),
     ])
 
     if (patchResult.status === "rejected") {
@@ -385,13 +385,13 @@ export default function OnboardingPage() {
     }
 
     setShowSplash(true)
-    await wait(2200) 
+    await wait(2200)
     router.push("/events")
   }
 
   return (
     <div className="relative min-h-[100dvh] w-full bg-[#FCFCFC] flex flex-col selection:bg-[#80242a]/20 font-sans">
-      
+
       <AnimatedMeshBackground />
 
       {/* Progress bar */}
@@ -451,20 +451,21 @@ export default function OnboardingPage() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 50, scale: 0.9 }}
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
-            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 w-[90%] max-w-md"
+            // BUG FIX: Replaced left-1/2 -translate-x-1/2 with left-0 right-0 mx-auto
+            className="fixed bottom-6 md:bottom-8 left-0 right-0 mx-auto z-40 w-[92%] max-w-md"
           >
-            <div className="bg-white/70 backdrop-blur-xl border border-white/40 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.1)] rounded-[2rem] p-2 flex items-center justify-between">
-              <div className="pl-6 flex flex-col">
-                <span className="text-[11px] font-bold tracking-wider text-[#86868b] uppercase">Selected</span>
-                <span className={`text-[20px] font-bold leading-none ${selectedTags.length >= 3 ? "text-[#80242a]" : "text-[#1d1d1f]"}`}>
-                  {selectedTags.length} <span className="text-[14px] text-[#86868b] font-medium">/ 3 min</span>
+            <div className="bg-white/80 backdrop-blur-xl border border-white/60 shadow-[0_15px_35px_-5px_rgba(0,0,0,0.15)] rounded-[2rem] p-2 flex items-center justify-between">
+              <div className="pl-4 md:pl-6 flex flex-col">
+                <span className="text-[10px] md:text-[11px] font-bold tracking-wider text-[#86868b] uppercase">Selected</span>
+                <span className={`text-[18px] md:text-[20px] font-bold leading-none transition-colors duration-300 ${selectedTags.length >= 3 ? "text-[#80242a]" : "text-[#1d1d1f]"}`}>
+                  {selectedTags.length} <span className="text-[13px] md:text-[14px] text-[#86868b] font-medium">/ 3 min</span>
                 </span>
               </div>
               <motion.button
                 disabled={selectedTags.length < 3}
                 onClick={() => goTo(2)}
                 whileTap={{ scale: 0.95 }}
-                className="h-[56px] px-8 rounded-full text-[16px] font-bold transition-all duration-300 disabled:bg-gray-100 disabled:text-gray-400 enabled:bg-[#80242a] enabled:text-white enabled:shadow-[0_8px_20px_rgba(128,36,42,0.3)]"
+                className="shrink-0 h-[48px] md:h-[56px] px-6 md:px-8 rounded-full text-[15px] md:text-[16px] font-bold transition-all duration-300 bg-[#80242a] text-white shadow-[0_8px_20px_rgba(128,36,42,0.3)] disabled:bg-gray-100 disabled:text-gray-400 disabled:shadow-none"
               >
                 Continue
               </motion.button>
@@ -482,8 +483,8 @@ export default function OnboardingPage() {
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 bg-[#FCFCFC]/90 backdrop-blur-xl flex flex-col items-center justify-center"
           >
-            <motion.div 
-              animate={{ rotate: 360 }} 
+            <motion.div
+              animate={{ rotate: 360 }}
               transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
               className="w-16 h-16 mb-8 rounded-full border-[4px] border-[#80242a]/10 border-t-[#80242a]"
             />
@@ -565,7 +566,7 @@ function Screen1({ selectedTags, onToggle }: { selectedTags: string[], onToggle:
             </h2>
             <div className="w-full max-w-[100vw] overflow-x-auto snap-x snap-mandatory flex gap-5 px-[5vw] md:px-[15vw] pb-8 pt-4 no-scrollbar">
               {row.cards.map(card => (
-                <InteractiveCard 
+                <InteractiveCard
                   key={card.tag}
                   card={card}
                   selected={selectedTags.includes(card.tag)}
@@ -602,7 +603,7 @@ function Screen2({ selected, onSelect, onBack }: { selected: string | null, onSe
         transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
         className="text-[40px] md:text-[56px] font-bold text-[#1d1d1f] tracking-tight text-center mt-12 mb-20 leading-[1.1]"
       >
-        When are you <br/> usually free?
+        When are you <br /> usually free?
       </motion.h1>
 
       <div className="flex flex-col gap-5 w-full">
@@ -628,7 +629,7 @@ function Screen2({ selected, onSelect, onBack }: { selected: string | null, onSe
                   {opt.sub}
                 </span>
               </div>
-              
+
               <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${isActive ? 'border-white bg-white/20 scale-110' : 'border-gray-300'}`}>
                 {isActive && <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="w-3 h-3 bg-white rounded-full" />}
               </div>
@@ -663,7 +664,7 @@ function Screen3({ selected, submitting, onSelect, onBack }: { selected: string 
         transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
         className="text-[40px] md:text-[56px] font-bold text-[#1d1d1f] tracking-tight text-center mt-12 mb-20 leading-[1.1]"
       >
-        One last thing — <br/> how do you show up?
+        One last thing — <br /> how do you show up?
       </motion.h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
@@ -691,18 +692,18 @@ function Screen3({ selected, submitting, onSelect, onBack }: { selected: string 
               }}
             >
               {isActive && (
-                <motion.div 
+                <motion.div
                   layoutId="activeGlowSocial"
-                  className="absolute inset-0 bg-gradient-to-b from-[#80242a]/[0.05] to-transparent pointer-events-none" 
+                  className="absolute inset-0 bg-gradient-to-b from-[#80242a]/[0.05] to-transparent pointer-events-none"
                   initial={false}
                   transition={{ type: "spring", bounce: 0.2, duration: 0.8 }}
                 />
               )}
-              
+
               <div className="mb-10 transform transition-transform duration-700 group-hover:scale-110">
                 <opt.Icon active={isActive} />
               </div>
-              
+
               <span className={`text-[28px] font-bold tracking-tight mb-3 ${isActive ? "text-[#80242a]" : "text-[#1d1d1f]"}`}>
                 {opt.title}
               </span>
