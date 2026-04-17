@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { UpdateVolunteerProfileDto } from './dto/update-volunteer-profile.dto';
+import { OnboardingDto } from './dto/onboarding.dto';
 import { validateImageFile } from '../common/file-validation.util';
 
 @Injectable()
@@ -300,5 +301,24 @@ export class VolunteerService {
 
     if (error) throw error;
     return { success: true };
+  }
+
+  async updateOnboarding(userId: string, dto: OnboardingDto) {
+    const client = this.supabase.getClient();
+
+    const { data, error } = await client
+      .from('volunteer_profiles')
+      .update({
+        interest_tags: dto.interest_tags,
+        preferred_availability: dto.preferred_availability,
+        social_preference: dto.social_preference,
+        onboarding_completed: true,
+      })
+      .eq('user_id', userId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return { profile: data };
   }
 }

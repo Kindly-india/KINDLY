@@ -16,6 +16,7 @@ import { VolunteerService } from './volunteer.service';
 import { CertificateService } from '../certificate/certificate.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UpdateVolunteerProfileDto } from './dto/update-volunteer-profile.dto';
+import { OnboardingDto } from './dto/onboarding.dto';
 import { OptionalAuthGuard } from '../auth/guards/optional-auth.guard';
 
 @Controller('volunteers')
@@ -93,5 +94,15 @@ export class VolunteerController {
   @Get('me/certificates')
   async getMyCertificates(@Request() req: any) {
     return this.certificateService.getCertificatesForVolunteer(req.user.id);
+  }
+
+  // 9. Complete Onboarding
+  @UseGuards(JwtAuthGuard)
+  @Patch('me/onboarding')
+  async completeOnboarding(
+    @Request() req: any,
+    @Body() dto: OnboardingDto,
+  ) {
+    return this.volunteerService.updateOnboarding(req.user.id, dto);
   }
 }

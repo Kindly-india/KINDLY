@@ -14,7 +14,7 @@ export class CreateEventDto {
   coverImageUrl?: string;
 
   @IsString()
-  @IsIn(['environment', 'education', 'health', 'animals', 'elderly', 'community'])
+  @IsIn(['nature_outdoors', 'food_hunger', 'animal_welfare', 'elderly_care', 'education_mentoring', 'health_medical', 'art_culture', 'civic_community', 'women_empowerment', 'youth_sports', 'mental_wellness', 'donation_drives'])
   category: string;
 
   @IsBoolean()
@@ -50,7 +50,7 @@ export class CreateEventDto {
 
   @IsOptional()
   @IsString()
-  proposedConnect?: string;
+  connectPlan?: string;
 
   @IsInt()
   @Min(1)

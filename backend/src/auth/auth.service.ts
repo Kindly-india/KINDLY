@@ -19,8 +19,9 @@ export class AuthService {
           user_type: 'volunteer',
           full_name: dto.fullName,
         },
-        // Replace with your actual deployed frontend URL
-        // emailRedirectTo: 'https://your-frontend-url.com/login',
+        emailRedirectTo: process.env.FRONTEND_URL
+          ? `${process.env.FRONTEND_URL}/auth/callback?next=/onboarding`
+          : 'http://localhost:3000/auth/callback?next=/onboarding',
       },
     });
 
@@ -88,8 +89,9 @@ export class AuthService {
           user_type: 'organization',
           org_type: dto.orgType,
         },
-        // Replace with your actual deployed frontend URL
-        // emailRedirectTo: 'https://your-frontend-url.com/login',
+        emailRedirectTo: process.env.FRONTEND_URL
+          ? `${process.env.FRONTEND_URL}/auth/callback?next=/login`
+          : 'http://localhost:3000/auth/callback?next=/login',
       },
     });
 

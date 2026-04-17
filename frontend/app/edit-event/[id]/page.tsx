@@ -21,12 +21,18 @@ import {
 import { api } from "@/lib/api"
 
 const categories = [
-  { value: "environment", label: "Environment" },
-  { value: "education", label: "Education" },
-  { value: "health", label: "Health" },
-  { value: "animals", label: "Animals" },
-  { value: "elderly", label: "Elderly Care" },
-  { value: "community", label: "Community" },
+  { value: "nature_outdoors", label: "Outdoors & Nature" },
+  { value: "food_hunger", label: "Food & Hunger Relief" },
+  { value: "animal_welfare", label: "Animals & Rescue" },
+  { value: "elderly_care", label: "Elderly Care" },
+  { value: "education_mentoring", label: "Kids & Learning" },
+  { value: "health_medical", label: "Health & Medical" },
+  { value: "art_culture", label: "Art, Culture & Heritage" },
+  { value: "civic_community", label: "Community & Civic" },
+  { value: "women_empowerment", label: "Women & Safety" },
+  { value: "youth_sports", label: "Youth & Sports" },
+  { value: "mental_wellness", label: "Mental Health & Wellness" },
+  { value: "donation_drives", label: "Donations & Drives" },
 ]
 
 export default function EditEventPage() {
@@ -58,7 +64,7 @@ export default function EditEventPage() {
     thingsToBring: "",
     // --- NEW CLUB FIELDS ---
     pointOfContact: "",
-    proposedConnect: "",
+    connectPlan: "",
     // -----------------------
     totalSlots: "",
     registrationDeadline: "", // Updated default
@@ -110,7 +116,7 @@ export default function EditEventPage() {
           thingsToBring: event.things_to_bring || "",
           // --- POPULATE NEW FIELDS ---
           pointOfContact: event.point_of_contact || "",
-          proposedConnect: event.proposed_connect || "",
+          connectPlan: event.connect_plan || "",
           // ---------------------------
           totalSlots: event.total_slots?.toString() || "",
           registrationDeadline: formattedDeadline,
@@ -219,7 +225,7 @@ export default function EditEventPage() {
         thingsToBring: formData.thingsToBring || undefined,
         // --- SEND NEW FIELDS ---
         pointOfContact: formData.pointOfContact,
-        proposedConnect: formData.proposedConnect || undefined,
+        connectPlan: formData.connectPlan || undefined,
         // -----------------------
         totalSlots: parseInt(formData.totalSlots),
         registrationDeadline: formData.registrationDeadline, 
@@ -551,20 +557,20 @@ export default function EditEventPage() {
                 />
             </div>
 
-            {/* --- NEW: PROPOSED CONNECT --- */}
+            {/* --- THE AFTER --- */}
             <div>
                 <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide">
-                    Proposed Connect Activity (Optional)
+                    The After (Optional)
                 </label>
                 <input
                     type="text"
                     placeholder="e.g., Grabbing breakfast at Roastery Coffee after!"
-                    value={formData.proposedConnect}
-                    onChange={(e) => setFormData({ ...formData, proposedConnect: e.target.value })}
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                    value={formData.connectPlan}
+                    onChange={(e) => setFormData({ ...formData, connectPlan: e.target.value })}
+                    className="w-full px-4 py-3 bg-emerald-50 border border-emerald-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 />
                 <p className="text-xs text-gray-400 mt-2">
-                    Are you planning a post-event hangout? If left blank, our team may suggest one.
+                    What's the after-event hangout? Chai? Walk? Breakfast together? If blank, our team may suggest one.
                 </p>
             </div>
 

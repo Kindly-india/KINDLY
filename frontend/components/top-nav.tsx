@@ -20,6 +20,7 @@ export function TopNav() {
     "/for-organisations",
     "/update-password",
     "/org-events/[id]/report",
+    "/onboarding"
   ]
   
   // Also hide if the path starts with company, resources, or legal

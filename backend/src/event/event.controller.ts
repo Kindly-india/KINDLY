@@ -4,6 +4,7 @@ import { CertificateService } from '../certificate/certificate.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AdminGuard } from '../auth/guards/admin.guard';
+import { OptionalAuthGuard } from '../auth/guards/optional-auth.guard';
 import { UploadedFile, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 
@@ -40,8 +41,9 @@ export class EventController {
   // ==========================================
 
   @Get('public')
-  async getPublicEvents() {
-    return this.eventService.getPublicEvents();
+  @UseGuards(OptionalAuthGuard)
+  async getPublicEvents(@Request() req: any) {
+    return this.eventService.getPublicEvents(req.user?.id);
   }
 
   @Get('top')

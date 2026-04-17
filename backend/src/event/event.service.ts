@@ -89,7 +89,7 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
       things_to_bring: dto.thingsToBring,
       // --- NEW CLUB FIELDS ---
       point_of_contact: dto.pointOfContact,
-      proposed_connect: dto.proposedConnect,
+      connect_plan: dto.connectPlan,
       // -----------------------
       total_slots: dto.totalSlots,
       registration_deadline: dto.registrationDeadline,
@@ -163,7 +163,7 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
     return { events: eventsWithCounts };
   }
 
-  async getPublicEvents() {
+  async getPublicEvents(userId?: string) {
     const supabase = this.supabaseService.getClient();
 
     const { data: events, error } = await supabase
@@ -180,6 +180,47 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
       .order('event_date', { ascending: true });
 
     if (error) throw error;
+
+    // Feed personalization: if user is logged in and has interest_tags, sort relevant events first
+    if (userId && events) {
+      const { data: profile } = await supabase
+        .from('volunteer_profiles')
+        .select('interest_tags')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      const interestTags: string[] = profile?.interest_tags || [];
+
+      if (interestTags.length > 0) {
+        // Map interest tags to parent event categories
+        const TAG_TO_CATEGORY: Record<string, string> = {
+          treks_cleanups: 'nature_outdoors', tree_plantation: 'nature_outdoors',
+          water_cleanup: 'nature_outdoors', wildlife: 'nature_outdoors', urban_gardening: 'nature_outdoors',
+          food_drives: 'food_hunger',
+          donation_drives: 'donation_drives',
+          elderly_care: 'elderly_care',
+          women_safety: 'women_empowerment',
+          slum_upliftment: 'civic_community', rallies_awareness: 'civic_community',
+          teaching: 'education_mentoring', kids_art: 'education_mentoring',
+          kids_sports: 'education_mentoring', storytelling: 'education_mentoring',
+          career_guidance: 'education_mentoring',
+          dog_feeding: 'animal_welfare', animal_shelter: 'animal_welfare',
+          adoption_drives: 'animal_welfare', cat_care: 'animal_welfare', bird_rescue: 'animal_welfare',
+          art_culture: 'art_culture',
+          health_camps: 'health_medical',
+          marathons_sports: 'youth_sports',
+          mental_health: 'mental_wellness',
+        };
+
+        const preferredCategories = new Set(
+          interestTags.map(tag => TAG_TO_CATEGORY[tag]).filter(Boolean)
+        );
+
+        const relevant = events.filter(e => preferredCategories.has(e.category));
+        const rest = events.filter(e => !preferredCategories.has(e.category));
+        return { events: [...relevant, ...rest] };
+      }
+    }
 
     return { events };
   }
@@ -669,7 +710,7 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
         things_to_bring: dto.thingsToBring,
         // --- NEW CLUB FIELDS ---
         point_of_contact: dto.pointOfContact,
-        proposed_connect: dto.proposedConnect,
+        connect_plan: dto.connectPlan,
         // -----------------------
         total_slots: dto.totalSlots,
         registration_deadline: dto.registrationDeadline,
@@ -987,7 +1028,7 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
       end_time: updateData.endTime,
       location: updateData.location,
       point_of_contact: updateData.pointOfContact,
-      proposed_connect: updateData.proposedConnect, // You can override this here
+      connect_plan: updateData.connectPlan, // You can override this here
       // ... we map the rest of the fields we care about tweaking
       updated_at: new Date().toISOString(),
     };

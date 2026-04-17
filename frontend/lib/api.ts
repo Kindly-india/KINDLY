@@ -48,7 +48,7 @@ export interface CreateEventData {
   minimumAge?: number;
   gallery_images?: string[];
   pointOfContact: string;
-  proposedConnect?: string;
+  connectPlan?: string;
 }
 
 export interface UpdateVolunteerProfileDto {
@@ -283,9 +283,13 @@ export const api = {
     return response.json();
   },
 
-  // Get public events
+  // Get public events (passes token if logged in for personalized feed ordering)
   getPublicEvents: async () => {
-    const response = await fetch(`${API_URL}/events/public`);
+    const { data: { session } } = await supabase.auth.getSession();
+    const headers: Record<string, string> = {};
+    if (session) headers['Authorization'] = `Bearer ${session.access_token}`;
+
+    const response = await fetch(`${API_URL}/events/public`, { headers });
 
     if (!response.ok) {
       const error = await response.json();
@@ -1132,6 +1136,27 @@ export const api = {
       throw new Error(errorData.message || 'Failed to send reset link');
     }
     
+    return response.json();
+  },
+
+  // Complete onboarding
+  patchOnboarding: async (data: { interest_tags: string[]; preferred_availability: string; social_preference: string }) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const response = await fetch(`${API_URL}/volunteers/me/onboarding`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || 'Failed to save onboarding');
+    }
     return response.json();
   },
 

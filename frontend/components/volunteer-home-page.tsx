@@ -126,10 +126,17 @@ export function VolunteerHomePage() {
 
         if (!user || error) {
           router.push('/login')
-          return // Halts execution so the rest of the code doesn't run unauthenticated
+          return
         }
 
-        // 2. Start Loading State
+        // 2. Onboarding check — redirect if not completed
+        const profileCheck = await api.getUserProfile().catch(() => null)
+        if (profileCheck?.userType === 'volunteer' && profileCheck?.profile?.onboarding_completed === false) {
+          router.push('/onboarding')
+          return
+        }
+
+        // 3. Start Loading State
         setLoading(true)
 
         // 3. Fetch Data (Your exact original API calls)
@@ -218,13 +225,18 @@ export function VolunteerHomePage() {
 
   const getCategoryColor = (category: string) => {
     const map: Record<string, string> = {
-      environment: "bg-emerald-500",
-      education: "bg-blue-500",
-      teaching: "bg-blue-500",
-      elderly: "bg-purple-500",
-      animals: "bg-amber-500",
-      health: "bg-red-500",
-      community: "bg-orange-500",
+      nature_outdoors: "bg-emerald-500",
+      food_hunger: "bg-orange-500",
+      animal_welfare: "bg-amber-500",
+      elderly_care: "bg-purple-500",
+      education_mentoring: "bg-blue-500",
+      health_medical: "bg-red-500",
+      art_culture: "bg-pink-500",
+      civic_community: "bg-cyan-500",
+      women_empowerment: "bg-rose-500",
+      youth_sports: "bg-lime-500",
+      mental_wellness: "bg-indigo-500",
+      donation_drives: "bg-yellow-500",
     }
     return map[category?.toLowerCase()] || "bg-gray-500"
   }

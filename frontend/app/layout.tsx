@@ -4,6 +4,7 @@ import { Inter } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 import { NavbarManager } from "@/components/navbar-manager"
+import { Toaster } from "sonner"
 
 
 const inter = Inter({
@@ -52,6 +53,7 @@ export default function RootLayout({
         
         {/* The Traffic Cop: Decides which navbars to show */}
         <NavbarManager />
+        <Toaster position="top-center" richColors />
         
         {/* pb-24 ensures space for the bottom navbars on mobile */}
         <main className="flex-1 w-full pb-20 md:pb-0">

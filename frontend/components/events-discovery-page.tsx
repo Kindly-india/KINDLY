@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import {
     Search,
     X,
@@ -19,10 +20,17 @@ import {
     Moon,
     TrendingUp,
     Filter,
-    Sparkles,
     ChevronDown,
     Menu,
     Clock,
+    Coffee,
+    Utensils,
+    Shield,
+    Trophy,
+    Brain,
+    Gift,
+    Palette,
+    Building2,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -32,12 +40,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { api } from "@/lib/api"
 
 const causes = [
-    { id: "environment", label: "Environment", icon: Leaf, color: "text-emerald-500" },
-    { id: "education", label: "Education", icon: GraduationCap, color: "text-amber-500" },
-    { id: "animals", label: "Animals", icon: Dog, color: "text-purple-500" },
-    { id: "health", label: "Health", icon: Heart, color: "text-red-500" },
-    { id: "elderly", label: "Elderly Care", icon: Users, color: "text-pink-500" },
-    { id: "community", label: "Community", icon: Sparkles, color: "text-cyan-500" },
+    { id: "nature_outdoors", label: "Outdoors & Nature", icon: Leaf, color: "text-emerald-500" },
+    { id: "food_hunger", label: "Food & Hunger Relief", icon: Utensils, color: "text-orange-500" },
+    { id: "animal_welfare", label: "Animals & Rescue", icon: Dog, color: "text-purple-500" },
+    { id: "elderly_care", label: "Elderly Care", icon: Users, color: "text-pink-500" },
+    { id: "education_mentoring", label: "Kids & Learning", icon: GraduationCap, color: "text-amber-500" },
+    { id: "health_medical", label: "Health & Medical", icon: Heart, color: "text-red-500" },
+    { id: "art_culture", label: "Art, Culture & Heritage", icon: Palette, color: "text-fuchsia-500" },
+    { id: "civic_community", label: "Community & Civic", icon: Building2, color: "text-cyan-500" },
+    { id: "women_empowerment", label: "Women & Safety", icon: Shield, color: "text-rose-500" },
+    { id: "youth_sports", label: "Youth & Sports", icon: Trophy, color: "text-lime-500" },
+    { id: "mental_wellness", label: "Mental Health & Wellness", icon: Brain, color: "text-indigo-500" },
+    { id: "donation_drives", label: "Donations & Drives", icon: Gift, color: "text-yellow-500" },
 ]
 
 const timeOfDay = [
@@ -61,6 +75,7 @@ const durationOptions = [
 ]
 
 export default function EventsDiscoveryPage() {
+    const router = useRouter()
     const [events, setEvents] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
@@ -90,6 +105,12 @@ export default function EventsDiscoveryPage() {
                     api.getPublicEvents(),
                     api.getUserProfile().catch(() => null)
                 ])
+
+                // Onboarding guard: redirect volunteers who haven't completed it
+                if (profileRes?.userType === 'volunteer' && profileRes?.profile?.onboarding_completed === false) {
+                    router.push('/onboarding')
+                    return
+                }
 
                 setEvents(eventsRes.events || [])
                 if (profileRes?.profile) {
@@ -282,12 +303,18 @@ const FilterContent = () => (
     // Helper functions
     const getCategoryColor = (category: string) => {
         const colors: Record<string, string> = {
-            environment: "bg-[#10b981]",
-            education: "bg-[#f59e0b]",
-            health: "bg-[#ef4444]",
-            animals: "bg-[#8b5cf6]",
-            elderly: "bg-[#ec4899]",
-            community: "bg-[#06b6d4]",
+            nature_outdoors: "bg-[#10b981]",
+            food_hunger: "bg-[#f97316]",
+            animal_welfare: "bg-[#8b5cf6]",
+            elderly_care: "bg-[#ec4899]",
+            education_mentoring: "bg-[#f59e0b]",
+            health_medical: "bg-[#ef4444]",
+            art_culture: "bg-[#e879f9]",
+            civic_community: "bg-[#06b6d4]",
+            women_empowerment: "bg-[#f43f5e]",
+            youth_sports: "bg-[#84cc16]",
+            mental_wellness: "bg-[#6366f1]",
+            donation_drives: "bg-[#eab308]",
         }
         return colors[category] || "bg-gray-500"
     }
@@ -621,6 +648,14 @@ const FilterContent = () => (
                                                         <MapPin className="w-3.5 h-3.5 md:w-4 md:h-4 text-[#10b981] shrink-0" />
                                                         <span className="text-[11px] md:text-[13px] font-medium truncate">{event.location}</span>
                                                     </div>
+                                                    {event.connect_plan && (
+                                                        <div className="flex items-center gap-1.5 md:gap-2">
+                                                            <Coffee className="w-3.5 h-3.5 md:w-4 md:h-4 text-amber-500 shrink-0" />
+                                                            <span className="text-[11px] md:text-[13px] font-medium text-amber-700 truncate">
+                                                                The After: {event.connect_plan}
+                                                            </span>
+                                                        </div>
+                                                    )}
                                                 </div>
 
                                                 {/* Desktop Footer (Hidden on mobile) */}

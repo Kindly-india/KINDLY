@@ -8,26 +8,20 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { cn } from "@/lib/utils"
 import { OrgSignupWizard } from "./org-signup-wizard"
 import { api } from "@/lib/api"
 import Image from "next/image"
+import { toast } from "sonner"
 
 type UserType = "volunteer" | "organisation" | null
 
-const interests = ["Environment", "Education", "Health", "Animals", "Elderly Care", "Community"]
 const cities = ["Nashik", "Mumbai", "Pune", "Delhi", "Bangalore", "Chennai", "Hyderabad", "Kolkata"]
 
 export function HeroSection() {
   const [selectedType, setSelectedType] = useState<UserType>(null)
   const [showPassword, setShowPassword] = useState(false)
-  const [selectedInterests, setSelectedInterests] = useState<string[]>([])
   const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [city, setCity] = useState("Nashik")
-
-  const toggleInterest = (interest: string) => {
-    setSelectedInterests((prev) => (prev.includes(interest) ? prev.filter((i) => i !== interest) : [...prev, interest]))
-  }
 
   if (selectedType === "volunteer") {
     return (
@@ -73,11 +67,10 @@ export function HeroSection() {
                       phone: formData.get('phone') as string,
                       password: formData.get('password') as string,
                       city,
-                      interests: selectedInterests,
+                      interests: [],
                     });
-                    alert('Account created successfully!');
-                    window.location.href = '/login';
-                  } catch (error: any) { alert(error.message || 'Signup failed.'); }
+                    toast.success("Check your email to verify your account.");
+                  } catch (error: any) { toast.error(error.message || 'Signup failed.'); }
                 }}
                 className="space-y-5"
               >
@@ -120,25 +113,6 @@ export function HeroSection() {
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
-
-                <div className="space-y-3">
-                  <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-wider ml-1">Causes I care about</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {interests.map((interest) => (
-                      <button
-                        key={interest}
-                        type="button"
-                        onClick={() => toggleInterest(interest)}
-                        className={cn(
-                          "px-4 py-2 rounded-full text-[13px] md:text-sm font-bold transition-all",
-                          selectedInterests.includes(interest) ? "bg-black text-white shadow-md" : "bg-gray-50 md:bg-transparent border border-gray-200 text-gray-500"
-                        )}
-                      >
-                        {interest}
-                      </button>
-                    ))}
-                  </div>
                 </div>
 
                 <div className="flex items-start gap-3 pt-2">

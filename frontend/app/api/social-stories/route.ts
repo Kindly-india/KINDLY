@@ -2,12 +2,18 @@ import { NextResponse } from "next/server"
 
 function inferCategory(text: string): string {
   const t = text.toLowerCase()
-  if (t.includes("environment") || t.includes("clean") || t.includes("river") || t.includes("tree") || t.includes("forest") || t.includes("pollution") || t.includes("plastic") || t.includes("waste")) return "Environment"
-  if (t.includes("school") || t.includes("education") || t.includes("student") || t.includes("teach") || t.includes("learn") || t.includes("literacy")) return "Education"
-  if (t.includes("health") || t.includes("hospital") || t.includes("doctor") || t.includes("medical") || t.includes("blood") || t.includes("cancer") || t.includes("clinic")) return "Health"
+  if (t.includes("nature") || t.includes("outdoor") || t.includes("clean") || t.includes("river") || t.includes("tree") || t.includes("forest") || t.includes("pollution") || t.includes("plastic") || t.includes("waste")) return "Outdoors & Nature"
+  if (t.includes("food") || t.includes("hunger") || t.includes("feed") || t.includes("meal") || t.includes("ration")) return "Food & Hunger Relief"
+  if (t.includes("school") || t.includes("education") || t.includes("student") || t.includes("teach") || t.includes("learn") || t.includes("literacy") || t.includes("mentor")) return "Kids & Learning"
+  if (t.includes("health") || t.includes("hospital") || t.includes("doctor") || t.includes("medical") || t.includes("blood") || t.includes("cancer") || t.includes("clinic")) return "Health & Medical"
   if (t.includes("elderly") || t.includes("senior") || t.includes("old age") || t.includes("helpage")) return "Elderly Care"
-  if (t.includes("animal") || t.includes("dog") || t.includes("cat") || t.includes("wildlife") || t.includes("rescue") || t.includes("stray")) return "Animals"
-  return "Community"
+  if (t.includes("animal") || t.includes("dog") || t.includes("cat") || t.includes("wildlife") || t.includes("rescue") || t.includes("stray")) return "Animals & Rescue"
+  if (t.includes("women") || t.includes("gender") || t.includes("safety") || t.includes("empowerment")) return "Women & Safety"
+  if (t.includes("art") || t.includes("culture") || t.includes("heritage") || t.includes("mural")) return "Art, Culture & Heritage"
+  if (t.includes("mental") || t.includes("wellness") || t.includes("wellbeing")) return "Mental Health & Wellness"
+  if (t.includes("youth") || t.includes("sport") || t.includes("marathon") || t.includes("run")) return "Youth & Sports"
+  if (t.includes("donation") || t.includes("drive") || t.includes("clothes") || t.includes("blanket")) return "Donations & Drives"
+  return "Community & Civic"
 }
 
 function relativeDate(pubDate: string): string {

@@ -160,12 +160,18 @@ export function OrgHomePage() {
 
   const getCategoryColor = (category: string) => {
     const colors: Record<string, string> = {
-      environment: "bg-emerald-500",
-      education: "bg-blue-500",
-      health: "bg-red-500",
-      animals: "bg-amber-500",
-      elderly: "bg-purple-500",
-      community: "bg-cyan-500",
+      nature_outdoors: "bg-emerald-500",
+      food_hunger: "bg-orange-500",
+      animal_welfare: "bg-amber-500",
+      elderly_care: "bg-purple-500",
+      education_mentoring: "bg-blue-500",
+      health_medical: "bg-red-500",
+      art_culture: "bg-pink-500",
+      civic_community: "bg-cyan-500",
+      women_empowerment: "bg-rose-500",
+      youth_sports: "bg-lime-500",
+      mental_wellness: "bg-indigo-500",
+      donation_drives: "bg-yellow-500",
     }
     return colors[category?.toLowerCase()] || "bg-gray-500"
   }

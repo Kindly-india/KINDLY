@@ -86,11 +86,16 @@ export class AnalyticsService {
             // Skills & SDGs
             if (evt.category) {
                 const cat = evt.category.toLowerCase();
-                if (cat.includes('edu') || cat.includes('teach')) { skillsSet.add('Mentoring'); skillsSet.add('Public Speaking'); sdgSet.add('SDG 4: Quality Education'); }
-                if (cat.includes('env') || cat.includes('clean')) { skillsSet.add('Eco-Awareness'); skillsSet.add('Teamwork'); sdgSet.add('SDG 13: Climate Action'); }
-                if (cat.includes('health') || cat.includes('med')) { skillsSet.add('Health Care'); sdgSet.add('SDG 3: Good Health'); }
-                if (cat.includes('anim')) { skillsSet.add('Animal Care'); sdgSet.add('Empathy'); }
-                if (cat.includes('com')) { skillsSet.add('Community Service'); sdgSet.add('SDG 11: Sustainable Cities'); }
+                if (cat.includes('education') || cat.includes('mentor') || cat.includes('teach')) { skillsSet.add('Mentoring'); skillsSet.add('Public Speaking'); sdgSet.add('SDG 4: Quality Education'); }
+                if (cat.includes('nature') || cat.includes('outdoor') || cat.includes('clean')) { skillsSet.add('Eco-Awareness'); skillsSet.add('Teamwork'); sdgSet.add('SDG 13: Climate Action'); }
+                if (cat.includes('health') || cat.includes('medical')) { skillsSet.add('Health Care'); sdgSet.add('SDG 3: Good Health'); }
+                if (cat.includes('animal') || cat.includes('welfare')) { skillsSet.add('Animal Care'); sdgSet.add('Empathy'); }
+                if (cat.includes('civic') || cat.includes('community') || cat.includes('food') || cat.includes('donation')) { skillsSet.add('Community Service'); sdgSet.add('SDG 11: Sustainable Cities'); }
+                if (cat.includes('elderly') || cat.includes('elder')) { skillsSet.add('Caregiving'); sdgSet.add('SDG 3: Good Health'); }
+                if (cat.includes('women') || cat.includes('empowerment')) { skillsSet.add('Advocacy'); sdgSet.add('SDG 5: Gender Equality'); }
+                if (cat.includes('mental') || cat.includes('wellness')) { skillsSet.add('Empathy'); sdgSet.add('SDG 3: Good Health'); }
+                if (cat.includes('youth') || cat.includes('sports')) { skillsSet.add('Coaching'); sdgSet.add('SDG 3: Good Health'); }
+                if (cat.includes('art') || cat.includes('culture')) { skillsSet.add('Creativity'); sdgSet.add('SDG 11: Sustainable Cities'); }
             }
         });
 

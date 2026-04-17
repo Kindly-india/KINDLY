@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Calendar, Clock, MapPin, ChevronRight, Loader2 } from "lucide-react"
+import { Calendar, Clock, MapPin, ChevronRight, Loader2, Coffee } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { api } from "@/lib/api"
 import Link from "next/link"
@@ -138,6 +138,12 @@ export function EventsSection() {
                         <MapPin className="w-4 h-4 md:w-3.5 md:h-3.5 shrink-0" />
                         <span className="truncate">{event.location}</span>
                       </div>
+                      {event.connect_plan && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <Coffee className="w-4 h-4 md:w-3.5 md:h-3.5 text-amber-500 shrink-0" />
+                          <span className="text-amber-700 font-medium truncate">The After: {event.connect_plan}</span>
+                        </div>
+                      )}
                     </div>
 
                     {/* mt-auto pushes everything below it to the very bottom, keeping buttons aligned perfectly */}

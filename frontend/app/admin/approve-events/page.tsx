@@ -29,12 +29,18 @@ import { api } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
 const categories = [
-    { id: "environment", name: "Environment", icon: "🌿" },
-    { id: "education", name: "Education", icon: "📚" },
-    { id: "health", name: "Health", icon: "❤️" },
-    { id: "animals", name: "Animals", icon: "🐾" },
-    { id: "elderly", name: "Elderly Care", icon: "👴" },
-    { id: "community", name: "Community", icon: "🏘️" },
+    { id: "nature_outdoors", name: "Outdoors & Nature", icon: "🌿" },
+    { id: "food_hunger", name: "Food & Hunger Relief", icon: "🍱" },
+    { id: "animal_welfare", name: "Animals & Rescue", icon: "🐾" },
+    { id: "elderly_care", name: "Elderly Care", icon: "🤝" },
+    { id: "education_mentoring", name: "Kids & Learning", icon: "📚" },
+    { id: "health_medical", name: "Health & Medical", icon: "❤️" },
+    { id: "art_culture", name: "Art, Culture & Heritage", icon: "🎨" },
+    { id: "civic_community", name: "Community & Civic", icon: "🏘️" },
+    { id: "women_empowerment", name: "Women & Safety", icon: "💪" },
+    { id: "youth_sports", name: "Youth & Sports", icon: "⚽" },
+    { id: "mental_wellness", name: "Mental Health & Wellness", icon: "🧠" },
+    { id: "donation_drives", name: "Donations & Drives", icon: "🎁" },
 ]
 
 export default function AdminApprovalPage() {
@@ -122,7 +128,7 @@ export default function AdminApprovalPage() {
         endTime: selectedEvent.end_time,
         location: selectedEvent.location,
         pointOfContact: selectedEvent.point_of_contact,
-        proposedConnect: selectedEvent.proposed_connect,
+        connectPlan: selectedEvent.connect_plan,
         totalSlots: parseInt(selectedEvent.total_slots),
         registrationDeadline: new Date(selectedEvent.registration_deadline).toISOString(),
         dressCode: selectedEvent.dress_code,
@@ -308,24 +314,24 @@ export default function AdminApprovalPage() {
                   </div>
               </div>
 
-              {/* THE CONNECT BOX */}
+              {/* THE AFTER BOX */}
               <div className="bg-[#064e3b] p-6 lg:p-8 rounded-[32px] lg:rounded-[40px] border border-emerald-800 shadow-2xl space-y-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-emerald-500/20 rounded-full flex items-center justify-center">
                         <Coffee className="w-5 h-5 text-emerald-400" />
                     </div>
-                    <h3 className="text-white font-black text-lg">The Connect</h3>
+                    <h3 className="text-white font-black text-lg">The After</h3>
                   </div>
                   <div className="bg-emerald-900/40 p-3 rounded-xl border border-emerald-700/50">
-                    <p className="text-emerald-300/80 text-[10px] font-bold uppercase tracking-wider mb-1">Org's Proposed Connect Activity:</p>
-                    <p className="text-emerald-100 text-xs italic">"{selectedEvent.proposed_connect || "No suggestion provided"}"</p>
+                    <p className="text-emerald-300/80 text-[10px] font-bold uppercase tracking-wider mb-1">Org's Proposed After Activity:</p>
+                    <p className="text-emerald-100 text-xs italic">"{selectedEvent.connect_plan || "No suggestion provided"}"</p>
                   </div>
-                  <textarea 
+                  <textarea
                     placeholder="Describe the curated after-activity... e.g. ☕ Post-event Coffee at Roastery!"
                     rows={3}
                     className="w-full p-4 lg:p-5 bg-emerald-900/50 rounded-2xl border border-emerald-700 text-white placeholder:text-emerald-700 focus:ring-2 focus:ring-emerald-400 text-sm font-medium"
-                    value={selectedEvent.proposed_connect}
-                    onChange={(e) => handleInputChange('proposed_connect', e.target.value)}
+                    value={selectedEvent.connect_plan}
+                    onChange={(e) => handleInputChange('connect_plan', e.target.value)}
                   />
               </div>
 

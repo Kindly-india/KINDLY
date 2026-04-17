@@ -23,12 +23,18 @@ import { cn } from "@/lib/utils"
 import { api } from "@/lib/api"
 
 const categories = [
-    { id: "environment", name: "Environment", color: "bg-emerald-500", icon: "🌿" },
-    { id: "education", name: "Education", color: "bg-blue-500", icon: "📚" },
-    { id: "health", name: "Health", color: "bg-red-500", icon: "❤️" },
-    { id: "animals", name: "Animals", color: "bg-amber-500", icon: "🐾" },
-    { id: "elderly", name: "Elderly Care", color: "bg-purple-500", icon: "👴" },
-    { id: "community", name: "Community", color: "bg-cyan-500", icon: "🏘️" },
+    { id: "nature_outdoors", name: "Outdoors & Nature", color: "bg-emerald-500", icon: "🌿" },
+    { id: "food_hunger", name: "Food & Hunger Relief", color: "bg-orange-500", icon: "🍱" },
+    { id: "animal_welfare", name: "Animals & Rescue", color: "bg-amber-500", icon: "🐾" },
+    { id: "elderly_care", name: "Elderly Care", color: "bg-purple-500", icon: "🤝" },
+    { id: "education_mentoring", name: "Kids & Learning", color: "bg-blue-500", icon: "📚" },
+    { id: "health_medical", name: "Health & Medical", color: "bg-red-500", icon: "❤️" },
+    { id: "art_culture", name: "Art, Culture & Heritage", color: "bg-pink-500", icon: "🎨" },
+    { id: "civic_community", name: "Community & Civic", color: "bg-cyan-500", icon: "🏘️" },
+    { id: "women_empowerment", name: "Women & Safety", color: "bg-rose-500", icon: "💪" },
+    { id: "youth_sports", name: "Youth & Sports", color: "bg-lime-500", icon: "⚽" },
+    { id: "mental_wellness", name: "Mental Health & Wellness", color: "bg-indigo-500", icon: "🧠" },
+    { id: "donation_drives", name: "Donations & Drives", color: "bg-yellow-500", icon: "🎁" },
 ]
 
 export function CreateEventPage() {
@@ -53,7 +59,7 @@ export function CreateEventPage() {
         thingsToBring: '',
         // --- NEW FIELDS ---
         pointOfContact: '',
-        proposedConnect: '',
+        connectPlan: '',
         // ------------------
         totalSlots: 50,
         registrationDeadline: '', 
@@ -158,7 +164,7 @@ export function CreateEventPage() {
                 dressCode: formData.dressCode,
                 thingsToBring: formData.thingsToBring,
                 pointOfContact: formData.pointOfContact,
-                proposedConnect: formData.proposedConnect,
+                connectPlan: formData.connectPlan,
                 totalSlots: formData.totalSlots,
                 registrationDeadline: deadlineISO,
                 minimumAge: formData.minimumAge,
@@ -548,16 +554,16 @@ export function CreateEventPage() {
 
                         <div>
                             <label className="block text-sm font-semibold text-[#1d1d1f] mb-1">
-                                Proposed Connect Activity
+                                The After
                                 <span className="text-xs text-[#86868b] font-normal ml-2">(Optional)</span>
                             </label>
-                            <p className="text-xs text-[#86868b] mb-3">Are you planning a post-event hangout? (e.g., Coffee, breakfast nearby). If left blank, our team may suggest one.</p>
+                            <p className="text-xs text-[#86868b] mb-3">What's the after-event hangout? Chai? Walk? Breakfast together? If blank, our team may suggest one.</p>
                             <input
                                 type="text"
                                 placeholder="e.g., Grabbing breakfast at Roastery Coffee after!"
-                                value={formData.proposedConnect}
-                                onChange={(e) => setFormData({ ...formData, proposedConnect: e.target.value })}
-                                className="w-full h-12 md:h-14 px-4 bg-[#f5f5f7] rounded-xl border-0 text-[#1d1d1f] placeholder:text-[#86868b] focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all text-sm md:text-base"
+                                value={formData.connectPlan}
+                                onChange={(e) => setFormData({ ...formData, connectPlan: e.target.value })}
+                                className="w-full h-12 md:h-14 px-4 bg-[#f5f5f7] rounded-xl border-0 text-[#1d1d1f] placeholder:text-[#86868b] focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all text-sm md:text-base border border-emerald-200"
                             />
                         </div>
 

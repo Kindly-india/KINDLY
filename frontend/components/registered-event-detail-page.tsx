@@ -471,8 +471,8 @@ export default function RegisteredEventDetailPage() {
             </div>
           </div>
 
-          {/* --- THE CONNECT: KINDLY EXCLUSIVE --- */}
-          {event.proposed_connect && (
+          {/* --- THE AFTER: KINDLY EXCLUSIVE --- */}
+          {event.connect_plan && (
             <div className="px-5 md:px-0 pb-10 mt-4">
               <div className="bg-[#064e3b] rounded-[40px] p-8 md:p-12 shadow-2xl relative overflow-hidden border border-emerald-800">
                 <div className="absolute -top-8 -right-8 opacity-10">
@@ -484,21 +484,18 @@ export default function RegisteredEventDetailPage() {
                     <Coffee className="w-6 h-6 text-emerald-400" />
                   </div>
                   <div>
-                    <h3 className="text-2xl font-black text-white tracking-tight">The Connect</h3>
-                    {/* Clearer Subtitle */}
+                    <h3 className="text-2xl font-black text-white tracking-tight">The After</h3>
                     <p className="text-emerald-400/90 text-[10px] font-bold uppercase tracking-widest">Official Post-Event Hangout</p>
                   </div>
                 </div>
 
-                {/* Explainer Text so new users get the vibe */}
                 <p className="text-emerald-200 text-sm italic mb-4 font-medium pr-4">
                   Because the community is built after the work is done. Join your fellow volunteers to chill, network, and hang out.
                 </p>
 
-                {/* The actual activity wrapped in a distinct box */}
                 <div className="bg-emerald-900/40 border border-emerald-700/50 rounded-2xl p-5 mb-6 shadow-inner">
                   <p className="text-emerald-50 text-base md:text-lg leading-relaxed font-bold">
-                    {event.proposed_connect}
+                    {event.connect_plan}
                   </p>
                 </div>
 
