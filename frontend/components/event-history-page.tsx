@@ -17,7 +17,7 @@ import { api } from "@/lib/api"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 
-type FilterType = "all" | "attended" | "missed" | "registered"
+type FilterType = "all" | "attended" | "missed" | "cancelled" | "registered"
 
 export function EventHistoryPage() {
   const router = useRouter()
@@ -94,7 +94,7 @@ export function EventHistoryPage() {
           date: new Date(ev.event_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
           image: ev.cover_image_url,
           location: ev.location,
-          status: mapBackendStatusToUI(ev.registration_status, ev.status),
+          status: mapBackendStatusToUI(ev.registration_status, ev.event_date, ev.end_time),
           org: ev.organization_profiles?.name || "Organizer",
           hours: calculateExactHours(ev.start_time, ev.end_time),
           certId: map[ev.id] || null,
@@ -112,26 +112,26 @@ export function EventHistoryPage() {
     fetchHistory()
   }, [router]) // Make sure to add router here
 
-  // ✅ UPDATED: Maps 'absent' from DB directly to 'missed' in UI
-  const mapBackendStatusToUI = (regStatus: string, eventStatus: string) => {
+  const mapBackendStatusToUI = (regStatus: string, eventDate: string, endTime: string) => {
     if (regStatus === 'completed' || regStatus === 'checked_in') return 'attended';
-    
-    // ✅ Logic for Missed Events
-    if (regStatus === 'absent' || regStatus === 'cancelled') return 'missed';
-    
-    if (regStatus === 'registered') return 'registered';
+    if (regStatus === 'cancelled') return 'cancelled';
+    // 'absent' = org explicitly marked no-show → missed
+    if (regStatus === 'absent') return 'missed';
+    if (regStatus === 'registered') {
+      // If the event has already ended, treat as missed
+      if (eventDate && endTime) {
+        const eventEnd = new Date(`${eventDate}T${endTime}`)
+        if (eventEnd < new Date()) return 'missed'
+      }
+      return 'registered';
+    }
     return 'pending';
   }
 
   const filteredEvents = historyEvents.filter((event) => {
     const matchesSearch = event.title.toLowerCase().includes(searchQuery.toLowerCase())
-
     if (activeFilter === "all") return matchesSearch;
-    if (activeFilter === "attended") return matchesSearch && event.status === "attended";
-    if (activeFilter === "missed") return matchesSearch && event.status === "missed";
-    if (activeFilter === "registered") return matchesSearch && event.status === "registered";
-
-    return matchesSearch
+    return matchesSearch && event.status === activeFilter;
   })
 
   const getStatusBadge = (status: string) => {
@@ -144,8 +144,14 @@ export function EventHistoryPage() {
         )
       case "missed":
         return (
-          <span className="px-2 py-0.5 md:px-2.5 md:py-1 bg-[#f5f5f5] text-[#86868b] text-[9px] md:text-xs font-medium rounded-full">
+          <span className="px-2 py-0.5 md:px-2.5 md:py-1 bg-orange-50 text-orange-600 text-[9px] md:text-xs font-medium rounded-full">
             Missed
+          </span>
+        )
+      case "cancelled":
+        return (
+          <span className="px-2 py-0.5 md:px-2.5 md:py-1 bg-[#f5f5f5] text-[#86868b] text-[9px] md:text-xs font-medium rounded-full">
+            Cancelled
           </span>
         )
       case "registered":
@@ -172,7 +178,7 @@ export function EventHistoryPage() {
     try {
       await api.cancelRsvp(eventId)
       setHistoryEvents(prev => prev.map(ev =>
-        ev.id === eventId ? { ...ev, status: 'missed' } : ev
+        ev.id === eventId ? { ...ev, status: 'cancelled' } : ev
       ))
     } catch (err: any) {
       alert(err.message || 'Failed to cancel registration')
@@ -255,11 +261,20 @@ export function EventHistoryPage() {
           <button
             onClick={() => setActiveFilter("missed")}
             className={`px-3 py-1.5 md:px-4 md:py-2 rounded-full text-[11px] md:text-sm font-medium whitespace-nowrap transition-all ${activeFilter === "missed"
+              ? "bg-orange-50 text-orange-600 border border-orange-300"
+              : "bg-white text-orange-600 border border-orange-100 hover:border-orange-300"
+              }`}
+          >
+            Missed
+          </button>
+          <button
+            onClick={() => setActiveFilter("cancelled")}
+            className={`px-3 py-1.5 md:px-4 md:py-2 rounded-full text-[11px] md:text-sm font-medium whitespace-nowrap transition-all ${activeFilter === "cancelled"
               ? "bg-[#f5f5f5] text-[#86868b] border border-[#86868b]"
               : "bg-white text-[#86868b] border border-[#e5e5e7] hover:border-[#86868b]"
               }`}
           >
-            Missed
+            Cancelled
           </button>
         </div>
 
@@ -271,7 +286,7 @@ export function EventHistoryPage() {
             >
               <button
                 onClick={() => { if (event.status === "attended") window.location.href = `/events/${event.id}/showcase` }}
-                disabled={event.status === "missed" || event.status === "registered"}
+                disabled={event.status === "missed" || event.status === "registered" || event.status === "cancelled"}
                 className="flex items-center gap-3 md:gap-4 flex-1 min-w-0 text-left disabled:cursor-default"
               >
                 <div className="w-14 h-14 md:w-16 md:h-16 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
