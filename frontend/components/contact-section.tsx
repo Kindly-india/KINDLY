@@ -23,7 +23,7 @@ export function ContactSection() {
   return (
     // Increased mobile padding (py-16) so it doesn't feel like an afterthought
     <section id="contact" className="bg-[#1d1d1f] py-16 md:py-16">
-      <div className="max-w-245 mx-auto px-6 md:px-6">
+      <div className="max-w-5xl mx-auto px-6 md:px-6">
         
         {/* Top CTA */}
         <div className="text-center pb-12 md:pb-12 border-b border-[#424245]">

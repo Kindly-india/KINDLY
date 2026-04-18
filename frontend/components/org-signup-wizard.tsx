@@ -205,7 +205,7 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
         </div>
 
         <div className="mt-3 flex items-start md:items-center justify-center px-4 md:px-6 pt-2 md:pt-24 pb-8 md:pb-20">
-          <div className="w-full max-w-90 md:max-w-125 relative">
+          <div className="w-full max-w-sm md:max-w-lg relative">
             {/* Decorative blur elements */}
             <div className="absolute -top-8 -left-8 md:-top-10 md:-left-10 w-16 h-16 md:w-24 md:h-24 bg-gradient-to-br from-[#ffecd2]/40 to-[#fcb69f]/40 rounded-full blur-2xl" />
             <div className="absolute -bottom-8 -right-8 md:-bottom-10 md:-right-10 w-20 h-20 md:w-28 md:h-28 bg-gradient-to-br from-[#a8edea]/40 to-[#fed6e3]/40 rounded-full blur-2xl" />
@@ -311,7 +311,7 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
           <Sparkles className="w-7 h-7 text-[#f59e0b]" />
         </div>
 
-        <div className="w-full max-w-85 md:max-w-110 relative">
+        <div className="w-full max-w-sm md:max-w-md relative">
           <div className="absolute -top-8 -left-8 md:-top-10 md:-left-10 w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-[#ffecd2]/40 to-[#fcb69f]/40 rounded-full blur-2xl" />
           <div className="absolute -bottom-8 -right-8 md:-bottom-10 md:-right-10 w-20 h-20 md:w-24 md:h-24 bg-gradient-to-br from-[#a8edea]/40 to-[#fed6e3]/40 rounded-full blur-2xl" />
 
@@ -389,7 +389,7 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
       </div>
 
       <div className="flex items-start justify-center px-4 md:px-6 pt-2 md:pt-24 pb-8 md:pb-20">
-        <div className="w-full max-w-90 md:max-w-125 relative">
+        <div className="w-full max-w-sm md:max-w-lg relative">
           <div className="absolute -top-8 -left-8 md:-top-10 md:-left-10 w-16 h-16 md:w-24 md:h-24 bg-gradient-to-br from-[#ffecd2]/40 to-[#fcb69f]/40 rounded-full blur-2xl" />
           <div className="absolute -bottom-8 -right-8 md:-bottom-10 md:-right-10 w-20 h-20 md:w-28 md:h-28 bg-gradient-to-br from-[#a8edea]/40 to-[#fed6e3]/40 rounded-full blur-2xl" />
 

@@ -63,7 +63,7 @@ export function TopNav() {
 
   return (
     <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-[#f5f5f7]">
-      <div className="max-w-300 mx-auto px-4 md:px-8 h-12 md:h-14 flex items-center justify-between relative">
+      <div className="max-w-7xl mx-auto px-4 md:px-8 h-12 md:h-14 flex items-center justify-between relative">
         
         {/* 2nd Problem Fixed: Logo now directs to Home screen */}
         <Link href="/home" className="hover:opacity-80 transition-opacity">

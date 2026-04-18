@@ -292,7 +292,7 @@ export function VolunteerHomePage() {
           <Leaf className="w-4 h-4 md:w-5 md:h-5 text-[#10b981]" />
         </div>
 
-        <div className="max-w-300 mx-auto px-4 md:px-8 text-center relative">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 text-center relative">
           <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white rounded-full shadow-sm mb-4 md:mb-6 max-w-full">
             <span className="w-1.5 h-1.5 md:w-2 md:h-2 bg-emerald-500 rounded-full animate-pulse shrink-0" />
             <span className="text-[11px] md:text-[13px] text-[#1d1d1f] font-medium truncate">
@@ -340,7 +340,7 @@ export function VolunteerHomePage() {
 
 {/* Main Event Feed */}
       <section className="bg-[#f5f5f7] py-6 md:py-12">
-        <div className="max-w-300 mx-auto px-4 md:px-8">
+        <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="mb-4 md:mb-8 flex justify-between items-end">
             <div>
               <h2 className="text-[20px] md:text-[36px] font-bold text-[#1d1d1f] tracking-tight">Registered Events</h2>
@@ -418,7 +418,7 @@ export function VolunteerHomePage() {
 
       {/* Impact Section */}
       <section className="bg-gradient-to-br from-[#f0fdf4] via-[#ecfdf5] to-[#d1fae5] py-8 md:py-16">
-        <div className="max-w-300 mx-auto px-4 md:px-8">
+        <div className="max-w-7xl mx-auto px-4 md:px-8">
           <h2 className="text-[24px] md:text-[40px] font-bold text-[#1d1d1f] tracking-tight mb-6 md:mb-10">Your Impact.</h2>
 
           <div className="flex flex-col md:flex-row items-center gap-6 md:gap-12">
@@ -485,7 +485,7 @@ export function VolunteerHomePage() {
 
       {/* Stories Section */}
       <section className="bg-gradient-to-br from-[#fef7f0] via-[#fef5f0] to-[#fdf2f8] py-8 md:py-16 overflow-hidden">
-        <div className="max-w-300 mx-auto px-4 md:px-8">
+        <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-[20px] md:text-[36px] font-bold text-[#1d1d1f]">Stories from Nashik.</h2>
             <div className="flex gap-2">
@@ -523,7 +523,7 @@ export function VolunteerHomePage() {
 
       {/* CTA Section */}
       <section className="bg-[#1d1d1f] py-10 md:py-20">
-        <div className="max-w-175 mx-auto px-4 md:px-8 text-center">
+        <div className="max-w-2xl mx-auto px-4 md:px-8 text-center">
           <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl bg-gradient-to-br from-[#f59e0b] to-[#d97706] flex items-center justify-center mx-auto mb-4 md:mb-5">
             <Heart className="w-6 h-6 md:w-7 md:h-7 text-white fill-white" />
           </div>
@@ -538,7 +538,7 @@ export function VolunteerHomePage() {
 
       {/* Footer / Contact Section */}
       <footer className="bg-[#1d1d1f] border-t border-[#424245] py-8 md:py-12">
-        <div className="max-w-300 mx-auto px-4 md:px-8">
+        <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-10">
             <div>
               <h4 className="text-[10px] md:text-[11px] font-semibold text-[#86868b] uppercase tracking-wider mb-3">

@@ -7,10 +7,12 @@ import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from './dto/optional-jwt-auth.guard'; // 👈 IMPORT THIS
+import { EmailModule } from '../email/email.module';
 
 @Module({
   imports: [
     SupabaseModule,
+    EmailModule,
     PassportModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET,

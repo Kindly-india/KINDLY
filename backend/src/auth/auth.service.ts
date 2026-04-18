@@ -1,11 +1,15 @@
 import { Injectable, ConflictException, BadRequestException } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
+import { EmailService } from '../email/email.service';
 import { VolunteerSignupDto } from './dto/volunteer-signup.dto';
 import { OrganizationSignupDto } from './dto/organization-signup.dto';
 
 @Injectable()
 export class AuthService {
-  constructor(private supabaseService: SupabaseService) { }
+  constructor(
+    private supabaseService: SupabaseService,
+    private emailService: EmailService,
+  ) { }
 
   async signupVolunteer(dto: VolunteerSignupDto) {
     const supabase = this.supabaseService.getClient();
@@ -66,6 +70,9 @@ export class AuthService {
         'Failed to create volunteer profile. Please try again or contact support.'
       );
     }
+
+    // Fire-and-forget — email failure must never break signup
+    this.emailService.sendWelcomeEmail(dto.email, dto.fullName, 'volunteer').catch(() => {});
 
     return {
       message: 'Signup successful. Please check your email to verify your account.',
@@ -136,6 +143,9 @@ export class AuthService {
       await supabase.auth.admin.deleteUser(authData.user.id);
       throw new BadRequestException('Failed to create organization profile');
     }
+
+    // Fire-and-forget — email failure must never break signup
+    this.emailService.sendWelcomeEmail(dto.email, dto.name, 'org').catch(() => {});
 
     return {
       message: 'Organization application submitted. Please check your email to verify your account.',

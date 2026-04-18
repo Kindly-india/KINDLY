@@ -1,10 +1,14 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
+import { EmailService } from '../email/email.service';
 import { CreateEventDto } from './dto/create-event.dto';
 
 @Injectable()
 export class EventService {
-  constructor(private supabaseService: SupabaseService) { }
+  constructor(
+    private supabaseService: SupabaseService,
+    private emailService: EmailService,
+  ) { }
 
   async uploadEventImage(userId: string, file: Express.Multer.File) {
     const supabase = this.supabaseService.getClient();
@@ -603,6 +607,9 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
 
     if (updateError) throw updateError;
 
+    // Fire-and-forget — email every RSVP'd volunteer about the cancellation
+    this.sendCancellationEmails(supabase, eventId, updatedEvent).catch(() => {});
+
     return {
       message: 'Event cancelled successfully',
       event: updatedEvent,
@@ -655,6 +662,9 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
       .update({ status: 'missed' })
       .eq('event_id', eventId)
       .eq('status', 'registered');
+
+    // Fire-and-forget — email every checked-in volunteer that their hours are verified
+    this.sendImpactEmails(supabase, eventId, event).catch(() => {});
 
     return { message: 'Event marked as completed', event };
   }
@@ -743,10 +753,38 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
       throw error;
     }
 
+    // Fire-and-forget RSVP confirmation — fetch details then send
+    this.sendRsvpEmail(supabase, userId, eventId).catch(() => {});
+
     return {
       message: 'Successfully registered for event',
       registration: data,
     };
+  }
+
+  private async sendRsvpEmail(supabase: any, userId: string, eventId: string) {
+    const [userResult, eventResult] = await Promise.all([
+      supabase.auth.admin.getUserById(userId),
+      supabase.from('events').select('title, event_date, location').eq('id', eventId).maybeSingle(),
+    ]);
+
+    const email = userResult.data?.user?.email;
+    const event = eventResult.data;
+
+    if (!email || !event) return;
+
+    const { data: volProfile } = await supabase
+      .from('volunteer_profiles')
+      .select('full_name')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    const name = volProfile?.full_name ?? 'Volunteer';
+    const eventDate = event.event_date
+      ? new Date(event.event_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
+      : '';
+
+    await this.emailService.sendRSVPConfirmation(email, name, event.title, eventDate, event.location ?? '');
   }
 
   async sendBroadcast(userId: string, eventId: string, message: string) {
@@ -1050,5 +1088,66 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
     if (error) throw error;
 
     return { message: 'Event approved and published!', event: updatedEvent };
+  }
+
+  private async sendCancellationEmails(supabase: any, eventId: string, event: any) {
+    const { data: regs } = await supabase
+      .from('event_registrations')
+      .select('volunteer_profiles(user_id, full_name)')
+      .eq('event_id', eventId)
+      .in('status', ['registered', 'checked_in']);
+
+    if (!regs?.length) return;
+
+    const eventDate = event.event_date
+      ? new Date(event.event_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
+      : '';
+
+    await Promise.all(
+      regs.map(async (reg: any) => {
+        const profile = reg.volunteer_profiles;
+        if (!profile?.user_id) return;
+        const { data: userResult } = await supabase.auth.admin.getUserById(profile.user_id);
+        const email = userResult?.user?.email;
+        if (!email) return;
+        await this.emailService.sendEventCancellation(
+          email,
+          profile.full_name ?? 'Volunteer',
+          event.title ?? 'Your event',
+          eventDate,
+          event.location ?? '',
+        );
+      }),
+    );
+  }
+
+  private async sendImpactEmails(supabase: any, eventId: string, event: any) {
+    const { data: regs } = await supabase
+      .from('event_registrations')
+      .select('volunteer_profiles(user_id, full_name)')
+      .eq('event_id', eventId)
+      .eq('status', 'completed');
+
+    if (!regs?.length) return;
+
+    const start = new Date(`${event.event_date}T${event.start_time}`);
+    const end = new Date(`${event.event_date}T${event.end_time}`);
+    const hours = Math.max(1, Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60)));
+
+    await Promise.all(
+      regs.map(async (reg: any) => {
+        const profile = reg.volunteer_profiles;
+        if (!profile?.user_id) return;
+        const { data: userResult } = await supabase.auth.admin.getUserById(profile.user_id);
+        const email = userResult?.user?.email;
+        if (!email) return;
+        await this.emailService.sendImpactLogged(
+          email,
+          profile.full_name ?? 'Volunteer',
+          event.title ?? 'your event',
+          hours,
+        );
+      }),
+    );
   }
 }

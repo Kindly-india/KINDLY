@@ -36,7 +36,7 @@ export function Navigation() {
         scrolled ? "bg-white/95 backdrop-blur-md border-b border-[#f5f5f7]" : "bg-transparent",
       )}
     >
-      <div className="max-w-300 mx-auto px-4 md:px-8">
+      <div className="max-w-7xl mx-auto px-4 md:px-8">
         <div className="flex items-center justify-between h-12 md:h-14">
           
           {/* Left: Logo (Always visible) */}

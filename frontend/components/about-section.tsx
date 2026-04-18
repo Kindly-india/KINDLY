@@ -6,7 +6,7 @@ export function AboutSection() {
   return (
     // Boosted vertical padding for mobile (py-16)
     <section id="about" className="bg-white py-16 md:py-24">
-      <div className="max-w-245 mx-auto px-6 md:px-6">
+      <div className="max-w-5xl mx-auto px-6 md:px-6">
         
         {/* Header */}
         <div className="text-center mb-8 md:mb-16">
@@ -20,7 +20,7 @@ export function AboutSection() {
         </div>
 
         {/* Mission Text: Bumped to 16px (standard mobile body size) */}
-        <p className="text-[16px] md:text-[21px] text-[#1d1d1f] text-center max-w-170 mx-auto leading-relaxed mb-12 md:mb-20 px-2">
+        <p className="text-[16px] md:text-[21px] text-[#1d1d1f] text-center max-w-2xl mx-auto leading-relaxed mb-12 md:mb-20 px-2">
           We're on a mission to connect passionate volunteers with organisations that are making real change. Every
           connection sparks a difference.
         </p>

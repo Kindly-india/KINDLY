@@ -223,7 +223,7 @@ export function OrgHomePage() {
           <Heart className="w-4 h-4 md:w-5 md:h-5 text-[#ff6b6b]" />
         </div>
 
-        <div className="max-w-300 mx-auto px-4 md:px-8 text-center relative">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 text-center relative">
           <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white rounded-full shadow-sm mb-4 md:mb-6">
             <span className="w-1.5 h-1.5 md:w-2 md:h-2 bg-emerald-500 rounded-full animate-pulse" />
             <span className="text-[11px] md:text-[13px] text-[#1d1d1f] font-medium">
@@ -267,7 +267,7 @@ export function OrgHomePage() {
 
       {/* Quick Actions (Unchanged) */}
       <section className="bg-white py-6 md:py-10 border-b border-[#f5f5f7]">
-        <div className="max-w-300 mx-auto px-4 md:px-8">
+        <div className="max-w-7xl mx-auto px-4 md:px-8">
           <h2 className="text-[18px] md:text-[24px] font-bold text-[#1d1d1f] mb-4">Quick Actions</h2>
           <div className="grid grid-cols-2 gap-3 md:gap-4">
             <Link href="/org-events/create" className="bg-gradient-to-br from-[#f0fdf4] to-[#dcfce7] rounded-xl md:rounded-2xl p-4 md:p-6 hover:shadow-md transition-all group border border-[#bbf7d0]">
@@ -290,7 +290,7 @@ export function OrgHomePage() {
 
 {/* Your Events Section (Updated with 16:9 and Fixed Heights) */}
       <section className="bg-[#f5f5f7] py-6 md:py-12">
-        <div className="max-w-300 mx-auto px-4 md:px-8">
+        <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="flex items-center justify-between mb-4 md:mb-6">
             <div>
               <h2 className="text-[20px] md:text-[36px] font-bold text-[#1d1d1f] tracking-tight">Your Events</h2>
@@ -410,7 +410,7 @@ export function OrgHomePage() {
 
       {/* Recent Activity Section (Unchanged) */}
       <section className="bg-white py-6 md:py-10">
-        <div className="max-w-300 mx-auto px-4 md:px-8">
+        <div className="max-w-7xl mx-auto px-4 md:px-8">
           <h2 className="text-[18px] md:text-[24px] font-bold text-[#1d1d1f] mb-4">Recent Activity</h2>
 
           {recentActivity.length === 0 ? (

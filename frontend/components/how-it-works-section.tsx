@@ -6,7 +6,7 @@ export function HowItWorksSection() {
   return (
     // Boosted vertical padding for mobile (py-16)
     <section className="bg-gradient-to-b from-[#f0fdf4] to-[#ecfdf5] py-16 md:py-24">
-      <div className="max-w-245 mx-auto px-6 md:px-6">
+      <div className="max-w-5xl mx-auto px-6 md:px-6">
         
         <div className="text-center mb-12 md:mb-16">
           {/* Subtitle: 12px for mobile readability */}
