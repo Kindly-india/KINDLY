@@ -97,6 +97,7 @@ export default function NotificationsPage() {
   const router = useRouter()
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
   // Track the action state per notification id
   const [requestStates, setRequestStates] = useState<Record<string, RequestState>>({})
 
@@ -109,7 +110,7 @@ export default function NotificationsPage() {
         ])
         setNotifications(data)
       } catch {
-        // fail silently — user just sees empty state
+        setLoadError(true)
       } finally {
         setLoading(false)
       }
@@ -121,7 +122,12 @@ export default function NotificationsPage() {
     setRequestStates(prev => ({ ...prev, [notifId]: 'loading' }))
     try {
       await api.acceptFollowRequest(actorId)
+      // Belt-and-suspenders: Phase 2 backend already deleted this notification,
+      // but call again in case that cleanup failed.
+      api.deleteNotification(notifId).catch(() => {})
       setRequestStates(prev => ({ ...prev, [notifId]: 'accepted' }))
+      // Brief delay so the user sees "Accepted" before the row disappears
+      setTimeout(() => setNotifications(prev => prev.filter(n => n.id !== notifId)), 1500)
     } catch {
       setRequestStates(prev => ({ ...prev, [notifId]: 'idle' }))
     }
@@ -131,7 +137,9 @@ export default function NotificationsPage() {
     setRequestStates(prev => ({ ...prev, [notifId]: 'loading' }))
     try {
       await api.rejectFollowRequest(actorId)
+      api.deleteNotification(notifId).catch(() => {})
       setRequestStates(prev => ({ ...prev, [notifId]: 'rejected' }))
+      setTimeout(() => setNotifications(prev => prev.filter(n => n.id !== notifId)), 1500)
     } catch {
       setRequestStates(prev => ({ ...prev, [notifId]: 'idle' }))
     }
@@ -165,6 +173,14 @@ export default function NotificationsPage() {
                 </div>
               </div>
             ))}
+          </div>
+        ) : loadError ? (
+          <div className="flex flex-col items-center justify-center pt-24 px-8 text-center">
+            <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mb-4">
+              <Bell className="w-7 h-7 text-red-400" />
+            </div>
+            <p className="text-[15px] font-semibold text-[#1d1d1f] mb-1">Couldn't load notifications</p>
+            <p className="text-[13px] text-[#86868b]">Check your connection and try again.</p>
           </div>
         ) : notifications.length === 0 ? (
           <div className="flex flex-col items-center justify-center pt-24 px-8 text-center">

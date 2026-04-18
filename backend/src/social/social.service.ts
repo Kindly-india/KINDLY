@@ -100,7 +100,14 @@ export class SocialService {
       .eq('follower_id', followerId)
       .eq('following_id', targetId);
 
-    if (error) throw error;
+    if (error) throw new BadRequestException(error.message);
+
+    // Clean up any pending follow_request notification from this actor (no-op if none)
+    await client.from('notifications').delete()
+      .eq('recipient_id', targetId)
+      .eq('actor_id', followerId)
+      .eq('type', 'follow_request');
+
     return { message: 'Unfollowed' };
   }
 
@@ -133,9 +140,22 @@ export class SocialService {
 
     if (!existing) throw new NotFoundException('Follow request not found');
 
-    await client.from('follows').update({ status: 'accepted' }).eq('id', existing.id);
+    const { data: updated, error: updateError } = await client
+      .from('follows')
+      .update({ status: 'accepted' })
+      .eq('id', existing.id)
+      .select('id');
 
-    // Notify the requester that their request was accepted
+    if (updateError) throw new BadRequestException(updateError.message);
+    if (!updated?.length) throw new NotFoundException('Follow request no longer exists');
+
+    // Clean up the source follow_request notification
+    await client.from('notifications').delete()
+      .eq('recipient_id', currentUserId)
+      .eq('actor_id', requesterId)
+      .eq('type', 'follow_request');
+
+    // Notify the requester their request was accepted
     this.notifications.createNotification(
       requesterId,
       currentUserId,
@@ -149,14 +169,29 @@ export class SocialService {
   async rejectFollowRequest(requesterId: string, currentUserId: string) {
     const client = this.supabase.getClient();
 
+    const { data: existing } = await client
+      .from('follows')
+      .select('id')
+      .eq('follower_id', requesterId)
+      .eq('following_id', currentUserId)
+      .eq('status', 'pending')
+      .maybeSingle();
+
+    if (!existing) throw new NotFoundException('Follow request not found or already processed');
+
     const { error } = await client
       .from('follows')
       .delete()
-      .eq('follower_id', requesterId)
-      .eq('following_id', currentUserId)
-      .eq('status', 'pending');
+      .eq('id', existing.id);
 
-    if (error) throw error;
+    if (error) throw new BadRequestException(error.message);
+
+    // Clean up the source follow_request notification
+    await client.from('notifications').delete()
+      .eq('recipient_id', currentUserId)
+      .eq('actor_id', requesterId)
+      .eq('type', 'follow_request');
+
     return { message: 'Follow request rejected' };
   }
 
@@ -170,7 +205,7 @@ export class SocialService {
       .eq('follower_id', followerId)
       .eq('following_id', currentUserId);
 
-    if (error) throw error;
+    if (error) throw new BadRequestException(error.message);
     return { message: 'Follower removed' };
   }
 
@@ -180,6 +215,9 @@ export class SocialService {
     viewerId: string | null,
     client: any,
   ) {
+    // Self-view: always allowed — skip the DB lookup entirely
+    if (viewerId && viewerId === targetUserId) return;
+
     const { data: targetProfile } = await client
       .from('volunteer_profiles')
       .select('is_private')
@@ -188,9 +226,10 @@ export class SocialService {
 
     if (!targetProfile) throw new NotFoundException('User not found');
 
-    const isSelf = viewerId === targetUserId;
-    if (!targetProfile.is_private || isSelf) return;
+    // Public profile: always allowed
+    if (!targetProfile.is_private) return;
 
+    // Private profile: viewer must have an accepted follow
     if (viewerId) {
       const { data: followRecord } = await client
         .from('follows')
@@ -243,7 +282,7 @@ export class SocialService {
     const [profilesResult, statusMap] = await Promise.all([
       client
         .from('volunteer_profiles')
-        .select('user_id, full_name, avatar_url, city, headline')
+        .select('user_id, full_name, avatar_url, city, headline, is_verified')
         .in('user_id', ids),
       this.buildViewerStatusMap(viewerId, ids, client),
     ]);
@@ -272,7 +311,7 @@ export class SocialService {
     const [profilesResult, statusMap] = await Promise.all([
       client
         .from('volunteer_profiles')
-        .select('user_id, full_name, avatar_url, city, headline')
+        .select('user_id, full_name, avatar_url, city, headline, is_verified')
         .in('user_id', ids),
       this.buildViewerStatusMap(viewerId, ids, client),
     ]);
@@ -283,5 +322,69 @@ export class SocialService {
     }));
 
     return { following };
+  }
+
+  // --- SEARCH HISTORY ---
+
+  async getSearchHistory(userId: string) {
+    const client = this.supabase.getClient();
+    const { data, error } = await client
+      .from('search_history')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(10);
+    if (error) throw error;
+    return data ?? [];
+  }
+
+  async saveSearchHistory(userId: string, item: {
+    result_id: string;
+    result_type: string;
+    result_name: string;
+    result_image?: string | null;
+  }) {
+    const client = this.supabase.getClient();
+    // Remove existing entry for same result to re-insert as most recent
+    await client
+      .from('search_history')
+      .delete()
+      .eq('user_id', userId)
+      .eq('result_id', item.result_id);
+
+    const { data, error } = await client
+      .from('search_history')
+      .insert({
+        user_id: userId,
+        result_id: item.result_id,
+        result_type: item.result_type,
+        result_name: item.result_name,
+        result_image: item.result_image ?? null,
+      })
+      .select()
+      .single();
+    if (error) throw new BadRequestException(error.message);
+    return data;
+  }
+
+  async clearSearchHistory(userId: string) {
+    const client = this.supabase.getClient();
+    const { error } = await client
+      .from('search_history')
+      .delete()
+      .eq('user_id', userId);
+    if (error) throw new BadRequestException(error.message);
+    return { message: 'History cleared' };
+  }
+
+  async removeSearchHistoryItem(userId: string, id: string) {
+    const client = this.supabase.getClient();
+    const { error } = await client
+      .from('search_history')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', userId);
+    if (error) throw new BadRequestException(error.message);
+    return { message: 'Item removed' };
   }
 }

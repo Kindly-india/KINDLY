@@ -2,11 +2,8 @@
 
 import { useEffect, useState } from "react"
 import { api } from "@/lib/api"
-import Link from "next/link"
-import Image from "next/image" // ✅ Added
 import { 
-  Loader2, 
-  TrendingUp, 
+  Loader2,
   Award, 
   Clock, 
   Heart, 
@@ -14,11 +11,7 @@ import {
   Zap, 
   Globe, 
   Download, 
-  Share2, 
-  ArrowLeft,
-  Menu, // ✅ Added
-  X,    // ✅ Added
-  Sparkles // ✅ Added
+  Share2,
 } from "lucide-react"
 import { 
   BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, 
@@ -34,7 +27,6 @@ export default function VolunteerImpactPage() {
   const [loading, setLoading] = useState(true)
   
   // ✅ Added for Navbar
-  const [menuOpen, setMenuOpen] = useState(false)
   const [profile, setProfile] = useState<any>(null)
 
   const [stats, setStats] = useState({

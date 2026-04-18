@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import {
-  MapPin, Calendar, ChevronLeft, Loader2, CheckCircle2, Edit2,
+  MapPin, Calendar, ChevronLeft, Loader2, Edit2,
   Sparkles, Trophy, Mail, Phone, UserPlus,
   UserMinus, Download, Share2, Linkedin, Instagram, Globe,
   Home, Check, Quote, Building2, Languages, GraduationCap,
@@ -12,6 +12,7 @@ import {
 } from "lucide-react"
 import { api } from "@/lib/api"
 import { cn } from "@/lib/utils"
+import { VerifiedBadge } from "@/components/verified-badge"
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from "recharts"
 
 // --- SUB-COMPONENTS ---
@@ -205,10 +206,12 @@ function FollowUserButton({ user, onStatusChange }: {
     user.requester_follow_status ?? 'none'
   )
   const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const handle = async () => {
     if (busy) return
     setBusy(true)
+    setError(null)
     try {
       if (status === 'none') {
         const res = await api.followUser(user.user_id)
@@ -220,26 +223,31 @@ function FollowUserButton({ user, onStatusChange }: {
         setStatus('none')
         onStatusChange(user.user_id, 'none')
       }
-    } catch { /* ignore */ } finally {
+    } catch (err: any) {
+      setError(err.message || 'Failed')
+    } finally {
       setBusy(false)
     }
   }
 
   return (
-    <button
-      onClick={handle}
-      disabled={busy}
-      className={cn(
-        "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all active:scale-95 disabled:opacity-50",
-        status === 'accepted'
-          ? "bg-gray-100 text-gray-700 hover:bg-gray-200"
-          : status === 'pending'
-            ? "bg-gray-100 text-gray-400 cursor-default"
-            : "bg-gray-900 text-white hover:bg-gray-700"
-      )}
-    >
-      {status === 'accepted' ? 'Following' : status === 'pending' ? 'Requested' : 'Follow'}
-    </button>
+    <div className="flex flex-col items-end gap-0.5">
+      <button
+        onClick={handle}
+        disabled={busy}
+        className={cn(
+          "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all active:scale-95 disabled:opacity-50",
+          status === 'accepted'
+            ? "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            : status === 'pending'
+              ? "bg-gray-100 text-gray-400 cursor-pointer"
+              : "bg-gray-900 text-white hover:bg-gray-700"
+        )}
+      >
+        {status === 'accepted' ? 'Following' : status === 'pending' ? 'Requested' : 'Follow'}
+      </button>
+      {error && <p className="text-[10px] text-red-500 max-w-[80px] text-right leading-tight">{error}</p>}
+    </div>
   )
 }
 
@@ -249,7 +257,8 @@ function FollowListModal({ type, initialUsers, onClose, isOwnProfilePage }: {
   onClose: () => void
   isOwnProfilePage: boolean
 }) {
-  const [users, setUsers] = useState(initialUsers)
+  const [users, setUsers] = useState(initialUsers ?? [])
+  const [removeError, setRemoveError] = useState<string | null>(null)
 
   if (!type) return null
   const title = type === 'followers' ? 'Followers' : 'Following'
@@ -258,7 +267,10 @@ function FollowListModal({ type, initialUsers, onClose, isOwnProfilePage }: {
     try {
       await api.removeFollower(followerId)
       setUsers(prev => prev.filter(u => u.user_id !== followerId))
-    } catch { /* ignore */ }
+    } catch (err: any) {
+      setRemoveError(err.message || 'Failed to remove')
+      setTimeout(() => setRemoveError(null), 3000)
+    }
   }
 
   const handleStatusChange = (userId: string, newStatus: 'none' | 'pending' | 'accepted') => {
@@ -281,6 +293,9 @@ function FollowListModal({ type, initialUsers, onClose, isOwnProfilePage }: {
           </button>
         </div>
 
+        {removeError && (
+          <p className="text-xs text-red-600 px-5 py-2 bg-red-50 border-b border-red-100">{removeError}</p>
+        )}
         <div className="overflow-y-auto flex-1">
           {users.length === 0 ? (
             <div className="py-14 text-center text-gray-400 text-sm">No {title.toLowerCase()} yet.</div>
@@ -299,7 +314,10 @@ function FollowListModal({ type, initialUsers, onClose, isOwnProfilePage }: {
                     }
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 truncate">{u.full_name}</p>
+                    <div className="flex items-center gap-1">
+                      <p className="text-sm font-semibold text-gray-900 truncate">{u.full_name}</p>
+                      {u.is_verified && <VerifiedBadge />}
+                    </div>
                     <p className="text-xs text-gray-500 truncate">{u.city || u.headline || 'Volunteer'}</p>
                   </div>
                 </Link>
@@ -343,6 +361,8 @@ export default function VolunteerProfile() {
 
   const [coverError, setCoverError] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [followLoading, setFollowLoading] = useState(false)
+  const [errorToast, setErrorToast] = useState<string | null>(null)
 
   useEffect(() => {
     let isMounted = true;
@@ -398,13 +418,18 @@ export default function VolunteerProfile() {
     return () => { isMounted = false; }
   }, [id])
 
+  const showError = (msg: string) => {
+    setErrorToast(msg)
+    setTimeout(() => setErrorToast(null), 3000)
+  }
+
   const handleFollow = async () => {
-    if (!profile?.user_id) return
+    if (!profile?.user_id || followLoading) return
     if (followStatus === 'accepted') {
-      // Show confirmation sheet — actual unfollow happens in executeUnfollow
       setShowUnfollowConfirm(true)
       return
     }
+    setFollowLoading(true)
     try {
       if (followStatus === 'pending') {
         await api.unfollowUser(profile.user_id)
@@ -418,7 +443,9 @@ export default function VolunteerProfile() {
         }
       }
     } catch (err: any) {
-      alert(`Follow failed: ${err.message || "Unknown error"}`);
+      showError(err.message || 'Something went wrong')
+    } finally {
+      setFollowLoading(false)
     }
   }
 
@@ -429,7 +456,7 @@ export default function VolunteerProfile() {
       setFollowStatus('none')
       setProfile((prev: any) => ({ ...prev, followers_count: Math.max(0, (prev.followers_count || 0) - 1) }))
     } catch (err: any) {
-      alert(`Unfollow failed: ${err.message || "Unknown error"}`)
+      showError(err.message || 'Failed to unfollow')
     }
   }
 
@@ -438,12 +465,18 @@ export default function VolunteerProfile() {
     try {
       if (type === 'followers') {
         const res = await api.getFollowers(profile.user_id)
-        setFollowModal({ type, users: res.followers })
+        if (res.error === 'forbidden') return
+        if (res.error) { showError('Could not load followers'); return }
+        setFollowModal({ type, users: res.followers ?? [] })
       } else {
         const res = await api.getFollowing(profile.user_id)
-        setFollowModal({ type, users: res.following })
+        if (res.error === 'forbidden') return
+        if (res.error) { showError('Could not load following'); return }
+        setFollowModal({ type, users: res.following ?? [] })
       }
-    } catch { /* silently fail — modal just won't open */ }
+    } catch {
+      showError('Could not load list')
+    }
   }
 
   const handleShare = async () => {
@@ -528,16 +561,19 @@ export default function VolunteerProfile() {
               !isViewerOrg && (
                 <button
                   onClick={handleFollow}
+                  disabled={followLoading}
                   className={cn(
-                    "px-6 py-2 rounded-full text-sm font-bold transition-all shadow-sm active:scale-95 flex items-center gap-2",
+                    "px-6 py-2 rounded-full text-sm font-bold transition-all shadow-sm active:scale-95 flex items-center gap-2 disabled:opacity-60",
                     followStatus === 'accepted'
                       ? "bg-white text-gray-700 border border-gray-300 hover:border-red-300 hover:text-red-600"
                       : followStatus === 'pending'
-                        ? "bg-gray-100 text-gray-500 border border-gray-200 cursor-default"
+                        ? "bg-gray-100 text-gray-500 border border-gray-200 cursor-pointer"
                         : "bg-black text-white hover:bg-gray-800"
                   )}
                 >
-                  {followStatus === 'accepted' ? (
+                  {followLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : followStatus === 'accepted' ? (
                     <><UserMinus className="w-4 h-4" /> Following</>
                   ) : followStatus === 'pending' ? (
                     <><Clock className="w-4 h-4" /> Requested</>
@@ -585,12 +621,39 @@ export default function VolunteerProfile() {
               <div className="mb-6">
                 <div className="flex items-center gap-2 mb-1">
                   <h1 className="text-2xl font-bold text-gray-900">{profile?.full_name}</h1>
-                  {profile?.is_verified && <CheckCircle2 className="w-5 h-5 text-blue-500 fill-blue-50" />}
+                  {profile?.is_verified && <VerifiedBadge size="lg" />}
                 </div>
                 <p className="text-gray-600 font-medium">{profile?.headline || "Volunteer"}</p>
                 {profile?.city && (
                   <div className="flex items-center gap-1 text-sm text-gray-500 mt-2">
                     <MapPin className="w-4 h-4" /> {profile.city}
+                  </div>
+                )}
+                {!isOwnProfile && profile?.mutual_followers?.count > 0 && (
+                  <div className="flex items-center gap-2 mt-3">
+                    <div className="flex -space-x-2 shrink-0">
+                      {profile.mutual_followers.preview.map((u: any, i: number) => (
+                        <div
+                          key={u.user_id}
+                          className="w-6 h-6 rounded-full border-2 border-white bg-gray-200 overflow-hidden"
+                          style={{ zIndex: profile.mutual_followers.preview.length - i }}
+                        >
+                          {u.avatar_url
+                            ? <img src={u.avatar_url} className="w-full h-full object-cover" alt={u.full_name} />
+                            : <div className="w-full h-full flex items-center justify-center text-[7px] font-bold text-gray-500 bg-gray-100">{u.full_name?.charAt(0)}</div>
+                          }
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-xs text-gray-500 leading-tight">
+                      {profile.mutual_followers.count === 1 ? (
+                        <>Followed by <span className="font-semibold text-gray-700">{profile.mutual_followers.preview[0]?.full_name?.split(' ')[0]}</span></>
+                      ) : profile.mutual_followers.count === 2 ? (
+                        <>Followed by <span className="font-semibold text-gray-700">{profile.mutual_followers.preview[0]?.full_name?.split(' ')[0]}</span> and <span className="font-semibold text-gray-700">{profile.mutual_followers.preview[1]?.full_name?.split(' ')[0]}</span></>
+                      ) : (
+                        <>Followed by <span className="font-semibold text-gray-700">{profile.mutual_followers.preview[0]?.full_name?.split(' ')[0]}</span>, <span className="font-semibold text-gray-700">{profile.mutual_followers.preview[1]?.full_name?.split(' ')[0]}</span> and <span className="font-semibold text-gray-700">{profile.mutual_followers.count - 2} others</span></>
+                      )}
+                    </p>
                   </div>
                 )}
               </div>
@@ -622,12 +685,6 @@ export default function VolunteerProfile() {
                 {profile?.linkedin && <a href={getExternalLink(profile.linkedin)} target="_blank" className="p-2 bg-gray-50 rounded-full hover:bg-blue-600 hover:text-white transition-colors"><Linkedin className="w-5 h-5" /></a>}
                 {profile?.instagram && <a href={getExternalLink(profile.instagram)} target="_blank" className="p-2 bg-gray-50 rounded-full hover:bg-pink-600 hover:text-white transition-colors"><Instagram className="w-5 h-5" /></a>}
                 {profile?.website && <a href={getExternalLink(profile.website)} target="_blank" className="p-2 bg-gray-50 rounded-full hover:bg-gray-200 hover:text-black transition-colors"><Globe className="w-5 h-5" /></a>}
-              </div>
-
-              <div className="mt-6 pt-6 border-t border-gray-100">
-                <button className="w-full py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
-                  <Download className="w-4 h-4" /> Download Resume
-                </button>
               </div>
             </div>
 
@@ -817,6 +874,13 @@ export default function VolunteerProfile() {
           onConfirm={executeUnfollow}
           onCancel={() => setShowUnfollowConfirm(false)}
         />
+      )}
+
+      {/* Error toast */}
+      {errorToast && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[70] bg-gray-900 text-white text-sm px-4 py-2.5 rounded-full shadow-lg pointer-events-none">
+          {errorToast}
+        </div>
       )}
     </div>
   )

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, Query, Param, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Query, Param, Body, UseGuards, Request } from '@nestjs/common';
 import { SocialService } from './social.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { OptionalAuthGuard } from '../auth/guards/optional-auth.guard';
@@ -54,6 +54,31 @@ export class SocialController {
   @Delete('followers/:followerId')
   async removeFollower(@Request() req: any, @Param('followerId') followerId: string) {
     return this.socialService.removeFollower(req.user.id, followerId);
+  }
+
+  // Search history
+  @UseGuards(JwtAuthGuard)
+  @Get('search/recent')
+  async getSearchHistory(@Request() req: any) {
+    return this.socialService.getSearchHistory(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('search/recent')
+  async saveSearchHistory(@Request() req: any, @Body() body: any) {
+    return this.socialService.saveSearchHistory(req.user.id, body);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('search/recent')
+  async clearSearchHistory(@Request() req: any) {
+    return this.socialService.clearSearchHistory(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('search/recent/:id')
+  async removeSearchHistoryItem(@Request() req: any, @Param('id') id: string) {
+    return this.socialService.removeSearchHistoryItem(req.user.id, id);
   }
 
   // Followers list (private-gated)

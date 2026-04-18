@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 
 @Injectable()
@@ -21,6 +21,7 @@ export class NotificationsService {
       entity_id: entityId ?? null,
     });
     if (error) {
+      if (error.code === '23505') return; // Duplicate follow_request — partial unique index, ignore
       // Non-fatal — log and move on. Notification failure should never break the triggering action.
       console.error('Failed to create notification:', error.message);
     }
@@ -78,5 +79,16 @@ export class NotificationsService {
 
     if (error) throw error;
     return { message: 'All notifications marked as read' };
+  }
+
+  async deleteNotification(userId: string, notifId: string) {
+    const client = this.supabase.getClient();
+    const { error } = await client
+      .from('notifications')
+      .delete()
+      .eq('id', notifId)
+      .eq('recipient_id', userId); // owner-scoped: can only delete your own
+    if (error) throw new BadRequestException(error.message);
+    return { message: 'Notification deleted' };
   }
 }

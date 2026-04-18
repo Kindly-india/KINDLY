@@ -1,31 +1,24 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import Image from "next/image"
+import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
-import { useRouter, usePathname } from "next/navigation"
+import { useRouter } from "next/navigation"
 import {
   Search,
   ArrowUpRight,
-  CheckCircle2,
   ChevronRight,
   Loader2,
   Clock,
   User,
-  Menu,
-  X,
-  Sparkles,
-  Calendar,
-  BarChart3,
-  Users,
   RefreshCw,
-  ExternalLink
+  ExternalLink,
+  X,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { api } from "@/lib/api"
-import { supabase } from "@/lib/supabase"
+import { VerifiedBadge } from "@/components/verified-badge"
 
-// --- CATEGORY IMAGE MAP (Expanded for Variety) ---
+// --- CATEGORY IMAGE MAP ---
 const CATEGORY_IMAGES: Record<string, string[]> = {
   Environment: [
     "https://images.unsplash.com/photo-1618477461853-5f8dd68aa1fd?w=800&auto=format&fit=crop&q=60",
@@ -56,70 +49,61 @@ const CATEGORY_IMAGES: Record<string, string[]> = {
   ],
 }
 
-// Deterministic helper to pick an image based on the article title
 const getImageForStory = (title: string, category: string) => {
   const images = CATEGORY_IMAGES[category] || CATEGORY_IMAGES["Community"]
   let hash = 0
   for (let i = 0; i < title.length; i++) {
     hash = title.charCodeAt(i) + ((hash << 5) - hash)
   }
-  const index = Math.abs(hash) % images.length
-  return images[index]
+  return images[Math.abs(hash) % images.length]
 }
 
 export default function SocialDiscoveryPage() {
   const router = useRouter()
-  const pathname = usePathname()
+  const inputRef = useRef<HTMLInputElement>(null)
+
   const [searchQuery, setSearchQuery] = useState("")
   const [activeTab, setActiveTab] = useState<'all' | 'volunteers' | 'orgs'>('all')
   const [loading, setLoading] = useState(false)
   const [results, setResults] = useState<any[]>([])
-  const [isSearching, setIsSearching] = useState(false)
 
-  // News feed state
+  const [history, setHistory] = useState<any[]>([])
+  const [historyLoading, setHistoryLoading] = useState(true)
+
   const [stories, setStories] = useState<any[]>([])
   const [storiesLoading, setStoriesLoading] = useState(true)
 
-  // Navbar & User State
-  const [menuOpen, setMenuOpen] = useState(false)
-  const [profile, setProfile] = useState<any>(null)
-  const [userType, setUserType] = useState<'volunteer' | 'org' | null>(null)
+  const isSearching = searchQuery.trim().length > 0
 
-  // --- INITIALIZATION & AUTH CHECK ---
+  // Load search history on mount
   useEffect(() => {
-    const initializePage = async () => {
-      // 1. Authenticate with Supabase
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
+    api.getSearchHistory()
+      .then(setHistory)
+      .catch(() => {})
+      .finally(() => setHistoryLoading(false))
+  }, [])
 
-      // 2. Redirect to login if unauthorized
-      if (!user || authError) {
-        router.push('/login')
-        return // Stop execution, preventing unauthenticated API calls
-      }
-
-      // 3. If authenticated, fetch User Profile
-      try {
-        const res = await api.getUserProfile()
-        if (res?.profile) {
-          setProfile(res.profile)
-          if ('org_type' in res.profile) {
-            setUserType('org')
-          } else {
-            setUserType('volunteer')
-          }
-        }
-      } catch (e) {
-        console.error("Failed to fetch profile", e)
-      }
-
-      // 4. Finally, trigger the stories to load
-      loadStories()
+  // Debounced live search
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setResults([])
+      setLoading(false)
+      return
     }
+    setLoading(true)
+    const timer = setTimeout(async () => {
+      try {
+        const data = await api.globalSearch(searchQuery)
+        setResults(data)
+      } catch {
+        setResults([])
+      } finally {
+        setLoading(false)
+      }
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [searchQuery])
 
-    initializePage()
-  }, [router])
-
-  // --- FETCH REAL STORIES ---
   const loadStories = () => {
     setStoriesLoading(true)
     fetch("/api/social-stories")
@@ -129,50 +113,33 @@ export default function SocialDiscoveryPage() {
       .finally(() => setStoriesLoading(false))
   }
 
-  useEffect(() => {
-    loadStories()
-  }, [])
+  useEffect(() => { loadStories() }, [])
 
-  // --- SEARCH HANDLER ---
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!searchQuery.trim()) return
-    setIsSearching(true)
-    setLoading(true)
-    setResults([])
-    try {
-      const data = await api.globalSearch(searchQuery)
-      setResults(data)
-    } catch (err) {
-      console.error("Search failed:", err)
-    } finally {
-      setLoading(false)
-    }
+  const handleResultClick = (item: any) => {
+    api.saveSearchHistory({
+      result_id: item.id,
+      result_type: item.type,
+      result_name: item.name,
+      result_image: item.image ?? null,
+    }).catch(() => {})
+    setHistory(prev => {
+      const filtered = prev.filter(h => h.result_id !== item.id)
+      return [
+        { id: `local-${item.id}`, result_id: item.id, result_type: item.type, result_name: item.name, result_image: item.image },
+        ...filtered,
+      ].slice(0, 10)
+    })
   }
 
-  // Fetch Profile
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const res = await api.getUserProfile()
-        if (res?.profile) {
-          setProfile(res.profile)
-          if ('org_type' in res.profile) {
-            setUserType('org')
-          } else {
-            setUserType('volunteer')
-          }
-        }
-      } catch (e) {
-        console.error("Failed to fetch profile", e)
-      }
-    }
-    fetchUser()
-  }, [])
+  const removeHistoryItem = (id: string) => {
+    api.removeSearchHistoryItem(id).catch(() => {})
+    setHistory(prev => prev.filter(h => h.id !== id))
+  }
 
-  const displayImage = profile?.avatar_url || profile?.logo_url
-  const displayName = profile?.full_name || profile?.name || "User"
-  const displayInitial = displayName ? displayName.charAt(0).toUpperCase() : "U"
+  const clearHistory = () => {
+    api.clearSearchHistory().catch(() => {})
+    setHistory([])
+  }
 
   const displayedResults = results.filter(item => {
     if (activeTab === 'all') return true
@@ -193,42 +160,40 @@ export default function SocialDiscoveryPage() {
     return map[category] || "bg-gray-100 text-gray-700"
   }
 
-  const isActive = (path: string) =>
-    pathname === path ? "text-[#0066cc] font-medium" : "text-[#1d1d1f] hover:text-[#0066cc]"
-
   return (
     <div className="min-h-screen bg-[#f8f9fa] pb-20">
-
-
-      {/* =========================================================
-          MAIN CONTENT AREA (Mobile Optimized)
-         ========================================================= */}
       <div className="max-w-2xl mx-auto px-2 sm:px-4 pt-4 pb-24">
 
         {/* SEARCH BAR */}
-        <div className="mb-6 px-2">
-          <form onSubmit={handleSearch} className="relative group w-full">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-gray-400 group-focus-within:text-black transition-colors" />
+        <div className="mb-4 px-2">
+          <div className="relative group w-full">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-black transition-colors pointer-events-none" />
             <input
+              ref={inputRef}
               type="text"
               placeholder="Search volunteers, orgs..."
               value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value)
-                if (e.target.value === '') { setIsSearching(false); setResults([]) }
-              }}
-              className="w-full h-11 md:h-12 pl-11 pr-4 bg-white border border-gray-200 shadow-sm rounded-2xl md:rounded-full text-[14px] md:text-[15px] outline-none focus:border-gray-400 focus:shadow-md transition-all placeholder:text-gray-400"
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full h-11 pl-11 pr-10 bg-white border border-gray-200 shadow-sm rounded-2xl text-[14px] outline-none focus:border-gray-400 focus:shadow-md transition-all placeholder:text-gray-400"
             />
-          </form>
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-gray-100 transition-colors"
+              >
+                <X className="w-3.5 h-3.5 text-gray-400" />
+              </button>
+            )}
+          </div>
 
           {isSearching && (
-            <div className="flex gap-2 mt-3 animate-in fade-in slide-in-from-top-2 ml-2">
-              {['all', 'volunteers', 'orgs'].map((tab) => (
+            <div className="flex gap-2 mt-3 animate-in fade-in slide-in-from-top-2 ml-1">
+              {(['all', 'volunteers', 'orgs'] as const).map((tab) => (
                 <button
                   key={tab}
-                  onClick={() => setActiveTab(tab as any)}
+                  onClick={() => setActiveTab(tab)}
                   className={cn(
-                    "px-4 py-1.5 rounded-full text-[11px] md:text-xs font-semibold capitalize transition-all",
+                    "px-4 py-1.5 rounded-full text-[11px] font-semibold capitalize transition-all",
                     activeTab === tab ? "bg-black text-white shadow-md" : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
                   )}
                 >
@@ -239,89 +204,129 @@ export default function SocialDiscoveryPage() {
           )}
         </div>
 
-        {/* LOADING STATE (search) */}
+        {/* LOADING */}
         {loading && (
-          <div className="py-20 flex flex-col items-center justify-center text-gray-400">
-            <Loader2 className="w-8 h-8 animate-spin mb-2" />
-            <p className="text-sm">Searching community...</p>
+          <div className="py-16 flex flex-col items-center justify-center text-gray-400">
+            <Loader2 className="w-6 h-6 animate-spin mb-2" />
+            <p className="text-sm">Searching...</p>
           </div>
         )}
 
         {/* SEARCH RESULTS */}
         {!loading && isSearching && displayedResults.length > 0 && (
           <div className="space-y-2 px-2">
-            <h3 className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Top Results</h3>
+            <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">Results</h3>
             <div className="bg-white rounded-[20px] border border-gray-200 overflow-hidden shadow-sm">
               {displayedResults.map((item, idx) => (
                 <Link
                   key={idx}
                   href={item.type === 'volunteer' ? `/volunteers/${item.id}` : `/organizations/${item.id}`}
-                  className="flex items-center gap-3 md:gap-4 p-3 md:p-4 hover:bg-gray-50 active:bg-gray-100 transition-colors border-b border-gray-100 last:border-0"
+                  onClick={() => handleResultClick(item)}
+                  className="flex items-center gap-3 p-3 hover:bg-gray-50 active:bg-gray-100 transition-colors border-b border-gray-100 last:border-0"
                 >
                   <div className="w-10 h-10 rounded-full bg-gray-100 overflow-hidden shrink-0 border border-gray-200 flex items-center justify-center">
-                    {item.image ? <img src={item.image} className="w-full h-full object-cover" /> : <User className="w-5 h-5 text-gray-400" />}
+                    {item.image
+                      ? <img src={item.image} className="w-full h-full object-cover" alt={item.name} />
+                      : <User className="w-5 h-5 text-gray-400" />
+                    }
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <h4 className="font-semibold text-gray-900 truncate text-[14px] md:text-[15px]">{item.name}</h4>
-                      {item.verified && <CheckCircle2 className="w-4 h-4 text-blue-500 fill-blue-50" />}
+                    <div className="flex items-center gap-1">
+                      <h4 className="font-semibold text-gray-900 truncate text-[14px]">{item.name}</h4>
+                      {item.verified && <VerifiedBadge />}
                     </div>
-                    <p className="text-[11px] md:text-xs text-gray-500 truncate">{item.subtitle}</p>
+                    <p className="text-[11px] text-gray-500 truncate">{item.subtitle}</p>
                   </div>
-                  <ArrowUpRight className="w-4 h-4 text-gray-300" />
+                  <ArrowUpRight className="w-4 h-4 text-gray-300 shrink-0" />
                 </Link>
               ))}
             </div>
           </div>
         )}
 
-        {/* NO RESULTS STATE */}
+        {/* NO RESULTS */}
         {!loading && isSearching && displayedResults.length === 0 && (
           <div className="text-center py-12 text-gray-500">
-            <p className="text-[13px] md:text-sm">No results found for "{searchQuery}"</p>
+            <p className="text-[13px]">No results for "{searchQuery}"</p>
           </div>
         )}
 
-        {/* DEFAULT FEED: REAL IMPACT STORIES */}
+        {/* DEFAULT: HISTORY + FEED */}
         {!isSearching && !loading && (
-          <div className="space-y-6 animate-in fade-in duration-500">
+          <div className="space-y-6 animate-in fade-in duration-300">
 
-            {/* Header */}
-            <div className="flex items-center justify-between px-2 md:px-1">
+            {/* RECENT SEARCHES */}
+            {!historyLoading && history.length > 0 && (
+              <div className="px-2">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Recent</h3>
+                  <button
+                    onClick={clearHistory}
+                    className="text-[11px] text-[#0066cc] font-semibold hover:underline"
+                  >
+                    Clear All
+                  </button>
+                </div>
+                <div className="bg-white rounded-[20px] border border-gray-200 overflow-hidden shadow-sm">
+                  {history.map((item) => (
+                    <div key={item.id} className="flex items-center gap-3 p-3 hover:bg-gray-50 border-b border-gray-100 last:border-0 group">
+                      <Link
+                        href={item.result_type === 'volunteer' ? `/volunteers/${item.result_id}` : `/organizations/${item.result_id}`}
+                        className="flex items-center gap-3 flex-1 min-w-0"
+                      >
+                        <div className="w-9 h-9 rounded-full bg-gray-100 overflow-hidden shrink-0 border border-gray-200 flex items-center justify-center">
+                          {item.result_image
+                            ? <img src={item.result_image} className="w-full h-full object-cover" alt={item.result_name} />
+                            : <User className="w-4 h-4 text-gray-400" />
+                          }
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-gray-900 truncate">{item.result_name}</p>
+                          <p className="text-[11px] text-gray-500 capitalize">{item.result_type}</p>
+                        </div>
+                      </Link>
+                      <button
+                        onClick={() => removeHistoryItem(item.id)}
+                        className="p-1.5 rounded-full hover:bg-gray-200 transition-colors shrink-0 opacity-0 group-hover:opacity-100"
+                        aria-label="Remove"
+                      >
+                        <X className="w-3.5 h-3.5 text-gray-500" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* DISCOVER IMPACT FEED */}
+            <div className="flex items-center justify-between px-2">
               <div>
-                <h1 className="text-xl md:text-2xl font-bold text-[#1d1d1f] tracking-tight">Discover Impact</h1>
+                <h1 className="text-xl font-bold text-[#1d1d1f] tracking-tight">Discover Impact</h1>
                 {!storiesLoading && (
-                  <p className="text-[11px] md:text-xs text-gray-400 mt-0.5 flex items-center gap-1">
+                  <p className="text-[11px] text-gray-400 mt-0.5 flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block animate-pulse" />
                     Live news
                   </p>
                 )}
               </div>
-              <div className="flex items-center gap-2">
-                <span className="hidden md:inline-block text-xs font-medium text-gray-500 bg-white px-3 py-1 rounded-full border border-gray-200 shadow-sm">
-                  {new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long' })}
-                </span>
-                <button
-                  onClick={loadStories}
-                  disabled={storiesLoading}
-                  title="Refresh stories"
-                  className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center active:scale-95 hover:bg-gray-50 transition-all disabled:opacity-40"
-                >
-                  <RefreshCw className={cn("w-3.5 h-3.5 md:w-4 md:h-4 text-gray-500", storiesLoading && "animate-spin")} />
-                </button>
-              </div>
+              <button
+                onClick={loadStories}
+                disabled={storiesLoading}
+                title="Refresh"
+                className="w-8 h-8 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center active:scale-95 hover:bg-gray-50 transition-all disabled:opacity-40"
+              >
+                <RefreshCw className={cn("w-3.5 h-3.5 text-gray-500", storiesLoading && "animate-spin")} />
+              </button>
             </div>
 
-            {/* SKELETON LOADING (Updated aspect ratios) */}
             {storiesLoading && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-2">
                 {[1, 2, 3, 4].map((i) => (
                   <div key={i} className="bg-white rounded-[24px] border border-gray-200/60 overflow-hidden animate-pulse">
-                    <div className="aspect-video md:aspect-[4/3] w-full bg-gray-200" />
+                    <div className="aspect-video w-full bg-gray-200" />
                     <div className="p-4 space-y-3">
                       <div className="h-3 bg-gray-200 rounded w-1/3" />
                       <div className="h-5 bg-gray-200 rounded w-full" />
-                      <div className="h-5 bg-gray-200 rounded w-4/5" />
                       <div className="h-3 bg-gray-100 rounded w-2/3 mt-4" />
                     </div>
                   </div>
@@ -329,17 +334,15 @@ export default function SocialDiscoveryPage() {
               </div>
             )}
 
-            {/* STORIES GRID */}
             {!storiesLoading && (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-2">
                   {stories.map((story, idx) => (
                     <div
                       key={idx}
                       className="group flex flex-col h-full bg-white rounded-[24px] border border-gray-200/80 overflow-hidden shadow-sm active:scale-[0.98] transition-all duration-200"
                     >
-                      {/* Card Image */}
-                      <div className="aspect-video md:aspect-[4/3] w-full overflow-hidden relative bg-gray-100">
+                      <div className="aspect-video w-full overflow-hidden relative bg-gray-100">
                         <img
                           src={getImageForStory(story.title, story.category)}
                           alt={story.title}
@@ -357,25 +360,20 @@ export default function SocialDiscoveryPage() {
                           LIVE
                         </span>
                       </div>
-
-                      {/* Card Content */}
                       <div className="p-4 flex flex-col flex-1">
-                        <div className="flex items-center gap-2 text-[10px] md:text-[11px] font-medium text-gray-400 mb-2">
+                        <div className="flex items-center gap-2 text-[10px] font-medium text-gray-400 mb-2">
                           <span className="truncate max-w-[130px] text-[#1d1d1f]">{story.author}</span>
                           <span className="w-1 h-1 rounded-full bg-gray-300 shrink-0" />
                           <span className="shrink-0">{story.date}</span>
                         </div>
-
-                        <h3 className="text-base md:text-lg font-bold text-gray-900 leading-snug mb-2 group-hover:text-[#0066cc] transition-colors line-clamp-2">
+                        <h3 className="text-base font-bold text-gray-900 leading-snug mb-2 group-hover:text-[#0066cc] transition-colors line-clamp-2">
                           {story.title}
                         </h3>
-
-                        <p className="text-[13px] md:text-sm text-gray-600 line-clamp-2 md:line-clamp-3 mb-4 leading-relaxed">
+                        <p className="text-[13px] text-gray-600 line-clamp-2 mb-4 leading-relaxed">
                           {story.excerpt}
                         </p>
-
                         <div className="mt-auto flex items-center justify-between border-t border-gray-50 pt-3">
-                          <div className="flex items-center gap-1.5 text-[11px] md:text-xs text-gray-500 font-medium">
+                          <div className="flex items-center gap-1.5 text-[11px] text-gray-500 font-medium">
                             <Clock className="w-3.5 h-3.5" />
                             {story.readTime}
                           </div>
@@ -385,12 +383,12 @@ export default function SocialDiscoveryPage() {
                               target="_blank"
                               rel="noopener noreferrer"
                               onClick={(e) => e.stopPropagation()}
-                              className="h-8 px-3 bg-[#f5f5f7] hover:bg-gray-200 rounded-full text-[11px] md:text-xs font-bold text-[#1d1d1f] flex items-center gap-1 transition-colors"
+                              className="h-8 px-3 bg-[#f5f5f7] hover:bg-gray-200 rounded-full text-[11px] font-bold text-[#1d1d1f] flex items-center gap-1 transition-colors"
                             >
-                              Read <ExternalLink className="w-3 h-3 md:hidden" /> <span className="hidden md:inline">Story</span>
+                              Read <ExternalLink className="w-3 h-3" />
                             </a>
                           ) : (
-                            <span className="h-8 px-3 bg-[#f5f5f7] rounded-full text-[11px] md:text-xs font-bold text-[#1d1d1f] flex items-center gap-1">
+                            <span className="h-8 px-3 bg-[#f5f5f7] rounded-full text-[11px] font-bold text-[#1d1d1f] flex items-center gap-1">
                               Read <ChevronRight className="w-3 h-3" />
                             </span>
                           )}
@@ -399,12 +397,11 @@ export default function SocialDiscoveryPage() {
                     </div>
                   ))}
                 </div>
-
-                <div className="py-6 text-center">
+                <div className="py-4 text-center">
                   <button
                     onClick={loadStories}
                     disabled={storiesLoading}
-                    className="text-[13px] font-medium text-gray-500 active:text-black transition-colors flex items-center gap-2 mx-auto disabled:opacity-40"
+                    className="text-[13px] font-medium text-gray-500 active:text-black flex items-center gap-2 mx-auto disabled:opacity-40"
                   >
                     <RefreshCw className="w-3.5 h-3.5" />
                     Load fresh stories
@@ -412,10 +409,8 @@ export default function SocialDiscoveryPage() {
                 </div>
               </>
             )}
-
           </div>
         )}
-
       </div>
     </div>
   )

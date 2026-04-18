@@ -175,7 +175,34 @@ export class VolunteerService {
       followStatus = (followRecord?.status as 'pending' | 'accepted') ?? 'none';
     }
 
-    // ✅ FORCE SHOW CONTACT INFO: If Self, Resume Mode, or Private Mode
+    // Mutual followers: people viewer follows who also follow the target
+    let mutualFollowers: { count: number; preview: Array<{ user_id: string; full_name: string; avatar_url: string | null }> } = { count: 0, preview: [] };
+    if (viewerId && !isSelf) {
+      const { data: viewerFollowing } = await client
+        .from('follows')
+        .select('following_id')
+        .eq('follower_id', viewerId)
+        .eq('status', 'accepted');
+      const viewerFollowingIds = (viewerFollowing || []).map((f: any) => f.following_id);
+      if (viewerFollowingIds.length > 0) {
+        const { data: sharedFollowers } = await client
+          .from('follows')
+          .select('follower_id')
+          .eq('following_id', profile.user_id)
+          .eq('status', 'accepted')
+          .in('follower_id', viewerFollowingIds);
+        const mutualIds = (sharedFollowers || []).map((f: any) => f.follower_id);
+        if (mutualIds.length > 0) {
+          const { data: mutualProfiles } = await client
+            .from('volunteer_profiles')
+            .select('user_id, full_name, avatar_url')
+            .in('user_id', mutualIds)
+            .limit(3);
+          mutualFollowers = { count: mutualIds.length, preview: mutualProfiles || [] };
+        }
+      }
+    }
+
     const showContactInfo = viewType === 'private' || viewType === 'resume' || isSelf;
 
     return {
@@ -186,6 +213,7 @@ export class VolunteerService {
         address: showContactInfo ? profile.address : null,
         view_type: viewType,
         follow_status: followStatus,
+        mutual_followers: mutualFollowers,
       }
     };
   }

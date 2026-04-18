@@ -68,6 +68,7 @@ export interface UpdateVolunteerProfileDto {
   availability_status?: string;
   avatar_url?: string;
   cover_url?: string;
+  is_private?: boolean;
 }
 
 export interface UpdateOrganizationProfileDto {
@@ -660,22 +661,24 @@ export const api = {
     return res.json();
   },
 
-  getFollowers: async (userId: string): Promise<{ followers: any[] }> => {
+  getFollowers: async (userId: string): Promise<{ followers: any[], error: 'forbidden' | 'error' | null }> => {
     const { data: { session } } = await supabase.auth.getSession();
     const res = await fetch(`${API_URL}/social/${userId}/followers`, {
       headers: { ...(session && { Authorization: `Bearer ${session.access_token}` }) },
     });
-    if (!res.ok) return { followers: [] };
-    return res.json();
+    if (!res.ok) return { followers: [], error: res.status === 403 ? 'forbidden' : 'error' };
+    const data = await res.json();
+    return { ...data, error: null };
   },
 
-  getFollowing: async (userId: string): Promise<{ following: any[] }> => {
+  getFollowing: async (userId: string): Promise<{ following: any[], error: 'forbidden' | 'error' | null }> => {
     const { data: { session } } = await supabase.auth.getSession();
     const res = await fetch(`${API_URL}/social/${userId}/following`, {
       headers: { ...(session && { Authorization: `Bearer ${session.access_token}` }) },
     });
-    if (!res.ok) return { following: [] };
-    return res.json();
+    if (!res.ok) return { following: [], error: res.status === 403 ? 'forbidden' : 'error' };
+    const data = await res.json();
+    return { ...data, error: null };
   },
 
   getVolunteerImpact: async () => {
@@ -1239,6 +1242,55 @@ export const api = {
       method: 'PATCH',
       headers: { Authorization: `Bearer ${session.access_token}` },
     });
+  },
+
+  async getSearchHistory(): Promise<any[]> {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return [];
+    const res = await fetch(`${API_URL}/social/search/recent`, {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    if (!res.ok) return [];
+    return res.json();
+  },
+
+  async saveSearchHistory(item: { result_id: string; result_type: string; result_name: string; result_image?: string | null }) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    await fetch(`${API_URL}/social/search/recent`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify(item),
+    });
+  },
+
+  async clearSearchHistory() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    await fetch(`${API_URL}/social/search/recent`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+  },
+
+  async removeSearchHistoryItem(id: string) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    await fetch(`${API_URL}/social/search/recent/${id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+  },
+
+  async deleteNotification(notifId: string) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+    const res = await fetch(`${API_URL}/notifications/${notifId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    if (!res.ok) { const e = await res.json(); throw new Error(e.message || 'Failed'); }
+    return res.json();
   },
 
 // --- UPDATE PASSWORD ---
