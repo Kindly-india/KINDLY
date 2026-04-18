@@ -365,6 +365,29 @@ export const api = {
     return response.json();
   },
 
+  // Cancel own RSVP for an event
+  cancelRsvp: async (eventId: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session) {
+      throw new Error('Please login to cancel registrations');
+    }
+
+    const response = await fetch(`${API_URL}/events/${eventId}/rsvp`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to cancel registration');
+    }
+
+    return response.json();
+  },
+
   // Get event registrations (for organizations)
   getEventRegistrations: async (eventId: string) => {
     const { data: { session } } = await supabase.auth.getSession();

@@ -762,6 +762,55 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
     };
   }
 
+  async cancelRsvp(userId: string, eventId: string) {
+    const supabase = this.supabaseService.getClient();
+
+    // Resolve volunteer profile id from auth user id
+    const { data: volProfile, error: volError } = await supabase
+      .from('volunteer_profiles')
+      .select('id')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (volError || !volProfile) throw new NotFoundException('Volunteer profile not found');
+
+    // Find the active registration
+    const { data: reg, error: regError } = await supabase
+      .from('event_registrations')
+      .select('id, status')
+      .eq('event_id', eventId)
+      .eq('volunteer_id', volProfile.id)
+      .maybeSingle();
+
+    if (regError) throw new BadRequestException(regError.message);
+    if (!reg) throw new NotFoundException('Registration not found');
+
+    // Block cancellation if already checked in or completed
+    if (reg.status === 'checked_in' || reg.status === 'completed') {
+      throw new BadRequestException('Cannot cancel a registration that is already checked in or completed');
+    }
+
+    // Update status to cancelled
+    const { error: updateError } = await supabase
+      .from('event_registrations')
+      .update({ status: 'cancelled' })
+      .eq('id', reg.id);
+
+    if (updateError) throw new BadRequestException(updateError.message);
+
+    // Decrement current_volunteers on the event (floor at 0)
+    const { data: eventRow } = await supabase
+      .from('events')
+      .select('current_volunteers')
+      .eq('id', eventId)
+      .maybeSingle();
+
+    const newCount = Math.max(0, (eventRow?.current_volunteers ?? 1) - 1);
+    await supabase.from('events').update({ current_volunteers: newCount }).eq('id', eventId);
+
+    return { message: 'Registration cancelled successfully' };
+  }
+
   private async sendRsvpEmail(supabase: any, userId: string, eventId: string) {
     const [userResult, eventResult] = await Promise.all([
       supabase.auth.admin.getUserById(userId),

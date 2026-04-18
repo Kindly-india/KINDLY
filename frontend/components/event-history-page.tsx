@@ -35,6 +35,7 @@ export function EventHistoryPage() {
   // cert_id keyed by event_id
   const [certMap, setCertMap] = useState<Record<string, string>>({})
   const [downloadingCertId, setDownloadingCertId] = useState<string | null>(null)
+  const [cancellingId, setCancellingId] = useState<string | null>(null)
 
   // --- Helper to Calculate Exact Hours ---
   const calculateExactHours = (start: string, end: string) => {
@@ -97,6 +98,8 @@ export function EventHistoryPage() {
           org: ev.organization_profiles?.name || "Organizer",
           hours: calculateExactHours(ev.start_time, ev.end_time),
           certId: map[ev.id] || null,
+          event_date: ev.event_date,
+          start_time: ev.start_time,
         }))
 
         setHistoryEvents(formattedEvents)
@@ -153,6 +156,28 @@ export function EventHistoryPage() {
         )
       default:
         return null
+    }
+  }
+
+  const isWithin24Hours = (eventDate: string, startTime: string) => {
+    if (!eventDate || !startTime) return false
+    const eventStart = new Date(`${eventDate}T${startTime}`)
+    return eventStart.getTime() - Date.now() < 24 * 60 * 60 * 1000
+  }
+
+  const handleCancelRsvp = async (e: React.MouseEvent, eventId: string) => {
+    e.stopPropagation()
+    if (!confirm('Are you sure you want to cancel your registration?')) return
+    setCancellingId(eventId)
+    try {
+      await api.cancelRsvp(eventId)
+      setHistoryEvents(prev => prev.map(ev =>
+        ev.id === eventId ? { ...ev, status: 'missed' } : ev
+      ))
+    } catch (err: any) {
+      alert(err.message || 'Failed to cancel registration')
+    } finally {
+      setCancellingId(null)
     }
   }
 
@@ -278,6 +303,27 @@ export function EventHistoryPage() {
                     }
                     Certificate
                   </button>
+                ) : event.status === "registered" ? (
+                  isWithin24Hours(event.event_date, event.start_time) ? (
+                    <span
+                      title="Less than 24 hours to the event. Contact the organiser directly for emergency cancellations."
+                      className="flex items-center gap-1 px-2.5 py-1.5 bg-gray-100 text-gray-400 text-[10px] md:text-xs font-semibold rounded-lg cursor-not-allowed select-none"
+                    >
+                      🔒 Locked
+                    </span>
+                  ) : (
+                    <button
+                      onClick={(e) => handleCancelRsvp(e, event.id)}
+                      disabled={cancellingId === event.id}
+                      className="flex items-center gap-1 px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 text-[10px] md:text-xs font-semibold rounded-lg transition-colors disabled:opacity-50"
+                    >
+                      {cancellingId === event.id
+                        ? <Loader2 className="w-3 h-3 animate-spin" />
+                        : <X className="w-3 h-3" />
+                      }
+                      Cancel
+                    </button>
+                  )
                 ) : (
                   event.status === "attended" && <ChevronRight className="w-4 h-4 md:w-5 md:h-5 text-[#86868b]" />
                 )}

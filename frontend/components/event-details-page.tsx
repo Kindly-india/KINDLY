@@ -46,6 +46,8 @@ export default function EventDetailsPage() {
   const [showFullDescription, setShowFullDescription] = useState(false)
   const [isRegistering, setIsRegistering] = useState(false)
   const [isRegistered, setIsRegistered] = useState(false)
+  const [showConfirmModal, setShowConfirmModal] = useState(false)
+  const [agreedToTerms, setAgreedToTerms] = useState(false)
 
   /**
    * Data Fetching Logic
@@ -85,39 +87,42 @@ export default function EventDetailsPage() {
   }, [eventId])
 
   /**
-   * handleBookSlot
-   * Manages the registration pipeline for the volunteer.
-   * Includes auth-check and local state updates for instant feedback.
+   * openConfirmModal
+   * Auth-checks the user, then opens the commitment modal.
+   * Actual API call happens only after the user ticks the T&C checkbox.
    */
-  const handleBookSlot = async () => {
+  const openConfirmModal = async () => {
     try {
-      setIsRegistering(true)
-
-      // 1. Verify Authentication
       const user = await api.getCurrentUser()
       if (!user) {
-        alert('Please login to register for events')
         router.push('/login')
         return
       }
+      setAgreedToTerms(false)
+      setShowConfirmModal(true)
+    } catch {
+      router.push('/login')
+    }
+  }
 
-      // 2. API Call to Register
+  /**
+   * executeRegistration
+   * Called when the user confirms in the modal.
+   */
+  const executeRegistration = async () => {
+    try {
+      setIsRegistering(true)
+      setShowConfirmModal(false)
+
       await api.registerForEvent(eventId)
 
-      // 3. Update local state for reactive UI
       setIsRegistered(true)
       setEvent((prev: any) => ({
         ...prev,
         registered_count: (prev.registered_count || 0) + 1
       }))
-
-      alert('Successfully registered for the event! 🎉')
     } catch (err: any) {
-      if (err.message.includes('login')) {
-        router.push('/login')
-      } else {
-        alert(err.message || 'Failed to register for event')
-      }
+      alert(err.message || 'Failed to register for event')
     } finally {
       setIsRegistering(false)
     }
@@ -489,7 +494,7 @@ export default function EventDetailsPage() {
             {/* ACTION CENTER */}
             <div className="p-8 bg-gray-50/50">
               <Button
-                onClick={handleBookSlot}
+                onClick={openConfirmModal}
                 disabled={isRegistering || !canRegister}
                 className={cn(
                   "w-full h-14 text-white font-black rounded-2xl text-lg shadow-2xl transition-all active:scale-95 disabled:opacity-50",
@@ -540,6 +545,97 @@ export default function EventDetailsPage() {
         </div>
       </div>
 
+      {/* --- RSVP CONFIRMATION MODAL --- */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setShowConfirmModal(false)}
+          />
+
+          {/* Sheet / Card */}
+          <div className="relative w-full md:max-w-md bg-white md:rounded-3xl rounded-t-3xl px-6 pt-6 pb-10 md:pb-8 shadow-2xl z-10">
+            {/* Handle bar (mobile) */}
+            <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5 md:hidden" />
+
+            {/* Header */}
+            <div className="flex items-start gap-3 mb-5">
+              <div className="w-10 h-10 rounded-2xl bg-amber-50 flex items-center justify-center shrink-0 mt-0.5">
+                <CheckCircle2 className="w-5 h-5 text-amber-500" />
+              </div>
+              <div>
+                <h2 className="text-lg font-black text-gray-900">Commitment Required</h2>
+                <p className="text-xs text-gray-500 mt-0.5">Please read before confirming</p>
+              </div>
+            </div>
+
+            {/* Body */}
+            <div className="bg-gray-50 rounded-2xl p-4 mb-5 border border-gray-100">
+              <p className="text-sm text-gray-700 leading-relaxed">
+                You are committing to{' '}
+                <span className="font-bold text-gray-900">
+                  {event.start_time && event.end_time
+                    ? `${Math.max(1, Math.round((new Date(`1970-01-01T${event.end_time}`).getTime() - new Date(`1970-01-01T${event.start_time}`).getTime()) / 3600000))} hour(s)`
+                    : 'several hours'
+                  }
+                </span>{' '}
+                for <span className="font-bold text-gray-900">{event.title}</span>.
+              </p>
+              <p className="text-xs text-gray-500 mt-2 leading-relaxed">
+                Organizations rely on accurate headcounts to plan resources and volunteers. Please only register if you intend to attend.
+              </p>
+            </div>
+
+            {/* T&C Checkbox */}
+            <label className="flex items-start gap-3 cursor-pointer mb-6 group">
+              <div className="relative mt-0.5 shrink-0">
+                <input
+                  type="checkbox"
+                  checked={agreedToTerms}
+                  onChange={(e) => setAgreedToTerms(e.target.checked)}
+                  className="peer sr-only"
+                />
+                <div className="w-5 h-5 rounded-md border-2 border-gray-300 peer-checked:border-gray-900 peer-checked:bg-gray-900 transition-all flex items-center justify-center">
+                  {agreedToTerms && (
+                    <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </div>
+              </div>
+              <span className="text-sm text-gray-600 leading-relaxed">
+                I agree to the{' '}
+                <Link href="/legal/terms" className="font-semibold text-gray-900 underline underline-offset-2" onClick={() => setShowConfirmModal(false)}>
+                  Terms &amp; Conditions
+                </Link>
+                {' '}and{' '}
+                <Link href="/legal/privacy" className="font-semibold text-gray-900 underline underline-offset-2" onClick={() => setShowConfirmModal(false)}>
+                  Privacy Policy
+                </Link>
+              </span>
+            </label>
+
+            {/* Actions */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowConfirmModal(false)}
+                className="flex-1 h-12 rounded-2xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <Button
+                onClick={executeRegistration}
+                disabled={!agreedToTerms || isRegistering}
+                className="flex-1 h-12 bg-gray-900 hover:bg-black text-white font-black rounded-2xl text-sm shadow-lg disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+              >
+                {isRegistering ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm Registration'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* --- MOBILE STICKY FOOTER --- */}
       <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-gray-100 shadow-[0_-8px_30px_rgba(0,0,0,0.12)] z-50 md:hidden">
         <div className="flex items-center justify-between px-6 py-4">
@@ -555,7 +651,7 @@ export default function EventDetailsPage() {
             <p className="text-xs text-gray-500 font-medium">{formatTime(event.start_time)}</p>
           </div>
           <Button
-            onClick={handleBookSlot}
+            onClick={openConfirmModal}
             disabled={isRegistering || !canRegister}
             className={cn(
               "h-14 px-8 text-white font-black rounded-2xl text-sm shadow-xl transition-all active:scale-95 disabled:opacity-50",

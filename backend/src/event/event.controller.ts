@@ -194,6 +194,13 @@ export class EventController {
     return this.eventService.updateEvent(req.user.id, id, dto);
   }
 
+  // Volunteer cancels their own RSVP
+  @Delete(':id/rsvp')
+  @UseGuards(JwtAuthGuard)
+  async cancelRsvp(@Request() req: any, @Param('id') id: string) {
+    return this.eventService.cancelRsvp(req.user.id, id);
+  }
+
   // 3. Dynamic Routes (MUST BE LAST)
   // This handles /events/:id calls for Org Dashboard
   @Get(':id')
