@@ -681,6 +681,27 @@ export const api = {
     return { ...data, error: null };
   },
 
+  getPendingFollowRequests: async (): Promise<{
+    requests: {
+      requester_id: string
+      full_name: string
+      avatar_url: string | null
+      city: string | null
+      headline: string | null
+      is_verified: boolean
+      requested_at: string
+    }[]
+    count: number
+  }> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return { requests: [], count: 0 };
+    const res = await fetch(`${API_URL}/social/follow-requests/pending`, {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    if (!res.ok) return { requests: [], count: 0 };
+    return res.json();
+  },
+
   getVolunteerImpact: async () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error('Not authenticated');

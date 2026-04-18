@@ -138,6 +138,7 @@ export default function OrganizationProfile() {
   const [reviews, setReviews] = useState<any[]>([])
   const [isFollowing, setIsFollowing] = useState(false)
   const [isOwnProfile, setIsOwnProfile] = useState(false)
+  const [isViewerOrg, setIsViewerOrg] = useState(false)
   const [activityData, setActivityData] = useState<any[]>([])
   const [coverError, setCoverError] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -173,6 +174,9 @@ export default function OrganizationProfile() {
         const isSelf = currentUser?.id === profileRes.profile.user_id;
         setIsOwnProfile(isSelf);
         setIsFollowing(profileRes.profile.is_followed_by_current_user ?? false)
+        if (currentUser?.user_metadata?.user_type === 'organization') {
+          setIsViewerOrg(true);
+        }
       } catch (err) {
         console.error(err)
       } finally {
@@ -265,7 +269,7 @@ export default function OrganizationProfile() {
                   <LogOut className="w-5 h-5" />
                 </button>
               </>
-            ) : (
+            ) : !isViewerOrg && (
               <button onClick={handleFollow} className={cn("px-6 py-2 rounded-full text-sm font-bold transition-all flex items-center gap-2", isFollowing ? "bg-white text-red-600 border border-red-200" : "bg-black text-white")}>
                 {isFollowing ? <><UserMinus className="w-4 h-4" /> Unfollow</> : <><UserPlus className="w-4 h-4" /> Follow</>}
               </button>

@@ -54,6 +54,14 @@ export class SocialService {
     if (followerId === targetId) throw new BadRequestException('You cannot follow yourself');
     const client = this.supabase.getClient();
 
+    // Organizations are broadcast-only — they cannot follow anyone
+    const { data: orgCheck } = await client
+      .from('organization_profiles')
+      .select('id')
+      .eq('user_id', followerId)
+      .maybeSingle();
+    if (orgCheck) throw new ForbiddenException('Organizations cannot follow other accounts.');
+
     // Return early if a row already exists (idempotent)
     const { data: existing } = await client
       .from('follows')
@@ -266,6 +274,64 @@ export class SocialService {
     return map;
   }
 
+  // Normalise a raw volunteer_profiles row into the common social-list shape.
+  private normalizeVolunteer(p: any, statusMap: Record<string, string>) {
+    return {
+      user_id: p.user_id,
+      profile_id: p.user_id,      // volunteer URL uses user_id
+      entity_type: 'volunteer' as const,
+      full_name: p.full_name,
+      avatar_url: p.avatar_url ?? null,
+      city: p.city ?? null,
+      headline: p.headline ?? null,
+      is_verified: p.is_verified ?? false,
+      requester_follow_status: (statusMap[p.user_id] ?? 'none') as 'none' | 'pending' | 'accepted',
+    };
+  }
+
+  // Normalise a raw organization_profiles row into the same shape.
+  private normalizeOrg(o: any, statusMap: Record<string, string>) {
+    return {
+      user_id: o.user_id,
+      profile_id: o.id,            // org URL uses the profile UUID, not user_id
+      entity_type: 'org' as const,
+      full_name: o.name,
+      avatar_url: o.logo_url ?? null,
+      city: o.area_locality ?? null,
+      headline: null,
+      is_verified: o.is_verified ?? false,
+      requester_follow_status: (statusMap[o.user_id] ?? 'none') as 'none' | 'pending' | 'accepted',
+    };
+  }
+
+  // Fetch volunteer + org profiles for a given set of user_ids, returning a
+  // unified list. Both tables are queried in parallel; org rows fill the gaps
+  // for any user_id not found in volunteer_profiles.
+  private async buildProfileList(ids: string[], viewerId: string | null, client: any) {
+    const [volResult, orgResult, statusMap] = await Promise.all([
+      client
+        .from('volunteer_profiles')
+        .select('user_id, full_name, avatar_url, city, headline, is_verified')
+        .in('user_id', ids),
+      client
+        .from('organization_profiles')
+        .select('id, user_id, name, logo_url, area_locality, is_verified')
+        .in('user_id', ids),
+      this.buildViewerStatusMap(viewerId, ids, client),
+    ]);
+
+    const volUserIds = new Set((volResult.data ?? []).map((p: any) => p.user_id));
+
+    return [
+      ...(volResult.data ?? []).map((p: any) => this.normalizeVolunteer(p, statusMap)),
+      // Only include orgs whose user_id isn't already in volunteer_profiles
+      // (a user_id belongs to exactly one type, but this guards against surprises)
+      ...(orgResult.data ?? [])
+        .filter((o: any) => !volUserIds.has(o.user_id))
+        .map((o: any) => this.normalizeOrg(o, statusMap)),
+    ];
+  }
+
   async getFollowers(targetUserId: string, viewerId: string | null) {
     const client = this.supabase.getClient();
     await this.assertCanViewSocialGraph(targetUserId, viewerId, client);
@@ -279,19 +345,7 @@ export class SocialService {
     if (!follows?.length) return { followers: [] };
     const ids = follows.map((f: any) => f.follower_id);
 
-    const [profilesResult, statusMap] = await Promise.all([
-      client
-        .from('volunteer_profiles')
-        .select('user_id, full_name, avatar_url, city, headline, is_verified')
-        .in('user_id', ids),
-      this.buildViewerStatusMap(viewerId, ids, client),
-    ]);
-
-    const followers = (profilesResult.data ?? []).map((p: any) => ({
-      ...p,
-      requester_follow_status: statusMap[p.user_id] ?? 'none',
-    }));
-
+    const followers = await this.buildProfileList(ids, viewerId, client);
     return { followers };
   }
 
@@ -308,20 +362,53 @@ export class SocialService {
     if (!follows?.length) return { following: [] };
     const ids = follows.map((f: any) => f.following_id);
 
-    const [profilesResult, statusMap] = await Promise.all([
-      client
-        .from('volunteer_profiles')
-        .select('user_id, full_name, avatar_url, city, headline, is_verified')
-        .in('user_id', ids),
-      this.buildViewerStatusMap(viewerId, ids, client),
-    ]);
-
-    const following = (profilesResult.data ?? []).map((p: any) => ({
-      ...p,
-      requester_follow_status: statusMap[p.user_id] ?? 'none',
-    }));
-
+    const following = await this.buildProfileList(ids, viewerId, client);
     return { following };
+  }
+
+  // --- PENDING FOLLOW REQUESTS INBOX ---
+  async getPendingFollowRequests(currentUserId: string) {
+    const client = this.supabase.getClient();
+
+    // All rows where someone is waiting for currentUser to approve
+    const { data: follows, error } = await client
+      .from('follows')
+      .select('follower_id, created_at')
+      .eq('following_id', currentUserId)
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false });
+
+    if (error) throw new BadRequestException(error.message);
+    if (!follows?.length) return { requests: [], count: 0 };
+
+    const requesterIds = follows.map((f: any) => f.follower_id);
+
+    const { data: profiles } = await client
+      .from('volunteer_profiles')
+      .select('user_id, full_name, avatar_url, city, headline, is_verified')
+      .in('user_id', requesterIds);
+
+    const profileMap = Object.fromEntries(
+      (profiles ?? []).map((p: any) => [p.user_id, p]),
+    );
+
+    const requests = follows
+      .map((f: any) => {
+        const p = profileMap[f.follower_id];
+        if (!p) return null; // org followers not in volunteer_profiles — skip
+        return {
+          requester_id: p.user_id,
+          full_name: p.full_name,
+          avatar_url: p.avatar_url ?? null,
+          city: p.city ?? null,
+          headline: p.headline ?? null,
+          is_verified: p.is_verified ?? false,
+          requested_at: f.created_at,
+        };
+      })
+      .filter(Boolean);
+
+    return { requests, count: requests.length };
   }
 
   // --- SEARCH HISTORY ---

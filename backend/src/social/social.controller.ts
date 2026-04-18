@@ -81,6 +81,13 @@ export class SocialController {
     return this.socialService.removeSearchHistoryItem(req.user.id, id);
   }
 
+  // Pending inbound follow requests for current user
+  @UseGuards(JwtAuthGuard)
+  @Get('follow-requests/pending')
+  async getPendingFollowRequests(@Request() req: any) {
+    return this.socialService.getPendingFollowRequests(req.user.id);
+  }
+
   // Followers list (private-gated)
   @UseGuards(OptionalAuthGuard)
   @Get(':id/followers')

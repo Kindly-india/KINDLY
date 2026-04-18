@@ -251,11 +251,12 @@ function FollowUserButton({ user, onStatusChange }: {
   )
 }
 
-function FollowListModal({ type, initialUsers, onClose, isOwnProfilePage }: {
+function FollowListModal({ type, initialUsers, onClose, isOwnProfilePage, currentUserId }: {
   type: 'followers' | 'following' | null
   initialUsers: any[]
   onClose: () => void
   isOwnProfilePage: boolean
+  currentUserId: string | null
 }) {
   const [users, setUsers] = useState(initialUsers ?? [])
   const [removeError, setRemoveError] = useState<string | null>(null)
@@ -303,7 +304,7 @@ function FollowListModal({ type, initialUsers, onClose, isOwnProfilePage }: {
             users.map((u) => (
               <div key={u.user_id} className="flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50 transition-colors">
                 <Link
-                  href={`/volunteers/${u.user_id}`}
+                  href={u.entity_type === 'org' ? `/organizations/${u.profile_id}` : `/volunteers/${u.user_id}`}
                   onClick={onClose}
                   className="flex items-center gap-3 flex-1 min-w-0"
                 >
@@ -322,18 +323,20 @@ function FollowListModal({ type, initialUsers, onClose, isOwnProfilePage }: {
                   </div>
                 </Link>
 
-                {/* Action button */}
-                {isOwnProfilePage && type === 'followers' ? (
-                  <button
-                    onClick={() => handleRemove(u.user_id)}
-                    className="px-3.5 py-1.5 bg-gray-100 text-gray-700 text-xs font-semibold rounded-lg hover:bg-red-50 hover:text-red-600 active:scale-95 transition-all shrink-0"
-                  >
-                    Remove
-                  </button>
-                ) : (
-                  <div className="shrink-0">
-                    <FollowUserButton user={u} onStatusChange={handleStatusChange} />
-                  </div>
+                {/* Action button — never show for the viewer's own entry */}
+                {u.user_id !== currentUserId && (
+                  isOwnProfilePage && type === 'followers' ? (
+                    <button
+                      onClick={() => handleRemove(u.user_id)}
+                      className="px-3.5 py-1.5 bg-gray-100 text-gray-700 text-xs font-semibold rounded-lg hover:bg-red-50 hover:text-red-600 active:scale-95 transition-all shrink-0"
+                    >
+                      Remove
+                    </button>
+                  ) : (
+                    <div className="shrink-0">
+                      <FollowUserButton user={u} onStatusChange={handleStatusChange} />
+                    </div>
+                  )
                 )}
               </div>
             ))
@@ -358,6 +361,7 @@ export default function VolunteerProfile() {
   const [showUnfollowConfirm, setShowUnfollowConfirm] = useState(false)
   const [activityData, setActivityData] = useState<any[]>([])
   const [isViewerOrg, setIsViewerOrg] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   const [coverError, setCoverError] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -384,6 +388,7 @@ export default function VolunteerProfile() {
 
         const isSelf = currentUser?.id === fetchedProfile.user_id;
         setIsOwnProfile(isSelf);
+        if (currentUser?.id) setCurrentUserId(currentUser.id);
 
         if (isSelf) {
           try {
@@ -859,13 +864,16 @@ export default function VolunteerProfile() {
         </div>
       </div>
 
-      {/* Followers / Following Modal */}
-      <FollowListModal
-        type={followModal.type}
-        initialUsers={followModal.users}
-        isOwnProfilePage={isOwnProfile}
-        onClose={() => setFollowModal({ type: null, users: [] })}
-      />
+      {/* Followers / Following Modal — conditionally rendered so useState re-initialises on each open */}
+      {followModal.type && (
+        <FollowListModal
+          type={followModal.type}
+          initialUsers={followModal.users}
+          isOwnProfilePage={isOwnProfile}
+          currentUserId={currentUserId}
+          onClose={() => setFollowModal({ type: null, users: [] })}
+        />
+      )}
 
       {/* Unfollow Confirmation Sheet */}
       {showUnfollowConfirm && (
