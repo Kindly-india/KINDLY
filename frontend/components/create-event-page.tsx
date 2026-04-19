@@ -74,14 +74,34 @@ export function CreateEventPage() {
 
         setGettingLocation(true);
         navigator.geolocation.getCurrentPosition(
-            (position) => {
+            async (position) => {
                 const { latitude, longitude } = position.coords;
-                setGettingLocation(false);
-                alert(`Location detected (${latitude.toFixed(4)}, ${longitude.toFixed(4)}). Please type the specific building name or street address to confirm on the map.`);
+                try {
+                    const res = await fetch(
+                        `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`,
+                        { headers: { 'Accept-Language': 'en' } }
+                    );
+                    const data = await res.json();
+                    const a = data.address || {};
+                    const parts = [
+                        a.amenity || a.building || a.shop || a.tourism,
+                        a.road || a.pedestrian || a.footway,
+                        a.suburb || a.neighbourhood,
+                        a.city || a.town || a.village,
+                        a.state,
+                    ].filter(Boolean);
+                    const readable = parts.join(', ') || data.display_name;
+                    setFormData(prev => ({ ...prev, location: readable }));
+                } catch {
+                    // Fallback: coordinates only
+                    setFormData(prev => ({ ...prev, location: `${latitude.toFixed(5)}, ${longitude.toFixed(5)}` }));
+                } finally {
+                    setGettingLocation(false);
+                }
             },
             () => {
                 setGettingLocation(false);
-                alert("Unable to retrieve your location");
+                alert("Unable to retrieve your location. Please type the address manually.");
             }
         );
     };
@@ -597,8 +617,17 @@ export function CreateEventPage() {
                                 type="datetime-local"
                                 value={formData.registrationDeadline}
                                 onChange={(e) => setFormData({ ...formData, registrationDeadline: e.target.value })}
-                                min={new Date(new Date().getTime() + 60 * 60 * 1000).toISOString().slice(0, 16)}
-                                max={formData.eventDate && formData.startTime ? `${formData.eventDate}T${formData.startTime}` : undefined}
+                                min={(() => {
+                                    const d = new Date(Date.now() + 60 * 60 * 1000);
+                                    const pad = (n: number) => String(n).padStart(2, '0');
+                                    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+                                })()}
+                                max={formData.eventDate && formData.startTime ? (() => {
+                                    const start = new Date(`${formData.eventDate}T${formData.startTime}`);
+                                    const m = new Date(start.getTime() - 60 * 60 * 1000);
+                                    const pad = (n: number) => String(n).padStart(2, '0');
+                                    return `${m.getFullYear()}-${pad(m.getMonth()+1)}-${pad(m.getDate())}T${pad(m.getHours())}:${pad(m.getMinutes())}`;
+                                })() : undefined}
                                 className="w-full h-12 md:h-14 px-4 bg-[#f5f5f7] rounded-xl border-0 text-[#1d1d1f] focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all text-sm md:text-base"
                             />
                             <p className="text-xs text-[#86868b] mt-2">

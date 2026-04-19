@@ -240,7 +240,7 @@ export function OrgEventDetail() {
 
   const formatTime = (timeString: string) => {
     if (!timeString) return "";
-    const [hours, minutes] = timeString.split(':')
+    const [hours] = timeString.split(':')
     const hour = parseInt(hours)
     const ampm = hour >= 12 ? 'PM' : 'AM'
     const displayHour = hour % 12 || 12
@@ -637,7 +637,6 @@ export function OrgEventDetail() {
                     <iframe
                       width="100%"
                       height="100%"
-                      frameBorder="0"
                       style={{ border: 0 }}
                       src={`https://maps.google.com/maps?q=${encodeURIComponent(event.location)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
                       className="absolute inset-0 w-full h-full pointer-events-none opacity-90 group-hover:opacity-100 transition-opacity"
@@ -720,7 +719,7 @@ export function OrgEventDetail() {
         </div>
       </div>
 
-      <button onClick={() => { if (eventStarted) setShowQR(true); else alert("Event has not started yet."); }} className="fixed bottom-6 right-6 md:bottom-8 md:right-8 w-14 h-14 md:w-16 md:h-16 bg-gradient-to-br from-emerald-500 to-teal-500 text-white rounded-full shadow-xl flex items-center justify-center hover:shadow-2xl hover:scale-105 transition-all z-40"><QrCode className="w-6 h-6 md:w-7 md:h-7" /></button>
+      <button onClick={() => { if (eventStarted) setShowQR(true); else alert("Event has not started yet."); }} className="fixed bottom-20 right-6 md:bottom-8 md:right-8 w-14 h-14 md:w-16 md:h-16 bg-gradient-to-br from-emerald-500 to-teal-500 text-white rounded-full shadow-xl flex items-center justify-center hover:shadow-2xl hover:scale-105 transition-all z-[60]"><QrCode className="w-6 h-6 md:w-7 md:h-7" /></button>
     </div>
   )
 }

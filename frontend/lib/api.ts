@@ -1225,6 +1225,16 @@ export const api = {
     return response.json();
   },
 
+  // Fire after email verification — sends the Welcome email exactly once
+  sendWelcomeEmail: async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    await fetch(`${API_URL}/auth/welcome-email`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${session.access_token}` },
+    }).catch(() => {});
+  },
+
   // --- PASSWORD RESET ---
   async resetPassword(email: string) {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/auth/reset-password`, {

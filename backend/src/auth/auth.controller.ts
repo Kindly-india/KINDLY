@@ -1,8 +1,9 @@
-import { Controller, Post, Body, ValidationPipe, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Body, ValidationPipe, BadRequestException, UseGuards, Request } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { VolunteerSignupDto } from './dto/volunteer-signup.dto';
 import { OrganizationSignupDto } from './dto/organization-signup.dto';
 import { Throttle } from '@nestjs/throttler';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -18,6 +19,13 @@ export class AuthController {
   @Post('signup/organization')
   async signupOrganization(@Body(ValidationPipe) dto: OrganizationSignupDto) {
     return this.authService.signupOrganization(dto);
+  }
+
+  @Post('welcome-email')
+  @UseGuards(JwtAuthGuard)
+  async sendWelcomeEmail(@Request() req: any) {
+    await this.authService.dispatchWelcomeEmail(req.user.id);
+    return { message: 'ok' };
   }
 
   @Post('reset-password')

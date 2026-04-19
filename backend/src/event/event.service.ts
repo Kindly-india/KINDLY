@@ -852,13 +852,13 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
       throw new BadRequestException('Cannot cancel a registration that is already checked in or completed');
     }
 
-    // Update status to cancelled
-    const { error: updateError } = await supabase
+    // Delete the registration record entirely
+    const { error: deleteError } = await supabase
       .from('event_registrations')
-      .update({ status: 'cancelled' })
+      .delete()
       .eq('id', reg.id);
 
-    if (updateError) throw new BadRequestException(updateError.message);
+    if (deleteError) throw new BadRequestException(deleteError.message);
 
     // Decrement current_volunteers on the event (floor at 0)
     const { data: eventRow } = await supabase

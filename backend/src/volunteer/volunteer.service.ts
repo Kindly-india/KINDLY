@@ -50,20 +50,27 @@ export class VolunteerService {
           event_date,
           start_time,
           end_time,
-          organization_id
+          organization_id,
+          status
         )
       `)
       .eq('volunteer_id', profile.id);
 
     // --- CALCULATE METRICS ---
-    const totalRegistered = registrations?.length || 0;
-    
+    // Exclude registrations for org-cancelled events from all scoring —
+    // the volunteer should never be penalised for a cancellation outside their control.
+    const scorableRegistrations = (registrations || []).filter(
+      (r: any) => (r.events?.status ?? '') !== 'cancelled'
+    );
+
+    const totalRegistered = scorableRegistrations.length;
+
     // Filter for Verified Activity ('checked_in' or 'completed')
-    const completedRegs = registrations?.filter(r => {
+    const completedRegs = scorableRegistrations.filter(r => {
         const status = (r.status || '').toLowerCase();
         return status === 'checked_in' || status === 'completed';
-    }) || [];
-    
+    });
+
     const totalAttended = completedRegs.length;
     let totalHours = 0;
     

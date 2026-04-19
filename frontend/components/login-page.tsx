@@ -56,8 +56,9 @@ export function LoginPage() {
             if (profileData.userType === 'volunteer') {
                 // Set role cookie so middleware can enforce RBAC
                 document.cookie = 'kindly_role=volunteer; path=/; max-age=604800; SameSite=Lax'
-                // Explicit login — show the brand splash before navigating
-                setLoginDestination('/home')
+                // Route directly to onboarding if not completed — avoids the /home flash
+                const destination = profileData.profile?.onboarding_completed === false ? '/onboarding' : '/home'
+                setLoginDestination(destination)
                 setShowSplash(true)
             } else if (profileData.userType === 'organization') {
                 const approvalStatus = profileData.profile.approval_status
@@ -79,7 +80,11 @@ export function LoginPage() {
                 }
             }
         } catch (error: any) {
-            alert(error.message || 'Login failed. Please check your credentials.')
+            const raw: string = error.message || ''
+            const msg = /not confirmed|email.*confirm|confirm.*email|verify.*email|email.*verify/i.test(raw)
+                ? 'Please verify your email address to continue.'
+                : raw || 'Login failed. Please check your credentials.'
+            alert(msg)
         }
     }
 

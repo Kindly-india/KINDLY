@@ -94,7 +94,9 @@ export function EventHistoryPage() {
           date: new Date(ev.event_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
           image: ev.cover_image_url,
           location: ev.location,
-          status: mapBackendStatusToUI(ev.registration_status, ev.event_date, ev.end_time),
+          status: mapBackendStatusToUI(ev.registration_status, ev.event_date, ev.end_time, ev.status),
+          // True when the event itself was cancelled by the org (not by the volunteer)
+          cancelledByHost: ev.status === 'cancelled',
           org: ev.organization_profiles?.name || "Organizer",
           hours: calculateExactHours(ev.start_time, ev.end_time),
           certId: map[ev.id] || null,
@@ -112,13 +114,15 @@ export function EventHistoryPage() {
     fetchHistory()
   }, [router]) // Make sure to add router here
 
-  const mapBackendStatusToUI = (regStatus: string, eventDate: string, endTime: string) => {
+  const mapBackendStatusToUI = (regStatus: string, eventDate: string, endTime: string, eventStatus?: string) => {
     if (regStatus === 'completed' || regStatus === 'checked_in') return 'attended';
     if (regStatus === 'cancelled') return 'cancelled';
     // 'absent' = org explicitly marked no-show → missed
     if (regStatus === 'absent') return 'missed';
+    // Org cancelled the event — never the volunteer's fault, treat as cancelled
+    if (eventStatus === 'cancelled') return 'cancelled';
     if (regStatus === 'registered') {
-      // If the event has already ended, treat as missed
+      // If the event has already ended AND the event was not cancelled, treat as missed
       if (eventDate && endTime) {
         const eventEnd = new Date(`${eventDate}T${endTime}`)
         if (eventEnd < new Date()) return 'missed'
@@ -134,7 +138,7 @@ export function EventHistoryPage() {
     return matchesSearch && event.status === activeFilter;
   })
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: string, cancelledByHost?: boolean) => {
     switch (status) {
       case "attended":
         return (
@@ -149,7 +153,11 @@ export function EventHistoryPage() {
           </span>
         )
       case "cancelled":
-        return (
+        return cancelledByHost ? (
+          <span className="px-2 py-0.5 md:px-2.5 md:py-1 bg-red-50 text-red-500 text-[9px] md:text-xs font-medium rounded-full">
+            Cancelled by Host
+          </span>
+        ) : (
           <span className="px-2 py-0.5 md:px-2.5 md:py-1 bg-[#f5f5f5] text-[#86868b] text-[9px] md:text-xs font-medium rounded-full">
             Cancelled
           </span>
@@ -177,9 +185,7 @@ export function EventHistoryPage() {
     setCancellingId(eventId)
     try {
       await api.cancelRsvp(eventId)
-      setHistoryEvents(prev => prev.map(ev =>
-        ev.id === eventId ? { ...ev, status: 'cancelled' } : ev
-      ))
+      setHistoryEvents(prev => prev.filter(ev => ev.id !== eventId))
     } catch (err: any) {
       alert(err.message || 'Failed to cancel registration')
     } finally {
@@ -305,7 +311,7 @@ export function EventHistoryPage() {
               </button>
 
               <div className="flex-shrink-0 flex items-center gap-2">
-                {getStatusBadge(event.status)}
+                {getStatusBadge(event.status, event.cancelledByHost)}
                 {event.certId ? (
                   <button
                     onClick={(e) => handleDownload(e, event.certId)}

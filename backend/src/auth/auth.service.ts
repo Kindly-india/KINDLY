@@ -71,9 +71,6 @@ export class AuthService {
       );
     }
 
-    // Fire-and-forget — email failure must never break signup
-    this.emailService.sendWelcomeEmail(dto.email, dto.fullName, 'volunteer').catch(() => {});
-
     return {
       message: 'Signup successful. Please check your email to verify your account.',
       user: {
@@ -144,9 +141,6 @@ export class AuthService {
       throw new BadRequestException('Failed to create organization profile');
     }
 
-    // Fire-and-forget — email failure must never break signup
-    this.emailService.sendWelcomeEmail(dto.email, dto.name, 'org').catch(() => {});
-
     return {
       message: 'Organization application submitted. Please check your email to verify your account.',
       user: {
@@ -155,6 +149,38 @@ export class AuthService {
         profile,
       },
     };
+  }
+
+  async dispatchWelcomeEmail(userId: string): Promise<void> {
+    const supabase = this.supabaseService.getClient();
+
+    // Resolve email from Supabase auth (source of truth)
+    const { data: { user } } = await supabase.auth.admin.getUserById(userId);
+    const email = user?.email;
+    if (!email) return;
+
+    // Check volunteer profile first
+    const { data: vol } = await supabase
+      .from('volunteer_profiles')
+      .select('full_name')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (vol) {
+      this.emailService.sendWelcomeEmail(email, vol.full_name, 'volunteer').catch(() => {});
+      return;
+    }
+
+    // Fall back to org profile
+    const { data: org } = await supabase
+      .from('organization_profiles')
+      .select('name')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (org) {
+      this.emailService.sendWelcomeEmail(email, org.name, 'org').catch(() => {});
+    }
   }
 
   async resetPassword(email: string) {

@@ -3,6 +3,7 @@
 import { Suspense, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { supabase } from "@/lib/supabase"
+import { api } from "@/lib/api"
 
 function AuthCallbackLogic() {
   const router = useRouter()
@@ -22,6 +23,8 @@ function AuthCallbackLogic() {
         console.error("Auth callback error:", error.message)
         router.replace("/")
       } else {
+        // Session is live — fire welcome email once, after email verification
+        api.sendWelcomeEmail().catch(() => {})
         router.replace(next)
       }
     })

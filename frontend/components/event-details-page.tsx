@@ -66,14 +66,13 @@ export default function EventDetailsPage() {
         // Check if current user is already registered (Safe check)
         try {
           const registrations = await api.getMyRegistrations()
-          const alreadyRegistered = registrations?.events?.some(
-            (r: any) => r.id === eventId
-          )
-          setIsRegistered(!!alreadyRegistered)
-        } catch (regError) {
-          // If the user isn't logged in, registration fetch will fail.
-          // We catch it here so the page still loads the public event data.
-          console.log("User not logged in; skipping registration check.")
+          const myReg = registrations?.events?.find((r: any) => r.id === eventId)
+          if (myReg && myReg.registration_status !== 'cancelled') {
+            router.replace(`/events/${eventId}/registered`)
+            return
+          }
+        } catch {
+          // User not logged in — skip silently, page loads as public view
         }
 
       } catch (err: any) {
@@ -575,10 +574,18 @@ export default function EventDetailsPage() {
               <p className="text-sm text-gray-700 leading-relaxed">
                 You are committing to{' '}
                 <span className="font-bold text-gray-900">
-                  {event.start_time && event.end_time
-                    ? `${Math.max(1, Math.round((new Date(`1970-01-01T${event.end_time}`).getTime() - new Date(`1970-01-01T${event.start_time}`).getTime()) / 3600000))} hour(s)`
-                    : 'several hours'
-                  }
+                  {(() => {
+                    if (!event.start_time || !event.end_time) return 'several hours'
+                    const [sh, sm] = event.start_time.split(':').map(Number)
+                    const [eh, em] = event.end_time.split(':').map(Number)
+                    const total = Math.max(0, (eh * 60 + em) - (sh * 60 + sm))
+                    if (total === 0) return 'a short time'
+                    const h = Math.floor(total / 60)
+                    const m = total % 60
+                    if (h === 0) return `${m} minute${m !== 1 ? 's' : ''}`
+                    if (m === 0) return `${h} hour${h !== 1 ? 's' : ''}`
+                    return `${h} hr ${m} min`
+                  })()}
                 </span>{' '}
                 for <span className="font-bold text-gray-900">{event.title}</span>.
               </p>
