@@ -21,18 +21,12 @@ import {
 import { api } from "@/lib/api"
 
 const categories = [
-  { value: "nature_outdoors", label: "Outdoors & Nature" },
-  { value: "food_hunger", label: "Food & Hunger Relief" },
-  { value: "animal_welfare", label: "Animals & Rescue" },
-  { value: "elderly_care", label: "Elderly Care" },
-  { value: "education_mentoring", label: "Kids & Learning" },
-  { value: "health_medical", label: "Health & Medical" },
-  { value: "art_culture", label: "Art, Culture & Heritage" },
-  { value: "civic_community", label: "Community & Civic" },
-  { value: "women_empowerment", label: "Women & Safety" },
-  { value: "youth_sports", label: "Youth & Sports" },
-  { value: "mental_wellness", label: "Mental Health & Wellness" },
-  { value: "donation_drives", label: "Donations & Drives" },
+  { value: "environment", label: "Environment" },
+  { value: "education", label: "Education" },
+  { value: "health", label: "Health" },
+  { value: "animals", label: "Animals" },
+  { value: "elderly", label: "Elderly Care" },
+  { value: "community", label: "Community" },
 ]
 
 export default function EditEventPage() {

@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { api } from "@/lib/api"
+import { BrandSplash } from "@/components/brand-splash"
 
 export function LoginPage() {
     const router = useRouter()
@@ -28,6 +29,10 @@ export function LoginPage() {
     // --- LOGIN STATE ---
     const [showPassword, setShowPassword] = useState(false)
     
+    // --- SPLASH STATE ---
+    const [showSplash, setShowSplash] = useState(false)
+    const [loginDestination, setLoginDestination] = useState("")
+
     // --- FORGOT PASSWORD STATE ---
     const [isForgotPassword, setIsForgotPassword] = useState(false)
     const [resetEmail, setResetEmail] = useState("")
@@ -35,6 +40,49 @@ export function LoginPage() {
     const [resetMessage, setResetMessage] = useState("")
 
     // --- HANDLERS ---
+    const handleLogin = async (e: React.FormEvent) => {
+        e.preventDefault()
+        const formData = new FormData(e.currentTarget as HTMLFormElement)
+
+        try {
+            await api.login(
+                formData.get('email') as string,
+                formData.get('password') as string,
+            )
+
+            const profileData = await api.getUserProfile()
+            if (!profileData) throw new Error('Profile not found')
+
+            if (profileData.userType === 'volunteer') {
+                // Explicit login — show the brand splash before navigating
+                setLoginDestination('/home')
+                setShowSplash(true)
+            } else if (profileData.userType === 'organization') {
+                const approvalStatus = profileData.profile.approval_status
+
+                if (approvalStatus === 'pending') {
+                    alert('Your organization is pending approval. You will be notified once approved.')
+                    await api.logout()
+                    window.location.href = '/'
+                } else if (approvalStatus === 'approved') {
+                    // Explicit login — show the brand splash before navigating
+                    setLoginDestination('/org-home')
+                    setShowSplash(true)
+                } else {
+                    alert('Your organization application was rejected. Please contact support.')
+                    await api.logout()
+                    window.location.href = '/'
+                }
+            }
+        } catch (error: any) {
+            alert(error.message || 'Login failed. Please check your credentials.')
+        }
+    }
+
+    const handleSplashDone = () => {
+        window.location.href = loginDestination
+    }
+
     const handleResetPassword = async (e: React.FormEvent) => {
         e.preventDefault()
         if (!resetEmail) return
@@ -199,43 +247,7 @@ export function LoginPage() {
                                 </p>
 
                                 <form
-                                    onSubmit={async (e) => {
-                                        e.preventDefault();
-                                        const formData = new FormData(e.currentTarget);
-
-                                        try {
-                                            await api.login(
-                                                formData.get('email') as string,
-                                                formData.get('password') as string
-                                            );
-
-                                            const profileData = await api.getUserProfile();
-
-                                            if (!profileData) {
-                                                throw new Error('Profile not found');
-                                            }
-
-                                            if (profileData.userType === 'volunteer') {
-                                                window.location.href = '/home';
-                                            } else if (profileData.userType === 'organization') {
-                                                const approvalStatus = profileData.profile.approval_status;
-
-                                                if (approvalStatus === 'pending') {
-                                                    alert('Your organization is pending approval. You will be notified once approved.');
-                                                    await api.logout();
-                                                    window.location.href = '/';
-                                                } else if (approvalStatus === 'approved') {
-                                                    window.location.href = '/org-home';
-                                                } else {
-                                                    alert('Your organization application was rejected. Please contact support.');
-                                                    await api.logout();
-                                                    window.location.href = '/';
-                                                }
-                                            }
-                                        } catch (error: any) {
-                                            alert(error.message || 'Login failed. Please check your credentials.');
-                                        }
-                                    }}
+                                    onSubmit={handleLogin}
                                     className="space-y-4 md:space-y-5"
                                 >
                                     <div className="space-y-2">
@@ -349,6 +361,9 @@ export function LoginPage() {
                     </div>
                 </div>
             </main>
+
+            {/* Brand wipe — only mounts after an explicit successful login */}
+            <BrandSplash show={showSplash} onDone={handleSplashDone} />
         </div>
     )
 }
