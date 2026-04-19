@@ -20,8 +20,7 @@ import { api } from "@/lib/api"
 import { cn } from "@/lib/utils"
 import Image from "next/image"
 
-// --- UPDATED TAB TYPE ---
-type EventTab = "pending" | "active" | "completed"
+type EventTab = "pending" | "active" | "completed" | "cancelled"
 
 interface Event {
   id: string
@@ -140,14 +139,15 @@ export function OrgEventManagement() {
     )
   }
 
-  // --- UPDATED FILTERING LOGIC ---
   const pendingEvents = events.filter(e => e.status === 'pending')
   const activeEvents = events.filter(e => e.status === 'published' && !isEventCompleted(e))
   const completedEvents = events.filter(e => e.status === 'completed' || (e.status === 'published' && isEventCompleted(e)))
+  const cancelledEvents = events.filter(e => e.status === 'cancelled')
 
   let displayEvents: Event[] = []
   if (activeTab === "pending") displayEvents = pendingEvents
   else if (activeTab === "active") displayEvents = activeEvents
+  else if (activeTab === "cancelled") displayEvents = cancelledEvents
   else displayEvents = completedEvents
 
   return (
@@ -200,6 +200,15 @@ export function OrgEventManagement() {
           >
             Completed
           </button>
+          <button
+            onClick={() => setActiveTab("cancelled")}
+            className={`px-4 py-1.5 md:px-6 md:py-2.5 rounded-full font-medium text-[12px] md:text-sm transition-all whitespace-nowrap ${activeTab === "cancelled"
+                ? "bg-red-500 text-white shadow-md"
+                : "bg-white text-red-500 border border-red-100 md:border-transparent hover:bg-red-50"
+              }`}
+          >
+            Cancelled Drops {cancelledEvents.length > 0 && `(${cancelledEvents.length})`}
+          </button>
         </div>
 
         {error && (
@@ -217,13 +226,15 @@ export function OrgEventManagement() {
               <Calendar className="w-10 h-10 md:w-16 md:h-16 text-gray-300 mx-auto mb-3 md:mb-4" />
             )}
             <h3 className="text-[15px] md:text-lg font-semibold text-gray-900 mb-1.5 md:mb-2">
-              No {activeTab} events
+              No {activeTab === "cancelled" ? "cancelled" : activeTab} events
             </h3>
             <p className="text-[13px] md:text-sm text-gray-500 mb-5 md:mb-6">
-              {activeTab === "pending" 
-                ? "When you create an event, it will appear here for review." 
+              {activeTab === "pending"
+                ? "When you create an event, it will appear here for review."
                 : activeTab === "active"
                 ? "Create your first event to get started!"
+                : activeTab === "cancelled"
+                ? "No events have been cancelled. Keep it up!"
                 : "Your completed events will appear here"}
             </p>
             {activeTab === "active" && (
@@ -282,16 +293,20 @@ export function OrgEventManagement() {
                           {/* --- UPDATED STATUS BADGES --- */}
                           <span className={cn(
                             "px-2 py-0.5 md:px-3 md:py-1 text-[9px] md:text-xs font-bold rounded-full shrink-0 border uppercase tracking-wider",
-                            event.status === 'pending' 
-                              ? "bg-amber-50 text-amber-600 border-amber-100" 
+                            event.status === 'pending'
+                              ? "bg-amber-50 text-amber-600 border-amber-100"
+                              : event.status === 'cancelled'
+                              ? "bg-red-50 text-red-500 border-red-100"
                               : (event.status === 'completed' || isEventCompleted(event))
                               ? "bg-gray-50 text-gray-600 border-gray-200"
                               : "bg-emerald-50 text-emerald-600 border-emerald-100"
                           )}>
-                            {event.status === 'pending' 
-                              ? 'Pending Review' 
-                              : (event.status === 'completed' || isEventCompleted(event)) 
-                              ? 'Completed' 
+                            {event.status === 'pending'
+                              ? 'Pending Review'
+                              : event.status === 'cancelled'
+                              ? 'Cancelled'
+                              : (event.status === 'completed' || isEventCompleted(event))
+                              ? 'Completed'
                               : 'Published'}
                           </span>
                         </div>
@@ -338,26 +353,27 @@ export function OrgEventManagement() {
                         View
                       </Link>
 
-                      {/* --- OPTION C: Only show edit if pending --- */}
+                      {/* Edit only available for pending events */}
                       {(activeTab === "pending" || event.status === 'pending') && (
-                          <Link
-                            href={`/edit-event/${event.id}`}
-                            className="px-3 py-1.5 md:px-4 md:py-2 bg-blue-50 text-blue-600 rounded-lg text-[11px] md:text-sm font-semibold hover:bg-blue-100 transition-colors inline-flex items-center gap-1.5 md:gap-2 border border-blue-100/50"
-                          >
-                            <Edit className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                            Edit
-                          </Link>
+                        <Link
+                          href={`/edit-event/${event.id}`}
+                          className="px-3 py-1.5 md:px-4 md:py-2 bg-blue-50 text-blue-600 rounded-lg text-[11px] md:text-sm font-semibold hover:bg-blue-100 transition-colors inline-flex items-center gap-1.5 md:gap-2 border border-blue-100/50"
+                        >
+                          <Edit className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                          Edit
+                        </Link>
                       )}
 
+                      {/* Cancel only available for active and pending events */}
                       {(activeTab === "active" || activeTab === "pending") && (
-                          <button
-                            onClick={() => handleCancelEvent(event.id)}
-                            disabled={deletingEventId === event.id}
-                            className="px-3 py-1.5 md:px-4 md:py-2 bg-red-50 text-red-600 rounded-lg text-[11px] md:text-sm font-semibold hover:bg-red-100 transition-colors inline-flex items-center gap-1.5 md:gap-2 disabled:opacity-50 border border-red-100/50 ml-auto md:ml-0"
-                          >
-                            <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                            {deletingEventId === event.id ? "Wait..." : "Cancel"}
-                          </button>
+                        <button
+                          onClick={() => handleCancelEvent(event.id)}
+                          disabled={deletingEventId === event.id}
+                          className="px-3 py-1.5 md:px-4 md:py-2 bg-red-50 text-red-600 rounded-lg text-[11px] md:text-sm font-semibold hover:bg-red-100 transition-colors inline-flex items-center gap-1.5 md:gap-2 disabled:opacity-50 border border-red-100/50 ml-auto md:ml-0"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                          {deletingEventId === event.id ? "Wait..." : "Cancel"}
+                        </button>
                       )}
                     </div>
                   </div>

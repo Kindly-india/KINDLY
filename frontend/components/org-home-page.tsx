@@ -82,8 +82,10 @@ export function OrgHomePage() {
           upcomingEventsCount: 0
         }
 
-        // Process Events Basic Stats
+        // Process Events Basic Stats — exclude cancelled events from all counts
         fetchedEvents.forEach((event: any) => {
+          if (event.status === 'cancelled') return
+
           calculatedStats.eventsHosted += 1
 
           const start = new Date(`1970-01-01T${event.start_time}`)
@@ -301,7 +303,7 @@ export function OrgHomePage() {
             </Link>
           </div>
 
-          {events.length === 0 ? (
+          {events.filter(e => e.status !== 'cancelled').length === 0 ? (
             <div className="text-center py-12 bg-white rounded-xl">
               <Calendar className="w-12 h-12 text-[#86868b] mx-auto mb-3" />
               <p className="text-sm text-[#86868b]">No events yet. Create your first event!</p>
@@ -312,11 +314,11 @@ export function OrgHomePage() {
           ) : (
             <>
               {/* items-stretch forces all cards to equal height */}
-              <div 
-                ref={eventsRef} 
+              <div
+                ref={eventsRef}
                 className="flex md:grid md:grid-cols-4 gap-3 md:gap-4 overflow-x-auto md:overflow-visible pb-4 md:pb-0 snap-x snap-mandatory scrollbar-hide items-stretch"
               >
-                {events.map((event) => (
+                {events.filter(e => e.status !== 'cancelled').map((event) => (
                   <Link 
                     key={event.id} 
                     href={`/org-events/${event.id}`} 

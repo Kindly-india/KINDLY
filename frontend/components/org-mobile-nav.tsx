@@ -10,16 +10,15 @@ import { api } from "@/lib/api"
 export function OrgMobileNav() {
     const pathname = usePathname()
     const [profile, setProfile] = useState<any>(null)
-    
-    // Checks if the current URL matches the link
+
     const isActive = (path: string) => pathname === path
 
     useEffect(() => {
         const fetchUser = async () => {
             try {
-                const res = await api.getUserProfile() 
+                const res = await api.getUserProfile()
                 if (res?.profile) setProfile(res.profile)
-            } catch (e) {
+            } catch {
                 console.log("No active session found")
             }
         }

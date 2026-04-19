@@ -444,6 +444,10 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
       throw new BadRequestException('Cannot check in volunteers before the event has started');
     }
 
+    if (event.status === 'cancelled') {
+      throw new BadRequestException('Check-in is closed — this event was cancelled');
+    }
+
     if (event.status === 'completed') {
       throw new BadRequestException('Check-in is closed — the event has been completed');
     }

@@ -271,6 +271,33 @@ export function OrgEventDetail() {
     )
   }
 
+  // --- CANCELLED VIEW ---
+  if (event.status === 'cancelled') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-gray-50 flex flex-col items-center justify-center p-6">
+        <div className="max-w-md w-full bg-white rounded-3xl p-8 shadow-xl border border-red-100 text-center relative overflow-hidden">
+          <div className="absolute -top-10 -right-10 opacity-5">
+            <X className="w-40 h-40" />
+          </div>
+          <div className="w-20 h-20 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <X className="w-10 h-10 text-red-500" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Event Cancelled</h2>
+          <p className="text-gray-500 text-sm mb-8">
+            <span className="font-bold text-gray-900">"{event.title}"</span> was cancelled. All registered volunteers were notified by email.
+          </p>
+          <Link
+            href="/org-events"
+            className="w-full h-12 bg-white text-gray-600 border border-gray-200 rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition-all"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            Back to My Events
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
   // --- PENDING APPROVAL VIEW ---
   if (event.status === 'pending') {
     return (
