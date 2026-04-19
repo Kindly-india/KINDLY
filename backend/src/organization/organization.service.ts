@@ -158,7 +158,7 @@ export class OrganizationService {
     const client = this.supabase.getClient();
 
     const { data: reviews, error } = await client
-      .from('org_reviews')
+      .from('organization_reviews')
       .select(`
         id,
         rating,
@@ -271,8 +271,19 @@ export class OrganizationService {
     return { isFollowing: !!data };
   }
 
-  async getOrgVolunteers(orgId: string) {
+  async getOrgVolunteers(orgId: string, requestingUserId: string) {
     const client = this.supabase.getClient();
+
+    // Ownership check: the requesting user must own this org profile
+    const { data: callerOrg } = await client
+      .from('organization_profiles')
+      .select('id')
+      .eq('user_id', requestingUserId)
+      .maybeSingle();
+
+    if (!callerOrg || callerOrg.id !== orgId) {
+      throw new ForbiddenException('Access denied');
+    }
 
     const { data, error } = await client
       .from('event_registrations')

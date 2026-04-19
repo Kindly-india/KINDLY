@@ -6,8 +6,6 @@ export class AnalyticsService {
     constructor(private readonly supabase: SupabaseService) { }
 
     async getVolunteerImpact(userId: string) {
-        console.log("🔍 IMPACT DEBUG: Starting for User ID:", userId);
-
         const client = this.supabase.getClient();
 
         const { data: vol, error: volError } = await client
@@ -20,7 +18,6 @@ export class AnalyticsService {
             console.error("❌ No Volunteer Profile found.");
             return null;
         }
-        console.log("✅ Volunteer Found, Profile ID:", vol.id);
 
         // 1. Fetch ALL registrations
         const { data: rawHistory, error: historyError } = await client
@@ -28,9 +25,8 @@ export class AnalyticsService {
             .select(`
         status,
         hours_contributed,
-        event_date,
         events (
-          id, title, category, start_time, end_time, location
+          id, title, category, event_date, start_time, end_time, location
         )
       `)
             .eq('volunteer_id', vol.id);
@@ -41,12 +37,6 @@ export class AnalyticsService {
 
         // ✅ FIX: Ensure history is always an array (never null)
         const history = rawHistory || [];
-
-        // Now these lines will work perfectly (No Red Lines)
-        console.log(`📊 Found ${history.length} registration records.`);
-        if (history.length > 0) {
-            console.log("First Record Sample:", JSON.stringify(history[0], null, 2));
-        }
 
         // --- CALCULATIONS ---
         let verifiedHours = 0;
@@ -64,8 +54,6 @@ export class AnalyticsService {
             const status = (r.status || '').toLowerCase();
             const isVerified = status === 'completed' || status === 'checked_in';
             const isRegistered = status === 'registered';
-
-            console.log(`Processing Event: ${evt.title} | Status: ${status}`);
 
             // Duration Logic
             let duration = r.hours_contributed || 0;
@@ -99,8 +87,6 @@ export class AnalyticsService {
             }
         });
 
-        console.log(`🏁 FINAL: Verified=${verifiedHours}, Pending=${pendingHours}`);
-
         // Causes Breakdown
         const causesMap = new Map();
         history.forEach(r => {
@@ -121,7 +107,7 @@ export class AnalyticsService {
             const status = (r.status || '').toLowerCase();
             if (status === 'completed' || status === 'checked_in') {
                 const now = new Date();
-                const d = new Date(r.event_date);
+                const d = new Date((r.events as any)?.event_date);
 
                 const monthsAgo =
                     (now.getFullYear() - d.getFullYear()) * 12 +
@@ -150,8 +136,6 @@ export class AnalyticsService {
     }
 
     async getOrgAnalytics(userId: string) {
-        console.log("🔍 ORG ANALYTICS: Starting for User:", userId);
-
         const client = this.supabase.getClient();
 
         // 1. Get Org Profile
@@ -162,7 +146,6 @@ export class AnalyticsService {
             .single();
 
         if (!org) {
-            console.log("❌ No Org Profile Found");
             return null;
         }
 
@@ -184,8 +167,6 @@ export class AnalyticsService {
         )
       `)
             .eq('organization_id', org.id);
-
-        console.log(`📊 Found ${events?.length || 0} events.`);
 
         // --- CALCULATIONS ---
         let totalHours = 0;
@@ -225,8 +206,6 @@ export class AnalyticsService {
                 // ✅ FIX: If hours_contributed is missing, use Event Duration
                 const hours = reg.hours_contributed || eventDuration || 0;
 
-                console.log(`   -> Reg: ${status} | Hours: ${hours} (Calc from ${e.start_time}-${e.end_time})`);
-
                 if (status === 'completed' || status === 'checked_in') {
                     totalHours += hours;
                     checkedInCount++;
@@ -248,8 +227,6 @@ export class AnalyticsService {
                 }
             });
         });
-
-        console.log(`🏁 FINAL ORG STATS: Hours=${totalHours}, Vols=${totalVolunteers.size}`);
 
         const turnoutRate = registeredTotal > 0 ? Math.round((checkedInCount / registeredTotal) * 100) : 0;
 

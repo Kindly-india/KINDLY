@@ -33,13 +33,13 @@ export class AdminGuard implements CanActivate {
     }
 
     // Step 2: check is_admin on volunteer_profiles
-    const { data: profile, error: profileError } = await supabase
+    const { data: profile } = await supabase
       .from('volunteer_profiles')
       .select('is_admin')
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
-    if (profileError || !profile || !profile.is_admin) {
+    if (!profile || !profile.is_admin) {
       throw new ForbiddenException('Admin access required');
     }
 

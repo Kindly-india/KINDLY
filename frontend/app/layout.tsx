@@ -13,12 +13,17 @@ const inter = Inter({
   variable: "--font-sans",
 })
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.kindly.co.in'
+const DEFAULT_OG_IMAGE = `${SITE_URL}/og-default.png`
+const DEFAULT_TITLE = 'KINDLY — Volunteer with people, not just for causes'
+const DEFAULT_DESCRIPTION = 'Find events near you. Show up. Make friends. Make a difference. Sundays in Nashik are for KINDLY.'
+
 export const metadata: Metadata = {
   title: {
-    default: "KINDLY | Make a Real Impact",
+    default: DEFAULT_TITLE,
     template: "%s | KINDLY",
   },
-  description: "Bridge the gap between intention and action. Connect with verified community organizations, discover local volunteering events, and build your digital impact resume.",
+  description: DEFAULT_DESCRIPTION,
   generator: "Next.js",
   applicationName: "KINDLY",
   keywords: ["volunteering", "community organizations", "NGO", "social impact", "community service", "Nashik", "KINDLY"],
@@ -30,6 +35,20 @@ export const metadata: Metadata = {
       { url: "/icon.svg", type: "image/svg+xml" },
     ],
     apple: "/apple-icon.png",
+  },
+  openGraph: {
+    type: "website",
+    siteName: "KINDLY",
+    title: DEFAULT_TITLE,
+    description: DEFAULT_DESCRIPTION,
+    url: SITE_URL,
+    images: [{ url: DEFAULT_OG_IMAGE, width: 1200, height: 630, alt: "KINDLY" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: DEFAULT_TITLE,
+    description: DEFAULT_DESCRIPTION,
+    images: [DEFAULT_OG_IMAGE],
   },
 }
 

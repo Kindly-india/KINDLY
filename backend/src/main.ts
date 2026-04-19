@@ -1,11 +1,14 @@
+import './instrument';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
+import { SentryExceptionFilter } from './filters/sentry-exception.filter';
 
 async function bootstrap() {
   const requiredEnvVars = [
     'SUPABASE_URL',
     'SUPABASE_SERVICE_ROLE_KEY',
+    'SENTRY_DSN',
   ];
   for (const key of requiredEnvVars) {
     if (!process.env[key]) {
@@ -20,7 +23,7 @@ async function bootstrap() {
       const allowedOrigins = [
         'https://www.kindly.co.in',
         'https://kindly-sigma.vercel.app',
-        'http://localhost:3000'
+        ...(process.env.NODE_ENV !== 'production' ? ['http://localhost:3000'] : []),
       ];
 
       // Allow server-to-server / Postman / Render health checks
@@ -39,6 +42,7 @@ async function bootstrap() {
   });
 
   app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalFilters(new SentryExceptionFilter());
 
   const port = process.env.PORT || 3001;
   await app.listen(port);

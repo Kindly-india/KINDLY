@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, ForbiddenException, BadRequestException 
 import { SupabaseService } from '../supabase/supabase.service';
 import { EmailService } from '../email/email.service';
 import { CreateEventDto } from './dto/create-event.dto';
+import { validateImageFile } from '../common/file-validation.util';
 
 @Injectable()
 export class EventService {
@@ -11,6 +12,7 @@ export class EventService {
   ) { }
 
   async uploadEventImage(userId: string, file: Express.Multer.File) {
+    validateImageFile(file);
     const supabase = this.supabaseService.getClient();
 
     // 1. Generate unique filename
@@ -31,7 +33,6 @@ export class EventService {
     const { data: { publicUrl } } = supabase.storage
       .from('event-images') // 👈 UPDATED HERE
       .getPublicUrl(filePath);
-    console.log('Public URL:', publicUrl);
     return publicUrl;
   }
 
@@ -1027,6 +1028,7 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
 
     const { data: orgProfile } = await supabase.from('organization_profiles').select('id').eq('user_id', userId).single();
     if (!orgProfile) throw new NotFoundException('Organization not found');
+    validateImageFile(file);
 
     const fileExt = file.originalname.split('.').pop();
     const fileName = `${orgProfile.id}-${Date.now()}.${fileExt}`;
@@ -1097,19 +1099,30 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
 
     if (!event) throw new NotFoundException('Event not found');
 
-    // 3. Check if review already exists (Optional, prevents duplicates)
-    const { data: existing } = await supabase
-      .from('org_reviews')
+    // 3. Verify the volunteer attended this event
+    const { data: registration } = await supabase
+      .from('event_registrations')
       .select('id')
       .eq('event_id', eventId)
       .eq('volunteer_id', volProfile.id)
-      .single();
+      .in('status', ['checked_in', 'completed'])
+      .maybeSingle();
+
+    if (!registration) throw new ForbiddenException('Only volunteers who attended this event can leave a review');
+
+    // 4. Check if review already exists (prevents duplicates)
+    const { data: existing } = await supabase
+      .from('organization_reviews')
+      .select('id')
+      .eq('event_id', eventId)
+      .eq('volunteer_id', volProfile.id)
+      .maybeSingle();
 
     if (existing) throw new BadRequestException('You have already reviewed this event');
 
-    // 4. Insert Review
+    // 5. Insert Review
     const { error } = await supabase
-      .from('org_reviews')
+      .from('organization_reviews')
       .insert({
         organization_id: event.organization_id,
         volunteer_id: volProfile.id,
@@ -1133,11 +1146,11 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
     if (!volProfile) return null;
 
     const { data: review } = await supabase
-      .from('org_reviews')
+      .from('organization_reviews')
       .select('*')
       .eq('event_id', eventId)
       .eq('volunteer_id', volProfile.id)
-      .single();
+      .maybeSingle();
 
     return { review };
   }
