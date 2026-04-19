@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Delete, ValidationPipe, Request, UseGuards, Param, Patch, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Get, Body, Delete, ValidationPipe, Request, UseGuards, Param, Patch, BadRequestException, Query } from '@nestjs/common';
 import { EventService } from './event.service';
 import { CertificateService } from '../certificate/certificate.service';
 import { CreateEventDto } from './dto/create-event.dto';
@@ -42,8 +42,11 @@ export class EventController {
 
   @Get('public')
   @UseGuards(OptionalAuthGuard)
-  async getPublicEvents(@Request() req: any) {
-    return this.eventService.getPublicEvents(req.user?.id);
+  async getPublicEvents(
+    @Request() req: any,
+    @Query('location') location?: string,
+  ) {
+    return this.eventService.getPublicEvents(req.user?.id, location);
   }
 
   @Get('top')

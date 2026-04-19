@@ -54,6 +54,8 @@ export function LoginPage() {
             if (!profileData) throw new Error('Profile not found')
 
             if (profileData.userType === 'volunteer') {
+                // Set role cookie so middleware can enforce RBAC
+                document.cookie = 'kindly_role=volunteer; path=/; max-age=604800; SameSite=Lax'
                 // Explicit login — show the brand splash before navigating
                 setLoginDestination('/home')
                 setShowSplash(true)
@@ -65,6 +67,8 @@ export function LoginPage() {
                     await api.logout()
                     window.location.href = '/'
                 } else if (approvalStatus === 'approved') {
+                    // Set role cookie so middleware can enforce RBAC
+                    document.cookie = 'kindly_role=org; path=/; max-age=604800; SameSite=Lax'
                     // Explicit login — show the brand splash before navigating
                     setLoginDestination('/org-home')
                     setShowSplash(true)

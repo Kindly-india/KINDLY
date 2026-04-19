@@ -5,7 +5,7 @@ import { Resend } from 'resend';
 export class EmailService {
   private readonly resend: Resend | null;
   private readonly logger = new Logger(EmailService.name);
-  private readonly from = 'KINDLY <hello@kindly.co.in>';
+  private readonly from = 'KINDLY <team@kindly.co.in>';
 
   constructor() {
     const apiKey = process.env.RESEND_API_KEY;
@@ -84,6 +84,55 @@ export class EmailService {
       to,
       `Reminder: You're volunteering at ${eventTitle} tomorrow`,
       this.eventReminderHtml(name, eventTitle, eventDate, eventLocation),
+    );
+  }
+
+  async sendAdminCancellationAlert(
+    eventTitle: string,
+    orgName: string,
+    eventDate: string,
+    location: string,
+  ): Promise<void> {
+    const ADMINS = ['manasdhivare@gmail.com', 'adityamohandhongade@gmail.com'];
+    const formattedDate = eventDate
+      ? new Date(eventDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
+      : 'Unknown date';
+
+    const html = this.base(
+      `[KINDLY OPS] Event Cancelled — ${eventTitle}`,
+      `<div style="display:inline-block;background:#fff1f2;border-radius:100px;padding:6px 16px;margin-bottom:20px;">
+         <span style="font-size:13px;font-weight:600;color:#e11d48;">⚠ Cancellation Alert</span>
+       </div>
+       <h1 style="margin:0 0 8px;font-size:24px;font-weight:700;color:#1d1d1f;letter-spacing:-0.5px;">An event has been cancelled.</h1>
+       <p style="margin:0 0 24px;font-size:15px;color:#86868b;line-height:1.6;">
+         An organisation just cancelled a published event on KINDLY. Review below.
+       </p>
+       <div style="border:1px solid #fecdd3;border-radius:12px;overflow:hidden;margin-bottom:28px;">
+         <div style="background:#e11d48;padding:16px 20px;">
+           <p style="margin:0;font-size:16px;font-weight:700;color:#ffffff;">${eventTitle}</p>
+         </div>
+         <div style="padding:16px 20px;background:#fff1f2;">
+           <table cellpadding="0" cellspacing="0">
+             <tr>
+               <td style="padding:4px 0;font-size:13px;color:#86868b;padding-right:16px;white-space:nowrap;">Organisation</td>
+               <td style="padding:4px 0;font-size:13px;font-weight:600;color:#1d1d1f;">${orgName}</td>
+             </tr>
+             <tr>
+               <td style="padding:4px 0;font-size:13px;color:#86868b;padding-right:16px;white-space:nowrap;">Was scheduled</td>
+               <td style="padding:4px 0;font-size:13px;font-weight:600;color:#1d1d1f;">${formattedDate}</td>
+             </tr>
+             <tr>
+               <td style="padding:4px 0;font-size:13px;color:#86868b;padding-right:16px;white-space:nowrap;">Location</td>
+               <td style="padding:4px 0;font-size:13px;font-weight:600;color:#1d1d1f;">${location}</td>
+             </tr>
+           </table>
+         </div>
+       </div>
+       <p style="margin:0;font-size:13px;color:#86868b;">This is an automated ops alert from the KINDLY platform.</p>`,
+    );
+
+    await Promise.all(
+      ADMINS.map((to) => this.send(to, `[KINDLY OPS] Event Cancelled — ${eventTitle}`, html)),
     );
   }
 

@@ -167,6 +167,8 @@ export const api = {
   logout: async () => {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
+    // Clear RBAC role cookie so middleware doesn't grant stale access
+    document.cookie = 'kindly_role=; path=/; max-age=0; SameSite=Lax'
   },
 
   // Get current user
@@ -285,12 +287,16 @@ export const api = {
   },
 
   // Get public events (passes token if logged in for personalized feed ordering)
-  getPublicEvents: async () => {
+  getPublicEvents: async (location?: string) => {
     const { data: { session } } = await supabase.auth.getSession();
     const headers: Record<string, string> = {};
     if (session) headers['Authorization'] = `Bearer ${session.access_token}`;
 
-    const response = await fetch(`${API_URL}/events/public`, { headers });
+    const url = location
+      ? `${API_URL}/events/public?location=${encodeURIComponent(location)}`
+      : `${API_URL}/events/public`;
+
+    const response = await fetch(url, { headers });
 
     if (!response.ok) {
       const error = await response.json();

@@ -80,13 +80,16 @@ export function OrgEventDetail() {
     const fetchEventData = async () => {
       try {
         setLoading(true)
-        const [eventResponse, registrationsResponse, broadcastsResponse] = await Promise.all([
-          api.getEventById(eventId),
+        const eventResponse = await api.getEventById(eventId)
+        setEvent(eventResponse.event)
+
+        // Pending events have no registrations or broadcasts yet — skip those fetches
+        if (eventResponse.event?.status === 'pending') return
+
+        const [registrationsResponse, broadcastsResponse] = await Promise.all([
           api.getEventRegistrations(eventId),
           api.getEventBroadcasts(eventId)
         ])
-
-        setEvent(eventResponse.event)
         setRegistrations(registrationsResponse.registrations || [])
         setBroadcasts(broadcastsResponse.broadcasts || [])
       } catch (err: any) {

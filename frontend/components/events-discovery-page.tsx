@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import {
@@ -19,10 +18,6 @@ import {
     Sunset,
     Moon,
     TrendingUp,
-    Filter,
-    ChevronDown,
-    Menu,
-    Clock,
     Coffee,
     Utensils,
     Shield,
@@ -81,28 +76,26 @@ export default function EventsDiscoveryPage() {
     const [error, setError] = useState<string | null>(null)
     const [searchQuery, setSearchQuery] = useState("")
 
-    // Profile State
-    const [profile, setProfile] = useState<any>(null)
-
     // Filters
     const [selectedDate, setSelectedDate] = useState<string | null>(null)
     const [selectedCauses, setSelectedCauses] = useState<string[]>([])
     const [selectedTime, setSelectedTime] = useState<string | null>(null)
     const [selectedDuration, setSelectedDuration] = useState<string | null>(null)
     const [locationFilter, setLocationFilter] = useState("")
+    const [debouncedLocation, setDebouncedLocation] = useState("")
     const [showFilledEvents, setShowFilledEvents] = useState(true)
 
     const [sortBy, setSortBy] = useState("newest")
     const [isFilterOpen, setIsFilterOpen] = useState(false)
     const [visibleEvents, setVisibleEvents] = useState(10) // Increased initial load for compact view
 
-    // Fetch events & Profile
+    // Fetch events & Profile — refetch whenever debouncedLocation changes
     useEffect(() => {
         const fetchData = async () => {
             try {
                 setLoading(true)
                 const [eventsRes, profileRes] = await Promise.all([
-                    api.getPublicEvents(),
+                    api.getPublicEvents(debouncedLocation || undefined),
                     api.getUserProfile().catch(() => null)
                 ])
 
@@ -113,9 +106,6 @@ export default function EventsDiscoveryPage() {
                 }
 
                 setEvents(eventsRes.events || [])
-                if (profileRes?.profile) {
-                    setProfile(profileRes.profile)
-                }
             } catch (err: any) {
                 setError(err.message || 'Failed to load data')
                 console.error('Error fetching data:', err)
@@ -125,7 +115,10 @@ export default function EventsDiscoveryPage() {
         }
 
         fetchData()
-    }, [])
+    }, [debouncedLocation, router])
+
+    // Commit the location filter — called on Enter keypress or input blur
+    const commitLocationFilter = () => setDebouncedLocation(locationFilter)
 
     const toggleCause = (causeId: string) => {
         setSelectedCauses((prev) => (prev.includes(causeId) ? prev.filter((c) => c !== causeId) : [...prev, causeId]))
@@ -137,6 +130,7 @@ export default function EventsDiscoveryPage() {
         setSelectedTime(null)
         setSelectedDuration(null)
         setLocationFilter("")
+        setDebouncedLocation("")
         setShowFilledEvents(true)
         setSearchQuery("")
     }
@@ -273,6 +267,7 @@ const FilterContent = () => (
                         placeholder="Enter specific location..."
                         value={locationFilter}
                         onChange={(e) => setLocationFilter(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && commitLocationFilter()}
                         // 16px is required on mobile to prevent iOS zoom, but we safely drop it to 12px on desktop!
                         className="w-full h-12 lg:h-9 bg-white border border-gray-200 rounded-xl lg:rounded-lg text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition-colors pl-11 lg:pl-8 pr-4 lg:pr-3 text-[16px] lg:text-[12px]"
                     />
@@ -326,7 +321,7 @@ const FilterContent = () => (
 
     const formatTime = (timeString: string) => {
         if (!timeString) return '';
-        const [hours, minutes] = timeString.split(':')
+        const [hours] = timeString.split(':')
         const hour = parseInt(hours)
         const ampm = hour >= 12 ? 'PM' : 'AM'
         const displayHour = hour % 12 || 12
@@ -341,10 +336,6 @@ const FilterContent = () => (
             const matchLocation = event.location?.toLowerCase().includes(query)
             const matchOrg = event.org_name?.toLowerCase().includes(query)
             if (!matchTitle && !matchLocation && !matchOrg) return false
-        }
-
-        if (locationFilter && !event.location?.toLowerCase().includes(locationFilter.toLowerCase())) {
-            return false
         }
 
         if (selectedCauses.length > 0 && !selectedCauses.includes(event.category)) {

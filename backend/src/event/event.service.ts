@@ -167,10 +167,10 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
     return { events: eventsWithCounts };
   }
 
-  async getPublicEvents(userId?: string) {
+  async getPublicEvents(userId?: string, location?: string) {
     const supabase = this.supabaseService.getClient();
 
-    const { data: events, error } = await supabase
+    let query = supabase
       .from('events')
       .select(`
       *,
@@ -182,6 +182,12 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
       .eq('status', 'published')
       .gte('event_date', new Date().toISOString().split('T')[0])
       .order('event_date', { ascending: true });
+
+    if (location) {
+      query = query.ilike('location', `%${location}%`);
+    }
+
+    const { data: events, error } = await query;
 
     if (error) throw error;
 
@@ -421,7 +427,7 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
 
     const { data: event, error: eventError } = await supabase
       .from('events')
-      .select('organization_id, event_date, start_time')
+      .select('organization_id, event_date, start_time, status')
       .eq('id', eventId)
       .single();
 
@@ -436,6 +442,10 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
     const eventStart = new Date(`${event.event_date}T${event.start_time}:00+05:30`);
     if (new Date() < eventStart) {
       throw new BadRequestException('Cannot check in volunteers before the event has started');
+    }
+
+    if (event.status === 'completed') {
+      throw new BadRequestException('Check-in is closed — the event has been completed');
     }
 
     const { data: registration, error: updateError } = await supabase
@@ -540,7 +550,7 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
 
     const { data: event, error: eventError } = await supabase
       .from('events')
-      .select('organization_id')
+      .select('organization_id, status')
       .eq('id', eventId)
       .single();
 
@@ -550,6 +560,10 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
 
     if (event.organization_id !== orgProfile.id) {
       throw new ForbiddenException('You do not have access to this event');
+    }
+
+    if (event.status === 'completed') {
+      throw new BadRequestException('Cannot undo check-in after the event has been completed');
     }
 
     const { data: registration, error: updateError } = await supabase
@@ -586,7 +600,7 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
 
     const { data: event, error: eventError } = await supabase
       .from('events')
-      .select('organization_id')
+      .select('organization_id, event_date, start_time, status, title, location')
       .eq('id', eventId)
       .single();
 
@@ -596,6 +610,21 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
 
     if (event.organization_id !== orgProfile.id) {
       throw new ForbiddenException('You do not have access to this event');
+    }
+
+    if (event.status === 'cancelled') {
+      throw new BadRequestException('This event has already been cancelled');
+    }
+
+    if (event.status === 'completed') {
+      throw new BadRequestException('Cannot cancel a completed event');
+    }
+
+    // Time-lock: block cancellation within 2 hours of start time
+    const eventStart = new Date(`${event.event_date}T${event.start_time}:00+05:30`);
+    const twoHoursBefore = new Date(eventStart.getTime() - 2 * 60 * 60 * 1000);
+    if (new Date() >= twoHoursBefore) {
+      throw new BadRequestException('Events cannot be cancelled within 2 hours of the start time. Contact support for emergency cancellations.');
     }
 
     const { data: updatedEvent, error: updateError } = await supabase
@@ -609,6 +638,20 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
 
     // Fire-and-forget — email every RSVP'd volunteer about the cancellation
     this.sendCancellationEmails(supabase, eventId, updatedEvent).catch(() => {});
+
+    // Fire-and-forget — alert admins about the cancellation
+    const { data: orgData } = await supabase
+      .from('organization_profiles')
+      .select('name')
+      .eq('id', orgProfile.id)
+      .maybeSingle();
+
+    this.emailService.sendAdminCancellationAlert(
+      event.title ?? 'Untitled Event',
+      orgData?.name ?? 'Unknown Org',
+      event.event_date ?? '',
+      event.location ?? '',
+    ).catch(() => {});
 
     return {
       message: 'Event cancelled successfully',
@@ -738,28 +781,47 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
   async registerForEvent(userId: string, eventId: string) {
     const supabase = this.supabaseService.getClient();
 
-    const { data, error } = await supabase.rpc('register_for_event', {
-      p_user_id: userId,
-      p_event_id: eventId,
-    });
+    // Retry up to 3 times on transient advisory-lock contention.
+    // Root cause: pg_advisory_lock (session-scoped) conflicts with PgBouncer
+    // transaction-pooling mode. The SQL function should use pg_advisory_xact_lock
+    // instead, but the retry here handles any residual contention gracefully.
+    const MAX_ATTEMPTS = 3;
+    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+      const { data, error } = await supabase.rpc('register_for_event', {
+        p_user_id: userId,
+        p_event_id: eventId,
+      });
 
-    if (error) {
-      const msg = error.message;
+      if (!error) {
+        // Fire-and-forget RSVP confirmation — fetch details then send
+        this.sendRsvpEmail(supabase, userId, eventId).catch(() => {});
+        return {
+          message: 'Successfully registered for event',
+          registration: data,
+        };
+      }
+
+      const msg = error.message ?? '';
+
+      // Non-retryable business errors — surface immediately
       if (msg.includes('VOLUNTEER_NOT_FOUND')) throw new NotFoundException('Volunteer profile not found');
       if (msg.includes('EVENT_NOT_FOUND')) throw new NotFoundException('Event not found');
       if (msg.includes('DEADLINE_PASSED')) throw new BadRequestException('Registration deadline has passed');
       if (msg.includes('EVENT_FULL')) throw new BadRequestException('Event is already full');
       if (msg.includes('ALREADY_REGISTERED')) throw new BadRequestException('Already registered for this event');
+
+      // Retryable: lock contention from PgBouncer connection reuse
+      const isLockError = msg.toLowerCase().includes('lock');
+      if (isLockError && attempt < MAX_ATTEMPTS - 1) {
+        await new Promise((r) => setTimeout(r, 100 * (attempt + 1))); // 100ms, 200ms
+        continue;
+      }
+
       throw error;
     }
 
-    // Fire-and-forget RSVP confirmation — fetch details then send
-    this.sendRsvpEmail(supabase, userId, eventId).catch(() => {});
-
-    return {
-      message: 'Successfully registered for event',
-      registration: data,
-    };
+    // All retries exhausted
+    throw new BadRequestException('Registration is temporarily busy — please try again in a moment.');
   }
 
   async cancelRsvp(userId: string, eventId: string) {

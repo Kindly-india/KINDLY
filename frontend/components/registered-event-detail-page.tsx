@@ -59,6 +59,9 @@ export default function RegisteredEventDetailPage() {
   const [cert, setCert] = useState<VolunteerCertificate | null>(null)
   const [downloadingCert, setDownloadingCert] = useState(false)
 
+  // --- CANCEL RSVP STATE ---
+  const [cancellingRsvp, setCancellingRsvp] = useState(false)
+
   useEffect(() => {
     const loadData = async () => {
       if (!eventId) return
@@ -144,6 +147,24 @@ export default function RegisteredEventDetailPage() {
       setTimeout(() => setCheckingIn(false), 3000);
     }
   }, [checkingIn, eventId]);
+
+  const canCancelRsvp = () => {
+    if (!event || event.status !== 'published') return false
+    const eventStart = new Date(`${event.event_date}T${event.start_time}:00+05:30`)
+    return new Date() < new Date(eventStart.getTime() - 2 * 60 * 60 * 1000)
+  }
+
+  const handleCancelRsvp = async () => {
+    if (!confirm('Are you sure you want to cancel your registration? This cannot be undone.')) return
+    try {
+      setCancellingRsvp(true)
+      await api.cancelRsvp(eventId)
+      router.push('/home')
+    } catch (err: any) {
+      alert(err.message || 'Failed to cancel registration')
+      setCancellingRsvp(false)
+    }
+  }
 
   const handleCertDownload = async () => {
     if (!cert) return
@@ -627,6 +648,22 @@ export default function RegisteredEventDetailPage() {
                   Download Certificate
                 </button>
               )}
+
+              {/* Cancel RSVP */}
+              {canCancelRsvp() ? (
+                <button
+                  onClick={handleCancelRsvp}
+                  disabled={cancellingRsvp}
+                  className="w-full h-12 flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 font-bold text-sm rounded-2xl transition-all disabled:opacity-50"
+                >
+                  {cancellingRsvp ? <Loader2 className="w-4 h-4 animate-spin" /> : <X className="w-4 h-4" />}
+                  Cancel Registration
+                </button>
+              ) : event?.status === 'published' ? (
+                <p className="text-center text-[11px] text-gray-400 font-medium pt-1">
+                  Cancellations are closed — event starts in less than 2 hours
+                </p>
+              ) : null}
             </div>
 
             {/* Support Block */}
@@ -661,6 +698,24 @@ export default function RegisteredEventDetailPage() {
           </button>
         </div>
       )}
+
+      {/* --- MOBILE: CANCEL RSVP --- */}
+      {canCancelRsvp() ? (
+        <div className="mx-4 mb-3 md:hidden">
+          <button
+            onClick={handleCancelRsvp}
+            disabled={cancellingRsvp}
+            className="w-full flex items-center justify-center gap-2 py-3 bg-red-50 border border-red-200 rounded-2xl text-red-600 font-bold text-sm active:scale-95 transition-all disabled:opacity-50"
+          >
+            {cancellingRsvp ? <Loader2 className="w-4 h-4 animate-spin" /> : <X className="w-4 h-4" />}
+            Cancel My Registration
+          </button>
+        </div>
+      ) : event?.status === 'published' ? (
+        <p className="text-center text-[11px] text-gray-400 font-medium mb-3 md:hidden">
+          Cancellations closed — event starts in less than 2 hours
+        </p>
+      ) : null}
 
       {/* --- MOBILE STICKY NAVIGATION (High Impact) --- */}
       <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-r from-emerald-600 to-teal-600 shadow-[0_-12px_40px_rgba(0,0,0,0.15)] z-50 md:hidden">
