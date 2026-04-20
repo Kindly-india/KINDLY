@@ -6,6 +6,29 @@ import { validateImageFile } from '../common/file-validation.util';
 
 const GEOLOCK_RADIUS_METERS = 200;
 
+async function geocodeLocation(location: string): Promise<{ lat: number; lng: number } | null> {
+  const headers = { 'User-Agent': 'KINDLYApp/1.0 (kindly.co.in)', 'Accept-Language': 'en' };
+  // Try progressively shorter address variants (building → area → city)
+  const parts = location.split(',').map(s => s.trim()).filter(Boolean);
+  for (let i = 0; i < parts.length; i++) {
+    const query = parts.slice(i).join(', ');
+    try {
+      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&countrycodes=in`;
+      console.log(`[Geo] Trying: "${query}"`);
+      const res = await fetch(url, { headers });
+      const data: any[] = await res.json();
+      if (data.length > 0) {
+        console.log(`[Geo] Found at attempt ${i + 1}: lat=${data[0].lat} lon=${data[0].lon}`);
+        return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+      }
+    } catch (err) {
+      console.error(`[Geo] Error on attempt ${i + 1}:`, err);
+    }
+  }
+  console.warn('[Geo] All attempts failed for:', location);
+  return null;
+}
+
 @Injectable()
 export class EventService {
   constructor(
@@ -107,6 +130,16 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
     // ✅ Map galleryImages (DTO) to gallery_images (DB)
     if ((dto as any).galleryImages) {
       updateData.gallery_images = (dto as any).galleryImages;
+    }
+
+    // Geocode if coords not provided
+    if ((dto.latitude == null || dto.longitude == null) && dto.location) {
+      const coords = await geocodeLocation(dto.location);
+      updateData.latitude = coords?.lat ?? null;
+      updateData.longitude = coords?.lng ?? null;
+    } else {
+      updateData.latitude = dto.latitude ?? null;
+      updateData.longitude = dto.longitude ?? null;
     }
 
     // 5. Execute Update
@@ -886,6 +919,12 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
       throw new BadRequestException('Registration deadline must be at least 1 hour before event start');
     }
 
+    console.log('[createEvent] dto.latitude:', dto.latitude, 'dto.longitude:', dto.longitude, 'location:', dto.location);
+    const coords = (dto.latitude == null || dto.longitude == null) && dto.location
+      ? await geocodeLocation(dto.location)
+      : null;
+    console.log('[createEvent] coords resolved:', coords);
+
     const { data: event, error: eventError } = await supabase
       .from('events')
       .insert({
@@ -908,8 +947,8 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
         total_slots: dto.totalSlots,
         registration_deadline: dto.registrationDeadline,
         minimum_age: dto.minimumAge,
-        latitude: dto.latitude ?? null,
-        longitude: dto.longitude ?? null,
+        latitude: coords?.lat ?? dto.latitude ?? null,
+        longitude: coords?.lng ?? dto.longitude ?? null,
         status: 'pending', // <--- CHANGED FROM 'published' TO 'pending'
       })
       .select()
