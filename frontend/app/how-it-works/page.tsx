@@ -193,7 +193,7 @@ export default function HowItWorksPage() {
         <div className="max-w-4xl mx-auto">
           <div className="space-y-8">
             {(activeTab === "volunteers" ? volunteerSteps : orgSteps).map((step) => (
-              <div key={step.id} className={`flex gap-6 p-6 md:p-8 rounded-2xl border ${step.border || "border-gray-100"} bg-white shadow-sm hover:shadow-md transition-shadow`}>
+              <div key={step.id} className={`flex gap-6 p-6 md:p-8 rounded-2xl border ${(step as any).border || "border-gray-100"} bg-white shadow-sm hover:shadow-md transition-shadow`}>
                 <div className={`w-14 h-14 ${step.bg} rounded-2xl flex items-center justify-center shrink-0`}>
                   <step.icon className={`w-7 h-7 ${step.color}`} />
                 </div>
