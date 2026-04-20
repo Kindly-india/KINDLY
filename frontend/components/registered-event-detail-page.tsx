@@ -266,7 +266,7 @@ export default function RegisteredEventDetailPage() {
   const shortDescription = event.description?.slice(0, 150) + "..." || ""
 
   return (
-    <div className="min-h-screen bg-white pb-24 md:pb-12 relative overflow-x-hidden">
+    <div className="min-h-screen bg-white pb-40 md:pb-12 relative overflow-x-hidden">
 
       {/* --- SCANNER OVERLAY MODAL --- */}
       {showScanner && (
@@ -737,7 +737,7 @@ export default function RegisteredEventDetailPage() {
       ) : null}
 
       {/* --- MOBILE STICKY NAVIGATION (High Impact) --- */}
-      <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-r from-emerald-600 to-teal-600 shadow-[0_-12px_40px_rgba(0,0,0,0.15)] z-50 md:hidden">
+      <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-r from-emerald-600 to-teal-600 shadow-[0_-12px_40px_rgba(0,0,0,0.15)] z-[60] md:hidden pb-[env(safe-area-inset-bottom)]">
         <div className="flex items-center justify-between px-6 py-5">
           <div className="flex flex-col">
             <p className="text-[10px] text-white/70 font-black uppercase tracking-[0.2em] mb-1 leading-none">Arrival Time</p>

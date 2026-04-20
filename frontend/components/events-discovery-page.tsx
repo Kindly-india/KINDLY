@@ -81,8 +81,6 @@ export default function EventsDiscoveryPage() {
     const [selectedCauses, setSelectedCauses] = useState<string[]>([])
     const [selectedTime, setSelectedTime] = useState<string | null>(null)
     const [selectedDuration, setSelectedDuration] = useState<string | null>(null)
-    const [locationFilter, setLocationFilter] = useState("")
-    const [debouncedLocation, setDebouncedLocation] = useState("")
     const [showFilledEvents, setShowFilledEvents] = useState(true)
 
     const [sortBy, setSortBy] = useState("newest")
@@ -95,7 +93,7 @@ export default function EventsDiscoveryPage() {
             try {
                 setLoading(true)
                 const [eventsRes, profileRes] = await Promise.all([
-                    api.getPublicEvents(debouncedLocation || undefined),
+                    api.getPublicEvents(),
                     api.getUserProfile().catch(() => null)
                 ])
 
@@ -115,10 +113,7 @@ export default function EventsDiscoveryPage() {
         }
 
         fetchData()
-    }, [debouncedLocation, router])
-
-    // Commit the location filter — called on Enter keypress or input blur
-    const commitLocationFilter = () => setDebouncedLocation(locationFilter)
+    }, [router])
 
     const toggleCause = (causeId: string) => {
         setSelectedCauses((prev) => (prev.includes(causeId) ? prev.filter((c) => c !== causeId) : [...prev, causeId]))
@@ -129,14 +124,12 @@ export default function EventsDiscoveryPage() {
         setSelectedCauses([])
         setSelectedTime(null)
         setSelectedDuration(null)
-        setLocationFilter("")
-        setDebouncedLocation("")
         setShowFilledEvents(true)
         setSearchQuery("")
     }
 
     const hasActiveFilters =
-        selectedDate || selectedCauses.length > 0 || selectedTime || selectedDuration || locationFilter
+        selectedDate || selectedCauses.length > 0 || selectedTime || selectedDuration
 
     const loadMore = () => {
         setVisibleEvents((prev) => Math.min(prev + 10, filteredEvents.length))
@@ -255,25 +248,6 @@ const FilterContent = () => (
                 </div>
             </div>
 
-            {/* Location */}
-            <div>
-                <h3 className="font-bold text-gray-900 text-[12px] lg:text-[11px] uppercase tracking-wider mb-3 lg:mb-2">
-                    Location
-                </h3>
-                <div className="relative">
-                    <MapPin className="absolute left-3.5 lg:left-2.5 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 lg:w-4 lg:h-4" />
-                    <input
-                        type="text"
-                        placeholder="Enter specific location..."
-                        value={locationFilter}
-                        onChange={(e) => setLocationFilter(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && commitLocationFilter()}
-                        // 16px is required on mobile to prevent iOS zoom, but we safely drop it to 12px on desktop!
-                        className="w-full h-12 lg:h-9 bg-white border border-gray-200 rounded-xl lg:rounded-lg text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition-colors pl-11 lg:pl-8 pr-4 lg:pr-3 text-[16px] lg:text-[12px]"
-                    />
-                </div>
-            </div>
-
             {/* Show Filled Events */}
             <div className="bg-[#f5f5f7] rounded-xl lg:rounded-lg p-4 lg:p-3">
                 <label className="flex items-center justify-between cursor-pointer">
@@ -333,9 +307,10 @@ const FilterContent = () => (
         if (searchQuery) {
             const query = searchQuery.toLowerCase()
             const matchTitle = event.title?.toLowerCase().includes(query)
+            const matchDescription = event.description?.toLowerCase().includes(query)
             const matchLocation = event.location?.toLowerCase().includes(query)
             const matchOrg = event.org_name?.toLowerCase().includes(query)
-            if (!matchTitle && !matchLocation && !matchOrg) return false
+            if (!matchTitle && !matchDescription && !matchLocation && !matchOrg) return false
         }
 
         if (selectedCauses.length > 0 && !selectedCauses.includes(event.category)) {
@@ -435,7 +410,7 @@ const FilterContent = () => (
                                 type="text"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                placeholder="Search events..."
+                                placeholder="Search by title, location, or description..."
                                 className="w-full h-11 md:h-12 pl-11 md:pl-12 pr-10 py-3 bg-white border border-[#e8e8ed] rounded-full text-[14px] md:text-[15px] text-[#1d1d1f] placeholder:text-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#ff6b6b]/20 focus:border-[#ff6b6b]/30 transition-all shadow-sm"
                             />
                             {searchQuery ? (

@@ -43,8 +43,8 @@ export function NavbarManager() {
     pathname.startsWith("/how-it-works") ||
     pathname.startsWith("/for-") ||
     pathname.startsWith("/legal") ||
-    pathname === "/onboarding" ||
-    /^\/events\/[^/]+\/showcase(\/.*)?$/.test(pathname)
+    pathname === "/onboarding" 
+
 
   if (isStaticOrAuth) return null
 

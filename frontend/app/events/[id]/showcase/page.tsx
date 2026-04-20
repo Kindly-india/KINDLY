@@ -186,6 +186,27 @@ export default function EventShowcasePage() {
 
   if (!event) return <div className="h-screen flex items-center justify-center text-gray-500">Event not found</div>
 
+  // ── Derived stats ─────────────────────────────────────────────────────────────
+  const calcDurationHours = () => {
+    const start = event.start_time
+    const end = event.end_time
+    if (!start || !end) return null
+    const [sh, sm] = start.split(':').map(Number)
+    const [eh, em] = end.split(':').map(Number)
+    const diff = (eh * 60 + em - (sh * 60 + sm)) / 60
+    if (diff <= 0) return null
+    return Number.isInteger(diff) ? `${diff}h` : `${diff.toFixed(1)}h`
+  }
+  const durationLabel = calcDurationHours() ?? '—'
+
+  const regStatusMap: Record<string, string> = {
+    completed: 'Verified',
+    checked_in: 'Attended',
+    registered: 'Registered',
+  }
+  const regStatus = myRegistration?.registration_status ?? event.status ?? ''
+  const statusLabel = regStatusMap[regStatus] ?? regStatus.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())
+
   // ── Full showcase (event.status === 'completed' && attended) ─────────────────
   const galleryImages = [event?.cover_image_url, ...(event?.gallery_images || [])].filter(Boolean);
   const displayImages = galleryImages.length > 0 ? galleryImages : ["https://images.unsplash.com/photo-1593113598332-cd288d649433?w=800&auto=format&fit=crop&q=60", "https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=800&auto=format&fit=crop&q=60"];
@@ -197,31 +218,6 @@ export default function EventShowcasePage() {
 
   return (
     <div className="min-h-screen bg-white pb-20">
-
-      {/* NAVBAR */}
-      <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-[#e5e5e7]">
-        <div className="max-w-[1600px] mx-auto px-4 md:px-8 h-11 md:h-14 flex items-center justify-between relative">
-          <Link href="/home" className="flex items-center shrink-0">
-            <Image src="/logo.png" alt="Kindly" width={100} height={30} className="h-8 md:h-6 w-auto" priority />
-          </Link>
-          <div className="hidden md:flex items-center gap-8 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-            <Link href="/events" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors font-medium">Events</Link>
-            <Link href="/history" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors font-medium">History</Link>
-            <Link href="/social" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors font-medium">Social</Link>
-            <Link href="/volunteer-impact" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-[#0066cc] transition-colors font-medium flex items-center gap-1.5">Impact</Link>
-          </div>
-          <div className="flex items-center gap-4 shrink-0">
-            <Link href={profile?.id ? `/volunteers/${profile.id}` : '#'} className="hidden md:block group">
-              <div className="w-9 h-9 md:w-10 md:h-10 rounded-full overflow-hidden border border-gray-200 group-hover:border-gray-400 transition-all bg-gray-50 flex items-center justify-center shadow-sm">
-                {displayImage ? <img src={displayImage} className="w-full h-full object-cover" /> : <span className="font-bold text-gray-500 text-xs">{displayInitial}</span>}
-              </div>
-            </Link>
-            <button onClick={() => setMenuOpen(!menuOpen)} className="w-8 h-8 rounded-full bg-[#f5f5f7] flex md:hidden items-center justify-center hover:bg-[#e5e5e7]">
-              {menuOpen ? <X className="w-4 h-4 text-[#1d1d1f]" /> : <Menu className="w-4 h-4 text-[#1d1d1f]" />}
-            </button>
-          </div>
-        </div>
-      </nav>
 
       {/* HERO SECTION */}
       <div className="relative h-[50vh] md:h-[60vh] w-full bg-gray-900">
@@ -262,11 +258,11 @@ export default function EventShowcasePage() {
                 <div className="text-[10px] md:text-xs text-gray-500 uppercase">Volunteers</div>
               </div>
               <div className="text-center border-l border-gray-200 pl-4">
-                <div className="text-xl md:text-2xl font-bold text-gray-900">4.5</div>
+                <div className="text-xl md:text-2xl font-bold text-gray-900">{durationLabel}</div>
                 <div className="text-[10px] md:text-xs text-gray-500 uppercase">Hours</div>
               </div>
               <div className="text-center border-l border-gray-200 pl-4">
-                <div className="text-xl md:text-2xl font-bold text-gray-900">Success</div>
+                <div className="text-xl md:text-2xl font-bold text-gray-900">{statusLabel}</div>
                 <div className="text-[10px] md:text-xs text-gray-500 uppercase">Status</div>
               </div>
             </div>

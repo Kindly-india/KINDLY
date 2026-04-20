@@ -117,8 +117,8 @@ export function EventHistoryPage() {
   const mapBackendStatusToUI = (regStatus: string, eventDate: string, endTime: string, eventStatus?: string) => {
     if (regStatus === 'completed' || regStatus === 'checked_in') return 'attended';
     if (regStatus === 'cancelled') return 'cancelled';
-    // 'absent' = org explicitly marked no-show → missed
-    if (regStatus === 'absent') return 'missed';
+    // 'missed' or 'absent' = org explicitly marked no-show
+    if (regStatus === 'missed' || regStatus === 'absent') return 'missed';
     // Org cancelled the event — never the volunteer's fault, treat as cancelled
     if (eventStatus === 'cancelled') return 'cancelled';
     if (regStatus === 'registered') {
