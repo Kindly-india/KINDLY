@@ -92,10 +92,10 @@ export default function AboutPage() {
               India has one of the youngest populations in the world and one of the most pressing set of social challenges — in education, environment, food security, health, and more. At the same time, there are millions of students and young professionals who genuinely want to contribute but have no reliable way to connect with the causes that need them.
             </p>
             <p>
-              Kindly exists to close that gap. We are building the infrastructure for volunteering — the same way Swiggy built the infrastructure for food delivery or Ola built it for commuting. The goal is to make volunteering as easy, reliable, and habitual as ordering a meal.
+              Kindly exists to close that gap. We are building the infrastructure for volunteering. The goal is to make volunteering as easy, reliable, and habitual as ordering a meal.
             </p>
             <p>
-              But unlike a food app, Kindly is also building a community. A place where doing good becomes a part of your identity. Where your volunteer hours tell a story. Where the people you meet on event day become people you volunteer with for years.
+              Kindly is also building a community. A place where doing good becomes a part of your identity. Where your volunteer hours tell a story. Where the people you meet on event day become people you associate with for years.
             </p>
             <p>
               We measure success not in downloads or revenue but in hours volunteered, certificates earned, and organisations that can now do more with the reliable human energy Kindly brings to them.

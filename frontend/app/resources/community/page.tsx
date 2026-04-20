@@ -92,19 +92,23 @@ export default function CommunityPage() {
               </div>
             </a>
 
-            {/* WhatsApp Broadcast */}
-            <div className="border-2 border-gray-100 p-8 rounded-2xl relative overflow-hidden">
-              <div className="absolute top-3 right-3 bg-amber-100 text-amber-700 text-xs font-bold px-2 py-0.5 rounded-full">
-                Coming Soon
-              </div>
+            {/* WhatsApp Community */}
+            <div className="border-2 border-gray-100 p-8 rounded-2xl relative overflow-hidden hover:border-black transition-all">
               <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center mb-5">
                 <MessageCircle className="w-6 h-6 text-emerald-600" />
               </div>
-              <h3 className="text-xl font-bold text-[#1d1d1f] mb-2">WhatsApp Broadcast</h3>
-              <p className="text-gray-500 text-sm leading-relaxed mb-4">Get event announcements, impact updates, and community news directly on WhatsApp. One-way broadcast — no group chat noise.</p>
-              <div className="h-9 px-4 bg-[#f5f5f7] text-gray-400 text-sm font-medium rounded-full inline-flex items-center">
-                Link coming soon
-              </div>
+              <h3 className="text-xl font-bold text-[#1d1d1f] mb-2">WhatsApp Community</h3>
+              <p className="text-gray-500 text-sm leading-relaxed mb-4">
+                Get event announcements, impact updates, and community news directly on WhatsApp. One-way broadcast — no group chat noise.
+              </p>
+              <a
+                href="https://chat.whatsapp.com/JLTD1iP3m8p63Mnz7SjISt"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="h-9 px-5 bg-emerald-600 text-white text-sm font-semibold rounded-full inline-flex items-center hover:bg-emerald-700 transition-colors"
+              >
+                Join Community
+              </a>
             </div>
 
             {/* Community Guidelines teaser */}
