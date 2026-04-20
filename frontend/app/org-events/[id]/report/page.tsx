@@ -44,9 +44,12 @@ export default function EventReportPage() {
         setEvent(eventRes.event)
         setRegistrations(regsRes.registrations || [])
 
-        const present = (regsRes.registrations || []).filter((r: any) => r.status === 'checked_in')
+        const present = (regsRes.registrations || []).filter((r: any) =>
+          r.status === 'checked_in' || r.status === 'completed'
+        )
         const presentCount = present.length
-        const totalRegs = (regsRes.registrations || []).length
+        // Exclude cancelled registrations from the denominator
+        const totalRegs = (regsRes.registrations || []).filter((r: any) => r.status !== 'cancelled').length
 
         const start = new Date(`1970-01-01T${eventRes.event.start_time}`)
         const end = new Date(`1970-01-01T${eventRes.event.end_time}`)
@@ -84,21 +87,7 @@ export default function EventReportPage() {
       const publicUrl = await api.uploadEventImage(file)
       const currentGallery = event.gallery_images || []
       const updatedGallery = [...currentGallery, publicUrl]
-      const updatePayload = {
-        title: event.title,
-        description: event.description,
-        category: event.category,
-        isUrgent: event.is_urgent,
-        eventDate: event.event_date,
-        startTime: event.start_time,
-        endTime: event.end_time,
-        location: event.location,
-        totalSlots: event.total_slots,
-        registrationDeadline: event.registration_deadline,
-        coverImageUrl: event.cover_image_url,
-        galleryImages: updatedGallery
-      }
-      await api.updateEvent(eventId, updatePayload as any)
+      await api.updateEventGallery(eventId, updatedGallery)
       setEvent({ ...event, gallery_images: updatedGallery })
     } catch (error: any) {
       alert(error.message || "Failed to upload image.")
@@ -112,21 +101,7 @@ export default function EventReportPage() {
     try {
       const currentGallery = event.gallery_images || []
       const updatedGallery = currentGallery.filter((_: any, i: number) => i !== indexToRemove)
-      const updatePayload = {
-        title: event.title,
-        description: event.description,
-        category: event.category,
-        isUrgent: event.is_urgent,
-        eventDate: event.event_date,
-        startTime: event.start_time,
-        endTime: event.end_time,
-        location: event.location,
-        totalSlots: event.total_slots,
-        registrationDeadline: event.registration_deadline,
-        coverImageUrl: event.cover_image_url,
-        gallery_images: updatedGallery
-      }
-      await api.updateEvent(eventId, updatePayload as any)
+      await api.updateEventGallery(eventId, updatedGallery)
       setEvent({ ...event, gallery_images: updatedGallery })
     } catch {
       alert("Failed to delete image.")
@@ -305,10 +280,15 @@ export default function EventReportPage() {
                     <p className="text-xs text-gray-500">{reg.volunteer_profiles?.city || "Nashik"}</p>
                   </div>
                 </div>
-                {reg.status === 'checked_in' ? (
+                {(reg.status === 'checked_in' || reg.status === 'completed') ? (
                   <div className="flex items-center gap-2 text-emerald-600 text-sm font-medium">
                     <CheckCircle2 className="w-4 h-4" />
                     Present
+                  </div>
+                ) : reg.status === 'cancelled' ? (
+                  <div className="flex items-center gap-2 text-gray-300 text-sm">
+                    <XCircle className="w-4 h-4" />
+                    Cancelled
                   </div>
                 ) : (
                   <div className="flex items-center gap-2 text-gray-400 text-sm">

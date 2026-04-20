@@ -54,6 +54,8 @@ export default function EditEventPage() {
     startTime: "",
     endTime: "",
     location: "",
+    latitude: undefined as number | undefined,
+    longitude: undefined as number | undefined,
     dressCode: "",
     thingsToBring: "",
     // --- NEW CLUB FIELDS ---
@@ -106,6 +108,8 @@ export default function EditEventPage() {
           startTime: event.start_time || "",
           endTime: event.end_time || "",
           location: event.location || "",
+          latitude: event.latitude ?? undefined,
+          longitude: event.longitude ?? undefined,
           dressCode: event.dress_code || "",
           thingsToBring: event.things_to_bring || "",
           // --- POPULATE NEW FIELDS ---
@@ -143,7 +147,8 @@ export default function EditEventPage() {
         (position) => {
             const { latitude, longitude } = position.coords;
             setGettingLocation(false);
-            alert(`Location detected (${latitude.toFixed(4)}, ${longitude.toFixed(4)}). Please type the specific building name or street address to confirm on the map.`);
+            setFormData(prev => ({ ...prev, latitude, longitude }));
+            alert(`Location pinned (${latitude.toFixed(4)}, ${longitude.toFixed(4)}). Update the address field if needed.`);
         },
         () => {
             setGettingLocation(false);
@@ -222,8 +227,10 @@ export default function EditEventPage() {
         connectPlan: formData.connectPlan || undefined,
         // -----------------------
         totalSlots: parseInt(formData.totalSlots),
-        registrationDeadline: formData.registrationDeadline, 
+        registrationDeadline: formData.registrationDeadline,
         minimumAge: formData.minimumAge ? parseInt(formData.minimumAge) : undefined,
+        latitude: formData.latitude,
+        longitude: formData.longitude,
       })
 
       alert("Event updated successfully!")

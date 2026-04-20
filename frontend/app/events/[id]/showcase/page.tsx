@@ -1,23 +1,27 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
+import { toast } from "sonner"
 import {
   Calendar, MapPin, Users, Clock,
   Share2, CheckCircle2, Building2, Loader2,
   Download, Check, Menu, X, Sparkles,
   Star, Award
 } from "lucide-react"
-import { api, VolunteerCertificate } from "@/lib/api"
+import { api, VolunteerCertificate, ShowcaseData } from "@/lib/api"
+
+type AccessState = 'loading' | 'full' | 'waiting' | 'redirecting'
 
 export default function EventShowcasePage() {
   const { id } = useParams()
+  const router = useRouter()
 
-  const [loading, setLoading] = useState(true)
+  const [accessState, setAccessState] = useState<AccessState>('loading')
   const [event, setEvent] = useState<any>(null)
-  const [orgProfile, setOrgProfile] = useState<any>(null) // ✅ NEW: Store Org Details
+  const [orgProfile, setOrgProfile] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
   const [myRegistration, setMyRegistration] = useState<any>(null)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -35,65 +39,79 @@ export default function EventShowcasePage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        setLoading(true)
+        if (!id) return
 
-        // 1. Fetch User Profile
-        const profileRes = await api.getUserProfile().catch(() => null);
-        const currentUser = profileRes?.profile;
-        if (currentUser) setProfile(currentUser);
-
-        if (id) {
-          // 2. Fetch Event Details
-          let eventData = null;
-          try {
-            const res = await api.getEventById(id as string);
-            eventData = res.event;
-          } catch (authError) {
-            const publicRes = await api.getPublicEventById(id as string);
-            eventData = publicRes.event;
-          }
-          setEvent(eventData);
-
-          // 3. ✅ NEW: Fetch Organization Details using organization_id from event
-          if (eventData?.organization_id) {
-             try {
-                const orgRes = await api.getOrgPublicProfile(eventData.organization_id);
-                setOrgProfile(orgRes.profile);
-             } catch (err) {
-                console.error("Failed to load org details", err);
-             }
-          }
-
-          // 4. Fetch Registration & Review Status
-          if (currentUser && eventData) {
-            try {
-              const [myRegs, myReviewRes, certRes] = await Promise.all([
-                api.getVolunteerRegistrations(),
-                api.getMyReview(id as string),
-                api.getMyCertificates().catch(() => ({ certificates: [] })),
-              ]);
-
-              const thisEventReg = myRegs.events.find((e: any) => e.id === eventData.id);
-              if (thisEventReg) setMyRegistration(thisEventReg);
-
-              if (myReviewRes?.review) {
-                setSubmitted(true);
-                setRating(myReviewRes.review.rating);
-                setReviewText(myReviewRes.review.comment);
-              }
-
-              const myCert = certRes.certificates.find(
-                (c: VolunteerCertificate) => c.event_id === (id as string)
-              );
-              if (myCert) setCert(myCert);
-
-            } catch (err) {
-              console.log("Error fetching user data");
-            }
-          }
+        // 1. Auth check — unauthenticated visitors go to the public event page
+        const profileRes = await api.getUserProfile().catch(() => null)
+        const currentUser = profileRes?.profile
+        if (!currentUser) {
+          router.replace(`/events/${id}`)
+          setAccessState('redirecting')
+          return
         }
-      } finally {
-        setLoading(false)
+        setProfile(currentUser)
+
+        // 2. Event + registrations in parallel
+        const [publicEventRes, regsRes] = await Promise.all([
+          api.getPublicEventById(id as string).catch(() => null),
+          api.getVolunteerRegistrations().catch(() => null),
+        ])
+
+        const eventData = publicEventRes?.event
+        if (!eventData) {
+          router.replace(`/events/${id}`)
+          setAccessState('redirecting')
+          return
+        }
+        setEvent(eventData)
+
+        // 3. Access gate — check registration status
+        const thisEventReg = regsRes?.events?.find((e: any) => e.id === eventData.id)
+        const regStatus = thisEventReg?.registration_status
+        const attended = regStatus === 'checked_in' || regStatus === 'completed'
+
+        if (!attended) {
+          if (thisEventReg) {
+            // Registered but didn't attend (registered / missed / absent / cancelled)
+            toast.error("You did not attend this event.")
+            router.replace('/history')
+          } else {
+            // Random visitor who knows the URL
+            router.replace(`/events/${id}`)
+          }
+          setAccessState('redirecting')
+          return
+        }
+
+        setMyRegistration(thisEventReg)
+
+        // 4. Load showcase data — backend enforces attendance, returns org + cert + review
+        const showcase: ShowcaseData = await api.getShowcaseData(id as string)
+
+        // Use the richer event from the showcase endpoint (includes org join)
+        setEvent(showcase.event)
+        setOrgProfile(showcase.event?.organization_profiles ?? null)
+
+        // 5. Event not yet marked complete — show waiting state
+        if (showcase.event.status !== 'completed') {
+          setAccessState('waiting')
+          return
+        }
+
+        // 6. Full state
+        setAccessState('full')
+
+        if (showcase.review) {
+          setSubmitted(true)
+          setRating(showcase.review.rating)
+          setReviewText(showcase.review.comment)
+        }
+
+        if (showcase.certificate) setCert(showcase.certificate)
+
+      } catch {
+        router.replace(`/events/${id}`)
+        setAccessState('redirecting')
       }
     }
     loadData()
@@ -125,19 +143,57 @@ export default function EventShowcasePage() {
     }
   }
 
-  // Helpers
+  // ── Render guards ────────────────────────────────────────────────────────────
+  if (accessState === 'loading') {
+    return <div className="h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-gray-900" /></div>
+  }
+
+  if (accessState === 'redirecting') return null
+
+  // ── Waiting state ─────────────────────────────────────────────────────────────
+  if (accessState === 'waiting') {
+    const orgName = orgProfile?.name || event?.organization_name || event?.organization?.name || "Organization"
+    return (
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center px-4">
+        <div className="max-w-md w-full text-center space-y-6">
+          <div className="w-16 h-16 rounded-full bg-emerald-50 flex items-center justify-center mx-auto">
+            <CheckCircle2 className="w-8 h-8 text-emerald-500" />
+          </div>
+          <div className="space-y-1">
+            <h1 className="text-xl font-bold text-gray-900">{event?.title}</h1>
+            <p className="text-sm text-gray-400">
+              {event?.event_date && new Date(event.event_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
+            </p>
+          </div>
+          <div className="flex items-center gap-2 justify-center">
+            <div className="w-7 h-7 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center overflow-hidden shrink-0">
+              {orgProfile?.logo_url
+                ? <img src={orgProfile.logo_url} className="w-full h-full object-cover" alt="" />
+                : <Building2 className="w-3.5 h-3.5 text-gray-400" />}
+            </div>
+            <span className="text-sm text-gray-600">{orgName}</span>
+          </div>
+          <p className="text-sm text-gray-500 leading-relaxed max-w-sm mx-auto">
+            You were there. The organization hasn't wrapped up the event report yet — your certificate and event photos will appear here once they do. Usually within 24 hours.
+          </p>
+          <Link href="/history" className="block text-xs text-gray-400 hover:text-gray-600 transition-colors">
+            Back to my events
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  if (!event) return <div className="h-screen flex items-center justify-center text-gray-500">Event not found</div>
+
+  // ── Full showcase (event.status === 'completed' && attended) ─────────────────
   const galleryImages = [event?.cover_image_url, ...(event?.gallery_images || [])].filter(Boolean);
   const displayImages = galleryImages.length > 0 ? galleryImages : ["https://images.unsplash.com/photo-1593113598332-cd288d649433?w=800&auto=format&fit=crop&q=60", "https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=800&auto=format&fit=crop&q=60"];
   const displayImage = profile?.avatar_url || profile?.logo_url;
   const displayName = profile?.full_name || profile?.name || "User";
   const displayInitial = displayName ? displayName.charAt(0).toUpperCase() : "U";
 
-  // ✅ ROBUST ORG NAME RESOLUTION
-  // Priority: 1. Fetched Org Profile -> 2. Event Join (if exists) -> 3. Fallback
   const orgName = orgProfile?.name || event?.organization_name || event?.organization?.name || "Organization";
-
-  if (loading) return <div className="h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-gray-900" /></div>
-  if (!event) return <div className="h-screen flex items-center justify-center text-gray-500">Event not found</div>
 
   return (
     <div className="min-h-screen bg-white pb-20">

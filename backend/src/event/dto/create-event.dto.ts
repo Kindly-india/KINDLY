@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsInt, IsBoolean, IsOptional, IsIn, IsUrl, Min, IsDateString, IsArray } from 'class-validator';
+import { IsString, IsNotEmpty, IsInt, IsBoolean, IsOptional, IsIn, IsUrl, IsNumber, Min, IsDateString, IsArray } from 'class-validator';
 
 export class CreateEventDto {
   @IsString()
@@ -68,4 +68,12 @@ export class CreateEventDto {
   @IsOptional()
   @IsArray()
   galleryImages?: string[];
+
+  @IsOptional()
+  @IsNumber()
+  latitude?: number;
+
+  @IsOptional()
+  @IsNumber()
+  longitude?: number;
 }

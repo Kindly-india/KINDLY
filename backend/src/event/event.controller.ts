@@ -2,8 +2,10 @@ import { Controller, Post, Get, Body, Delete, ValidationPipe, Request, UseGuards
 import { EventService } from './event.service';
 import { CertificateService } from '../certificate/certificate.service';
 import { CreateEventDto } from './dto/create-event.dto';
+import { UpdateGalleryDto } from './dto/update-gallery.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AdminGuard } from '../auth/guards/admin.guard';
+import { CronSecretGuard } from '../auth/guards/cron-secret.guard';
 import { OptionalAuthGuard } from '../auth/guards/optional-auth.guard';
 import { UploadedFile, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -15,7 +17,17 @@ export class EventController {
     private certificateService: CertificateService,
   ) { }
 
-    // ==========================================
+  // ==========================================
+  // CRON ROUTES (secret-header guard)
+  // ==========================================
+
+  @Post('auto-complete')
+  @UseGuards(CronSecretGuard)
+  async autoCompleteEvents() {
+    return this.eventService.autoCompleteEvents();
+  }
+
+  // ==========================================
   // ADMIN "GHOST MODE" ROUTES
   // ==========================================
 
@@ -202,6 +214,22 @@ export class EventController {
   @UseGuards(JwtAuthGuard)
   async cancelRsvp(@Request() req: any, @Param('id') id: string) {
     return this.eventService.cancelRsvp(req.user.id, id);
+  }
+
+  @Patch(':id/gallery')
+  @UseGuards(JwtAuthGuard)
+  async updateEventGallery(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body(ValidationPipe) body: UpdateGalleryDto,
+  ) {
+    return this.eventService.updateEventGallery(req.user.id, id, body.galleryImages);
+  }
+
+  @Get(':id/showcase')
+  @UseGuards(JwtAuthGuard)
+  async getShowcaseData(@Request() req: any, @Param('id') id: string) {
+    return this.eventService.getShowcaseData(req.user.id, id);
   }
 
   // 3. Dynamic Routes (MUST BE LAST)

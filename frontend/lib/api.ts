@@ -49,6 +49,8 @@ export interface CreateEventData {
   gallery_images?: string[];
   pointOfContact: string;
   connectPlan?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface UpdateVolunteerProfileDto {
@@ -100,6 +102,13 @@ export interface VolunteerCertificate {
   event_title: string;
   event_date: string;
   org_name: string;
+}
+
+export interface ShowcaseData {
+  event: any;
+  registration: { id: string; status: string };
+  certificate: VolunteerCertificate | null;
+  review: { rating: number; comment: string } | null;
 }
 
 export interface EventCertificate {
@@ -508,6 +517,24 @@ export const api = {
       throw new Error(error.message || 'Failed to update event');
     }
 
+    return response.json();
+  },
+
+  updateEventGallery: async (eventId: string, galleryImages: string[]): Promise<{ gallery_images: string[] }> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+    const response = await fetch(`${API_URL}/events/${eventId}/gallery`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ galleryImages }),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to update gallery');
+    }
     return response.json();
   },
 
@@ -1154,6 +1181,19 @@ export const api = {
     if (!res.ok) {
       const err = await res.json();
       throw new Error(err.message || 'Failed to submit review');
+    }
+    return res.json();
+  },
+
+  getShowcaseData: async (eventId: string): Promise<ShowcaseData> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+    const res = await fetch(`${API_URL}/events/${eventId}/showcase`, {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.message || 'Access denied');
     }
     return res.json();
   },

@@ -4,6 +4,8 @@ import { EmailService } from '../email/email.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { validateImageFile } from '../common/file-validation.util';
 
+const GEOLOCK_RADIUS_METERS = 200;
+
 @Injectable()
 export class EventService {
   constructor(
@@ -121,6 +123,38 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
       message: 'Event updated successfully',
       event: updatedEvent,
     };
+  }
+
+  async updateEventGallery(userId: string, eventId: string, galleryImages: string[]) {
+    const supabase = this.supabaseService.getClient();
+
+    const { data: orgProfile } = await supabase
+      .from('organization_profiles')
+      .select('id')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (!orgProfile) throw new ForbiddenException('Organization not found');
+
+    const { data: event } = await supabase
+      .from('events')
+      .select('organization_id')
+      .eq('id', eventId)
+      .maybeSingle();
+
+    if (!event) throw new NotFoundException('Event not found');
+    if (event.organization_id !== orgProfile.id) throw new ForbiddenException('You do not have access to this event');
+
+    const { data: updated, error } = await supabase
+      .from('events')
+      .update({ gallery_images: galleryImages })
+      .eq('id', eventId)
+      .select('gallery_images')
+      .single();
+
+    if (error) throw error;
+
+    return { gallery_images: updated.gallery_images };
   }
 
   // ==========================================
@@ -316,6 +350,59 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
     return { event };
   }
 
+  async getShowcaseData(userId: string, eventId: string) {
+    const supabase = this.supabaseService.getClient();
+
+    const { data: volProfile } = await supabase
+      .from('volunteer_profiles')
+      .select('id')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (!volProfile) throw new ForbiddenException('You did not attend this event');
+
+    const { data: reg } = await supabase
+      .from('event_registrations')
+      .select('id, status')
+      .eq('event_id', eventId)
+      .eq('volunteer_id', volProfile.id)
+      .in('status', ['checked_in', 'completed'])
+      .maybeSingle();
+
+    if (!reg) throw new ForbiddenException('You did not attend this event');
+
+    const { data: event, error: eventError } = await supabase
+      .from('events')
+      .select(`*, organization_profiles (name, logo_url, org_type)`)
+      .eq('id', eventId)
+      .single();
+
+    if (eventError || !event) throw new NotFoundException('Event not found');
+
+    const { data: rawCert } = await supabase
+      .from('certificates')
+      .select('id, verification_id, issued_at, hours_credited, event_id')
+      .eq('event_id', eventId)
+      .eq('volunteer_id', volProfile.id)
+      .maybeSingle();
+
+    const certificate = rawCert ? {
+      ...rawCert,
+      event_title: event.title,
+      event_date: event.event_date,
+      org_name: (event.organization_profiles as any)?.name,
+    } : null;
+
+    const { data: review } = await supabase
+      .from('organization_reviews')
+      .select('rating, comment')
+      .eq('event_id', eventId)
+      .eq('volunteer_id', volProfile.id)
+      .maybeSingle();
+
+    return { event, registration: reg, certificate, review: review ?? null };
+  }
+
   async getEventRegistrations(userId: string, eventId: string) {
     const supabase = this.supabaseService.getClient();
 
@@ -500,17 +587,23 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
       throw new BadRequestException('Check-in not open yet. Please wait for event start.');
     }
 
-    if (event.latitude && event.longitude) {
-      const distance = this.calculateDistance(
-        event.latitude,
-        event.longitude,
-        data.latitude,
-        data.longitude
-      );
+    if (!data.latitude || !data.longitude) {
+      throw new BadRequestException('Location access required for check-in. Enable location and try again.');
+    }
 
-      if (distance > 0.2) {
-        throw new BadRequestException(`You are too far from the venue (${(distance * 1000).toFixed(0)}m away). Please get closer.`);
-      }
+    if (!event.latitude || !event.longitude) {
+      throw new BadRequestException('Event location not configured. Contact organizer.');
+    }
+
+    const distance = this.calculateDistance(
+      event.latitude,
+      event.longitude,
+      data.latitude,
+      data.longitude,
+    );
+
+    if (distance * 1000 > GEOLOCK_RADIUS_METERS) {
+      throw new BadRequestException(`You must be within ${GEOLOCK_RADIUS_METERS}m of the event location to check in. You are ${(distance * 1000).toFixed(0)}m away.`);
     }
 
     const { error } = await supabase
@@ -717,6 +810,48 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
     return { message: 'Event marked as completed', event };
   }
 
+  async autoCompleteEvents() {
+    const supabase = this.supabaseService.getClient();
+
+    const { data: events, error } = await supabase
+      .from('events')
+      .select('id, event_date, end_time, start_time')
+      .eq('status', 'published');
+
+    if (error) throw error;
+
+    const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+    const toComplete: string[] = [];
+
+    for (const event of events ?? []) {
+      const timeStr = event.end_time || event.start_time;
+      if (!timeStr) continue;
+      const eventEnd = new Date(`${event.event_date}T${timeStr}:00+05:30`).getTime();
+      if (eventEnd < cutoff) toComplete.push(event.id);
+    }
+
+    if (toComplete.length === 0) return { completed_count: 0, event_ids: [] };
+
+    await supabase
+      .from('events')
+      .update({ status: 'completed' })
+      .in('id', toComplete);
+
+    await supabase
+      .from('event_registrations')
+      .update({ status: 'completed' })
+      .in('event_id', toComplete)
+      .eq('status', 'checked_in');
+
+    await supabase
+      .from('event_registrations')
+      .update({ status: 'missed' })
+      .in('event_id', toComplete)
+      .eq('status', 'registered');
+
+    return { completed_count: toComplete.length, event_ids: toComplete };
+  }
+
   async createEvent(userId: string, dto: CreateEventDto) {
     const supabase = this.supabaseService.getClient();
 
@@ -773,6 +908,8 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
         total_slots: dto.totalSlots,
         registration_deadline: dto.registrationDeadline,
         minimum_age: dto.minimumAge,
+        latitude: dto.latitude ?? null,
+        longitude: dto.longitude ?? null,
         status: 'pending', // <--- CHANGED FROM 'published' TO 'pending'
       })
       .select()

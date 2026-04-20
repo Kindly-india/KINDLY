@@ -54,6 +54,7 @@ export default function RegisteredEventDetailPage() {
   // --- SCANNER & CHECK-IN STATE ---
   const [showScanner, setShowScanner] = useState(false)
   const [checkingIn, setCheckingIn] = useState(false)
+  const [geoBlocked, setGeoBlocked] = useState(false)
 
   // --- CERTIFICATE STATE ---
   const [cert, setCert] = useState<VolunteerCertificate | null>(null)
@@ -61,6 +62,18 @@ export default function RegisteredEventDetailPage() {
 
   // --- CANCEL RSVP STATE ---
   const [cancellingRsvp, setCancellingRsvp] = useState(false)
+
+  const handleOpenScanner = () => {
+    if (!navigator.geolocation) {
+      setGeoBlocked(true)
+      return
+    }
+    navigator.geolocation.getCurrentPosition(
+      () => { setGeoBlocked(false); setShowScanner(true) },
+      () => { setGeoBlocked(true) },
+      { timeout: 8000 }
+    )
+  }
 
   useEffect(() => {
     const loadData = async () => {
@@ -623,12 +636,18 @@ export default function RegisteredEventDetailPage() {
               </Button>
 
               <Button
-                onClick={() => setShowScanner(true)}
+                onClick={handleOpenScanner}
                 className="w-full h-16 bg-gray-900 hover:bg-black text-white font-black rounded-2xl text-lg shadow-2xl flex items-center justify-center gap-3 group transition-all active:scale-95"
               >
                 <Camera className="w-6 h-6 group-hover:rotate-12 transition-transform" />
                 Scan to Check In
               </Button>
+
+              {geoBlocked && (
+                <p className="text-center text-xs text-red-500 font-medium px-2">
+                  Location required to check in. Please enable location in your browser settings and try again.
+                </p>
+              )}
 
               <p className="text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest pt-4">
                 Scan arrival QR to log hours
@@ -728,7 +747,7 @@ export default function RegisteredEventDetailPage() {
           </div>
 
           <Button
-            onClick={() => setShowScanner(true)}
+            onClick={handleOpenScanner}
             className="h-14 px-8 bg-white hover:bg-gray-100 text-emerald-700 font-black rounded-2xl text-sm shadow-2xl flex items-center gap-3 transition-all active:scale-95"
           >
             <Camera className="w-5 h-5" />

@@ -55,6 +55,8 @@ export function CreateEventPage() {
         startTime: '',
         endTime: '',
         location: '',
+        latitude: undefined as number | undefined,
+        longitude: undefined as number | undefined,
         dressCode: '',
         thingsToBring: '',
         // --- NEW FIELDS ---
@@ -91,10 +93,10 @@ export function CreateEventPage() {
                         a.state,
                     ].filter(Boolean);
                     const readable = parts.join(', ') || data.display_name;
-                    setFormData(prev => ({ ...prev, location: readable }));
+                    setFormData(prev => ({ ...prev, location: readable, latitude, longitude }));
                 } catch {
                     // Fallback: coordinates only
-                    setFormData(prev => ({ ...prev, location: `${latitude.toFixed(5)}, ${longitude.toFixed(5)}` }));
+                    setFormData(prev => ({ ...prev, location: `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`, latitude, longitude }));
                 } finally {
                     setGettingLocation(false);
                 }
@@ -188,6 +190,8 @@ export function CreateEventPage() {
                 totalSlots: formData.totalSlots,
                 registrationDeadline: deadlineISO,
                 minimumAge: formData.minimumAge,
+                latitude: formData.latitude,
+                longitude: formData.longitude,
             });
 
             setShowSuccess(true);

@@ -8,7 +8,8 @@ import {
 import { SupabaseService } from '../supabase/supabase.service';
 import { renderCertificateHTML } from '../event/templates/certificate.template';
 import { v4 as uuidv4 } from 'uuid';
-import * as puppeteer from 'puppeteer';
+import chromium from '@sparticuz/chromium';
+import puppeteer from 'puppeteer-core';
 
 function formatEventDate(dateStr: string): string {
   const months = [
@@ -34,14 +35,14 @@ export class CertificateService {
   // PRIVATE: Render HTML → PDF buffer via Puppeteer
   // ─────────────────────────────────────────────
   private async generatePdf(html: string): Promise<Buffer> {
+    // CHROMIUM_PATH lets local dev point to an installed Chrome.
+    // In production (Render), omit it — @sparticuz/chromium supplies the binary.
+    const executablePath = process.env.CHROMIUM_PATH || await chromium.executablePath();
+
     const browser = await puppeteer.launch({
-      headless: true,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-      ],
+      args: [...chromium.args, '--disable-dev-shm-usage'],
+      executablePath,
+      headless: chromium.headless,
     });
     try {
       const page = await browser.newPage();
