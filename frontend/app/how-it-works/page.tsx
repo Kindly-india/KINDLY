@@ -126,7 +126,7 @@ const orgSteps = [
 
 const faqs = [
   { q: "Is Kindly free to use?", a: "Yes. Kindly is completely free for volunteers. Organisations can create and manage events at no cost during the current phase of the platform." },
-  { q: "Which cities does Kindly currently support?", a: "Kindly currently supports Nashik, Mumbai, Pune, Delhi, Bangalore, Chennai, Hyderabad, and Kolkata. More cities are being added based on demand." },
+  { q: "Which cities does Kindly currently support?", a: "Kindly currently supports Nashik, but in future would expand to Mumbai, Pune, Delhi, Bangalore, Chennai, Hyderabad, and Kolkata. More cities are being added based on demand." },
   { q: "How does the geo-lock check-in work?", a: "When you tap the check-in button, Kindly asks for your location. It then verifies you are within 200 metres of the event's registered GPS coordinates before allowing the scan. This ensures all attendance records are genuine." },
   { q: "Who generates the certificate — me or the organisation?", a: "Certificates are generated automatically by the platform once the organisation marks the event as complete. You do not need to request one manually. It appears in your event history as a downloadable PDF." },
   { q: "Can I cancel a registration?", a: "Yes. You can cancel your registration from your event dashboard at any time before the event starts. Please cancel early so the organisation can offer your spot to another volunteer." },

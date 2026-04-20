@@ -123,22 +123,6 @@ export default function CommunityPage() {
         </div>
       </section>
 
-      {/* Stats */}
-      <section className="py-16 px-6 bg-[#1d1d1f]">
-        <div className="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-          {[
-            { value: "50,000+", label: "Volunteers" },
-            { value: "120+", label: "Organisations" },
-            { value: "8", label: "Cities" },
-            { value: "1,200+", label: "Events Together" }
-          ].map((s, i) => (
-            <div key={i}>
-              <div className="text-3xl font-bold text-white mb-1">{s.value}</div>
-              <div className="text-xs text-[#86868b] uppercase tracking-wider">{s.label}</div>
-            </div>
-          ))}
-        </div>
-      </section>
 
       {/* What We're About */}
       <section className="py-24 px-6">

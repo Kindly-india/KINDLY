@@ -12,8 +12,8 @@ const features = [
     icon: Globe,
     color: "text-blue-600",
     bg: "bg-blue-50",
-    title: "Events Across 8 Cities",
-    body: "Discover hundreds of volunteering events in Nashik, Mumbai, Pune, Delhi, Bangalore, Chennai, Hyderabad, and Kolkata. Events are posted by verified NGOs and community groups — so every opportunity you see is real, vetted, and ready for you to show up."
+    title: "Events",
+    body: "Discover hundreds of volunteering events in Nashik, and in future for Mumbai, Pune, Delhi, Bangalore, Chennai, Hyderabad, and Kolkata. Events are posted by verified NGOs and community groups — so every opportunity you see is real, vetted, and ready for you to show up."
   },
   {
     icon: Trophy,
@@ -127,23 +127,6 @@ export default function ForVolunteersPage() {
         </div>
       </section>
 
-      {/* Stats Bar */}
-      <section className="py-12 px-6 bg-[#1d1d1f]">
-        <div className="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-          {[
-            { value: "50,000+", label: "Active Volunteers" },
-            { value: "8", label: "Cities" },
-            { value: "1,200+", label: "Events Hosted" },
-            { value: "98%", label: "Certificate Rate" }
-          ].map((stat, i) => (
-            <div key={i}>
-              <div className="text-3xl font-bold text-white mb-1">{stat.value}</div>
-              <div className="text-xs text-[#86868b] uppercase tracking-wider">{stat.label}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
       {/* What You Get */}
       <section className="py-24 px-6">
         <div className="max-w-5xl mx-auto">
@@ -196,7 +179,7 @@ export default function ForVolunteersPage() {
               <div className="flex items-center gap-4 mb-6">
                 <div className="w-16 h-16 rounded-full bg-gradient-to-br from-orange-400 to-rose-400 flex items-center justify-center text-white text-2xl font-bold">A</div>
                 <div>
-                  <div className="font-bold text-[#1d1d1f] text-lg">Aarav Mehta</div>
+                  <div className="font-bold text-[#1d1d1f] text-lg">Manas Dhivare</div>
                   <div className="text-sm text-gray-400">Nashik, Maharashtra</div>
                 </div>
               </div>

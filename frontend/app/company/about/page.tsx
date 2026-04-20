@@ -49,20 +49,12 @@ const values = [
 ]
 
 const timeline = [
-  { year: "Early 2025", event: "The idea", desc: "Manas Dhivare, a volunteer in Nashik, notices that local NGOs struggle not with funding but with reliable manpower. Meanwhile, thousands of students and young professionals in the city want to contribute but cannot find vetted opportunities. The idea for Kindly is written on a notebook." },
-  { year: "Mid 2025", event: "First version", desc: "A small group of builders comes together to create the first version of Kindly. Events are created manually. Attendance is tracked on paper. But it works — 200 volunteers attend 15 events in Nashik in the first month." },
-  { year: "Late 2025", event: "Platform launch", desc: "Kindly launches as a full platform — event creation, volunteer profiles, QR check-in, and certificate generation. Organisations in Nashik, Mumbai, and Pune sign up. 5,000 volunteers join in the first three months." },
-  { year: "Early 2026", event: "Expanding across India", desc: "Kindly opens to 8 Indian cities. 50,000 volunteers. 1,200+ events hosted. The geo-lock verification system is introduced, making certificates credible enough to be accepted by colleges and employers. This is just the beginning." }
+  { year: "End 2025", event: "The idea", desc: "I noticed that local Community Organisations struggle not with funding but with reliable manpower. Meanwhile, thousands of students and young professionals in the city want to contribute but cannot find vetted opportunities. The idea for Kindly is written on a notebook." },
+  { year: "Early 2026", event: "First version", desc: "I worked in some organisations to find out that events are created and carried out manually. Attendance is tracked on paper." },
+  { year: "Early 2026", event: "Platform launch", desc: "That’s when I brought the idea in my head to life, and kindly was created. Kindly is a full platform — event creation, volunteer profiles, QR check-in, and certificate generation. Organisations in Nashik." },
+  { year: "Vision for 2026 Onwards", event: "Expanding across India", desc: "Kindly should open to 8 Indian cities. 50,000 volunteers. 1,200+ events hosted. The geo-lock verification system is introduced, making certificates credible enough to be accepted by colleges and employers. This is just the beginning." }
 ]
 
-const stats = [
-  { value: "50,000+", label: "Volunteers" },
-  { value: "8", label: "Cities" },
-  { value: "1,200+", label: "Events" },
-  { value: "2,400+", label: "Certificates Issued" },
-  { value: "120+", label: "Verified Organisations" },
-  { value: "142,000+", label: "Volunteer Hours" }
-]
 
 export default function AboutPage() {
   const router = useRouter()
@@ -90,17 +82,6 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Stats */}
-      <section className="py-16 px-6 bg-[#1d1d1f]">
-        <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 text-center">
-          {stats.map((s, i) => (
-            <div key={i}>
-              <div className="text-2xl md:text-3xl font-bold text-white mb-1">{s.value}</div>
-              <div className="text-xs text-[#86868b] uppercase tracking-wider">{s.label}</div>
-            </div>
-          ))}
-        </div>
-      </section>
 
       {/* Mission */}
       <section className="py-24 px-6">
@@ -176,11 +157,11 @@ export default function AboutPage() {
           <h2 className="text-3xl font-bold text-[#1d1d1f] mb-8">A Note from the Founder</h2>
           <div className="bg-white p-8 rounded-2xl shadow-sm">
             <p className="text-[17px] text-gray-600 leading-relaxed mb-6 italic">
-              "I grew up in Nashik watching people do remarkable things quietly — planting trees, feeding strangers, teaching children after work hours. Nobody celebrated them. Nobody tracked what they did. And yet, the city is kinder because of them. Kindly is my attempt to give those people the recognition they deserve and to make it easier for more people to join them. It is the most important thing I've ever worked on."
+              The real work in this city has always been done quietly. I watched people build communities after their 9-to-5s without asking for a microphone. But today, good intentions get lost in the noise. KINDLY is our answer to that. We built a platform that turns intent into measurable, real-world action. It’s for the people who actually want to show up, not just talk about it.
             </p>
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#ff6b6b] to-[#f59e0b] flex items-center justify-center text-white font-bold text-lg">
-                M
+                MD
               </div>
               <div>
                 <div className="font-bold text-[#1d1d1f]">Manas Dhivare</div>
