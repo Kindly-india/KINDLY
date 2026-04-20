@@ -210,6 +210,25 @@ export default function EditEventPage() {
         coverImageUrl = await api.uploadEventImage(imageFile)
       }
 
+      // Forward-geocode if coords are missing (org typed location without using GPS button)
+      let finalLat = formData.latitude
+      let finalLng = formData.longitude
+      if ((finalLat === undefined || finalLng === undefined) && formData.location) {
+        try {
+          const geoRes = await fetch(
+            `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(formData.location)}&format=json&limit=1`,
+            { headers: { 'Accept-Language': 'en' } }
+          )
+          const geoData = await geoRes.json()
+          if (geoData.length > 0) {
+            finalLat = parseFloat(geoData[0].lat)
+            finalLng = parseFloat(geoData[0].lon)
+          }
+        } catch {
+          // Non-fatal — event saves without coords, geo-lock won't work
+        }
+      }
+
       await api.updateEvent(eventId, {
         title: formData.title,
         description: formData.description,
@@ -229,8 +248,8 @@ export default function EditEventPage() {
         totalSlots: parseInt(formData.totalSlots),
         registrationDeadline: formData.registrationDeadline,
         minimumAge: formData.minimumAge ? parseInt(formData.minimumAge) : undefined,
-        latitude: formData.latitude,
-        longitude: formData.longitude,
+        latitude: finalLat,
+        longitude: finalLng,
       })
 
       alert("Event updated successfully!")

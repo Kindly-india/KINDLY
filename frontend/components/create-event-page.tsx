@@ -171,6 +171,27 @@ export function CreateEventPage() {
                 setUploading(false);
             }
 
+            // If the org typed the location manually without using the GPS button,
+            // forward-geocode the text now so geo-lock has coordinates to work with.
+            let finalLat = formData.latitude;
+            let finalLng = formData.longitude;
+            if ((finalLat === undefined || finalLng === undefined) && formData.location) {
+                try {
+                    const geoRes = await fetch(
+                        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(formData.location)}&format=json&limit=1`,
+                        { headers: { 'Accept-Language': 'en' } }
+                    );
+                    const geoData = await geoRes.json();
+                    if (geoData.length > 0) {
+                        finalLat = parseFloat(geoData[0].lat);
+                        finalLng = parseFloat(geoData[0].lon);
+                    }
+                } catch {
+                    // Geocoding failure is non-fatal — event is still created,
+                    // but geo-lock will not work for this event.
+                }
+            }
+
             const deadlineISO = new Date(formData.registrationDeadline).toISOString();
 
             await api.createEvent({
@@ -190,8 +211,8 @@ export function CreateEventPage() {
                 totalSlots: formData.totalSlots,
                 registrationDeadline: deadlineISO,
                 minimumAge: formData.minimumAge,
-                latitude: formData.latitude,
-                longitude: formData.longitude,
+                latitude: finalLat,
+                longitude: finalLng,
             });
 
             setShowSuccess(true);
