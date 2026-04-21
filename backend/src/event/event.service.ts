@@ -6,26 +6,34 @@ import { validateImageFile } from '../common/file-validation.util';
 
 const GEOLOCK_RADIUS_METERS = 200;
 
+// City/district-level types are too coarse for geo-lock (would be km off)
+const COARSE_TYPES = new Set(['city', 'town', 'village', 'municipality', 'district', 'state', 'country', 'administrative']);
+
 async function geocodeLocation(location: string): Promise<{ lat: number; lng: number } | null> {
   const headers = { 'User-Agent': 'KINDLYApp/1.0 (kindly.co.in)', 'Accept-Language': 'en' };
-  // Try progressively shorter address variants (building → area → city)
   const parts = location.split(',').map(s => s.trim()).filter(Boolean);
   for (let i = 0; i < parts.length; i++) {
     const query = parts.slice(i).join(', ');
     try {
-      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&countrycodes=in`;
+      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&countrycodes=in&addressdetails=1`;
       console.log(`[Geo] Trying: "${query}"`);
       const res = await fetch(url, { headers });
       const data: any[] = await res.json();
       if (data.length > 0) {
-        console.log(`[Geo] Found at attempt ${i + 1}: lat=${data[0].lat} lon=${data[0].lon}`);
-        return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+        const result = data[0];
+        const type = result.type || result.class || '';
+        if (COARSE_TYPES.has(type)) {
+          console.log(`[Geo] Skipping coarse result (type="${type}") for: "${query}"`);
+          continue;
+        }
+        console.log(`[Geo] Using result type="${type}" lat=${result.lat} lon=${result.lon}`);
+        return { lat: parseFloat(result.lat), lng: parseFloat(result.lon) };
       }
     } catch (err) {
       console.error(`[Geo] Error on attempt ${i + 1}:`, err);
     }
   }
-  console.warn('[Geo] All attempts failed for:', location);
+  console.warn('[Geo] No precise geocoding result for:', location, '— org must use GPS button');
   return null;
 }
 

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import dynamic from "next/dynamic"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import {
@@ -21,6 +22,11 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { api } from "@/lib/api"
+
+const LocationPickerMap = dynamic(
+    () => import("./location-picker-map").then((m) => ({ default: m.LocationPickerMap })),
+    { ssr: false, loading: () => <div className="w-full rounded-xl bg-[#f5f5f7] animate-pulse" style={{ height: 220 }} /> }
+)
 
 const categories = [
     { id: "nature_outdoors", name: "Outdoors & Nature", color: "bg-emerald-500", icon: "🌿" },
@@ -503,28 +509,24 @@ export function CreateEventPage() {
                                 </button>
                             </div>
 
-                            <div className="aspect-2/1 bg-[#f5f5f7] rounded-xl overflow-hidden border border-[#e5e5e7] shadow-inner">
-                                {formData.location ? (
-                                    <iframe
-                                        width="100%"
-                                        height="100%"
-                                        frameBorder="0"
-                                        style={{ border: 0 }}
-                                        src={`https://www.google.com/maps?q=${encodeURIComponent(formData.location)}&output=embed`}
-                                        allowFullScreen
-                                        loading="lazy"
-                                        className="w-full h-full"
-                                    ></iframe>
-                                ) : (
-                                    <div className="w-full h-full bg-gradient-to-br from-[#f5f5f7] to-[#e5e5e7] flex flex-col items-center justify-center">
-                                        <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm mb-3">
-                                            <MapPin className="w-6 h-6 text-gray-400" />
-                                        </div>
-                                        <p className="text-sm font-medium text-gray-500">Enter a location to verify on map</p>
-                                        <p className="text-xs text-gray-400 mt-1">This ensures volunteers find you easily</p>
+                            {formData.location ? (
+                                <LocationPickerMap
+                                    location={formData.location}
+                                    latitude={formData.latitude}
+                                    longitude={formData.longitude}
+                                    onCoordinatesChange={(lat, lng) =>
+                                        setFormData(prev => ({ ...prev, latitude: lat, longitude: lng }))
+                                    }
+                                />
+                            ) : (
+                                <div className="w-full rounded-xl bg-gradient-to-br from-[#f5f5f7] to-[#e5e5e7] border border-[#e5e5e7] flex flex-col items-center justify-center" style={{ height: 220 }}>
+                                    <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm mb-3">
+                                        <MapPin className="w-6 h-6 text-gray-400" />
                                     </div>
-                                )}
-                            </div>
+                                    <p className="text-sm font-medium text-gray-500">Enter a location to see map</p>
+                                    <p className="text-xs text-gray-400 mt-1">Pin will appear — drag it to your exact spot</p>
+                                </div>
+                            )}
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
