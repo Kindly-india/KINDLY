@@ -482,7 +482,11 @@ export default function RegisteredEventDetailPage() {
               {/* MAP EMBED (Fixed Standard Embed) */}
               <div className="rounded-[24px] overflow-hidden h-44 relative group border border-gray-200 shadow-inner bg-gray-100">
                 <a
-                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}`}
+                  href={
+                    event.latitude && event.longitude
+                      ? `https://www.google.com/maps/search/?api=1&query=${event.latitude},${event.longitude}`
+                      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}`
+                  }
                   target="_blank"
                   rel="noopener noreferrer"
                   className="block w-full h-full"
@@ -492,7 +496,11 @@ export default function RegisteredEventDetailPage() {
                     height="100%"
                     frameBorder="0"
                     style={{ border: 0 }}
-                    src={`https://googleusercontent.com/maps.google.com/maps?q=${encodeURIComponent(event.location)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+                    src={
+                      event.latitude && event.longitude
+                        ? `https://maps.google.com/maps?q=${event.latitude},${event.longitude}&t=&z=17&ie=UTF8&iwloc=&output=embed`
+                        : `https://googleusercontent.com/maps.google.com/maps?q=${encodeURIComponent(event.location)}&t=&z=15&ie=UTF8&iwloc=&output=embed`
+                    }
                     className="absolute inset-0 w-full h-full pointer-events-none opacity-80 group-hover:opacity-100 transition-opacity"
                   ></iframe>
                   <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
