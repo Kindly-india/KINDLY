@@ -18,7 +18,8 @@ import {
     CheckCircle,
     Info,
     Navigation,
-    Search
+    Search,
+    Loader2
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { api } from "@/lib/api"
@@ -51,7 +52,8 @@ export function CreateEventPage() {
     const [coverImage, setCoverImage] = useState<File | null>(null);
     const [coverImageUrl, setCoverImageUrl] = useState<string>('');
     const [uploading, setUploading] = useState(false);
-    const [gettingLocation, setGettingLocation] = useState(false); 
+    const [gettingLocation, setGettingLocation] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const [formData, setFormData] = useState({
         title: '',
@@ -115,7 +117,9 @@ export function CreateEventPage() {
     };
 
     const handlePublish = async () => {
+        if (isSubmitting) return;
         try {
+            setIsSubmitting(true);
             // Validate required fields
             if (!formData.title || !formData.description || !formData.category) {
                 alert('Please fill in all required fields in Step 1');
@@ -203,6 +207,8 @@ export function CreateEventPage() {
             setShowSuccess(true);
         } catch (error: any) {
             alert(error.message || 'Failed to submit event for approval');
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -754,9 +760,15 @@ export function CreateEventPage() {
                             if (step < 3) setStep(step + 1)
                             else handlePublish()
                         }}
-                        className="flex-1 h-12 md:h-14 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-semibold hover:opacity-90 transition-opacity shadow-lg text-sm md:text-base"
+                        disabled={isSubmitting}
+                        className="flex-1 h-12 md:h-14 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-semibold hover:opacity-90 transition-opacity shadow-lg text-sm md:text-base disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
-                        {step === 3 ? "Submit for Approval" : "Continue"}
+                        {isSubmitting ? (
+                            <>
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                Submitting...
+                            </>
+                        ) : step === 3 ? "Submit for Approval" : "Continue"}
                     </button>
                 </div>
             </footer>

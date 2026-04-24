@@ -110,12 +110,35 @@ export class OrganizationService {
       .select('*', { count: 'exact', head: true })
       .eq('following_id', profile.user_id);
 
-    const { data: stats, error: statsError } = await client.rpc('get_org_stats', {
-      target_org_id: profile.id,
-    });
+    // Compute impact stats directly — no RPC dependency
+    const { data: completedEvents } = await client
+      .from('events')
+      .select('id, start_time, end_time')
+      .eq('organization_id', profile.id)
+      .eq('status', 'completed');
 
-    if (statsError) {
-      console.error('Stats Error:', statsError);
+    const eventIds = (completedEvents || []).map((e: any) => e.id);
+
+    const { data: attendedRegs } = eventIds.length
+      ? await client
+          .from('event_registrations')
+          .select('event_id, user_id')
+          .in('event_id', eventIds)
+          .in('registration_status', ['completed', 'checked_in'])
+      : { data: [] };
+
+    const eventsHosted = completedEvents?.length ?? 0;
+    const volunteersEngaged = new Set((attendedRegs || []).map((r: any) => r.user_id)).size;
+
+    let totalHours = 0;
+    for (const ev of completedEvents || []) {
+      const attendees = (attendedRegs || []).filter((r: any) => r.event_id === ev.id).length;
+      if (attendees > 0 && ev.start_time && ev.end_time) {
+        const [sh, sm] = (ev.start_time as string).split(':').map(Number);
+        const [eh, em] = (ev.end_time as string).split(':').map(Number);
+        const hours = Math.max(0, (eh * 60 + em - sh * 60 - sm) / 60);
+        totalHours += hours * attendees;
+      }
     }
 
     return {
@@ -124,9 +147,9 @@ export class OrganizationService {
         is_owner: isOwner,
         is_followed_by_current_user: isFollowedByCurrentUser,
         followers_count: followersCount ?? 0,
-        total_hours_generated: stats?.total_hours ?? 0,
-        volunteers_engaged: stats?.volunteers_engaged ?? 0,
-        events_hosted: stats?.events_hosted ?? 0,
+        total_hours_generated: Math.round(totalHours * 10) / 10,
+        volunteers_engaged: volunteersEngaged,
+        events_hosted: eventsHosted,
       },
     };
   }

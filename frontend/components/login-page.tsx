@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { api } from "@/lib/api"
+import { supabase } from "@/lib/supabase"
 import { BrandSplash } from "@/components/brand-splash"
 
 export function LoginPage() {
@@ -98,8 +99,10 @@ export function LoginPage() {
         
         setResetStatus("loading")
         try {
-            // Calls the backend to send the reset email
-            await api.resetPassword(resetEmail)
+            const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+                redirectTo: `${window.location.origin}/update-password`,
+            })
+            if (error) throw error
             setResetStatus("success")
             setResetMessage("Check your inbox! We've sent a secure link to reset your password.")
         } catch (err: any) {

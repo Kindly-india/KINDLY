@@ -105,8 +105,8 @@ export function ContactSection() {
             </h3>
             <ul className="space-y-3 md:space-y-3">
               <li>
-                <a href="/resources/blog" className="text-[14px] md:text-sm text-[#d2d2d7] hover:text-white transition-colors">
-                  Blog
+                <a href="/resources/feedback" className="text-[14px] md:text-sm text-[#d2d2d7] hover:text-white transition-colors">
+                  Feedback
                 </a>
               </li>
               <li>

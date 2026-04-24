@@ -6,7 +6,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
    Loader2, Users, Clock, CalendarCheck,
-   DollarSign, ArrowUpRight, ArrowDownRight, Download,
+   Repeat, ArrowUpRight, ArrowDownRight, Download,
    Award, Filter, ArrowLeft,
    Calendar, BarChart3
 } from "lucide-react"
@@ -31,7 +31,7 @@ export default function OrgAnalyticsPage() {
       totalVolunteers: 0,
       eventsHosted: 0,
       turnoutRate: 0,
-      economicValue: 0,
+      repeatVolunteerRate: 0,
       monthlyGrowth: [] as any[],
       statusBreakdown: [] as any[],
       topVolunteers: [] as any[],
@@ -122,6 +122,24 @@ export default function OrgAnalyticsPage() {
                });
             });
 
+            // --- REPEAT VOLUNTEER RATE ---
+            // For each volunteer, count how many distinct completed events they attended
+            const volunteerEventCounts = new Map<string, Set<string>>();
+            allData.forEach((ev: any) => {
+               if (ev.status !== 'completed') return;
+               (ev.registrations || []).forEach((r: any) => {
+                  const status = (r.status || '').toLowerCase();
+                  const volId = r.volunteer_id || r.volunteer_profiles?.id;
+                  if ((status === 'checked_in' || status === 'completed') && volId) {
+                     if (!volunteerEventCounts.has(volId)) volunteerEventCounts.set(volId, new Set());
+                     volunteerEventCounts.get(volId)!.add(ev.id);
+                  }
+               });
+            });
+            const attendedAtLeastOne = Array.from(volunteerEventCounts.values()).filter(s => s.size >= 1).length;
+            const attendedAtLeastTwo = Array.from(volunteerEventCounts.values()).filter(s => s.size >= 2).length;
+            const repeatVolunteerRate = attendedAtLeastOne > 0 ? Math.round((attendedAtLeastTwo / attendedAtLeastOne) * 100) : 0;
+
             // --- FINAL FORMATTING ---
 
             // 1. Leaderboard (Top 5)
@@ -155,7 +173,7 @@ export default function OrgAnalyticsPage() {
                totalVolunteers: uniqueVolunteers.size,
                eventsHosted: events.length,
                turnoutRate: registeredTotal > 0 ? Math.round((checkedInCount / registeredTotal) * 100) : 0,
-               economicValue: Math.round(totalHours * 200), // ₹200/hr
+               repeatVolunteerRate,
                monthlyGrowth,
                statusBreakdown,
                topVolunteers,
@@ -227,15 +245,15 @@ export default function OrgAnalyticsPage() {
                   </div>
                </div>
 
-               {/* Economic Value */}
+               {/* Repeat Volunteer Rate */}
                <div className="bg-white p-4 md:p-6 rounded-xl border border-gray-200 shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex flex-col justify-between">
                   <div className="flex justify-between items-start mb-3 md:mb-4">
-                     <div className="p-1.5 md:p-2 bg-emerald-50 rounded-lg"><DollarSign className="w-4 h-4 md:w-5 md:h-5 text-emerald-600" /></div>
-                     <span className="text-[9px] md:text-xs text-gray-400 max-w-[50%] text-right leading-tight">Est. Value (₹200/hr)</span>
+                     <div className="p-1.5 md:p-2 bg-violet-50 rounded-lg"><Repeat className="w-4 h-4 md:w-5 md:h-5 text-violet-600" /></div>
                   </div>
                   <div>
-                     <p className="text-2xl md:text-3xl font-bold text-gray-900">₹{(data.economicValue / 1000).toFixed(1)}k</p>
-                     <p className="text-[11px] md:text-sm text-gray-500 mt-0.5 md:mt-1 leading-tight">Economic Value</p>
+                     <p className="text-2xl md:text-3xl font-bold text-gray-900">{data.repeatVolunteerRate}%</p>
+                     <p className="text-[11px] md:text-sm text-gray-500 mt-0.5 md:mt-1 leading-tight">Repeat Volunteer Rate</p>
+                     <p className="text-[10px] md:text-[11px] text-gray-400 mt-0.5 leading-tight">Came back for 2+ events</p>
                   </div>
                </div>
 
