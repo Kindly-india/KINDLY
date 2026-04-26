@@ -26,6 +26,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { api } from "@/lib/api"
 import { cn } from "@/lib/utils"
+import { PhoneVerificationModal } from "@/components/phone-verification-modal"
 
 /**
  * EventDetailsPage Component
@@ -48,6 +49,8 @@ export default function EventDetailsPage() {
   const [isRegistered, setIsRegistered] = useState(false)
   const [showConfirmModal, setShowConfirmModal] = useState(false)
   const [agreedToTerms, setAgreedToTerms] = useState(false)
+  const [showPhoneModal, setShowPhoneModal] = useState(false)
+  const [userPhone, setUserPhone] = useState<string | null>(undefined as any)
 
   /**
    * Data Fetching Logic
@@ -63,14 +66,18 @@ export default function EventDetailsPage() {
         const response = await api.getPublicEventById(eventId)
         setEvent(response.event)
 
-        // Check if current user is already registered (Safe check)
+        // Check if current user is already registered and fetch phone (Safe check)
         try {
-          const registrations = await api.getMyRegistrations()
+          const [registrations, profile] = await Promise.all([
+            api.getMyRegistrations(),
+            api.getUserProfile(),
+          ])
           const myReg = registrations?.events?.find((r: any) => r.id === eventId)
           if (myReg && myReg.registration_status !== 'cancelled') {
             router.replace(`/events/${eventId}/registered`)
             return
           }
+          setUserPhone(profile?.profile?.phone ?? null)
         } catch {
           // User not logged in — skip silently, page loads as public view
         }
@@ -95,6 +102,11 @@ export default function EventDetailsPage() {
       const user = await api.getCurrentUser()
       if (!user) {
         router.push('/login')
+        return
+      }
+      // Phone not yet verified — show OTP modal before the commitment modal
+      if (!userPhone) {
+        setShowPhoneModal(true)
         return
       }
       setAgreedToTerms(false)
@@ -680,6 +692,18 @@ export default function EventDetailsPage() {
           </Button>
         </div>
       </div>
+
+      {showPhoneModal && (
+        <PhoneVerificationModal
+          onSaved={(phone) => {
+            setUserPhone(phone)
+            setShowPhoneModal(false)
+            setAgreedToTerms(false)
+            setShowConfirmModal(true)
+          }}
+          onClose={() => setShowPhoneModal(false)}
+        />
+      )}
     </div>
   )
 }

@@ -9,10 +9,6 @@ export class VolunteerSignupDto {
   email: string;
 
   @IsString()
-  @IsNotEmpty()
-  phone: string;
-
-  @IsString()
   @MinLength(6)
   password: string;
 

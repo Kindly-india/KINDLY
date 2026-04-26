@@ -48,7 +48,6 @@ export class AuthService {
       .insert({
         user_id: authData.user.id,
         full_name: dto.fullName,
-        phone: dto.phone,
         city: dto.city,
         interests: dto.interests,
         total_hours: 0,

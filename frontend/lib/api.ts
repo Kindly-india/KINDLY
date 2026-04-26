@@ -5,7 +5,6 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 export interface VolunteerSignupData {
   fullName: string;
   email: string;
-  phone: string;
   password: string;
   city: string;
   interests: string[];
@@ -939,6 +938,23 @@ export const api = {
     });
     if (!res.ok) throw new Error('Failed to update profile');
     return res.json();
+  },
+
+  savePhone: async (phone: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const res = await fetch(`${API_URL}/phone-verification/save`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ phone }),
+    });
+    const body = await res.json();
+    if (!res.ok) throw new Error(body.message || 'Failed to save phone number');
+    return body;
   },
 
   // ✅ NEW: GALLERY FUNCTIONS

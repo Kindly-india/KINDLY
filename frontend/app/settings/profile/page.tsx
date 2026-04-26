@@ -194,31 +194,26 @@ export default function EditProfile() {
   const handleSave = async () => {
     try {
       setSaving(true)
-      
-      // Clean up empty strings to avoid DB errors
-      const cleanedData = { ...formData };
+
+      const cleanedData = { ...formData }
       Object.keys(cleanedData).forEach(key => {
-        if (cleanedData[key] === '') {
-            delete cleanedData[key];
-        }
-      });
+        if (cleanedData[key] === '') delete cleanedData[key]
+      })
 
       if (userType === 'volunteer') {
         const volunteerPayload: any = { ...cleanedData }
-        delete volunteerPayload.team_members; 
-        delete volunteerPayload.achievements;
+        delete volunteerPayload.team_members
+        delete volunteerPayload.achievements
         await api.updateVolunteerProfile(volunteerPayload)
       } else if (userType === 'organization') {
         const orgPayload: any = { ...cleanedData }
-        if (orgPayload.years_active) {
-            orgPayload.years_active = parseInt(orgPayload.years_active);
-        }
+        if (orgPayload.years_active) orgPayload.years_active = parseInt(orgPayload.years_active)
         await api.updateOrgProfile(orgPayload)
       }
       router.back()
     } catch (err: any) {
-      console.error(err); 
-      alert("Update Failed: " + err.message);
+      console.error(err)
+      alert("Update Failed: " + err.message)
     } finally {
       setSaving(false)
     }
@@ -462,6 +457,7 @@ export default function EditProfile() {
           </div>
         </div>
       </div>
+
     </div>
   )
 }

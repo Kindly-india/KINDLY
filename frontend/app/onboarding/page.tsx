@@ -341,7 +341,7 @@ export default function OnboardingPage() {
     const check = async () => {
       const profileRes = await api.getUserProfile().catch(() => null)
       if (profileRes?.profile?.onboarding_completed) {
-        router.replace("/events")
+        router.replace("/home")
       }
     }
     check()
@@ -386,7 +386,7 @@ export default function OnboardingPage() {
 
     setShowSplash(true)
     await wait(2200)
-    router.push("/events")
+    router.push("/home")
   }
 
   return (
