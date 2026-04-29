@@ -7,8 +7,9 @@ import {
   MapPin, Calendar, ChevronLeft, Loader2, Edit2,
   Sparkles, Trophy, Mail, Phone, UserPlus,
   UserMinus, Download, Share2, Linkedin, Instagram, Globe,
-  Home, Check, Quote, Building2, Languages, GraduationCap,
-  Image as ImageIcon, Plus, Trash2, LogOut, Lock, Clock, X
+  Home, Check, Quote, Building2,
+  Image as ImageIcon, Plus, Trash2, LogOut, Lock, Clock, X,
+  Camera, Images,
 } from "lucide-react"
 import { api } from "@/lib/api"
 import { cn } from "@/lib/utils"
@@ -47,36 +48,6 @@ function Testimonials({ journey }: { journey: any[] }) {
   )
 }
 
-function Credentials() {
-  return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
-      <h3 className="font-bold text-gray-900 mb-4 text-sm uppercase tracking-wide">Credentials</h3>
-      <div className="mb-5">
-        <div className="flex items-center gap-2 text-sm text-gray-900 font-medium mb-2">
-          <Languages className="w-4 h-4 text-blue-500" /> Languages
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <span className="px-2 py-1 bg-gray-50 border border-gray-200 rounded text-xs text-gray-600">English (Native)</span>
-          <span className="px-2 py-1 bg-gray-50 border border-gray-200 rounded text-xs text-gray-600">Hindi (Fluent)</span>
-        </div>
-      </div>
-      <div>
-        <div className="flex items-center gap-2 text-sm text-gray-900 font-medium mb-2">
-          <GraduationCap className="w-4 h-4 text-emerald-500" /> Certifications
-        </div>
-        <div className="space-y-2">
-          <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100">
-            <div className="w-8 h-8 rounded bg-red-50 flex items-center justify-center text-red-600 font-bold text-xs border border-red-100">RC</div>
-            <div>
-              <p className="text-xs font-bold text-gray-900">First Aid & CPR</p>
-              <p className="text-[10px] text-gray-500">Red Cross • Issued 2024</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
 
 function ActionGallery({ userId, isOwnProfile }: { userId: string, isOwnProfile: boolean }) {
   const [photos, setPhotos] = useState<any[]>([])
@@ -161,6 +132,78 @@ function ActionGallery({ userId, isOwnProfile }: { userId: string, isOwnProfile:
           ))}
         </div>
       )}
+    </div>
+  )
+}
+
+// --- POSTS GRID ---
+
+function PostsGrid({ userId, isOwnProfile }: { userId: string; isOwnProfile: boolean }) {
+  const router = useRouter()
+  const [data, setData] = useState<{ posts: any[]; is_private: boolean } | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (!userId) return
+    api.getVolunteerPosts(userId)
+      .then(setData)
+      .catch(() => setData({ posts: [], is_private: false }))
+      .finally(() => setLoading(false))
+  }, [userId])
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-3 gap-0.5 rounded-2xl overflow-hidden bg-gray-100 animate-pulse">
+        {[...Array(6)].map((_, i) => (
+          <div key={i} className="aspect-square bg-gray-200" />
+        ))}
+      </div>
+    )
+  }
+
+  if (data?.is_private) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-center bg-white rounded-2xl border border-gray-200">
+        <Lock className="w-7 h-7 text-gray-300 mb-2" />
+        <p className="text-sm text-gray-500">Posts are private</p>
+      </div>
+    )
+  }
+
+  if (!data?.posts.length) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-center bg-white rounded-2xl border border-gray-200">
+        <Camera className="w-8 h-8 text-gray-300 mb-2" />
+        <p className="text-sm text-gray-500 mb-1">No posts yet</p>
+        {isOwnProfile && (
+          <Link href="/history" className="text-xs text-blue-600 font-semibold">
+            Share your experience →
+          </Link>
+        )}
+      </div>
+    )
+  }
+
+  return (
+    <div className="grid grid-cols-3 gap-0.5">
+      {data.posts.map((post) => (
+        <button
+          key={post.id}
+          onClick={() => router.push(`/posts/${post.id}`)}
+          className="aspect-square overflow-hidden bg-gray-100 relative group"
+        >
+          <img
+            src={post.photo_urls[0]}
+            alt=""
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+          {post.photo_urls.length > 1 && (
+            <div className="absolute top-1.5 right-1.5 bg-black/40 rounded-sm p-0.5">
+              <Images className="w-2.5 h-2.5 text-white" />
+            </div>
+          )}
+        </button>
+      ))}
     </div>
   )
 }
@@ -367,6 +410,7 @@ export default function VolunteerProfile() {
   const [copied, setCopied] = useState(false)
   const [followLoading, setFollowLoading] = useState(false)
   const [errorToast, setErrorToast] = useState<string | null>(null)
+  const [activeProfileTab, setActiveProfileTab] = useState<'posts' | 'about'>('posts')
 
   useEffect(() => {
     let isMounted = true;
@@ -738,12 +782,10 @@ export default function VolunteerProfile() {
               </div>
             )}
 
-            {/* Credentials Card */}
-            <Credentials />
           </div>
 
           {/* 4. MAIN CONTENT */}
-          <div className="lg:col-span-8 space-y-6">
+          <div className="lg:col-span-8 space-y-6 lg:pt-20">
             {profile?.is_private && !isOwnProfile && followStatus !== 'accepted' ? (
               /* Privacy Lock */
               <div className="flex flex-col items-center justify-center py-24 text-center bg-white rounded-2xl shadow-sm border border-gray-200">
@@ -760,6 +802,28 @@ export default function VolunteerProfile() {
               </div>
             ) : (
               <>
+                {/* Tab bar */}
+                <div className="flex border-b border-gray-200 bg-white rounded-t-2xl overflow-hidden">
+                  {(['posts', 'about'] as const).map((tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => setActiveProfileTab(tab)}
+                      className={cn(
+                        "flex-1 py-3 text-[13px] font-semibold capitalize transition-colors",
+                        activeProfileTab === tab
+                          ? "border-b-2 border-gray-900 text-gray-900"
+                          : "text-gray-400 hover:text-gray-600"
+                      )}
+                    >
+                      {tab}
+                    </button>
+                  ))}
+                </div>
+
+                {activeProfileTab === 'posts' ? (
+                  <PostsGrid userId={profile?.user_id} isOwnProfile={isOwnProfile} />
+                ) : (
+                <>
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
                   <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-bold text-gray-900">About</h3>
@@ -858,6 +922,8 @@ export default function VolunteerProfile() {
                     </div>
                   )}
                 </div>
+              </>
+                )}
               </>
             )}
           </div>

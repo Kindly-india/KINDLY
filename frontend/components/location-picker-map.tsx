@@ -1,13 +1,15 @@
 "use client"
 
-import { useEffect, useRef, useCallback } from "react"
+import { useEffect, useRef } from "react"
 import "leaflet/dist/leaflet.css"
 
+const NASHIK: [number, number] = [19.9975, 73.7898]
+
 interface Props {
-  location: string
   latitude?: number
   longitude?: number
   onCoordinatesChange: (lat: number, lng: number) => void
+  onCenterChange?: (lat: number, lng: number) => void
 }
 
 const PIN_ICON_HTML = `
@@ -18,14 +20,15 @@ const PIN_ICON_HTML = `
   </svg>
 `
 
-export function LocationPickerMap({ location, latitude, longitude, onCoordinatesChange }: Props) {
+export function LocationPickerMap({ latitude, longitude, onCoordinatesChange, onCenterChange }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<any>(null)
   const markerRef = useRef<any>(null)
   const onChangeRef = useRef(onCoordinatesChange)
+  const onCenterRef = useRef(onCenterChange)
   onChangeRef.current = onCoordinatesChange
+  onCenterRef.current = onCenterChange
 
-  // Initialize map once
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return
 
@@ -35,8 +38,8 @@ export function LocationPickerMap({ location, latitude, longitude, onCoordinates
       if (cancelled || !containerRef.current || mapRef.current) return
 
       const map = L.map(containerRef.current, {
-        center: [20.5937, 78.9629], // India center
-        zoom: 4,
+        center: NASHIK,
+        zoom: 13,
         zoomControl: true,
         scrollWheelZoom: false,
       })
@@ -53,7 +56,7 @@ export function LocationPickerMap({ location, latitude, longitude, onCoordinates
         iconAnchor: [14, 40],
       })
 
-      const marker = L.marker([20.5937, 78.9629], {
+      const marker = L.marker(NASHIK, {
         draggable: true,
         icon,
         opacity: 0,
@@ -62,6 +65,11 @@ export function LocationPickerMap({ location, latitude, longitude, onCoordinates
       marker.on("dragend", () => {
         const { lat, lng } = marker.getLatLng()
         onChangeRef.current(lat, lng)
+      })
+
+      map.on("moveend", () => {
+        const center = map.getCenter()
+        onCenterRef.current?.(center.lat, center.lng)
       })
 
       mapRef.current = map
@@ -78,7 +86,6 @@ export function LocationPickerMap({ location, latitude, longitude, onCoordinates
     }
   }, [])
 
-  // Move marker when coords come from GPS button
   useEffect(() => {
     if (latitude == null || longitude == null) return
     if (!mapRef.current || !markerRef.current) return
@@ -86,32 +93,6 @@ export function LocationPickerMap({ location, latitude, longitude, onCoordinates
     markerRef.current.setOpacity(1)
     mapRef.current.setView([latitude, longitude], 17)
   }, [latitude, longitude])
-
-  // Geocode typed address (debounced)
-  useEffect(() => {
-    if (!location || latitude != null) return // skip if GPS already set coords
-
-    const timer = setTimeout(async () => {
-      if (!mapRef.current || !markerRef.current) return
-      try {
-        const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(location)}&format=json&limit=1&countrycodes=in`
-        const res = await fetch(url, { headers: { "Accept-Language": "en" } })
-        const data: any[] = await res.json()
-        if (data.length > 0) {
-          const lat = parseFloat(data[0].lat)
-          const lng = parseFloat(data[0].lon)
-          markerRef.current.setLatLng([lat, lng])
-          markerRef.current.setOpacity(1)
-          mapRef.current.setView([lat, lng], 16)
-          onChangeRef.current(lat, lng)
-        }
-      } catch {
-        // non-fatal
-      }
-    }, 800)
-
-    return () => clearTimeout(timer)
-  }, [location, latitude])
 
   return (
     <div className="relative">

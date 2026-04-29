@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import dynamic from "next/dynamic"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -23,6 +23,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { api } from "@/lib/api"
+import { toast } from "sonner"
 
 const LocationPickerMap = dynamic(
     () => import("./location-picker-map").then((m) => ({ default: m.LocationPickerMap })),
@@ -54,6 +55,13 @@ export function CreateEventPage() {
     const [uploading, setUploading] = useState(false);
     const [gettingLocation, setGettingLocation] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [suggestions, setSuggestions] = useState<any[]>([])
+    const [showSuggestions, setShowSuggestions] = useState(false)
+    const [searchLoading, setSearchLoading] = useState(false)
+    const [highlightedIndex, setHighlightedIndex] = useState(-1)
+    const searchContainerRef = useRef<HTMLDivElement>(null)
+    const searchDebounceRef = useRef<ReturnType<typeof setTimeout>>()
+    const mapCenterRef = useRef({ lng: 73.7898, lat: 19.9975 })
 
     const [formData, setFormData] = useState({
         title: '',
@@ -78,43 +86,101 @@ export function CreateEventPage() {
 
     const handleGetCurrentLocation = () => {
         if (!navigator.geolocation) {
-            alert("Geolocation is not supported by your browser");
-            return;
+            toast.error("Geolocation is not supported by your browser")
+            return
         }
-
-        setGettingLocation(true);
+        setGettingLocation(true)
         navigator.geolocation.getCurrentPosition(
             async (position) => {
-                const { latitude, longitude } = position.coords;
+                const { latitude, longitude } = position.coords
                 try {
-                    const res = await fetch(
-                        `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`,
-                        { headers: { 'Accept-Language': 'en' } }
-                    );
-                    const data = await res.json();
-                    const a = data.address || {};
-                    const parts = [
-                        a.amenity || a.building || a.shop || a.tourism,
-                        a.road || a.pedestrian || a.footway,
-                        a.suburb || a.neighbourhood,
-                        a.city || a.town || a.village,
-                        a.state,
-                    ].filter(Boolean);
-                    const readable = parts.join(', ') || data.display_name;
-                    setFormData(prev => ({ ...prev, location: readable, latitude, longitude }));
+                    const url = `https://photon.komoot.io/reverse?lat=${latitude}&lon=${longitude}&limit=1&lang=en`
+                    const res = await fetch(url)
+                    const data = await res.json()
+                    const p = data.features?.[0]?.properties ?? {}
+                    const address = [p.name, p.street, p.city, p.state].filter(Boolean).join(', ') || `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`
+                    setFormData(prev => ({ ...prev, location: address, latitude, longitude }))
+                    mapCenterRef.current = { lng: longitude, lat: latitude }
                 } catch {
-                    // Fallback: coordinates only
-                    setFormData(prev => ({ ...prev, location: `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`, latitude, longitude }));
+                    setFormData(prev => ({ ...prev, location: `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`, latitude, longitude }))
                 } finally {
-                    setGettingLocation(false);
+                    setGettingLocation(false)
                 }
             },
             () => {
-                setGettingLocation(false);
-                alert("Unable to retrieve your location. Please type the address manually.");
+                setGettingLocation(false)
+                toast.error("Location access denied. Please enable location in your browser settings.")
             }
-        );
-    };
+        )
+    }
+
+    const handleSearchChange = (value: string) => {
+        setFormData(prev => ({ ...prev, location: value }))
+        clearTimeout(searchDebounceRef.current)
+        if (value.length < 2) {
+            setSuggestions([])
+            setShowSuggestions(false)
+            return
+        }
+        searchDebounceRef.current = setTimeout(async () => {
+            setSearchLoading(true)
+            try {
+                const { lng, lat } = mapCenterRef.current
+                const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(value)}&limit=5&lang=en&lat=${lat}&lon=${lng}`
+                const res = await fetch(url)
+                const data = await res.json()
+                setSuggestions(data.features || [])
+                setShowSuggestions(true)
+                setHighlightedIndex(-1)
+            } catch {
+                toast.error("Location search unavailable. Please drag the pin manually.")
+            } finally {
+                setSearchLoading(false)
+            }
+        }, 300)
+    }
+
+    const handleSelectSuggestion = (feature: any) => {
+        const [lng, lat] = feature.geometry.coordinates
+        const p = feature.properties
+        const name = [p.name, p.street, p.city, p.state].filter(Boolean).join(', ')
+        setFormData(prev => ({ ...prev, location: name, latitude: lat, longitude: lng }))
+        mapCenterRef.current = { lng, lat }
+        setSuggestions([])
+        setShowSuggestions(false)
+        setHighlightedIndex(-1)
+    }
+
+    const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (!showSuggestions || suggestions.length === 0) {
+            if (e.key === 'Escape') setShowSuggestions(false)
+            return
+        }
+        if (e.key === 'ArrowDown') {
+            e.preventDefault()
+            setHighlightedIndex(prev => Math.min(prev + 1, suggestions.length - 1))
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault()
+            setHighlightedIndex(prev => Math.max(prev - 1, -1))
+        } else if (e.key === 'Enter') {
+            e.preventDefault()
+            const target = highlightedIndex >= 0 ? suggestions[highlightedIndex] : suggestions[0]
+            if (target) handleSelectSuggestion(target)
+        } else if (e.key === 'Escape') {
+            setShowSuggestions(false)
+            setHighlightedIndex(-1)
+        }
+    }
+
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
+                setShowSuggestions(false)
+            }
+        }
+        document.addEventListener('mousedown', handleClickOutside)
+        return () => document.removeEventListener('mousedown', handleClickOutside)
+    }, [])
 
     const handlePublish = async () => {
         if (isSubmitting) return;
@@ -493,46 +559,66 @@ export function CreateEventPage() {
                                 Exact Location
                             </label>
                             
-                            <div className="flex gap-2 mb-3">
-                                <div className="relative flex-1">
-                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                    <input
-                                        type="text"
-                                        placeholder="Enter specific venue, building, or street address"
-                                        value={formData.location}
-                                        onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                                        className="w-full h-12 px-4 pl-10 bg-[#f5f5f7] rounded-xl border-0 text-[#1d1d1f] placeholder:text-[#86868b] focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all text-sm"
-                                    />
+                            <div ref={searchContainerRef} className="relative mb-3">
+                                <div className="flex gap-2">
+                                    <div className="relative flex-1">
+                                        {searchLoading
+                                            ? <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500 animate-spin" />
+                                            : <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                        }
+                                        <input
+                                            type="text"
+                                            placeholder="Enter specific venue, building, or street address"
+                                            value={formData.location}
+                                            onChange={(e) => handleSearchChange(e.target.value)}
+                                            onKeyDown={handleSearchKeyDown}
+                                            className="w-full h-12 px-4 pl-10 bg-[#f5f5f7] rounded-xl border-0 text-[#1d1d1f] placeholder:text-[#86868b] focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all text-sm"
+                                        />
+                                    </div>
+                                    <button
+                                        onClick={handleGetCurrentLocation}
+                                        disabled={gettingLocation}
+                                        className="h-12 px-4 bg-white border border-[#e5e5e7] hover:bg-[#f5f5f7] rounded-xl flex items-center gap-2 transition-colors disabled:opacity-50"
+                                        title="Use my current location"
+                                    >
+                                        <Navigation className={`w-4 h-4 text-emerald-600 ${gettingLocation ? 'animate-spin' : ''}`} />
+                                        <span className="hidden sm:inline text-sm font-medium text-[#1d1d1f]">Locate Me</span>
+                                    </button>
                                 </div>
-                                <button 
-                                    onClick={handleGetCurrentLocation}
-                                    disabled={gettingLocation}
-                                    className="h-12 px-4 bg-white border border-[#e5e5e7] hover:bg-[#f5f5f7] rounded-xl flex items-center gap-2 transition-colors disabled:opacity-50"
-                                    title="Use my current location"
-                                >
-                                    <Navigation className={`w-4 h-4 text-emerald-600 ${gettingLocation ? 'animate-spin' : ''}`} />
-                                    <span className="hidden sm:inline text-sm font-medium text-[#1d1d1f]">Locate Me</span>
-                                </button>
+                                {showSuggestions && (
+                                    <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl shadow-lg border border-[#e5e5e7] z-[1000] max-h-60 overflow-y-auto">
+                                        {suggestions.length === 0 ? (
+                                            <div className="px-4 py-3 text-sm text-[#86868b]">No locations found. Try a different search term.</div>
+                                        ) : (
+                                            suggestions.map((feature, i) => {
+                                                const primary = feature.properties.name
+                                                const secondary = [feature.properties.street, feature.properties.city, feature.properties.state].filter(Boolean).join(', ')
+                                                return (
+                                                    <button
+                                                        key={feature.properties.osm_id ?? i}
+                                                        onMouseDown={(e) => { e.preventDefault(); handleSelectSuggestion(feature) }}
+                                                        className={`w-full px-4 py-3 text-left flex flex-col gap-0.5 transition-colors ${i === highlightedIndex ? 'bg-emerald-50' : 'hover:bg-[#f5f5f7]'} ${i > 0 ? 'border-t border-[#f5f5f7]' : ''}`}
+                                                    >
+                                                        <span className="text-sm font-medium text-[#1d1d1f] truncate">{primary}</span>
+                                                        <span className="text-xs text-[#86868b] truncate">{secondary}</span>
+                                                    </button>
+                                                )
+                                            })
+                                        )}
+                                    </div>
+                                )}
                             </div>
 
-                            {formData.location ? (
-                                <LocationPickerMap
-                                    location={formData.location}
-                                    latitude={formData.latitude}
-                                    longitude={formData.longitude}
-                                    onCoordinatesChange={(lat, lng) =>
-                                        setFormData(prev => ({ ...prev, latitude: lat, longitude: lng }))
-                                    }
-                                />
-                            ) : (
-                                <div className="w-full rounded-xl bg-gradient-to-br from-[#f5f5f7] to-[#e5e5e7] border border-[#e5e5e7] flex flex-col items-center justify-center" style={{ height: 220 }}>
-                                    <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm mb-3">
-                                        <MapPin className="w-6 h-6 text-gray-400" />
-                                    </div>
-                                    <p className="text-sm font-medium text-gray-500">Enter a location to see map</p>
-                                    <p className="text-xs text-gray-400 mt-1">Pin will appear — drag it to your exact spot</p>
-                                </div>
-                            )}
+                            <LocationPickerMap
+                                latitude={formData.latitude}
+                                longitude={formData.longitude}
+                                onCoordinatesChange={(lat, lng) =>
+                                    setFormData(prev => ({ ...prev, latitude: lat, longitude: lng }))
+                                }
+                                onCenterChange={(lat, lng) => {
+                                    mapCenterRef.current = { lng, lat }
+                                }}
+                            />
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

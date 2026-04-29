@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Bell, ArrowLeft, UserPlus, UserCheck, Check, ChevronRight, Users } from "lucide-react"
-import { api } from "@/lib/api"
+import { Bell, ArrowLeft, UserPlus, UserCheck, Check, ChevronRight, Users, Heart, MessageCircle, X, Loader2 } from "lucide-react"
+import Link from "next/link"
+import { api, type PostAuthor } from "@/lib/api"
+import { VerifiedBadge } from "@/components/verified-badge"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -17,6 +19,7 @@ type Notification = {
   read: boolean
   entity_id: string | null
   created_at: string
+  post_thumbnail?: string | null
 }
 
 type PendingRequest = {
@@ -41,22 +44,7 @@ function timeAgo(iso: string) {
   return `${Math.floor(diff / 86400)}d ago`
 }
 
-// ─── Notification icon ────────────────────────────────────────────────────────
-
-function NotificationIcon({ type }: { type: string }) {
-  if (type === "new_follower" || type === "follow_accepted") {
-    return (
-      <div className="w-9 h-9 rounded-full bg-[#80242a]/10 flex items-center justify-center shrink-0">
-        <UserPlus className="w-4 h-4 text-[#80242a]" />
-      </div>
-    )
-  }
-  return (
-    <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
-      <Bell className="w-4 h-4 text-gray-500" />
-    </div>
-  )
-}
+const isPostNotif = (type: string) => type === 'post_liked' || type === 'post_commented'
 
 // ─── Avatar ───────────────────────────────────────────────────────────────────
 
@@ -70,6 +58,82 @@ function Avatar({ src, name, size = 10 }: { src: string | null; name: string; si
             {name?.charAt(0)?.toUpperCase()}
           </div>
       }
+    </div>
+  )
+}
+
+// ─── Notification icon (non-post types) ───────────────────────────────────────
+
+function NotificationIcon({ type }: { type: string }) {
+  if (type === "new_follower" || type === "follow_accepted") {
+    return (
+      <div className="w-10 h-10 rounded-full bg-[#80242a]/10 flex items-center justify-center shrink-0">
+        <UserPlus className="w-4 h-4 text-[#80242a]" />
+      </div>
+    )
+  }
+  return (
+    <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
+      <Bell className="w-4 h-4 text-gray-500" />
+    </div>
+  )
+}
+
+// ─── Likes list modal ─────────────────────────────────────────────────────────
+
+function LikesListModal({ postId, onClose }: { postId: string; onClose: () => void }) {
+  const [likers, setLikers] = useState<PostAuthor[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    api.getPostLikes(postId)
+      .then(setLikers)
+      .finally(() => setLoading(false))
+  }, [postId])
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+
+      {/* Sheet */}
+      <div className="relative w-full max-w-lg bg-white rounded-t-2xl pb-safe max-h-[70vh] flex flex-col">
+        {/* Handle + header */}
+        <div className="flex items-center justify-between px-4 pt-3 pb-3 border-b border-[#f5f5f7]">
+          <span className="text-[15px] font-semibold text-[#1d1d1f]">Liked by</span>
+          <button onClick={onClose} className="p-1 rounded-full hover:bg-gray-100">
+            <X className="w-4 h-4 text-gray-500" />
+          </button>
+        </div>
+
+        <div className="overflow-y-auto flex-1">
+          {loading ? (
+            <div className="flex items-center justify-center py-10">
+              <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+            </div>
+          ) : likers.length === 0 ? (
+            <p className="text-center text-[13px] text-[#86868b] py-10">No likes yet.</p>
+          ) : (
+            <ul>
+              {likers.map((liker) => (
+                <li key={liker.user_id}>
+                  <Link
+                    href={`/volunteers/${liker.user_id}`}
+                    onClick={onClose}
+                    className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors"
+                  >
+                    <Avatar src={liker.avatar_url} name={liker.full_name} size={10} />
+                    <div className="flex items-center gap-1 min-w-0">
+                      <span className="text-[14px] font-semibold text-[#1d1d1f] truncate">{liker.full_name}</span>
+                      {liker.is_verified && <VerifiedBadge />}
+                    </div>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
     </div>
   )
 }
@@ -165,7 +229,6 @@ function RequestsInbox({
                     </p>
                   </div>
 
-                  {/* Action buttons */}
                   {state === 'accepted' ? (
                     <span className="flex items-center gap-1 text-xs text-green-600 font-medium shrink-0">
                       <Check className="w-3.5 h-3.5" /> Confirmed
@@ -211,6 +274,7 @@ export default function NotificationsPage() {
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(false)
   const [showRequestsInbox, setShowRequestsInbox] = useState(false)
+  const [likesModalPostId, setLikesModalPostId] = useState<string | null>(null)
 
   useEffect(() => {
     const load = async () => {
@@ -220,7 +284,6 @@ export default function NotificationsPage() {
           api.getPendingFollowRequests(),
           api.markAllNotificationsRead(),
         ])
-        // Filter out follow_request type — they now live in the dedicated inbox
         setNotifications(
           notifResult.notifications.filter((n: Notification) => n.type !== 'follow_request')
         )
@@ -235,7 +298,6 @@ export default function NotificationsPage() {
     load()
   }, [])
 
-  // If the requests inbox is open, render it as a full-page overlay
   if (showRequestsInbox) {
     return (
       <RequestsInbox
@@ -268,7 +330,7 @@ export default function NotificationsPage() {
           onClick={() => setShowRequestsInbox(true)}
           className="w-full flex items-center gap-3 px-4 py-3.5 border-b border-[#f5f5f7] hover:bg-gray-50 active:bg-gray-100 transition-colors text-left"
         >
-          <div className="w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
             <UserCheck className="w-4 h-4 text-blue-600" />
           </div>
           <div className="flex-1 min-w-0">
@@ -290,7 +352,7 @@ export default function NotificationsPage() {
           <div className="flex flex-col gap-3 px-4 pt-4">
             {[...Array(5)].map((_, i) => (
               <div key={i} className="flex items-center gap-3 animate-pulse">
-                <div className="w-9 h-9 rounded-full bg-gray-100 shrink-0" />
+                <div className="w-10 h-10 rounded-full bg-gray-100 shrink-0" />
                 <div className="flex-1 space-y-2">
                   <div className="h-3 bg-gray-100 rounded w-3/4" />
                   <div className="h-3 bg-gray-100 rounded w-1/3" />
@@ -316,29 +378,96 @@ export default function NotificationsPage() {
           </div>
         ) : (
           <ul>
-            {notifications.map((n) => (
-              <li
-                key={n.id}
-                className={`flex items-start gap-3 px-4 py-3.5 border-b border-[#f5f5f7] transition-colors ${
-                  !n.read ? "bg-[#80242a]/[0.03]" : ""
-                }`}
-              >
-                <NotificationIcon type={n.type} />
-                <div className="flex-1 min-w-0 pt-0.5">
-                  <p className="text-[14px] text-[#1d1d1f] leading-snug">
-                    <span className="font-semibold">{n.actor_name ?? "Someone"}</span>{" "}
-                    {n.message}
-                  </p>
-                  <p className="text-[12px] text-[#86868b] mt-0.5">{timeAgo(n.created_at)}</p>
-                </div>
-                {!n.read && (
-                  <div className="w-2 h-2 rounded-full bg-[#80242a] shrink-0 mt-1.5" />
-                )}
-              </li>
-            ))}
+            {notifications.map((n) => {
+              if (isPostNotif(n.type)) {
+                // Post like / comment — dedicated layout with thumbnail
+                return (
+                  <li
+                    key={n.id}
+                    className={`flex items-center gap-3 px-4 py-3.5 border-b border-[#f5f5f7] ${!n.read ? "bg-[#80242a]/[0.03]" : ""}`}
+                  >
+                    {/* Actor avatar with type badge */}
+                    <div className="relative shrink-0">
+                      <Avatar src={n.actor_avatar} name={n.actor_name ?? '?'} size={10} />
+                      <div className={`absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full border-2 border-white flex items-center justify-center ${n.type === 'post_liked' ? 'bg-red-500' : 'bg-[#1d1d1f]'}`}>
+                        {n.type === 'post_liked'
+                          ? <Heart className="w-2.5 h-2.5 text-white fill-white" />
+                          : <MessageCircle className="w-2.5 h-2.5 text-white" />
+                        }
+                      </div>
+                    </div>
+
+                    {/* Message + time — taps to post detail */}
+                    <button
+                      onClick={() => n.entity_id && router.push(`/posts/${n.entity_id}`)}
+                      className="flex-1 min-w-0 text-left"
+                    >
+                      <p className="text-[14px] text-[#1d1d1f] leading-snug">{n.message}</p>
+                      <p className="text-[12px] text-[#86868b] mt-0.5">{timeAgo(n.created_at)}</p>
+                    </button>
+
+                    {/* Post thumbnail — taps to post detail */}
+                    {n.post_thumbnail && (
+                      <button
+                        onClick={() => n.entity_id && router.push(`/posts/${n.entity_id}`)}
+                        className="shrink-0"
+                      >
+                        <img
+                          src={n.post_thumbnail}
+                          alt=""
+                          className="w-12 h-12 rounded-lg object-cover border border-[#f0f0f0]"
+                        />
+                      </button>
+                    )}
+
+                    {/* For likes: show likers modal button */}
+                    {n.type === 'post_liked' && n.entity_id && (
+                      <button
+                        onClick={() => setLikesModalPostId(n.entity_id)}
+                        className="shrink-0 text-[11px] text-[#86868b] hover:text-[#1d1d1f] transition-colors"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    )}
+
+                    {!n.read && (
+                      <div className="w-2 h-2 rounded-full bg-[#80242a] shrink-0" />
+                    )}
+                  </li>
+                )
+              }
+
+              // Default layout for follow / endorsement / other types
+              return (
+                <li
+                  key={n.id}
+                  className={`flex items-start gap-3 px-4 py-3.5 border-b border-[#f5f5f7] transition-colors ${!n.read ? "bg-[#80242a]/[0.03]" : ""}`}
+                >
+                  <NotificationIcon type={n.type} />
+                  <div className="flex-1 min-w-0 pt-0.5">
+                    <p className="text-[14px] text-[#1d1d1f] leading-snug">
+                      <span className="font-semibold">{n.actor_name ?? "Someone"}</span>{" "}
+                      {n.message}
+                    </p>
+                    <p className="text-[12px] text-[#86868b] mt-0.5">{timeAgo(n.created_at)}</p>
+                  </div>
+                  {!n.read && (
+                    <div className="w-2 h-2 rounded-full bg-[#80242a] shrink-0 mt-1.5" />
+                  )}
+                </li>
+              )
+            })}
           </ul>
         )}
       </div>
+
+      {/* Likes list modal */}
+      {likesModalPostId && (
+        <LikesListModal
+          postId={likesModalPostId}
+          onClose={() => setLikesModalPostId(null)}
+        />
+      )}
     </div>
   )
 }

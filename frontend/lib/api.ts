@@ -2,6 +2,55 @@ import { supabase } from './supabase'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
+// ─── Posts ────────────────────────────────────────────────────────────────────
+
+export interface PostAuthor {
+  id: string
+  user_id: string
+  full_name: string
+  avatar_url: string | null
+  is_verified: boolean
+}
+
+export interface PostEvent {
+  id: string
+  title: string
+}
+
+export interface Post {
+  id: string
+  volunteer_id: string
+  event_id: string
+  photo_urls: string[]
+  caption: string | null
+  created_at: string
+  volunteer: PostAuthor
+  event: PostEvent
+  like_count: number
+  comment_count: number
+  viewer_has_liked: boolean
+}
+
+export interface PostComment {
+  id: string
+  content: string
+  created_at: string
+  volunteer: Omit<PostAuthor, 'is_verified'>
+}
+
+export interface FeedResponse {
+  posts: Post[]
+  page: number
+  limit: number
+}
+
+export interface VolunteerPostsResponse {
+  posts: Post[]
+  is_private: boolean
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 export interface VolunteerSignupData {
   fullName: string;
   email: string;
@@ -1406,6 +1455,126 @@ export const api = {
       headers: { Authorization: `Bearer ${session.access_token}` },
     });
     if (!res.ok) { const e = await res.json(); throw new Error(e.message || 'Failed'); }
+    return res.json();
+  },
+
+// --- POSTS ---
+
+  uploadPostPhoto: async (file: File): Promise<string> => {
+    const fileExt = file.name.split('.').pop() || 'jpg';
+    const filePath = `posts/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('post-photos')
+      .upload(filePath, file);
+
+    if (uploadError) throw new Error(uploadError.message);
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('post-photos')
+      .getPublicUrl(filePath);
+
+    return publicUrl;
+  },
+
+  createPost: async (data: { event_id: string; photo_urls: string[]; caption?: string }): Promise<Post> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+    const res = await fetch(`${API_URL}/posts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) { const e = await res.json(); throw new Error(e.message || 'Failed to create post'); }
+    return res.json();
+  },
+
+  getPostsFeed: async (page = 1, limit = 20): Promise<FeedResponse> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return { posts: [], page, limit };
+    const res = await fetch(`${API_URL}/posts/feed?page=${page}&limit=${limit}`, {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    if (!res.ok) throw new Error('Failed to load feed');
+    return res.json();
+  },
+
+  getVolunteerPosts: async (userId: string): Promise<VolunteerPostsResponse> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const headers: Record<string, string> = {};
+    if (session) headers.Authorization = `Bearer ${session.access_token}`;
+    const res = await fetch(`${API_URL}/posts/volunteer/${userId}`, { headers });
+    if (!res.ok) throw new Error('Failed to load posts');
+    return res.json();
+  },
+
+  getPost: async (postId: string): Promise<Post & { comments: PostComment[] }> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const headers: Record<string, string> = {};
+    if (session) headers.Authorization = `Bearer ${session.access_token}`;
+    const res = await fetch(`${API_URL}/posts/${postId}`, { headers });
+    if (!res.ok) throw new Error('Post not found');
+    return res.json();
+  },
+
+  deletePost: async (postId: string): Promise<void> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+    const res = await fetch(`${API_URL}/posts/${postId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    if (!res.ok) { const e = await res.json(); throw new Error(e.message || 'Failed to delete'); }
+  },
+
+  togglePostLike: async (postId: string): Promise<{ liked: boolean }> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+    const res = await fetch(`${API_URL}/posts/${postId}/like`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    if (!res.ok) { const e = await res.json(); throw new Error(e.message || 'Failed'); }
+    return res.json();
+  },
+
+  getPostComments: async (postId: string): Promise<PostComment[]> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const headers: Record<string, string> = {};
+    if (session) headers.Authorization = `Bearer ${session.access_token}`;
+    const res = await fetch(`${API_URL}/posts/${postId}/comments`, { headers });
+    if (!res.ok) throw new Error('Failed to load comments');
+    return res.json();
+  },
+
+  addPostComment: async (postId: string, content: string): Promise<PostComment> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+    const res = await fetch(`${API_URL}/posts/${postId}/comments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({ content }),
+    });
+    if (!res.ok) { const e = await res.json(); throw new Error(e.message || 'Failed to comment'); }
+    return res.json();
+  },
+
+  deletePostComment: async (postId: string, commentId: string): Promise<void> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+    const res = await fetch(`${API_URL}/posts/${postId}/comments/${commentId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    if (!res.ok) { const e = await res.json(); throw new Error(e.message || 'Failed to delete comment'); }
+  },
+
+  getPostLikes: async (postId: string): Promise<PostAuthor[]> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const headers: Record<string, string> = {};
+    if (session) headers['Authorization'] = `Bearer ${session.access_token}`;
+    const res = await fetch(`${API_URL}/posts/${postId}/likes`, { headers });
+    if (!res.ok) return [];
     return res.json();
   },
 

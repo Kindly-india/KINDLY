@@ -3,59 +3,204 @@
 import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { api, type Post } from "@/lib/api"
 import {
   Search,
   ArrowUpRight,
   ChevronRight,
   Loader2,
-  Clock,
   User,
-  RefreshCw,
-  ExternalLink,
   X,
+  Heart,
+  MessageCircle,
+  ImageIcon,
+  Send,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { api } from "@/lib/api"
 import { VerifiedBadge } from "@/components/verified-badge"
 
-// --- CATEGORY IMAGE MAP ---
-const CATEGORY_IMAGES: Record<string, string[]> = {
-  Environment: [
-    "https://images.unsplash.com/photo-1618477461853-5f8dd68aa1fd?w=800&auto=format&fit=crop&q=60",
-    "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=800&auto=format&fit=crop&q=60",
-    "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=800&auto=format&fit=crop&q=60"
-  ],
-  Community: [
-    "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=800&auto=format&fit=crop&q=60",
-    "https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?w=800&auto=format&fit=crop&q=60",
-    "https://images.unsplash.com/photo-1528301721190-186c3bd85418?w=800&auto=format&fit=crop&q=60",
-    "https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=800&auto=format&fit=crop&q=60"
-  ],
-  Education: [
-    "https://images.unsplash.com/photo-1509062522246-3755977927d7?w=800&auto=format&fit=crop&q=60",
-    "https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?w=800&auto=format&fit=crop&q=60",
-  ],
-  Health: [
-    "https://images.unsplash.com/photo-1615461066841-6116e61058f4?w=800&auto=format&fit=crop&q=60",
-    "https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=800&auto=format&fit=crop&q=60"
-  ],
-  "Elderly Care": [
-    "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=800&auto=format&fit=crop&q=60",
-    "https://images.unsplash.com/photo-1531983412531-1f49a365ffed?w=800&auto=format&fit=crop&q=60"
-  ],
-  Animals: [
-    "https://images.unsplash.com/photo-1551730459-92db2a308d6a?w=800&auto=format&fit=crop&q=60",
-    "https://images.unsplash.com/photo-1548767797-d8c844163c4c?w=800&auto=format&fit=crop&q=60"
-  ],
+function timeAgo(iso: string) {
+  const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
+  if (diff < 60) return "just now"
+  if (diff < 3600) return `${Math.floor(diff / 60)}m`
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h`
+  return `${Math.floor(diff / 86400)}d`
 }
 
-const getImageForStory = (title: string, category: string) => {
-  const images = CATEGORY_IMAGES[category] || CATEGORY_IMAGES["Community"]
-  let hash = 0
-  for (let i = 0; i < title.length; i++) {
-    hash = title.charCodeAt(i) + ((hash << 5) - hash)
+function FeedCard({ post, onLikeToggle, onCommentAdded }: {
+  post: Post
+  onLikeToggle: (postId: string, liked: boolean) => void
+  onCommentAdded?: (postId: string) => void
+}) {
+  const router = useRouter()
+  const [liking, setLiking] = useState(false)
+  const [commentText, setCommentText] = useState("")
+  const [commenting, setCommenting] = useState(false)
+  const [showCommentSheet, setShowCommentSheet] = useState(false)
+  const sheetInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (showCommentSheet) setTimeout(() => sheetInputRef.current?.focus(), 50)
+  }, [showCommentSheet])
+
+  const handleComment = async (text: string) => {
+    if (!text.trim() || commenting) return
+    setCommenting(true)
+    try {
+      await api.addPostComment(post.id, text.trim())
+      setCommentText("")
+      setShowCommentSheet(false)
+      onCommentAdded?.(post.id)
+    } catch {
+      // keep text on failure
+    } finally {
+      setCommenting(false)
+    }
   }
-  return images[Math.abs(hash) % images.length]
+
+  const handleLike = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (liking) return
+    setLiking(true)
+    const wasLiked = post.viewer_has_liked
+    onLikeToggle(post.id, !wasLiked)
+    try {
+      await api.togglePostLike(post.id)
+    } catch {
+      onLikeToggle(post.id, wasLiked)
+    } finally {
+      setLiking(false)
+    }
+  }
+
+  return (
+    <div className="bg-white rounded-[20px] border border-gray-200/80 overflow-hidden shadow-sm">
+      {/* Author row */}
+      <div className="flex items-center gap-3 px-4 py-3">
+        <Link href={`/volunteers/${post.volunteer.user_id}`} onClick={(e) => e.stopPropagation()}>
+          <div className="w-9 h-9 rounded-full bg-gray-100 overflow-hidden shrink-0">
+            {post.volunteer.avatar_url
+              ? <img src={post.volunteer.avatar_url} alt={post.volunteer.full_name} className="w-full h-full object-cover" />
+              : <div className="w-full h-full flex items-center justify-center text-gray-500 font-bold text-sm">{post.volunteer.full_name?.charAt(0)}</div>
+            }
+          </div>
+        </Link>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1">
+            <Link href={`/volunteers/${post.volunteer.user_id}`} onClick={(e) => e.stopPropagation()} className="text-[13px] font-semibold text-gray-900 truncate hover:underline">
+              {post.volunteer.full_name}
+            </Link>
+            {post.volunteer.is_verified && <VerifiedBadge />}
+          </div>
+          <p className="text-[11px] text-gray-500 truncate">at {post.event.title}</p>
+        </div>
+        <span className="text-[10px] text-gray-400 shrink-0">{timeAgo(post.created_at)}</span>
+      </div>
+
+      {/* Photo */}
+      <button
+        className="block w-full aspect-square bg-gray-100 overflow-hidden active:opacity-90 transition-opacity"
+        onClick={() => router.push(`/posts/${post.id}`)}
+      >
+        <img src={post.photo_urls[0]} alt="" className="w-full h-full object-cover" />
+      </button>
+
+      {/* Actions + caption */}
+      <div className="px-4 pt-3 pb-4">
+        <div className="flex items-center gap-4 mb-2.5">
+          <button
+            onClick={handleLike}
+            disabled={liking}
+            className="flex items-center gap-1.5 active:scale-90 transition-transform disabled:opacity-60"
+          >
+            <Heart className={cn("w-5 h-5 transition-colors", post.viewer_has_liked ? "fill-red-500 text-red-500" : "text-gray-700")} />
+            {post.like_count > 0 && <span className="text-[13px] font-medium text-gray-700">{post.like_count}</span>}
+          </button>
+          <button
+            onClick={() => router.push(`/posts/${post.id}`)}
+            className="flex items-center gap-1.5 active:scale-90 transition-transform"
+          >
+            <MessageCircle className="w-5 h-5 text-gray-700" />
+            {post.comment_count > 0 && <span className="text-[13px] font-medium text-gray-700">{post.comment_count}</span>}
+          </button>
+        </div>
+
+        {post.caption && (
+          <p className="text-[13px] text-gray-700 leading-snug line-clamp-3">
+            <span className="font-semibold mr-1">{post.volunteer.full_name}</span>
+            {post.caption}
+          </p>
+        )}
+
+        {post.comment_count > 0 && (
+          <button onClick={() => router.push(`/posts/${post.id}`)} className="text-[12px] text-gray-400 mt-1 hover:text-gray-600 transition-colors">
+            View {post.comment_count === 1 ? "1 comment" : `all ${post.comment_count} comments`}
+          </button>
+        )}
+      </div>
+
+      {/* Comment input row */}
+      <div className="px-4 pb-3 flex items-center gap-2">
+        {/* Mobile: tappable pill → opens bottom sheet */}
+        <button
+          className="sm:hidden flex-1 h-8 bg-gray-50 rounded-full px-3.5 text-[12px] text-gray-400 text-left active:bg-gray-100 transition-colors"
+          onClick={() => setShowCommentSheet(true)}
+        >
+          Add a comment...
+        </button>
+
+        {/* Desktop: inline input */}
+        <input
+          className="hidden sm:block flex-1 h-8 bg-gray-50 rounded-full px-3.5 text-[12px] text-[#1d1d1f] placeholder:text-gray-400 outline-none"
+          placeholder="Add a comment..."
+          value={commentText}
+          maxLength={500}
+          onChange={(e) => setCommentText(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleComment(commentText)}
+        />
+        {commentText.trim() && (
+          <button
+            onClick={() => handleComment(commentText)}
+            disabled={commenting}
+            className="hidden sm:flex shrink-0 text-[13px] font-semibold text-[#80242a] disabled:opacity-40"
+          >
+            {commenting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Post"}
+          </button>
+        )}
+      </div>
+
+      {/* Comment bottom sheet — mobile only */}
+      {showCommentSheet && (
+        <div className="sm:hidden fixed inset-0 z-50 flex items-end">
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={() => { setShowCommentSheet(false); setCommentText("") }}
+          />
+          <div className="relative w-full bg-white rounded-t-2xl px-4 py-3 flex items-center gap-3 shadow-xl">
+            <input
+              ref={sheetInputRef}
+              value={commentText}
+              onChange={(e) => setCommentText(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleComment(commentText)}
+              placeholder="Add a comment..."
+              maxLength={500}
+              className="flex-1 h-10 bg-[#f5f5f7] rounded-full px-4 text-[14px] text-[#1d1d1f] placeholder:text-[#86868b] outline-none"
+            />
+            <button
+              onClick={() => handleComment(commentText)}
+              disabled={!commentText.trim() || commenting}
+              className="w-9 h-9 bg-[#80242a] rounded-full flex items-center justify-center disabled:opacity-40 shrink-0"
+            >
+              {commenting
+                ? <Loader2 className="w-4 h-4 animate-spin text-white" />
+                : <Send className="w-4 h-4 text-white" />
+              }
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
 }
 
 export default function SocialDiscoveryPage() {
@@ -70,8 +215,9 @@ export default function SocialDiscoveryPage() {
   const [history, setHistory] = useState<any[]>([])
   const [historyLoading, setHistoryLoading] = useState(true)
 
-  const [stories, setStories] = useState<any[]>([])
-  const [storiesLoading, setStoriesLoading] = useState(true)
+  const [feedPosts, setFeedPosts] = useState<Post[]>([])
+  const [feedLoading, setFeedLoading] = useState(true)
+  const [feedError, setFeedError] = useState(false)
 
   const isSearching = searchQuery.trim().length > 0
 
@@ -81,6 +227,14 @@ export default function SocialDiscoveryPage() {
       .then(setHistory)
       .catch(() => {})
       .finally(() => setHistoryLoading(false))
+  }, [])
+
+  // Load community feed on mount
+  useEffect(() => {
+    api.getPostsFeed()
+      .then((res) => setFeedPosts(res.posts))
+      .catch(() => setFeedError(true))
+      .finally(() => setFeedLoading(false))
   }, [])
 
   // Debounced live search
@@ -104,16 +258,21 @@ export default function SocialDiscoveryPage() {
     return () => clearTimeout(timer)
   }, [searchQuery])
 
-  const loadStories = () => {
-    setStoriesLoading(true)
-    fetch("/api/social-stories")
-      .then((r) => r.json())
-      .then((d) => setStories(d.stories || []))
-      .catch(() => setStories([]))
-      .finally(() => setStoriesLoading(false))
+  const handleLikeToggle = (postId: string, liked: boolean) => {
+    setFeedPosts((prev) =>
+      prev.map((p) =>
+        p.id === postId
+          ? { ...p, viewer_has_liked: liked, like_count: liked ? p.like_count + 1 : Math.max(0, p.like_count - 1) }
+          : p
+      )
+    )
   }
 
-  useEffect(() => { loadStories() }, [])
+  const handleCommentAdded = (postId: string) => {
+    setFeedPosts((prev) =>
+      prev.map((p) => p.id === postId ? { ...p, comment_count: p.comment_count + 1 } : p)
+    )
+  }
 
   const handleResultClick = (item: any) => {
     api.saveSearchHistory({
@@ -147,18 +306,6 @@ export default function SocialDiscoveryPage() {
     if (activeTab === 'orgs') return item.type === 'org'
     return true
   })
-
-  const getCategoryColor = (category: string) => {
-    const map: Record<string, string> = {
-      Environment:    "bg-emerald-100 text-emerald-700",
-      Community:      "bg-blue-100 text-blue-700",
-      Education:      "bg-orange-100 text-orange-700",
-      Health:         "bg-red-100 text-red-700",
-      "Elderly Care": "bg-purple-100 text-purple-700",
-      Animals:        "bg-amber-100 text-amber-700",
-    }
-    return map[category] || "bg-gray-100 text-gray-700"
-  }
 
   return (
     <div className="min-h-screen bg-[#f8f9fa] pb-20">
@@ -298,117 +445,59 @@ export default function SocialDiscoveryPage() {
               </div>
             )}
 
-            {/* DISCOVER IMPACT FEED */}
-            <div className="flex items-center justify-between px-2">
-              <div>
-                <h1 className="text-xl font-bold text-[#1d1d1f] tracking-tight">Discover Impact</h1>
-                {!storiesLoading && (
-                  <p className="text-[11px] text-gray-400 mt-0.5 flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block animate-pulse" />
-                    Live news
-                  </p>
-                )}
-              </div>
-              <button
-                onClick={loadStories}
-                disabled={storiesLoading}
-                title="Refresh"
-                className="w-8 h-8 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center active:scale-95 hover:bg-gray-50 transition-all disabled:opacity-40"
-              >
-                <RefreshCw className={cn("w-3.5 h-3.5 text-gray-500", storiesLoading && "animate-spin")} />
-              </button>
-            </div>
+            {/* COMMUNITY FEED */}
+            <div className="px-2">
+              <h1 className="text-xl font-bold text-[#1d1d1f] tracking-tight mb-4">Community</h1>
 
-            {storiesLoading && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-2">
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="bg-white rounded-[24px] border border-gray-200/60 overflow-hidden animate-pulse">
-                    <div className="aspect-video w-full bg-gray-200" />
-                    <div className="p-4 space-y-3">
-                      <div className="h-3 bg-gray-200 rounded w-1/3" />
-                      <div className="h-5 bg-gray-200 rounded w-full" />
-                      <div className="h-3 bg-gray-100 rounded w-2/3 mt-4" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {!storiesLoading && (
-              <>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-2">
-                  {stories.map((story, idx) => (
-                    <div
-                      key={idx}
-                      className="group flex flex-col h-full bg-white rounded-[24px] border border-gray-200/80 overflow-hidden shadow-sm active:scale-[0.98] transition-all duration-200"
-                    >
-                      <div className="aspect-video w-full overflow-hidden relative bg-gray-100">
-                        <img
-                          src={getImageForStory(story.title, story.category)}
-                          alt={story.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-80" />
-                        <span className={cn(
-                          "absolute top-3 left-3 px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider backdrop-blur-md",
-                          getCategoryColor(story.category)
-                        )}>
-                          {story.category}
-                        </span>
-                        <span className="absolute top-3 right-3 px-2 py-1 rounded-full text-[9px] font-bold bg-black/50 text-white backdrop-blur-md flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                          LIVE
-                        </span>
+              {feedLoading && (
+                <div className="space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="bg-white rounded-[20px] border border-gray-200/60 overflow-hidden animate-pulse">
+                      <div className="flex items-center gap-3 p-4">
+                        <div className="w-9 h-9 rounded-full bg-gray-200" />
+                        <div className="flex-1 space-y-1.5">
+                          <div className="h-3 bg-gray-200 rounded w-1/3" />
+                          <div className="h-2.5 bg-gray-100 rounded w-1/2" />
+                        </div>
                       </div>
-                      <div className="p-4 flex flex-col flex-1">
-                        <div className="flex items-center gap-2 text-[10px] font-medium text-gray-400 mb-2">
-                          <span className="truncate max-w-[130px] text-[#1d1d1f]">{story.author}</span>
-                          <span className="w-1 h-1 rounded-full bg-gray-300 shrink-0" />
-                          <span className="shrink-0">{story.date}</span>
-                        </div>
-                        <h3 className="text-base font-bold text-gray-900 leading-snug mb-2 group-hover:text-[#0066cc] transition-colors line-clamp-2">
-                          {story.title}
-                        </h3>
-                        <p className="text-[13px] text-gray-600 line-clamp-2 mb-4 leading-relaxed">
-                          {story.excerpt}
-                        </p>
-                        <div className="mt-auto flex items-center justify-between border-t border-gray-50 pt-3">
-                          <div className="flex items-center gap-1.5 text-[11px] text-gray-500 font-medium">
-                            <Clock className="w-3.5 h-3.5" />
-                            {story.readTime}
-                          </div>
-                          {story.url ? (
-                            <a
-                              href={story.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={(e) => e.stopPropagation()}
-                              className="h-8 px-3 bg-[#f5f5f7] hover:bg-gray-200 rounded-full text-[11px] font-bold text-[#1d1d1f] flex items-center gap-1 transition-colors"
-                            >
-                              Read <ExternalLink className="w-3 h-3" />
-                            </a>
-                          ) : (
-                            <span className="h-8 px-3 bg-[#f5f5f7] rounded-full text-[11px] font-bold text-[#1d1d1f] flex items-center gap-1">
-                              Read <ChevronRight className="w-3 h-3" />
-                            </span>
-                          )}
-                        </div>
+                      <div className="aspect-square w-full bg-gray-200" />
+                      <div className="p-4 space-y-2">
+                        <div className="h-3 bg-gray-200 rounded w-1/4" />
+                        <div className="h-3 bg-gray-100 rounded w-3/4" />
                       </div>
                     </div>
                   ))}
                 </div>
-                <div className="py-4 text-center">
-                  <button
-                    onClick={loadStories}
-                    disabled={storiesLoading}
-                    className="text-[13px] font-medium text-gray-500 active:text-black flex items-center gap-2 mx-auto disabled:opacity-40"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    Load fresh stories
-                  </button>
+              )}
+
+              {!feedLoading && feedError && (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3">
+                    <ImageIcon className="w-5 h-5 text-gray-400" />
+                  </div>
+                  <p className="text-[14px] font-semibold text-gray-700 mb-1">Couldn't load posts</p>
+                  <p className="text-[12px] text-gray-400">Follow volunteers to see their posts here.</p>
                 </div>
-              </>
-            )}
+              )}
+
+              {!feedLoading && !feedError && feedPosts.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center mb-3">
+                    <ImageIcon className="w-6 h-6 text-gray-400" />
+                  </div>
+                  <p className="text-[14px] font-semibold text-gray-700 mb-1">No posts yet</p>
+                  <p className="text-[12px] text-gray-400 max-w-[200px]">Follow volunteers to see their experiences here.</p>
+                </div>
+              )}
+
+              {!feedLoading && !feedError && feedPosts.length > 0 && (
+                <div className="space-y-4">
+                  {feedPosts.map((post) => (
+                    <FeedCard key={post.id} post={post} onLikeToggle={handleLikeToggle} onCommentAdded={handleCommentAdded} />
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>

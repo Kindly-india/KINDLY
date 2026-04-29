@@ -11,6 +11,7 @@ import { CertificateModule } from './certificate/certificate.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { EmailModule } from './email/email.module';
 import { PhoneVerificationModule } from './phone-verification/phone-verification.module';
+import { PostsModule } from './posts/posts.module';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core/constants';
 
@@ -31,6 +32,7 @@ import { APP_GUARD } from '@nestjs/core/constants';
     NotificationsModule,
     EmailModule,
     PhoneVerificationModule,
+    PostsModule,
     ThrottlerModule.forRoot([{
       name: 'short',
       ttl: 60000,
