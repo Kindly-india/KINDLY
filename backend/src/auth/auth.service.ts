@@ -23,9 +23,7 @@ export class AuthService {
           user_type: 'volunteer',
           full_name: dto.fullName,
         },
-        emailRedirectTo: process.env.FRONTEND_URL
-          ? `${process.env.FRONTEND_URL}/auth/callback?next=/onboarding`
-          : 'http://localhost:3000/auth/callback?next=/onboarding',
+        emailRedirectTo: `${process.env.FRONTEND_URL ?? process.env.SITE_URL ?? 'http://localhost:3000'}/auth/callback?next=/onboarding`,
       },
     });
 
@@ -92,9 +90,7 @@ export class AuthService {
           user_type: 'organization',
           org_type: dto.orgType,
         },
-        emailRedirectTo: process.env.FRONTEND_URL
-          ? `${process.env.FRONTEND_URL}/auth/callback?next=/login`
-          : 'http://localhost:3000/auth/callback?next=/login',
+        emailRedirectTo: `${process.env.FRONTEND_URL ?? process.env.SITE_URL ?? 'http://localhost:3000'}/auth/callback?next=/login`,
       },
     });
 
@@ -187,7 +183,7 @@ export class AuthService {
     
     // Supabase built-in magic to send the reset email
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: process.env.FRONTEND_URL ? `${process.env.FRONTEND_URL}/update-password` : 'http://localhost:3000/update-password',
+      redirectTo: `${process.env.FRONTEND_URL ?? process.env.SITE_URL ?? 'http://localhost:3000'}/update-password`,
     });
 
     if (error) {

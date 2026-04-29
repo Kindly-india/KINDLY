@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { ChevronRight, Eye, EyeOff, Heart, Building2, Sparkles, Users, Star, Mail } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -18,58 +18,74 @@ type UserType = "volunteer" | "organisation" | null
 
 const cities = ["Nashik", "Mumbai", "Pune", "Delhi", "Bangalore", "Chennai", "Hyderabad", "Kolkata"]
 
+function VerificationCard({ email }: { email: string }) {
+  const [cooldown, setCooldown] = useState(60)
+  const [resending, setResending] = useState(false)
+
+  useEffect(() => {
+    if (cooldown <= 0) return
+    const id = setTimeout(() => setCooldown((c) => c - 1), 1000)
+    return () => clearTimeout(id)
+  }, [cooldown])
+
+  const handleResend = async () => {
+    setResending(true)
+    const { error } = await supabase.auth.resend({ type: "signup", email })
+    setResending(false)
+    if (error) {
+      toast.error(error.message || "Failed to resend. Please try again.")
+    } else {
+      toast.success("Verification email sent! Check your inbox and spam folder.")
+      setCooldown(60)
+    }
+  }
+
+  return (
+    <section className="min-h-screen bg-white flex items-center justify-center px-4 py-12">
+      <div className="w-full max-w-[420px] bg-white rounded-2xl shadow-md p-6">
+        <div className="flex justify-center mb-4">
+          <Mail className="w-12 h-12 text-[#80242a]" />
+        </div>
+        <h2 className="text-[20px] font-bold text-[#1d1d1f] text-center mb-2">Check your inbox</h2>
+        <p className="text-[14px] text-[#6e6e73] text-center leading-relaxed mb-4">
+          We sent a verification link to{" "}
+          <span className="font-bold text-[#1d1d1f]">{email}</span>.
+          {" "}Click it to activate your account.
+        </p>
+        <div className="bg-[#fffbeb] border border-[#fcd34d] rounded-xl p-3 mb-5 text-[13px] text-[#92400e] leading-relaxed">
+          ⚠️ Can't find it? Check your{" "}
+          <span className="font-bold">spam folder</span>. Mark it as{" "}
+          <span className="font-bold">"Not spam"</span> so future emails reach your inbox directly.
+        </div>
+        <p className="text-[13px] text-[#6e6e73] text-center mb-4">
+          Didn't receive it?{" "}
+          <button
+            disabled={resending || cooldown > 0}
+            onClick={handleResend}
+            className="text-[#80242a] font-semibold disabled:opacity-50 hover:underline"
+          >
+            {resending ? "Sending…" : cooldown > 0 ? `Resend in ${cooldown}s` : "Resend email"}
+          </button>
+        </p>
+        <p className="text-center">
+          <Link href="/login" className="text-[13px] text-[#86868b] hover:underline">
+            Back to sign in
+          </Link>
+        </p>
+      </div>
+    </section>
+  )
+}
+
 export function HeroSection() {
   const [selectedType, setSelectedType] = useState<UserType>(null)
   const [verifiedEmail, setVerifiedEmail] = useState<string | null>(null)
-  const [resending, setResending] = useState(false)
-  const [resendDone, setResendDone] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [city, setCity] = useState("Nashik")
 
   if (selectedType === "volunteer") {
-    if (verifiedEmail) {
-      return (
-        <section className="min-h-screen bg-white flex items-center justify-center px-4 py-12">
-          <div className="w-full max-w-[420px] bg-white rounded-2xl shadow-md p-6">
-            <div className="flex justify-center mb-4">
-              <Mail className="w-12 h-12 text-[#80242a]" />
-            </div>
-            <h2 className="text-[20px] font-bold text-[#1d1d1f] text-center mb-2">Check your inbox</h2>
-            <p className="text-[14px] text-[#6e6e73] text-center leading-relaxed mb-4">
-              We sent a verification link to{" "}
-              <span className="font-bold text-[#1d1d1f]">{verifiedEmail}</span>.
-              {" "}Click it to activate your account.
-            </p>
-            <div className="bg-[#fffbeb] border border-[#fcd34d] rounded-xl p-3 mb-5 text-[13px] text-[#92400e] leading-relaxed">
-              ⚠️ Can't find it? Check your{" "}
-              <span className="font-bold">spam folder</span>. Mark it as{" "}
-              <span className="font-bold">"Not spam"</span> so future emails reach your inbox directly.
-            </div>
-            <p className="text-[13px] text-[#6e6e73] text-center mb-4">
-              Didn't receive it?{" "}
-              <button
-                disabled={resending || resendDone}
-                onClick={async () => {
-                  setResending(true)
-                  await supabase.auth.resend({ type: "signup", email: verifiedEmail })
-                  setResending(false)
-                  setResendDone(true)
-                }}
-                className="text-[#80242a] font-semibold disabled:opacity-50 hover:underline"
-              >
-                {resendDone ? "Email sent!" : resending ? "Sending…" : "Resend email"}
-              </button>
-            </p>
-            <p className="text-center">
-              <Link href="/login" className="text-[13px] text-[#86868b] hover:underline">
-                Back to sign in
-              </Link>
-            </p>
-          </div>
-        </section>
-      )
-    }
+    if (verifiedEmail) return <VerificationCard email={verifiedEmail} />
 
     return (
       <section id="hero" className="min-h-screen bg-white md:bg-gradient-to-b md:from-orange-50 md:via-white md:to-green-50 relative overflow-x-hidden">
