@@ -96,7 +96,14 @@ export class VolunteerController {
     return this.certificateService.getCertificatesForVolunteer(req.user.id);
   }
 
-  // 9. Complete Onboarding
+  // 9. Postable Events
+  @UseGuards(JwtAuthGuard)
+  @Get('me/postable-events')
+  async getPostableEvents(@Request() req: any) {
+    return this.volunteerService.getPostableEvents(req.user.id);
+  }
+
+  // 10. Complete Onboarding
   @UseGuards(JwtAuthGuard)
   @Patch('me/onboarding')
   async completeOnboarding(

@@ -88,6 +88,13 @@ export class SocialController {
     return this.socialService.getPendingFollowRequests(req.user.id);
   }
 
+  // People you might know — volunteer suggestions
+  @UseGuards(JwtAuthGuard)
+  @Get('suggestions')
+  async getSuggestions(@Request() req: any) {
+    return this.socialService.getSuggestions(req.user.id);
+  }
+
   // Followers list (private-gated)
   @UseGuards(OptionalAuthGuard)
   @Get(':id/followers')

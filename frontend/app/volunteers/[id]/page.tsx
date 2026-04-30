@@ -176,8 +176,8 @@ function PostsGrid({ userId, isOwnProfile }: { userId: string; isOwnProfile: boo
         <Camera className="w-8 h-8 text-gray-300 mb-2" />
         <p className="text-sm text-gray-500 mb-1">No posts yet</p>
         {isOwnProfile && (
-          <Link href="/history" className="text-xs text-blue-600 font-semibold">
-            Share your experience →
+          <Link href="/posts/select-event" className="text-xs text-[#80242a] font-semibold">
+            Share an experience →
           </Link>
         )}
       </div>
@@ -186,6 +186,15 @@ function PostsGrid({ userId, isOwnProfile }: { userId: string; isOwnProfile: boo
 
   return (
     <div className="grid grid-cols-3 gap-0.5">
+      {isOwnProfile && (
+        <Link
+          href="/posts/select-event"
+          className="col-span-3 flex items-center justify-center gap-2 h-12 mb-0.5 border border-dashed border-gray-300 rounded-xl text-sm text-gray-400 font-medium bg-gray-50 hover:bg-gray-100 transition-colors"
+        >
+          <Plus className="w-4 h-4" />
+          Share an experience
+        </Link>
+      )}
       {data.posts.map((post) => (
         <button
           key={post.id}

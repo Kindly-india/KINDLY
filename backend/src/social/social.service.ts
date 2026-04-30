@@ -411,6 +411,133 @@ export class SocialService {
     return { requests, count: requests.length };
   }
 
+  // --- PEOPLE YOU MIGHT KNOW ---
+  async getSuggestions(userId: string) {
+    const client = this.supabase.getClient();
+
+    // 1. Requester's profile
+    const { data: me } = await client
+      .from('volunteer_profiles')
+      .select('id, city')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (!me) return { suggestions: [] };
+
+    // 2. Already-followed user_ids (accepted + pending — exclude both)
+    const { data: followed } = await client
+      .from('follows')
+      .select('following_id')
+      .eq('follower_id', userId);
+
+    const excludeIds = new Set<string>([
+      userId,
+      ...(followed ?? []).map((f: any) => f.following_id),
+    ]);
+
+    const candidates: any[] = [];
+    const seenUserIds = new Set<string>();
+
+    const addCandidate = (p: any) => {
+      if (!seenUserIds.has(p.user_id) && !excludeIds.has(p.user_id) && !p.is_private) {
+        seenUserIds.add(p.user_id);
+        candidates.push(p);
+      }
+    };
+
+    // 3. Priority 1 — same city
+    if (me.city) {
+      const { data: cityVols } = await client
+        .from('volunteer_profiles')
+        .select('id, user_id, full_name, avatar_url, city, is_verified, is_private')
+        .eq('city', me.city)
+        .eq('is_private', false)
+        .limit(20);
+      (cityVols ?? []).forEach(addCandidate);
+    }
+
+    // 4. Priority 2 — shared event attendees
+    if (candidates.length < 10) {
+      const { data: myRegs } = await client
+        .from('event_registrations')
+        .select('event_id')
+        .eq('volunteer_id', me.id)
+        .in('status', ['checked_in', 'completed']);
+
+      const myEventIds = (myRegs ?? []).map((r: any) => r.event_id);
+
+      if (myEventIds.length > 0) {
+        const { data: sharedRegs } = await client
+          .from('event_registrations')
+          .select('volunteer_id')
+          .in('event_id', myEventIds)
+          .in('status', ['checked_in', 'completed'])
+          .neq('volunteer_id', me.id);
+
+        const sharedProfileIds = [...new Set((sharedRegs ?? []).map((r: any) => r.volunteer_id))];
+
+        if (sharedProfileIds.length > 0) {
+          const { data: sharedVols } = await client
+            .from('volunteer_profiles')
+            .select('id, user_id, full_name, avatar_url, city, is_verified, is_private')
+            .in('id', sharedProfileIds)
+            .eq('is_private', false)
+            .limit(20);
+          (sharedVols ?? []).forEach(addCandidate);
+        }
+      }
+    }
+
+    // 5. Priority 3 — fallback: any public volunteers
+    if (candidates.length < 10) {
+      const { data: fallback } = await client
+        .from('volunteer_profiles')
+        .select('id, user_id, full_name, avatar_url, city, is_verified, is_private')
+        .eq('is_private', false)
+        .order('created_at', { ascending: true })
+        .limit(30);
+      (fallback ?? []).forEach(addCandidate);
+    }
+
+    const top10 = candidates.slice(0, 10);
+    if (!top10.length) return { suggestions: [] };
+
+    // 6. Batch-compute total_hours for the 10 candidates (no N+1)
+    const profileIds = top10.map((p: any) => p.id);
+    const { data: allRegs } = await client
+      .from('event_registrations')
+      .select(`
+        volunteer_id,
+        hours_contributed,
+        events ( start_time, end_time, status )
+      `)
+      .in('volunteer_id', profileIds)
+      .in('status', ['checked_in', 'completed']);
+
+    const hoursMap: Record<string, number> = {};
+    for (const reg of (allRegs ?? []) as any[]) {
+      if (reg.events?.status === 'cancelled') continue;
+      let hrs = reg.hours_contributed || 0;
+      if (!hrs && reg.events?.start_time && reg.events?.end_time) {
+        const [sh, sm] = reg.events.start_time.split(':').map(Number);
+        const [eh, em] = reg.events.end_time.split(':').map(Number);
+        hrs = Math.max(0, (eh * 60 + em) - (sh * 60 + sm)) / 60;
+      }
+      hoursMap[reg.volunteer_id] = (hoursMap[reg.volunteer_id] ?? 0) + hrs;
+    }
+
+    return {
+      suggestions: top10.map((p: any) => ({
+        user_id: p.user_id,
+        full_name: p.full_name,
+        avatar_url: p.avatar_url ?? null,
+        city: p.city ?? null,
+        is_verified: p.is_verified ?? false,
+        total_hours: Math.round((hoursMap[p.id] ?? 0) * 10) / 10,
+      })),
+    };
+  }
+
   // --- SEARCH HISTORY ---
 
   async getSearchHistory(userId: string) {

@@ -369,4 +369,58 @@ export class VolunteerService {
     if (error) throw error;
     return { profile: data };
   }
+
+  async getPostableEvents(userId: string) {
+    const client = this.supabase.getClient();
+
+    const { data: profile } = await client
+      .from('volunteer_profiles')
+      .select('id')
+      .eq('user_id', userId)
+      .single();
+
+    if (!profile) return { events: [] };
+
+    // Attended registrations with event data (exclude cancelled events)
+    const { data: regs } = await client
+      .from('event_registrations')
+      .select(`
+        event_id,
+        events!inner(id, title, event_date, status, organization_profiles(name))
+      `)
+      .eq('volunteer_id', profile.id)
+      .in('status', ['checked_in', 'completed']);
+
+    if (!regs?.length) return { events: [] };
+
+    const validRegs = (regs as any[]).filter(r => r.events?.status !== 'cancelled');
+    if (!validRegs.length) return { events: [] };
+
+    const eventIds = validRegs.map(r => r.event_id);
+
+    // Count posts per event for this volunteer
+    const { data: posts } = await client
+      .from('posts')
+      .select('event_id')
+      .eq('volunteer_id', profile.id)
+      .in('event_id', eventIds);
+
+    const postCountMap: Record<string, number> = {};
+    for (const post of posts ?? []) {
+      postCountMap[(post as any).event_id] = (postCountMap[(post as any).event_id] ?? 0) + 1;
+    }
+
+    const events = validRegs
+      .map(r => ({
+        id: r.events.id,
+        title: r.events.title,
+        event_date: r.events.event_date,
+        org_name: r.events.organization_profiles?.name ?? 'Unknown',
+        post_count: postCountMap[r.event_id] ?? 0,
+      }))
+      .filter(e => e.post_count < 3)
+      .sort((a, b) => new Date(b.event_date).getTime() - new Date(a.event_date).getTime());
+
+    return { events };
+  }
 }

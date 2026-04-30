@@ -7,200 +7,22 @@ import { api, type Post } from "@/lib/api"
 import {
   Search,
   ArrowUpRight,
-  ChevronRight,
   Loader2,
   User,
   X,
-  Heart,
-  MessageCircle,
   ImageIcon,
-  Send,
+  ChevronRight,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { VerifiedBadge } from "@/components/verified-badge"
 
-function timeAgo(iso: string) {
-  const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
-  if (diff < 60) return "just now"
-  if (diff < 3600) return `${Math.floor(diff / 60)}m`
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h`
-  return `${Math.floor(diff / 86400)}d`
-}
-
-function FeedCard({ post, onLikeToggle, onCommentAdded }: {
-  post: Post
-  onLikeToggle: (postId: string, liked: boolean) => void
-  onCommentAdded?: (postId: string) => void
-}) {
-  const router = useRouter()
-  const [liking, setLiking] = useState(false)
-  const [commentText, setCommentText] = useState("")
-  const [commenting, setCommenting] = useState(false)
-  const [showCommentSheet, setShowCommentSheet] = useState(false)
-  const sheetInputRef = useRef<HTMLInputElement>(null)
-
-  useEffect(() => {
-    if (showCommentSheet) setTimeout(() => sheetInputRef.current?.focus(), 50)
-  }, [showCommentSheet])
-
-  const handleComment = async (text: string) => {
-    if (!text.trim() || commenting) return
-    setCommenting(true)
-    try {
-      await api.addPostComment(post.id, text.trim())
-      setCommentText("")
-      setShowCommentSheet(false)
-      onCommentAdded?.(post.id)
-    } catch {
-      // keep text on failure
-    } finally {
-      setCommenting(false)
-    }
-  }
-
-  const handleLike = async (e: React.MouseEvent) => {
-    e.stopPropagation()
-    if (liking) return
-    setLiking(true)
-    const wasLiked = post.viewer_has_liked
-    onLikeToggle(post.id, !wasLiked)
-    try {
-      await api.togglePostLike(post.id)
-    } catch {
-      onLikeToggle(post.id, wasLiked)
-    } finally {
-      setLiking(false)
-    }
-  }
-
-  return (
-    <div className="bg-white rounded-[20px] border border-gray-200/80 overflow-hidden shadow-sm">
-      {/* Author row */}
-      <div className="flex items-center gap-3 px-4 py-3">
-        <Link href={`/volunteers/${post.volunteer.user_id}`} onClick={(e) => e.stopPropagation()}>
-          <div className="w-9 h-9 rounded-full bg-gray-100 overflow-hidden shrink-0">
-            {post.volunteer.avatar_url
-              ? <img src={post.volunteer.avatar_url} alt={post.volunteer.full_name} className="w-full h-full object-cover" />
-              : <div className="w-full h-full flex items-center justify-center text-gray-500 font-bold text-sm">{post.volunteer.full_name?.charAt(0)}</div>
-            }
-          </div>
-        </Link>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1">
-            <Link href={`/volunteers/${post.volunteer.user_id}`} onClick={(e) => e.stopPropagation()} className="text-[13px] font-semibold text-gray-900 truncate hover:underline">
-              {post.volunteer.full_name}
-            </Link>
-            {post.volunteer.is_verified && <VerifiedBadge />}
-          </div>
-          <p className="text-[11px] text-gray-500 truncate">at {post.event.title}</p>
-        </div>
-        <span className="text-[10px] text-gray-400 shrink-0">{timeAgo(post.created_at)}</span>
-      </div>
-
-      {/* Photo */}
-      <button
-        className="block w-full aspect-square bg-gray-100 overflow-hidden active:opacity-90 transition-opacity"
-        onClick={() => router.push(`/posts/${post.id}`)}
-      >
-        <img src={post.photo_urls[0]} alt="" className="w-full h-full object-cover" />
-      </button>
-
-      {/* Actions + caption */}
-      <div className="px-4 pt-3 pb-4">
-        <div className="flex items-center gap-4 mb-2.5">
-          <button
-            onClick={handleLike}
-            disabled={liking}
-            className="flex items-center gap-1.5 active:scale-90 transition-transform disabled:opacity-60"
-          >
-            <Heart className={cn("w-5 h-5 transition-colors", post.viewer_has_liked ? "fill-red-500 text-red-500" : "text-gray-700")} />
-            {post.like_count > 0 && <span className="text-[13px] font-medium text-gray-700">{post.like_count}</span>}
-          </button>
-          <button
-            onClick={() => router.push(`/posts/${post.id}`)}
-            className="flex items-center gap-1.5 active:scale-90 transition-transform"
-          >
-            <MessageCircle className="w-5 h-5 text-gray-700" />
-            {post.comment_count > 0 && <span className="text-[13px] font-medium text-gray-700">{post.comment_count}</span>}
-          </button>
-        </div>
-
-        {post.caption && (
-          <p className="text-[13px] text-gray-700 leading-snug line-clamp-3">
-            <span className="font-semibold mr-1">{post.volunteer.full_name}</span>
-            {post.caption}
-          </p>
-        )}
-
-        {post.comment_count > 0 && (
-          <button onClick={() => router.push(`/posts/${post.id}`)} className="text-[12px] text-gray-400 mt-1 hover:text-gray-600 transition-colors">
-            View {post.comment_count === 1 ? "1 comment" : `all ${post.comment_count} comments`}
-          </button>
-        )}
-      </div>
-
-      {/* Comment input row */}
-      <div className="px-4 pb-3 flex items-center gap-2">
-        {/* Mobile: tappable pill → opens bottom sheet */}
-        <button
-          className="sm:hidden flex-1 h-8 bg-gray-50 rounded-full px-3.5 text-[12px] text-gray-400 text-left active:bg-gray-100 transition-colors"
-          onClick={() => setShowCommentSheet(true)}
-        >
-          Add a comment...
-        </button>
-
-        {/* Desktop: inline input */}
-        <input
-          className="hidden sm:block flex-1 h-8 bg-gray-50 rounded-full px-3.5 text-[12px] text-[#1d1d1f] placeholder:text-gray-400 outline-none"
-          placeholder="Add a comment..."
-          value={commentText}
-          maxLength={500}
-          onChange={(e) => setCommentText(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleComment(commentText)}
-        />
-        {commentText.trim() && (
-          <button
-            onClick={() => handleComment(commentText)}
-            disabled={commenting}
-            className="hidden sm:flex shrink-0 text-[13px] font-semibold text-[#80242a] disabled:opacity-40"
-          >
-            {commenting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Post"}
-          </button>
-        )}
-      </div>
-
-      {/* Comment bottom sheet — mobile only */}
-      {showCommentSheet && (
-        <div className="sm:hidden fixed inset-0 z-50 flex items-end">
-          <div
-            className="absolute inset-0 bg-black/40"
-            onClick={() => { setShowCommentSheet(false); setCommentText("") }}
-          />
-          <div className="relative w-full bg-white rounded-t-2xl px-4 py-3 flex items-center gap-3 shadow-xl">
-            <input
-              ref={sheetInputRef}
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleComment(commentText)}
-              placeholder="Add a comment..."
-              maxLength={500}
-              className="flex-1 h-10 bg-[#f5f5f7] rounded-full px-4 text-[14px] text-[#1d1d1f] placeholder:text-[#86868b] outline-none"
-            />
-            <button
-              onClick={() => handleComment(commentText)}
-              disabled={!commentText.trim() || commenting}
-              className="w-9 h-9 bg-[#80242a] rounded-full flex items-center justify-center disabled:opacity-40 shrink-0"
-            >
-              {commenting
-                ? <Loader2 className="w-4 h-4 animate-spin text-white" />
-                : <Send className="w-4 h-4 text-white" />
-              }
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  )
+type Suggestion = {
+  user_id: string
+  full_name: string
+  avatar_url: string | null
+  city: string | null
+  is_verified: boolean
+  total_hours: number
 }
 
 export default function SocialDiscoveryPage() {
@@ -219,9 +41,12 @@ export default function SocialDiscoveryPage() {
   const [feedLoading, setFeedLoading] = useState(true)
   const [feedError, setFeedError] = useState(false)
 
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([])
+  const [suggestionsLoading, setSuggestionsLoading] = useState(true)
+  const [followingMap, setFollowingMap] = useState<Record<string, boolean>>({})
+
   const isSearching = searchQuery.trim().length > 0
 
-  // Load search history on mount
   useEffect(() => {
     api.getSearchHistory()
       .then(setHistory)
@@ -229,7 +54,6 @@ export default function SocialDiscoveryPage() {
       .finally(() => setHistoryLoading(false))
   }, [])
 
-  // Load community feed on mount
   useEffect(() => {
     api.getPostsFeed()
       .then((res) => setFeedPosts(res.posts))
@@ -237,7 +61,13 @@ export default function SocialDiscoveryPage() {
       .finally(() => setFeedLoading(false))
   }, [])
 
-  // Debounced live search
+  useEffect(() => {
+    api.getSuggestedPeople()
+      .then((res) => setSuggestions(res.suggestions))
+      .catch(() => {})
+      .finally(() => setSuggestionsLoading(false))
+  }, [])
+
   useEffect(() => {
     if (!searchQuery.trim()) {
       setResults([])
@@ -257,22 +87,6 @@ export default function SocialDiscoveryPage() {
     }, 300)
     return () => clearTimeout(timer)
   }, [searchQuery])
-
-  const handleLikeToggle = (postId: string, liked: boolean) => {
-    setFeedPosts((prev) =>
-      prev.map((p) =>
-        p.id === postId
-          ? { ...p, viewer_has_liked: liked, like_count: liked ? p.like_count + 1 : Math.max(0, p.like_count - 1) }
-          : p
-      )
-    )
-  }
-
-  const handleCommentAdded = (postId: string) => {
-    setFeedPosts((prev) =>
-      prev.map((p) => p.id === postId ? { ...p, comment_count: p.comment_count + 1 } : p)
-    )
-  }
 
   const handleResultClick = (item: any) => {
     api.saveSearchHistory({
@@ -298,6 +112,15 @@ export default function SocialDiscoveryPage() {
   const clearHistory = () => {
     api.clearSearchHistory().catch(() => {})
     setHistory([])
+  }
+
+  const handleFollow = async (userId: string) => {
+    setFollowingMap(prev => ({ ...prev, [userId]: true }))
+    try {
+      await api.followUser(userId)
+    } catch {
+      setFollowingMap(prev => ({ ...prev, [userId]: false }))
+    }
   }
 
   const displayedResults = results.filter(item => {
@@ -351,7 +174,7 @@ export default function SocialDiscoveryPage() {
           )}
         </div>
 
-        {/* LOADING */}
+        {/* LOADING — search */}
         {loading && (
           <div className="py-16 flex flex-col items-center justify-center text-gray-400">
             <Loader2 className="w-6 h-6 animate-spin mb-2" />
@@ -398,7 +221,7 @@ export default function SocialDiscoveryPage() {
           </div>
         )}
 
-        {/* DEFAULT: HISTORY + FEED */}
+        {/* DEFAULT: HISTORY + SUGGESTIONS + FEED */}
         {!isSearching && !loading && (
           <div className="space-y-6 animate-in fade-in duration-300">
 
@@ -407,10 +230,7 @@ export default function SocialDiscoveryPage() {
               <div className="px-2">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Recent</h3>
-                  <button
-                    onClick={clearHistory}
-                    className="text-[11px] text-[#0066cc] font-semibold hover:underline"
-                  >
+                  <button onClick={clearHistory} className="text-[11px] text-[#0066cc] font-semibold hover:underline">
                     Clear All
                   </button>
                 </div>
@@ -445,27 +265,89 @@ export default function SocialDiscoveryPage() {
               </div>
             )}
 
-            {/* COMMUNITY FEED */}
+            {/* PEOPLE YOU MIGHT KNOW */}
+            {(suggestionsLoading || suggestions.length > 0) && (
+              <div>
+                <h2 className="text-[16px] font-semibold text-[#1d1d1f] mb-3 px-2">People you might know</h2>
+                <div
+                  className="flex gap-[10px] overflow-x-auto pb-1 px-5"
+                  style={{ scrollSnapType: 'x mandatory', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                >
+                  {suggestionsLoading
+                    ? [1, 2, 3].map((i) => (
+                        <div
+                          key={i}
+                          className="shrink-0 w-[140px] h-48 rounded-2xl bg-white shadow-sm animate-pulse flex flex-col"
+                          style={{ scrollSnapAlign: 'start' }}
+                        >
+                          <div className="flex flex-col items-center px-3 pt-4 gap-2 flex-1">
+                            <div className="w-14 h-14 rounded-full bg-gray-200" />
+                            <div className="w-20 h-3 rounded-full bg-gray-200" />
+                            <div className="w-14 h-2.5 rounded-full bg-gray-100" />
+                            <div className="w-12 h-2.5 rounded-full bg-gray-100" />
+                          </div>
+                          <div className="px-3 pb-4 mt-auto">
+                            <div className="w-full h-8 rounded-full bg-gray-200" />
+                          </div>
+                        </div>
+                      ))
+                    : suggestions.map((s) => {
+                        const isFollowing = followingMap[s.user_id] ?? false
+                        return (
+                          <div
+                            key={s.user_id}
+                            className="shrink-0 w-[140px] h-48 rounded-2xl bg-white shadow-sm flex flex-col"
+                            style={{ scrollSnapAlign: 'start' }}
+                          >
+                            <Link href={`/volunteers/${s.user_id}`} className="flex flex-col items-center px-3 pt-4 gap-1.5 flex-1 min-h-0">
+                              <div className="w-14 h-14 rounded-full bg-gray-100 overflow-hidden border border-gray-100 shrink-0 flex items-center justify-center">
+                                {s.avatar_url
+                                  ? <img src={s.avatar_url} className="w-full h-full object-cover" alt={s.full_name} />
+                                  : <User className="w-6 h-6 text-gray-400" />
+                                }
+                              </div>
+                              <div className="w-full text-center">
+                                <div className="flex items-center justify-center gap-1">
+                                  <p className="text-[13px] font-semibold text-[#1d1d1f] leading-tight line-clamp-2 text-center">{s.full_name}</p>
+                                  {s.is_verified && <VerifiedBadge />}
+                                </div>
+                                {s.city && (
+                                  <p className="text-[11px] text-[#86868b] mt-0.5 truncate">{s.city}</p>
+                                )}
+                                {s.total_hours > 0 && (
+                                  <p className="text-[11px] font-medium text-[#80242a] mt-0.5">{s.total_hours}h volunteered</p>
+                                )}
+                              </div>
+                            </Link>
+                            <div className="px-3 pb-4 mt-auto">
+                              <button
+                                onClick={() => !isFollowing && handleFollow(s.user_id)}
+                                className={cn(
+                                  "w-full h-8 rounded-full text-[12px] font-semibold transition-all",
+                                  isFollowing
+                                    ? "bg-[#80242a] text-white"
+                                    : "border border-[#80242a] text-[#80242a] hover:bg-[#80242a]/5"
+                                )}
+                              >
+                                {isFollowing ? "Following" : "Follow"}
+                              </button>
+                            </div>
+                          </div>
+                        )
+                      })
+                  }
+                </div>
+              </div>
+            )}
+
+            {/* COMMUNITY GRID */}
             <div className="px-2">
               <h1 className="text-xl font-bold text-[#1d1d1f] tracking-tight mb-4">Community</h1>
 
               {feedLoading && (
-                <div className="space-y-4">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="bg-white rounded-[20px] border border-gray-200/60 overflow-hidden animate-pulse">
-                      <div className="flex items-center gap-3 p-4">
-                        <div className="w-9 h-9 rounded-full bg-gray-200" />
-                        <div className="flex-1 space-y-1.5">
-                          <div className="h-3 bg-gray-200 rounded w-1/3" />
-                          <div className="h-2.5 bg-gray-100 rounded w-1/2" />
-                        </div>
-                      </div>
-                      <div className="aspect-square w-full bg-gray-200" />
-                      <div className="p-4 space-y-2">
-                        <div className="h-3 bg-gray-200 rounded w-1/4" />
-                        <div className="h-3 bg-gray-100 rounded w-3/4" />
-                      </div>
-                    </div>
+                <div className="grid grid-cols-3 gap-px bg-black rounded-xl overflow-hidden">
+                  {[1, 2, 3, 4, 5, 6].map((i) => (
+                    <div key={i} className="aspect-square bg-gray-200 animate-pulse" />
                   ))}
                 </div>
               )}
@@ -481,22 +363,43 @@ export default function SocialDiscoveryPage() {
               )}
 
               {!feedLoading && !feedError && feedPosts.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center mb-3">
-                    <ImageIcon className="w-6 h-6 text-gray-400" />
-                  </div>
-                  <p className="text-[14px] font-semibold text-gray-700 mb-1">No posts yet</p>
-                  <p className="text-[12px] text-gray-400 max-w-[200px]">Follow volunteers to see their experiences here.</p>
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <p className="text-[13px] text-[#86868b]">Follow people to see their posts here.</p>
                 </div>
               )}
 
-              {!feedLoading && !feedError && feedPosts.length > 0 && (
-                <div className="space-y-4">
-                  {feedPosts.map((post) => (
-                    <FeedCard key={post.id} post={post} onLikeToggle={handleLikeToggle} onCommentAdded={handleCommentAdded} />
-                  ))}
-                </div>
-              )}
+              {!feedLoading && !feedError && feedPosts.filter(p => p.photo_urls?.[0]).length > 0 && (() => {
+                const gridPosts = feedPosts.filter(p => p.photo_urls?.[0])
+                const gridCols = gridPosts.length > 0 && gridPosts.length % 3 === 0 ? 'grid-cols-3' : 'grid-cols-2'
+                return (
+                  <div className={`grid ${gridCols} gap-0.5 rounded-xl overflow-hidden`}>
+                    {gridPosts.map((post) => (
+                      <button
+                        key={post.id}
+                        className="aspect-square overflow-hidden bg-gray-100 relative"
+                        onClick={() => router.push(`/posts/${post.id}`)}
+                      >
+                        <img
+                          src={post.photo_urls[0]}
+                          alt=""
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            const img = e.currentTarget as HTMLImageElement
+                            img.style.display = 'none'
+                            const parent = img.parentElement
+                            if (parent) parent.style.background = '#f3f4f6'
+                          }}
+                        />
+                        {post.photo_urls.length > 1 && (
+                          <div className="absolute top-1.5 right-1.5 w-5 h-5 bg-black/50 rounded-sm flex items-center justify-center">
+                            <ChevronRight className="w-3 h-3 text-white" />
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )
+              })()}
             </div>
           </div>
         )}

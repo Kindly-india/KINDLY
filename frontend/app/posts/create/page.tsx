@@ -65,7 +65,7 @@ function CreatePostForm() {
     try {
       const urls = await Promise.all(photos.map((p) => api.uploadPostPhoto(p.file)))
       await api.createPost({ event_id: eventId, photo_urls: urls, caption: caption.trim() || undefined })
-      router.push("/history")
+      window.location.href = '/social'
     } catch (e: any) {
       setError(e.message || "Failed to share post. Try again.")
     } finally {

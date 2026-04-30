@@ -12,8 +12,6 @@ import {
   Menu,
   Sparkles,
   Loader2,
-  Camera,
-  Images,
 } from "lucide-react"
 import { api } from "@/lib/api"
 import { useRouter } from "next/navigation"
@@ -36,8 +34,6 @@ export function EventHistoryPage() {
 
   // cert_id keyed by event_id
   const [certMap, setCertMap] = useState<Record<string, string>>({})
-  // post_ids keyed by event_id — supports up to 3 posts per event
-  const [postEventMap, setPostEventMap] = useState<Record<string, string[]>>({})
   const [downloadingCertId, setDownloadingCertId] = useState<string | null>(null)
   const [cancellingId, setCancellingId] = useState<string | null>(null)
 
@@ -72,11 +68,10 @@ export function EventHistoryPage() {
         // 3. Begin loading your existing data
         setLoading(true)
 
-        const [profileRes, response, certRes, postsRes] = await Promise.all([
+        const [profileRes, response, certRes] = await Promise.all([
           api.getUserProfile(),
           api.getVolunteerRegistrations(),
           api.getMyCertificates().catch(() => ({ certificates: [] })),
-          api.getVolunteerPosts(user.id).catch(() => ({ posts: [], is_private: false })),
         ])
 
         if (profileRes?.profile) {
@@ -92,14 +87,6 @@ export function EventHistoryPage() {
           map[cert.event_id] = cert.id
         }
         setCertMap(map)
-
-        // Build a map of event_id -> post_ids (for per-event Share vs View Post, up to 3)
-        const eventPostMap: Record<string, string[]> = {}
-        for (const post of postsRes.posts ?? []) {
-          if (!eventPostMap[post.event_id]) eventPostMap[post.event_id] = []
-          eventPostMap[post.event_id].push(post.id)
-        }
-        setPostEventMap(eventPostMap)
 
         const formattedEvents = response.events.map((ev: any) => ({
           id: ev.id,
@@ -360,37 +347,7 @@ export function EventHistoryPage() {
                   )
                 ) : (
                   event.status === "attended" && (
-                    <div className="flex items-center gap-2">
-                      {(() => {
-                        const posts = postEventMap[event.id] ?? []
-                        const n = posts.length
-                        return (
-                          <>
-                            {n < 3 && (
-                              <Link
-                                href={`/posts/create?eventId=${event.id}`}
-                                onClick={(e) => e.stopPropagation()}
-                                className="flex items-center gap-1 px-2.5 py-1.5 bg-[#80242a]/10 hover:bg-[#80242a]/20 text-[#80242a] text-[10px] md:text-xs font-semibold rounded-lg transition-colors"
-                              >
-                                <Camera className="w-3 h-3" />
-                                Share
-                              </Link>
-                            )}
-                            {n > 0 && (
-                              <Link
-                                href={`/posts/${posts[0]}`}
-                                onClick={(e) => e.stopPropagation()}
-                                className="flex items-center gap-1 px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-600 text-[10px] md:text-xs font-semibold rounded-lg transition-colors"
-                              >
-                                <Images className="w-3 h-3" />
-                                {n}/3
-                              </Link>
-                            )}
-                          </>
-                        )
-                      })()}
-                      <ChevronRight className="w-4 h-4 md:w-5 md:h-5 text-[#86868b]" />
-                    </div>
+                    <ChevronRight className="w-4 h-4 md:w-5 md:h-5 text-[#86868b]" />
                   )
                 )}
               </div>

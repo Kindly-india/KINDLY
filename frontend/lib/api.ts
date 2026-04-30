@@ -1489,6 +1489,16 @@ export const api = {
     return res.json();
   },
 
+  getSuggestedPeople: async (): Promise<{ suggestions: Array<{ user_id: string; full_name: string; avatar_url: string | null; city: string | null; is_verified: boolean; total_hours: number }> }> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return { suggestions: [] };
+    const res = await fetch(`${API_URL}/social/suggestions`, {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    if (!res.ok) return { suggestions: [] };
+    return res.json();
+  },
+
   getPostsFeed: async (page = 1, limit = 20): Promise<FeedResponse> => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return { posts: [], page, limit };
@@ -1496,6 +1506,16 @@ export const api = {
       headers: { Authorization: `Bearer ${session.access_token}` },
     });
     if (!res.ok) throw new Error('Failed to load feed');
+    return res.json();
+  },
+
+  getPostableEvents: async (): Promise<{ events: { id: string; title: string; event_date: string; org_name: string; post_count: number }[] }> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+    const res = await fetch(`${API_URL}/volunteers/me/postable-events`, {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    if (!res.ok) throw new Error('Failed to load postable events');
     return res.json();
   },
 

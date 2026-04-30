@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
-import { ArrowLeft, Heart, MessageCircle, Send, Loader2, Trash2, ChevronLeft, ChevronRight } from "lucide-react"
+import { ArrowLeft, Heart, MessageCircle, Loader2, Trash2, ChevronLeft, ChevronRight, User } from "lucide-react"
 import { api, type Post, type PostComment } from "@/lib/api"
 import { cn } from "@/lib/utils"
 import { VerifiedBadge } from "@/components/verified-badge"
@@ -156,7 +156,7 @@ export default function PostDetailPage() {
     setDeleting(true)
     try {
       await api.deletePost(postId)
-      router.back()
+      window.location.href = '/social'
     } catch {
       setDeleting(false)
     }
@@ -220,7 +220,7 @@ export default function PostDetailPage() {
   const isOwnPost = currentUserId === post.volunteer.user_id
 
   return (
-    <div className="min-h-screen bg-white pb-28 max-w-lg mx-auto">
+    <div className="min-h-screen bg-white pb-36 max-w-lg mx-auto">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-[#f5f5f7]">
         <div className="h-14 flex items-center px-3 gap-2">
@@ -348,23 +348,32 @@ export default function PostDetailPage() {
         <div ref={commentsEndRef} />
       </div>
 
-      {/* Comment input — fixed at bottom */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#f0f0f0] px-4 py-3 max-w-lg mx-auto">
-        <div className="flex items-center gap-3">
-          <input
+      {/* Comment input — fixed at bottom, above mobile nav */}
+      <div className="fixed bottom-0 left-0 right-0 z-[60] bg-white border-t border-gray-100 px-4 pt-3 max-w-lg mx-auto" style={{ paddingBottom: 'calc(12px + env(safe-area-inset-bottom))' }}>
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-full bg-gray-100 shrink-0 flex items-center justify-center">
+            <User className="w-3.5 h-3.5 text-gray-400" />
+          </div>
+          <textarea
             value={commentText}
-            onChange={(e) => setCommentText(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleComment()}
-            placeholder="Add a comment…"
+            onChange={(e) => {
+              setCommentText(e.target.value)
+              e.target.style.height = "auto"
+              e.target.style.height = Math.min(e.target.scrollHeight, 72) + "px"
+            }}
+            onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), handleComment())}
+            placeholder="Add a comment..."
             maxLength={500}
-            className="flex-1 bg-[#f5f5f7] rounded-full px-4 py-2.5 text-[14px] text-[#1d1d1f] placeholder:text-[#86868b] outline-none"
+            rows={1}
+            className="flex-1 bg-gray-50 rounded-full px-4 py-2 text-sm text-[#1d1d1f] placeholder:text-gray-400 outline-none resize-none overflow-hidden leading-5"
+            style={{ maxHeight: '72px' }}
           />
           <button
             onClick={handleComment}
             disabled={!commentText.trim() || commenting}
-            className="w-9 h-9 bg-[#80242a] rounded-full flex items-center justify-center disabled:opacity-40 active:scale-95 transition-all"
+            className="text-[#80242a] font-semibold text-sm disabled:opacity-40 shrink-0"
           >
-            {commenting ? <Loader2 className="w-4 h-4 animate-spin text-white" /> : <Send className="w-4 h-4 text-white" />}
+            {commenting ? <Loader2 className="w-4 h-4 animate-spin text-[#80242a]" /> : "Post"}
           </button>
         </div>
       </div>
