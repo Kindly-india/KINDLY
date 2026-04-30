@@ -28,57 +28,47 @@ import { supabase } from "@/lib/supabase"
 const stories = [
   {
     id: 1,
-    quote: "Kindly began from simply showing up and working alongside people who care.",
+    quote: "the only acceptable reason to be awake at 6am on a sunday",
     author: "Manas Dhivare",
     role: "Founder - Kindly",
-    category: "Environment",
-    categoryColor: "bg-teal-500",
-    image: "https://images.unsplash.com/photo-1593113598332-cd288d649433?w=800&auto=format&fit=crop&q=60",
+    image: "FullSizeRender.JPG",
   },
   {
     id: 2,
-    quote: "Helping build Kindly was mostly about solving problems and making the platform usable for everyone.",
+    quote: "It starts as one event. Somehow it becomes the plan for every weekend.",
     author: "Aditya Dhongade",
     role: "Co-Founder - Kindly",
-    category: "Education",
-    categoryColor: "bg-pink-500",
-    image: "https://images.unsplash.com/photo-1544717305-2782549b5136?w=800&auto=format&fit=crop&q=60",
+    image: "201154.JPG",
   },
   {
     id: 3,
-    quote: "Spending weekends at the shelter has been therapy for me. These dogs just want love, and they give back so much more.",
+    quote: "Less time on the feed. More time actually living it.",
     author: "Sarah Jenkins",
     role: "Animal Shelter Volunteer",
-    category: "Animals",
-    categoryColor: "bg-amber-500",
-    image: "https://images.unsplash.com/photo-1551730459-92db2a308d6a?w=800&auto=format&fit=crop&q=60",
+    image: "dclassic 2024-08-04 213104.880.JPG",
   },
   {
     id: 4,
-    quote: "Organizing the food drive in Panchavati showed me the real power of community. Small acts really do add up.",
+    quote: "Stay for the events. Live for the afters.",
     author: "Rahul Verma",
     role: "Community Leader",
-    category: "Community",
-    categoryColor: "bg-orange-500",
-    image: "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=800&auto=format&fit=crop&q=60",
+    image: "IMG_5855.jpg",
   },
   {
     id: 5,
-    quote: "Helping the elderly with their daily technology struggles is surprisingly fun. Their stories from the past are a treasure.",
+    quote: "You come for the cause. You stay for the people.",
     author: "Neha Gupta",
     role: "Elderly Care Assistant",
-    category: "Elderly Care",
-    categoryColor: "bg-purple-500",
-    image: "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=800&auto=format&fit=crop&q=60",
+    image: "194439.JPG",
   },
   {
     id: 6,
-    quote: "I never realized how critical blood donation was until I met the patients. It takes 15 minutes to save a life.",
+    quote: "Connections through shared efforts",
     author: "Dr. Arjun K.",
     role: "Medical Volunteer",
     category: "Health",
     categoryColor: "bg-red-500",
-    image: "https://images.unsplash.com/photo-1615461066841-6116e61058f4?w=800&auto=format&fit=crop&q=60",
+    image: "IMG_8180.JPG",
   },
 ]
 
@@ -487,7 +477,7 @@ export function VolunteerHomePage() {
       <section className="bg-gradient-to-br from-[#fef7f0] via-[#fef5f0] to-[#fdf2f8] py-8 md:py-16 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="flex items-center justify-between mb-8">
-            <h2 className="text-[20px] md:text-[36px] font-bold text-[#1d1d1f]">Stories from Nashik.</h2>
+            <h2 className="text-[20px] md:text-[36px] font-bold text-[#1d1d1f]">Archives.</h2>
             <div className="flex gap-2">
               <button onClick={() => scrollStories('left')} className="w-10 h-10 rounded-full bg-white border flex items-center justify-center hover:bg-gray-50"><ChevronLeft className="w-5 h-5" /></button>
               <button onClick={() => scrollStories('right')} className="w-10 h-10 rounded-full bg-white border flex items-center justify-center hover:bg-gray-50"><ChevronRight className="w-5 h-5" /></button>
@@ -497,23 +487,12 @@ export function VolunteerHomePage() {
           <div ref={storiesRef} className="flex gap-6 overflow-x-auto pb-8 scrollbar-hide scroll-smooth snap-x">
             {stories.map(story => (
               <div key={story.id} className="min-w-[320px] md:min-w-100 snap-center bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
-                <div className="h-64 md:h-80 relative shrink-0">
-                  <img src={story.image} alt={story.author} className="w-full h-full object-cover" />
-                  <div className={`absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-bold text-white ${story.categoryColor}`}>
-                    {story.category}
-                  </div>
+                <div className="h-64 md:h-80 shrink-0">
+                  <img src={story.image} alt="" className="w-full h-full object-cover" />
                 </div>
-                <div className="p-6 flex flex-col flex-1">
+                <div className="p-6">
                   <Quote className="w-6 h-6 text-gray-300 mb-4" />
-                  <p className="text-gray-700 italic mb-6">"{story.quote}"</p>
-
-                  <div className="flex items-center gap-3 mt-auto">
-                    <div className={`w-2 h-10 rounded-full ${story.categoryColor}`}></div>
-                    <div>
-                      <p className="font-bold text-gray-900">{story.author}</p>
-                      <p className="text-xs text-gray-500">{story.role}</p>
-                    </div>
-                  </div>
+                  <p className="text-gray-700 italic">"{story.quote}"</p>
                 </div>
               </div>
             ))}
