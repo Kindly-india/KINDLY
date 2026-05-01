@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { api, type Post } from "@/lib/api"
 import {
@@ -48,24 +49,30 @@ export default function SocialDiscoveryPage() {
   const isSearching = searchQuery.trim().length > 0
 
   useEffect(() => {
+    let mounted = true
     api.getSearchHistory()
-      .then(setHistory)
+      .then(data => { if (mounted) setHistory(data) })
       .catch(() => {})
-      .finally(() => setHistoryLoading(false))
+      .finally(() => { if (mounted) setHistoryLoading(false) })
+    return () => { mounted = false }
   }, [])
 
   useEffect(() => {
+    let mounted = true
     api.getPostsFeed()
-      .then((res) => setFeedPosts(res.posts))
-      .catch(() => setFeedError(true))
-      .finally(() => setFeedLoading(false))
+      .then(res => { if (mounted) setFeedPosts(res.posts) })
+      .catch(() => { if (mounted) setFeedError(true) })
+      .finally(() => { if (mounted) setFeedLoading(false) })
+    return () => { mounted = false }
   }, [])
 
   useEffect(() => {
+    let mounted = true
     api.getSuggestedPeople()
-      .then((res) => setSuggestions(res.suggestions))
+      .then(res => { if (mounted) setSuggestions(res.suggestions) })
       .catch(() => {})
-      .finally(() => setSuggestionsLoading(false))
+      .finally(() => { if (mounted) setSuggestionsLoading(false) })
+    return () => { mounted = false }
   }, [])
 
   useEffect(() => {
@@ -196,7 +203,7 @@ export default function SocialDiscoveryPage() {
                 >
                   <div className="w-10 h-10 rounded-full bg-gray-100 overflow-hidden shrink-0 border border-gray-200 flex items-center justify-center">
                     {item.image
-                      ? <img src={item.image} className="w-full h-full object-cover" alt={item.name} />
+                      ? <Image src={item.image} width={40} height={40} className="w-full h-full object-cover" alt={item.name} />
                       : <User className="w-5 h-5 text-gray-400" />
                     }
                   </div>
@@ -243,7 +250,7 @@ export default function SocialDiscoveryPage() {
                       >
                         <div className="w-9 h-9 rounded-full bg-gray-100 overflow-hidden shrink-0 border border-gray-200 flex items-center justify-center">
                           {item.result_image
-                            ? <img src={item.result_image} className="w-full h-full object-cover" alt={item.result_name} />
+                            ? <Image src={item.result_image} width={36} height={36} className="w-full h-full object-cover" alt={item.result_name} />
                             : <User className="w-4 h-4 text-gray-400" />
                           }
                         </div>
@@ -302,7 +309,7 @@ export default function SocialDiscoveryPage() {
                             <Link href={`/volunteers/${s.user_id}`} className="flex flex-col items-center px-3 pt-4 gap-1.5 flex-1 min-h-0">
                               <div className="w-14 h-14 rounded-full bg-gray-100 overflow-hidden border border-gray-100 shrink-0 flex items-center justify-center">
                                 {s.avatar_url
-                                  ? <img src={s.avatar_url} className="w-full h-full object-cover" alt={s.full_name} />
+                                  ? <Image src={s.avatar_url} width={56} height={56} className="w-full h-full object-cover" alt={s.full_name} />
                                   : <User className="w-6 h-6 text-gray-400" />
                                 }
                               </div>

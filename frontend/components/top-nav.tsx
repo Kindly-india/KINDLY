@@ -53,7 +53,7 @@ export function TopNav() {
       }
     }
     fetchUser()
-  }, [pathname, shouldHide])
+  }, [shouldHide])
 
   if (shouldHide) return null
 
@@ -116,7 +116,7 @@ export function TopNav() {
           <Link href={profile?.id ? `/volunteers/${profile.id}` : '#'} className="hidden md:block group">
             <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-200 group-hover:border-gray-400 group-active:scale-95 transition-all bg-gray-50 flex items-center justify-center shadow-sm">
               {displayImage ? (
-                <img src={displayImage} alt="Profile" className="w-full h-full object-cover" />
+                <Image src={displayImage} alt="Profile" width={40} height={40} className="w-full h-full object-cover" />
               ) : (
                 <span className="font-bold text-gray-500 group-hover:text-gray-900 transition-colors">{displayInitial}</span>
               )}

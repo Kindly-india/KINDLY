@@ -19,10 +19,20 @@ export class EmailService {
 
   private async send(to: string, subject: string, html: string): Promise<void> {
     if (!this.resend) return;
-    try {
-      await this.resend.emails.send({ from: this.from, to, subject, html });
-    } catch (err: any) {
-      this.logger.error(`Failed to send email to ${to}: ${err?.message}`, err?.stack);
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        await this.resend.emails.send({ from: this.from, to, subject, html });
+        return;
+      } catch (err: any) {
+        if (attempt === 3) {
+          this.logger.error(
+            `Failed to send email to ${to} after 3 attempts: ${err?.message}`,
+            err?.stack,
+          );
+          return;
+        }
+        await new Promise(r => setTimeout(r, 500 * attempt));
+      }
     }
   }
 

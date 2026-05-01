@@ -149,14 +149,17 @@ export class AnalyticsService {
             return null;
         }
 
-        // 2. Fetch Events & Registrations
+        // 2. Fetch Events & Registrations (last 12 months, capped at 200)
+        const twelveMonthsAgo = new Date();
+        twelveMonthsAgo.setFullYear(twelveMonthsAgo.getFullYear() - 1);
+
         const { data: events } = await client
             .from('events')
             .select(`
         id,
         title,
         event_date,
-        start_time, 
+        start_time,
         end_time,
         registered_count,
         event_registrations (
@@ -166,7 +169,9 @@ export class AnalyticsService {
           volunteer_profiles ( full_name )
         )
       `)
-            .eq('organization_id', org.id);
+            .eq('organization_id', org.id)
+            .gte('event_date', twelveMonthsAgo.toISOString().split('T')[0])
+            .limit(200);
 
         // --- CALCULATIONS ---
         let totalHours = 0;
@@ -261,22 +266,8 @@ export class AnalyticsService {
 
     async getPlatformStats() {
         const client = this.supabase.getClient();
-
-        const [
-            { count: volunteers },
-            { count: organisations },
-            { data: hoursData },
-            { data: citiesData },
-        ] = await Promise.all([
-            client.from('volunteer_profiles').select('*', { count: 'exact', head: true }),
-            client.from('organization_profiles').select('*', { count: 'exact', head: true }).eq('approval_status', 'approved'),
-            client.from('volunteer_profiles').select('total_hours'),
-            client.from('volunteer_profiles').select('city'),
-        ]);
-
-        const hours = hoursData?.reduce((sum, v) => sum + (v.total_hours || 0), 0) ?? 0;
-        const cities = new Set(citiesData?.map(v => v.city).filter(Boolean)).size;
-
-        return { volunteers, organisations, hours, cities };
+        const { data, error } = await client.rpc('get_platform_stats');
+        if (error) throw error;
+        return data;
     }
 }

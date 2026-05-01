@@ -3,6 +3,8 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { SentryExceptionFilter } from './filters/sentry-exception.filter';
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const compression = require('compression');
 
 async function bootstrap() {
   const requiredEnvVars = [
@@ -17,6 +19,7 @@ async function bootstrap() {
     }
   }
   const app = await NestFactory.create(AppModule);
+  app.use(compression());
 
   // Enable CORS for frontend
   app.enableCors({
@@ -49,5 +52,11 @@ async function bootstrap() {
   const port = process.env.PORT || 3001;
   await app.listen(port);
   console.log(`Backend running on http://localhost:${port}`);
+
+  process.on('SIGTERM', async () => {
+    console.log('SIGTERM received — closing server gracefully');
+    await app.close();
+    process.exit(0);
+  });
 }
 bootstrap();

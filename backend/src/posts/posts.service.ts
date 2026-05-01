@@ -189,7 +189,7 @@ export class PostsService {
     }
 
     const [{ data: likes }, { data: comments }] = await Promise.all([
-      client.from('post_likes').select('volunteer_id').eq('post_id', postId),
+      client.from('post_likes').select('volunteer_id').eq('post_id', postId).limit(200),
       client
         .from('post_comments')
         .select(`
@@ -197,7 +197,8 @@ export class PostsService {
           volunteer:volunteer_profiles(id, user_id, full_name, avatar_url)
         `)
         .eq('post_id', postId)
-        .order('created_at', { ascending: true }),
+        .order('created_at', { ascending: true })
+        .limit(100),
     ]);
 
     return {
@@ -381,7 +382,8 @@ export class PostsService {
         volunteer:volunteer_profiles(id, user_id, full_name, avatar_url)
       `)
       .eq('post_id', postId)
-      .order('created_at', { ascending: true });
+      .order('created_at', { ascending: true })
+      .limit(100);
 
     if (error) throw new BadRequestException(error.message);
     return comments ?? [];
@@ -570,7 +572,8 @@ export class PostsService {
         volunteer:volunteer_profiles(id, user_id, full_name, avatar_url, is_verified)
       `)
       .eq('post_id', postId)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(200);
 
     if (error) throw new BadRequestException(error.message);
 
@@ -627,7 +630,8 @@ export class PostsService {
         event:events(id, title)
       `)
       .eq('volunteer_id', targetProfile.id)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(50);
 
     if (error) throw new BadRequestException(error.message);
 

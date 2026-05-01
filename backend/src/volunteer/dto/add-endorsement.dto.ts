@@ -1,4 +1,4 @@
-import { IsUUID, IsArray, IsOptional, IsString } from 'class-validator';
+import { IsUUID, IsArray, IsOptional, IsString, ArrayMaxSize, MaxLength } from 'class-validator';
 
 export class AddEndorsementDto {
   @IsUUID()
@@ -8,9 +8,13 @@ export class AddEndorsementDto {
   event_id: string;
 
   @IsArray()
+  @ArrayMaxSize(20)
+  @IsString({ each: true })
+  @MaxLength(50, { each: true })
   skills: string[];
 
   @IsOptional()
   @IsString()
+  @MaxLength(500)
   comment?: string;
 }

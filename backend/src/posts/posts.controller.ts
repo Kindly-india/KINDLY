@@ -4,6 +4,7 @@ import { CreatePostDto } from './dto/create-post.dto';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { OptionalAuthGuard } from '../auth/guards/optional-auth.guard';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller('posts')
 export class PostsController {
@@ -28,6 +29,7 @@ export class PostsController {
   }
 
   // Create a post (must have attended the event)
+  @Throttle({ default: { limit: 10, ttl: 3_600_000 } })
   @UseGuards(JwtAuthGuard)
   @Post()
   async createPost(@Request() req: any, @Body() dto: CreatePostDto) {
@@ -81,6 +83,7 @@ export class PostsController {
   }
 
   // Add a comment to a post
+  @Throttle({ default: { limit: 30, ttl: 3_600_000 } })
   @UseGuards(JwtAuthGuard)
   @Post(':id/comments')
   async addComment(

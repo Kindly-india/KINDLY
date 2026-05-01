@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsString, MinLength, IsIn, IsOptional, IsUrl } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString, MinLength, IsIn, IsOptional, IsUrl, MaxLength } from 'class-validator';
 
 export class OrganizationSignupDto {
   @IsString()
@@ -7,6 +7,7 @@ export class OrganizationSignupDto {
 
   @IsString()
   @IsNotEmpty()
+  @MaxLength(100)
   name: string;
 
   @IsEmail()
@@ -18,49 +19,58 @@ export class OrganizationSignupDto {
 
   @IsString()
   @IsNotEmpty()
+  @MaxLength(20)
   phone: string;
 
   // Registered org fields
   @IsOptional()
   @IsString()
+  @MaxLength(100)
   registrationType?: string;
 
   @IsOptional()
   @IsString()
+  @MaxLength(100)
   registrationNumber?: string;
 
   @IsOptional()
   @IsString()
+  @MaxLength(100)
   representativeName?: string;
 
   @IsOptional()
   @IsString()
+  @MaxLength(100)
   designation?: string;
 
   @IsOptional()
-  @IsString()
+  @IsUrl({ require_protocol: false })
   website?: string;
 
   // Supported org fields
   @IsOptional()
   @IsString()
+  @MaxLength(100)
   parentInstitution?: string;
 
   @IsOptional()
   @IsString()
+  @MaxLength(100)
   coordinatorName?: string;
 
   // Informal group fields
   @IsOptional()
   @IsString()
+  @MaxLength(300)
   areaLocality?: string;
 
   // Individual fields
   @IsOptional()
   @IsString()
+  @MaxLength(3000)
   intentDescription?: string;
 
-  // File URLs
+  // File URLs — system-generated, always full URLs from Supabase storage
   @IsOptional()
   @IsUrl()
   registrationCertificateUrl?: string;

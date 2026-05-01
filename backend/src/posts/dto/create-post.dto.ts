@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsUUID, IsArray, IsOptional, ArrayMinSize, ArrayMaxSize } from 'class-validator';
+import { IsString, IsNotEmpty, IsUUID, IsArray, IsOptional, ArrayMinSize, ArrayMaxSize, IsUrl, MaxLength } from 'class-validator';
 
 export class CreatePostDto {
   @IsUUID()
@@ -7,11 +7,12 @@ export class CreatePostDto {
 
   @IsArray()
   @ArrayMinSize(1)
-  @ArrayMaxSize(5)
-  @IsString({ each: true })
+  @ArrayMaxSize(3)
+  @IsUrl({}, { each: true })
   photo_urls: string[];
 
   @IsOptional()
   @IsString()
+  @MaxLength(500)
   caption?: string;
 }

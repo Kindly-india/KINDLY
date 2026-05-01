@@ -1,8 +1,11 @@
-import { Controller, Post, Get, Body, Delete, ValidationPipe, Request, UseGuards, Param, Patch, BadRequestException, Query } from '@nestjs/common';
+import { Controller, Post, Get, Body, Delete, ValidationPipe, Request, UseGuards, Param, Patch, BadRequestException, Query, Header } from '@nestjs/common';
 import { EventService } from './event.service';
 import { CertificateService } from '../certificate/certificate.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateGalleryDto } from './dto/update-gallery.dto';
+import { BroadcastMessageDto } from './dto/broadcast-message.dto';
+import { SelfCheckInDto } from './dto/self-check-in.dto';
+import { SubmitReviewDto } from './dto/submit-review.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AdminGuard } from '../auth/guards/admin.guard';
 import { CronSecretGuard } from '../auth/guards/cron-secret.guard';
@@ -62,12 +65,14 @@ export class EventController {
   }
 
   @Get('top')
+  @Header('Cache-Control', 'public, max-age=300, stale-while-revalidate=600')
   async getTopEvents() {
     return this.eventService.getTopEvents();
   }
 
   // This matches the error URL you saw: /events/:id/public
   @Get('details/:id')
+  @Header('Cache-Control', 'public, max-age=60, stale-while-revalidate=300')
   async getPublicEventById(@Param('id') id: string) {
     return this.eventService.getPublicEventById(id);
   }
@@ -92,8 +97,8 @@ export class EventController {
   // ✅ NEW: Send Broadcast (Protected for Org)
   @Post(':id/broadcast')
   @UseGuards(JwtAuthGuard)
-  async sendBroadcast(@Request() req: any, @Param('id') id: string, @Body() body: { message: string }) {
-    return this.eventService.sendBroadcast(req.user.id, id, body.message);
+  async sendBroadcast(@Request() req: any, @Param('id') id: string, @Body(ValidationPipe) dto: BroadcastMessageDto) {
+    return this.eventService.sendBroadcast(req.user.id, id, dto.message);
   }
 
   // ✅ NEW: Recent Activity Route
@@ -140,8 +145,8 @@ export class EventController {
 
   @Post('self-check-in')
   @UseGuards(JwtAuthGuard)
-  async selfCheckIn(@Request() req: any, @Body() body: { eventId: string; code: string; latitude: number; longitude: number }) {
-    return this.eventService.selfCheckIn(req.user.id, body);
+  async selfCheckIn(@Request() req: any, @Body(ValidationPipe) dto: SelfCheckInDto) {
+    return this.eventService.selfCheckIn(req.user.id, dto);
   }
 
   // 2. Organization Routes
@@ -253,12 +258,9 @@ export class EventController {
   async submitReview(
     @Request() req: any,
     @Param('id') eventId: string,
-    @Body() body: { rating: number; comment: string }
+    @Body(ValidationPipe) dto: SubmitReviewDto,
   ) {
-    if (!body.rating || body.rating < 1 || body.rating > 5) {
-      throw new BadRequestException('Rating must be between 1 and 5');
-    }
-    return this.eventService.submitReview(req.user.id, eventId, body.rating, body.comment);
+    return this.eventService.submitReview(req.user.id, eventId, dto.rating, dto.comment);
   }
 
   // Add this route

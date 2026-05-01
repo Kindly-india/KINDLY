@@ -14,7 +14,8 @@ import { PhoneVerificationModule } from './phone-verification/phone-verification
 import { PostsModule } from './posts/posts.module';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core/constants';
-
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
 
 @Module({
   imports: [
@@ -39,7 +40,9 @@ import { APP_GUARD } from '@nestjs/core/constants';
       limit: 20,
     }]),
   ],
+  controllers: [AppController],
   providers: [
+    AppService,
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,

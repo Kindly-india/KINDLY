@@ -340,7 +340,8 @@ export class SocialService {
       .from('follows')
       .select('follower_id')
       .eq('following_id', targetUserId)
-      .eq('status', 'accepted');
+      .eq('status', 'accepted')
+      .limit(200);
 
     if (!follows?.length) return { followers: [] };
     const ids = follows.map((f: any) => f.follower_id);
@@ -357,7 +358,8 @@ export class SocialService {
       .from('follows')
       .select('following_id')
       .eq('follower_id', targetUserId)
-      .eq('status', 'accepted');
+      .eq('status', 'accepted')
+      .limit(200);
 
     if (!follows?.length) return { following: [] };
     const ids = follows.map((f: any) => f.following_id);

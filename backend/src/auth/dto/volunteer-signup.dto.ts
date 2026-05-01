@@ -1,8 +1,9 @@
-import { IsEmail, IsNotEmpty, IsString, MinLength, IsArray, IsIn } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString, MinLength, IsArray, IsIn, MaxLength, ArrayMaxSize } from 'class-validator';
 
 export class VolunteerSignupDto {
   @IsString()
   @IsNotEmpty()
+  @MaxLength(100)
   fullName: string;
 
   @IsEmail()
@@ -17,5 +18,8 @@ export class VolunteerSignupDto {
   city: string;
 
   @IsArray()
+  @ArrayMaxSize(20)
+  @IsString({ each: true })
+  @MaxLength(50, { each: true })
   interests: string[];
 }

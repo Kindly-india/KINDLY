@@ -225,7 +225,8 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
         )
       `)
       .eq('organization_id', orgProfile.id)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(200);
 
     if (eventsError) throw eventsError;
 
@@ -249,15 +250,15 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
     let query = supabase
       .from('events')
       .select(`
-      *,
-      organization_profiles (
-        name,
-        org_type
-      )
-    `)
+        id, title, description, category, cover_image_url, is_urgent,
+        event_date, start_time, end_time, location,
+        total_slots, registered_count, registration_deadline, connect_plan,
+        organization_profiles ( name, org_type )
+      `)
       .eq('status', 'published')
       .gte('event_date', new Date().toISOString().split('T')[0])
-      .order('event_date', { ascending: true });
+      .order('event_date', { ascending: true })
+      .limit(50);
 
     if (location) {
       query = query.ilike('location', `%${location}%`);
@@ -317,11 +318,10 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
     const { data: events, error } = await supabase
       .from('events')
       .select(`
-        *,
-        organization_profiles (
-          name,
-          org_type
-        )
+        id, title, category, cover_image_url, is_urgent,
+        event_date, start_time, end_time, location,
+        total_slots, registered_count, registration_deadline, connect_plan,
+        organization_profiles ( name, org_type )
       `)
       .eq('status', 'published')
       .gte('event_date', new Date().toISOString().split('T')[0])
@@ -487,7 +487,8 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
         )
       `)
       .eq('event_id', eventId)
-      .order('registered_at', { ascending: false });
+      .order('registered_at', { ascending: false })
+      .limit(500);
 
     if (regError) throw regError;
 
@@ -509,26 +510,27 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
     // 2. Fetch Registrations
     const { data: registrations, error: regError } = await supabase.from('event_registrations')
       .select(`
-        id, 
-        status, 
-        registered_at, 
+        id,
+        status,
+        registered_at,
         events (
-          id, 
-          title, 
-          category, 
-          event_date, 
-          start_time, 
-          end_time, 
-          location, 
-          cover_image_url, 
-          total_slots, 
-          status, 
-          certificates_issued,  
+          id,
+          title,
+          category,
+          event_date,
+          start_time,
+          end_time,
+          location,
+          cover_image_url,
+          total_slots,
+          status,
+          certificates_issued,
           organization_profiles(name)
         )
       `)
       .eq('volunteer_id', volProfile.id)
-      .order('events(event_date)', { ascending: true });
+      .order('events(event_date)', { ascending: true })
+      .limit(200);
 
     if (regError) throw regError;
 
@@ -927,11 +929,9 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
       throw new BadRequestException('Registration deadline must be at least 1 hour before event start');
     }
 
-    console.log('[createEvent] dto.latitude:', dto.latitude, 'dto.longitude:', dto.longitude, 'location:', dto.location);
     const coords = (dto.latitude == null || dto.longitude == null) && dto.location
       ? await geocodeLocation(dto.location)
       : null;
-    console.log('[createEvent] coords resolved:', coords);
 
     const { data: event, error: eventError } = await supabase
       .from('events')
@@ -1262,7 +1262,7 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
 
   // In EventService class
 
-  async submitReview(userId: string, eventId: string, rating: number, comment: string) {
+  async submitReview(userId: string, eventId: string, rating: number, comment?: string) {
     const supabase = this.supabaseService.getClient();
 
     // 1. Get Volunteer Profile

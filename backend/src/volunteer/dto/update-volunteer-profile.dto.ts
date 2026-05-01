@@ -1,58 +1,71 @@
-import { IsOptional, IsString, IsArray, IsUrl, IsIn, IsBoolean } from 'class-validator';
+import { IsOptional, IsString, IsArray, IsUrl, IsIn, IsBoolean, IsEmail, MaxLength, ArrayMaxSize } from 'class-validator';
 
 export class UpdateVolunteerProfileDto {
   @IsOptional()
   @IsString()
+  @MaxLength(100)
   full_name?: string;
 
   @IsOptional()
   @IsString()
+  @MaxLength(150)
   headline?: string;
 
   @IsOptional()
   @IsString()
+  @MaxLength(3000)
   bio?: string;
 
   @IsOptional()
   @IsString()
+  @MaxLength(100)
   city?: string;
 
   @IsOptional()
   @IsString()
-  address?: string; // ✅ NEW
+  @MaxLength(300)
+  address?: string;
 
   @IsOptional()
   @IsString()
-  phone?: string;   // ✅ NEW
+  @MaxLength(20)
+  phone?: string;
 
   @IsOptional()
-  @IsString()
-  email?: string;   // ✅ NEW
+  @IsEmail()
+  email?: string;
 
   @IsOptional()
-  @IsString()
-  linkedin?: string; // ✅ NEW
+  @IsUrl({ require_protocol: false })
+  linkedin?: string;
 
   @IsOptional()
-  @IsString()
-  instagram?: string;  // ✅ NEW
+  @IsUrl({ require_protocol: false })
+  instagram?: string;
 
   @IsOptional()
-  @IsString()
-  website?: string;  // ✅ NEW
+  @IsUrl({ require_protocol: false })
+  website?: string;
 
   @IsOptional()
   @IsArray()
+  @ArrayMaxSize(20)
+  @IsString({ each: true })
+  @MaxLength(50, { each: true })
   skills?: string[];
 
   @IsOptional()
   @IsArray()
+  @ArrayMaxSize(20)
+  @IsString({ each: true })
+  @MaxLength(50, { each: true })
   interests?: string[];
 
   @IsOptional()
   @IsIn(['weekends', 'weekdays', 'remote', 'flexible'])
   availability_status?: string;
 
+  // System-generated URLs from Supabase storage — require full URL
   @IsOptional()
   @IsUrl()
   avatar_url?: string;

@@ -1,7 +1,9 @@
-import { Controller, Get, Post, Delete, Query, Param, Body, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Query, Param, Body, UseGuards, Request, ValidationPipe } from '@nestjs/common';
 import { SocialService } from './social.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { OptionalAuthGuard } from '../auth/guards/optional-auth.guard';
+import { Throttle } from '@nestjs/throttler';
+import { SaveSearchHistoryDto } from './dto/save-search-history.dto';
 
 @Controller('social')
 export class SocialController {
@@ -14,6 +16,7 @@ export class SocialController {
   }
 
   // Follow a user (privacy-aware: returns { status: 'pending' | 'accepted' })
+  @Throttle({ default: { limit: 60, ttl: 3_600_000 } })
   @UseGuards(JwtAuthGuard)
   @Post('follow/:targetId')
   async followUser(@Request() req: any, @Param('targetId') targetId: string) {
@@ -65,8 +68,8 @@ export class SocialController {
 
   @UseGuards(JwtAuthGuard)
   @Post('search/recent')
-  async saveSearchHistory(@Request() req: any, @Body() body: any) {
-    return this.socialService.saveSearchHistory(req.user.id, body);
+  async saveSearchHistory(@Request() req: any, @Body(ValidationPipe) dto: SaveSearchHistoryDto) {
+    return this.socialService.saveSearchHistory(req.user.id, dto);
   }
 
   @UseGuards(JwtAuthGuard)

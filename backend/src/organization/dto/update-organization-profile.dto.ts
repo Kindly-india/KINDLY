@@ -1,8 +1,9 @@
-import { IsOptional, IsString, IsNumber, IsArray, IsEmail, IsUrl } from 'class-validator'; // ✅ Make sure IsArray is imported
+import { IsOptional, IsString, IsNumber, IsArray, IsEmail, IsUrl, MaxLength, ArrayMaxSize } from 'class-validator';
 
 export class UpdateOrganizationProfileDto {
   @IsOptional()
   @IsString()
+  @MaxLength(100)
   name?: string;
 
   @IsOptional()
@@ -15,34 +16,39 @@ export class UpdateOrganizationProfileDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(20)
   phone?: string;
 
   @IsOptional()
   @IsString()
+  @MaxLength(150)
   tagline?: string;
 
   @IsOptional()
   @IsString()
+  @MaxLength(3000)
   mission_statement?: string;
 
   @IsOptional()
   @IsString()
+  @MaxLength(3000)
   intent_description?: string;
 
   @IsOptional()
   @IsString()
+  @MaxLength(300)
   area_locality?: string;
 
   @IsOptional()
-  @IsString()
+  @IsUrl({ require_protocol: false })
   website?: string;
 
   @IsOptional()
-  @IsString()
+  @IsUrl({ require_protocol: false })
   linkedin?: string;
 
   @IsOptional()
-  @IsString()
+  @IsUrl({ require_protocol: false })
   instagram?: string;
 
   @IsOptional()
@@ -51,38 +57,45 @@ export class UpdateOrganizationProfileDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(100)
   registration_number?: string;
 
   @IsOptional()
   @IsString()
+  @MaxLength(100)
   representative_name?: string;
 
   @IsOptional()
   @IsString()
+  @MaxLength(100)
   designation?: string;
 
   @IsOptional()
   @IsString()
+  @MaxLength(100)
   parent_institution?: string;
 
   @IsOptional()
   @IsString()
+  @MaxLength(100)
   coordinator_name?: string;
 
+  // System-generated URLs from Supabase storage — require full URL
   @IsOptional()
-  @IsString()
+  @IsUrl()
   logo_url?: string;
 
   @IsOptional()
-  @IsString()
+  @IsUrl()
   cover_url?: string;
 
-  // ✅ THESE ARE THE MISSING FIELDS CAUSING THE 400 ERROR
   @IsOptional()
   @IsArray()
+  @ArrayMaxSize(20)
   team_members?: any[];
 
   @IsOptional()
   @IsArray()
+  @ArrayMaxSize(20)
   achievements?: any[];
 }

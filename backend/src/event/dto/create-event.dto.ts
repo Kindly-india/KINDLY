@@ -1,12 +1,14 @@
-import { IsString, IsNotEmpty, IsInt, IsBoolean, IsOptional, IsIn, IsUrl, IsNumber, Min, IsDateString, IsArray } from 'class-validator';
+import { IsString, IsNotEmpty, IsInt, IsBoolean, IsOptional, IsIn, IsUrl, IsNumber, Min, IsDateString, IsArray, MaxLength, ArrayMaxSize } from 'class-validator';
 
 export class CreateEventDto {
   @IsString()
   @IsNotEmpty()
+  @MaxLength(100)
   title: string;
 
   @IsString()
   @IsNotEmpty()
+  @MaxLength(5000)
   description: string;
 
   @IsOptional()
@@ -22,41 +24,49 @@ export class CreateEventDto {
 
   @IsString()
   @IsNotEmpty()
+  @MaxLength(10)
   eventDate: string; // Format: YYYY-MM-DD
 
   @IsString()
   @IsNotEmpty()
+  @MaxLength(5)
   startTime: string; // Format: HH:MM
 
   @IsString()
   @IsNotEmpty()
+  @MaxLength(5)
   endTime: string; // Format: HH:MM
 
   @IsString()
   @IsNotEmpty()
+  @MaxLength(300)
   location: string;
 
   @IsOptional()
   @IsString()
+  @MaxLength(100)
   dressCode?: string;
 
   @IsOptional()
   @IsString()
+  @MaxLength(500)
   thingsToBring?: string;
 
   @IsString()
   @IsNotEmpty()
+  @MaxLength(150)
   pointOfContact: string;
 
   @IsOptional()
   @IsString()
+  @MaxLength(3000)
   connectPlan?: string;
 
   @IsInt()
   @Min(1)
   totalSlots: number;
 
-  @IsDateString() // Updated to validate ISO date string
+  @IsDateString()
   @IsNotEmpty()
   registrationDeadline: string;
 
@@ -67,6 +77,8 @@ export class CreateEventDto {
 
   @IsOptional()
   @IsArray()
+  @ArrayMaxSize(20)
+  @IsUrl({}, { each: true })
   galleryImages?: string[];
 
   @IsOptional()

@@ -9,7 +9,7 @@ import { SupabaseService } from '../supabase/supabase.service';
 import { renderCertificateHTML } from '../event/templates/certificate.template';
 import { v4 as uuidv4 } from 'uuid';
 import chromium from '@sparticuz/chromium';
-import puppeteer from 'puppeteer-core';
+import puppeteer, { Browser } from 'puppeteer-core';
 
 function formatEventDate(dateStr: string): string {
   const months = [
@@ -32,20 +32,29 @@ export class CertificateService {
   constructor(private supabaseService: SupabaseService) {}
 
   // ─────────────────────────────────────────────
+  // PRIVATE: Retry helper — linear backoff, 1 s / 2 s
+  // ─────────────────────────────────────────────
+  private async withRetry<T>(fn: () => Promise<T>, retries = 2): Promise<T> {
+    let lastErr: unknown;
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        return await fn();
+      } catch (err) {
+        lastErr = err;
+        if (attempt < retries) {
+          await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+        }
+      }
+    }
+    throw lastErr;
+  }
+
+  // ─────────────────────────────────────────────
   // PRIVATE: Render HTML → PDF buffer via Puppeteer
   // ─────────────────────────────────────────────
-  private async generatePdf(html: string): Promise<Buffer> {
-    // CHROMIUM_PATH lets local dev point to an installed Chrome.
-    // In production (Render), omit it — @sparticuz/chromium supplies the binary.
-    const executablePath = process.env.CHROMIUM_PATH || await chromium.executablePath();
-
-    const browser = await puppeteer.launch({
-      args: [...chromium.args, '--disable-dev-shm-usage'],
-      executablePath,
-      headless: chromium.headless,
-    });
+  private async generatePdf(html: string, browser: Browser): Promise<Buffer> {
+    const page = await browser.newPage();
     try {
-      const page = await browser.newPage();
       // 'load' fires once the page load event fires. networkidle0/2 both time out
       // because Google Fonts CDN keeps HTTP/2 connections alive indefinitely.
       // document.fonts.ready ensures all @font-face rules have finished loading.
@@ -58,7 +67,7 @@ export class CertificateService {
       });
       return Buffer.from(pdf);
     } finally {
-      await browser.close();
+      await page.close();
     }
   }
 
@@ -133,7 +142,7 @@ export class CertificateService {
   // ─────────────────────────────────────────────
   async generateForEvent(
     eventId: string,
-  ): Promise<{ issued: number; skipped: number; total: number }> {
+  ): Promise<{ issued: number; skipped: number; failed: number; total: number }> {
     const supabase = this.supabaseService.getClient();
 
     // Fetch event with org profile
@@ -161,7 +170,7 @@ export class CertificateService {
 
     if (regError) throw new InternalServerErrorException(regError.message);
     if (!registrations?.length) {
-      return { issued: 0, skipped: 0, total: 0 };
+      return { issued: 0, skipped: 0, failed: 0, total: 0 };
     }
 
     // Idempotency: find volunteers who already have a cert for this event
@@ -176,77 +185,92 @@ export class CertificateService {
 
     let issued = 0;
     let skipped = 0;
+    let failed = 0;
 
-    for (const reg of registrations) {
-      const vol = (reg as any).volunteer_profiles;
-      if (!vol) continue;
+    // ── Outer try/finally: one browser for the entire batch ───────────────────
+    // CHROMIUM_PATH lets local dev point to an installed Chrome.
+    // In production (Render), omit it — @sparticuz/chromium supplies the binary.
+    const executablePath = process.env.CHROMIUM_PATH || await chromium.executablePath();
+    const browser = await puppeteer.launch({
+      args: [...chromium.args, '--disable-dev-shm-usage'],
+      executablePath,
+      headless: chromium.headless,
+    });
 
-      if (alreadyIssued.has(vol.id)) {
-        skipped++;
-        continue;
-      }
+    try {
+      for (const reg of registrations) {
+        const vol = (reg as any).volunteer_profiles;
+        if (!vol) continue;
 
-      const verificationId = uuidv4();
+        if (alreadyIssued.has(vol.id)) {
+          skipped++;
+          continue;
+        }
 
-      const html = renderCertificateHTML({
-        volunteerName: vol.full_name || 'Volunteer',
-        eventTitle: event.title,
-        orgName: org?.name || 'KINDLY Partner',
-        orgLogoUrl: org?.logo_url || null,
-        eventDate: formattedEventDate,
-        hoursContributed: hours,
-        verificationId,
-        issuedDate: formattedIssuedDate,
-      });
+        const verificationId = uuidv4();
 
-      let pdfBuffer: Buffer;
-      try {
-        pdfBuffer = await this.generatePdf(html);
-      } catch (err) {
-        console.error(`PDF generation failed for volunteer ${vol.id}:`, err);
-        throw new InternalServerErrorException(
-          'PDF generation failed. Check Puppeteer installation.',
-        );
-      }
-
-      const storagePath = `${eventId}/${vol.id}-${verificationId}.pdf`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('certificates')
-        .upload(storagePath, pdfBuffer, {
-          contentType: 'application/pdf',
-          upsert: false,
+        const html = renderCertificateHTML({
+          volunteerName: vol.full_name || 'Volunteer',
+          eventTitle: event.title,
+          orgName: org?.name || 'KINDLY Partner',
+          orgLogoUrl: org?.logo_url || null,
+          eventDate: formattedEventDate,
+          hoursContributed: hours,
+          verificationId,
+          issuedDate: formattedIssuedDate,
         });
 
-      if (uploadError) {
-        throw new InternalServerErrorException(
-          'Failed to upload certificate: ' + uploadError.message,
-        );
-      }
+        // ── Inner: page lifecycle is managed inside generatePdf ───────────────
+        let pdfBuffer: Buffer;
+        try {
+          pdfBuffer = await this.withRetry(() => this.generatePdf(html, browser));
+        } catch (err) {
+          console.error(`[certificates] PDF failed for volunteer ${vol.id} — skipping:`, err);
+          failed++;
+          continue;
+        }
 
-      const { error: insertError } = await supabase
-        .from('certificates')
-        .insert({
-          verification_id: verificationId,
-          event_id: eventId,
-          volunteer_id: vol.id,
-          registration_id: reg.id,
-          storage_path: storagePath,
-          hours_credited: hours,
-        });
+        const storagePath = `${eventId}/${vol.id}-${verificationId}.pdf`;
 
-      if (insertError) {
-        // Clean up the uploaded file on DB failure
-        await supabase.storage
+        const { error: uploadError } = await supabase.storage
           .from('certificates')
-          .remove([storagePath]);
-        throw new InternalServerErrorException(insertError.message);
-      }
+          .upload(storagePath, pdfBuffer, {
+            contentType: 'application/pdf',
+            upsert: false,
+          });
 
-      issued++;
+        if (uploadError) {
+          console.error(`[certificates] Upload failed for volunteer ${vol.id}:`, uploadError.message);
+          failed++;
+          continue;
+        }
+
+        const { error: insertError } = await supabase
+          .from('certificates')
+          .insert({
+            verification_id: verificationId,
+            event_id: eventId,
+            volunteer_id: vol.id,
+            registration_id: reg.id,
+            storage_path: storagePath,
+            hours_credited: hours,
+          });
+
+        if (insertError) {
+          // Clean up the uploaded file on DB failure
+          await supabase.storage.from('certificates').remove([storagePath]);
+          console.error(`[certificates] DB insert failed for volunteer ${vol.id}:`, insertError.message);
+          failed++;
+          continue;
+        }
+
+        issued++;
+      }
+    } finally {
+      await browser.close();
     }
 
-    return { issued, skipped, total: registrations.length };
+    return { issued, skipped, failed, total: registrations.length };
   }
 
   // ─────────────────────────────────────────────
