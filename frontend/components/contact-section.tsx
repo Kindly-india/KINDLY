@@ -38,7 +38,7 @@ export function ContactSection() {
           </h2>
           {/* Paragraph: 15px is readable and professional */}
           <p className="text-[15px] md:text-[17px] text-[#86868b] mb-8 md:mb-6 px-4">
-            Join thousands of volunteers creating positive change.
+            Join people creating a positive change.
           </p>
           {/* Button: h-12 for a better mobile tap target */}
           <Button

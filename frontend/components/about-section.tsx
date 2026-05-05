@@ -21,7 +21,7 @@ export function AboutSection() {
 
         {/* Mission Text: Bumped to 16px (standard mobile body size) */}
         <p className="text-[16px] md:text-[21px] text-[#1d1d1f] text-center max-w-2xl mx-auto leading-relaxed mb-12 md:mb-20 px-2">
-          We're on a mission to connect passionate volunteers with organisations that are making real change. Every
+          We're on a mission to connect passionate people with organisations that are making real change. Every
           connection sparks a difference.
         </p>
 
@@ -36,7 +36,7 @@ export function AboutSection() {
             <h3 className="text-[16px] md:text-[21px] font-semibold text-[#1d1d1f] mb-1.5 md:mb-2">Impact First</h3>
             {/* Description: Bumped to 13px */}
             <p className="text-[13px] md:text-[15px] text-[#86868b] leading-relaxed px-1">
-              Every volunteer hour creates lasting change.
+              Every hour creates lasting change.
             </p>
           </div>
 

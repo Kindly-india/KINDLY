@@ -13,7 +13,7 @@ export function HowItWorksSection() {
           <p className="text-[#059669] text-[12px] md:text-sm font-medium mb-1 md:mb-2 uppercase tracking-wide">How It Works</p>
           {/* Header: 28px for mobile prominence */}
           <h2 className="text-[28px] md:text-[56px] font-semibold text-[#1d1d1f] tracking-tight leading-tight">
-            Start helping in
+            Start in
             <br />
             three simple steps.
           </h2>

@@ -216,7 +216,7 @@ export function HeroSection() {
       </h1>
 
       <p className="text-base md:text-xl text-gray-500 text-center mt-4 md:mt-6 mb-10 md:mb-12 max-w-sm md:max-w-2xl font-medium">
-        Join a growing community of volunteers making a real impact.
+        Join a growing community making a real impact.
       </p>
 
       {/* Grid: 1 column on mobile for full-width cards, 2 columns on desktop */}

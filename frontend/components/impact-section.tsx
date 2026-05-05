@@ -33,7 +33,7 @@ function AnimatedCounter({ value, suffix }: { value: number; suffix: string }) {
 
 export function ImpactSection() {
   const [stats, setStats] = useState([
-    { value: 0, label: "Volunteers Connected", suffix: "+" },
+    { value: 0, label: "Individuals Connected", suffix: "+" },
     { value: 0, label: "Organisations", suffix: "+" },
     { value: 0, label: "Hours Contributed", suffix: "+" },
     { value: 0, label: "Cities Reached", suffix: "" },
