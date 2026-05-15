@@ -29,6 +29,7 @@ export function LoginPage() {
     
     // --- LOGIN STATE ---
     const [showPassword, setShowPassword] = useState(false)
+    const [isLoggingIn, setIsLoggingIn] = useState(false)
     
     // --- SPLASH STATE ---
     const [showSplash, setShowSplash] = useState(false)
@@ -43,6 +44,7 @@ export function LoginPage() {
     // --- HANDLERS ---
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault()
+        setIsLoggingIn(true)
         const formData = new FormData(e.currentTarget as HTMLFormElement)
 
         try {
@@ -86,6 +88,7 @@ export function LoginPage() {
                 ? 'Please verify your email address to continue.'
                 : raw || 'Login failed. Please check your credentials.'
             alert(msg)
+            setIsLoggingIn(false)
         }
     }
 
@@ -318,9 +321,16 @@ export function LoginPage() {
 
                                     <Button
                                         type="submit"
-                                        className="w-full h-12 md:h-14 bg-gradient-to-r from-[#ff6b6b] to-[#ee5a5a] hover:from-[#ff5252] hover:to-[#e04848] text-white text-[16px] md:text-[17px] font-bold rounded-xl mt-2 shadow-lg shadow-[#ff6b6b]/25 active:scale-[0.98] transition-all"
+                                        disabled={isLoggingIn}
+                                        className="w-full h-12 md:h-14 bg-gradient-to-r from-[#ff6b6b] to-[#ee5a5a] hover:from-[#ff5252] hover:to-[#e04848] text-white text-[16px] md:text-[17px] font-bold rounded-xl mt-2 shadow-lg shadow-[#ff6b6b]/25 active:scale-[0.98] transition-all disabled:opacity-70"
                                     >
-                                        Sign In
+                                        {isLoggingIn ? (
+                                            <span className="flex items-center gap-2">
+                                                <Loader2 className="w-5 h-5 animate-spin" /> Signing In...
+                                            </span>
+                                        ) : (
+                                            "Sign In"
+                                        )}
                                     </Button>
                                 </form>
 

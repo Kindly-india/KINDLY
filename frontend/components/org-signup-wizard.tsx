@@ -16,6 +16,7 @@ import {
   Shield,
   Eye,
   EyeOff,
+  Loader2,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -79,6 +80,7 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
     proofDocument?: string;
   }>({});
   const [uploading, setUploading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -99,6 +101,7 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
       return;
     }
 
+    setIsSubmitting(true);
     try {
       const data: any = {
         orgType: selectedOrg,
@@ -132,6 +135,7 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
       setCurrentView('success');
     } catch (error: any) {
       alert(error.message || 'Signup failed. Please try again.');
+      setIsSubmitting(false);
     }
   };
 
@@ -1031,9 +1035,16 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
 
               <Button
                 type="submit"
-                className="w-full h-10 md:h-12 bg-gradient-to-r from-[#ff6b6b] to-[#ee5a5a] hover:from-[#ff5252] hover:to-[#e04848] text-white text-[13px] md:text-[17px] font-medium rounded-full mt-3 md:mt-6 shadow-lg shadow-[#ff6b6b]/25"
+                disabled={isSubmitting || uploading}
+                className="w-full h-10 md:h-12 bg-gradient-to-r from-[#ff6b6b] to-[#ee5a5a] hover:from-[#ff5252] hover:to-[#e04848] text-white text-[13px] md:text-[17px] font-medium rounded-full mt-3 md:mt-6 shadow-lg shadow-[#ff6b6b]/25 disabled:opacity-70"
               >
-                Submit Application
+                {isSubmitting ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="w-5 h-5 animate-spin" /> Submitting...
+                  </span>
+                ) : (
+                  "Submit Application"
+                )}
               </Button>
             </form>
           </div>

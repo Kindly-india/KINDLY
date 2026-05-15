@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { ChevronRight, Eye, EyeOff, Heart, Building2, Sparkles, Users, Star, Mail } from "lucide-react"
+import { ChevronRight, Eye, EyeOff, Heart, Building2, Sparkles, Users, Star, Mail, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -83,6 +83,7 @@ export function HeroSection() {
   const [showPassword, setShowPassword] = useState(false)
   const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [city, setCity] = useState("Nashik")
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   if (selectedType === "volunteer") {
     if (verifiedEmail) return <VerificationCard email={verifiedEmail} />
@@ -122,6 +123,7 @@ export function HeroSection() {
                 onSubmit={async (e) => {
                   e.preventDefault();
                   if (!agreedToTerms) { alert('Please agree to terms'); return; }
+                  setIsSubmitting(true);
                   const formData = new FormData(e.currentTarget);
                   try {
                     const email = formData.get('email') as string
@@ -133,7 +135,10 @@ export function HeroSection() {
                       interests: [],
                     });
                     setVerifiedEmail(email)
-                  } catch (error: any) { toast.error(error.message || 'Signup failed.'); }
+                  } catch (error: any) {
+                    toast.error(error.message || 'Signup failed.');
+                    setIsSubmitting(false);
+                  }
                 }}
                 className="space-y-5"
               >
@@ -182,8 +187,14 @@ export function HeroSection() {
                   </Label>
                 </div>
 
-                <Button type="submit" disabled={!agreedToTerms} className="w-full h-12 md:h-14 bg-black text-white font-bold rounded-xl mt-4 active:scale-[0.98] transition-all">
-                  Create Account
+                <Button type="submit" disabled={!agreedToTerms || isSubmitting} className="w-full h-12 md:h-14 bg-black text-white font-bold rounded-xl mt-4 active:scale-[0.98] transition-all disabled:opacity-70">
+                  {isSubmitting ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="w-5 h-5 animate-spin" /> Creating Account...
+                    </span>
+                  ) : (
+                    "Create Account"
+                  )}
                 </Button>
               </form>
 
