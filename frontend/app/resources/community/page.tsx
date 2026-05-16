@@ -76,7 +76,7 @@ export default function CommunityPage() {
 
             {/* Instagram */}
             <a
-              href="https://www.instagram.com/kindly.co.in?igsh=MWw2bHh1OW51NzQz&utm_source=qr"
+              href="https://www.instagram.com/kindly.india?igsh=MWw2bHh1OW51NzQz&utm_source=qr"
               target="_blank"
               rel="noopener noreferrer"
               className="block border-2 border-gray-100 hover:border-pink-300 p-8 rounded-2xl transition-all group"
@@ -87,7 +87,7 @@ export default function CommunityPage() {
               <h3 className="text-xl font-bold text-[#1d1d1f] mb-2 group-hover:text-pink-600 transition-colors">Follow on Instagram</h3>
               <p className="text-gray-500 text-sm leading-relaxed mb-4">Stories from the ground. Event highlights. Community moments. Follow <span className="font-medium text-[#1d1d1f]">@kindly.co.in</span> for the human side of volunteering.</p>
               <div className="flex items-center gap-1.5 text-pink-600 text-sm font-bold">
-                <span>@kindly.co.in</span>
+                <span>@kindly.india</span>
                 <ExternalLink className="w-3.5 h-3.5" />
               </div>
             </a>
@@ -204,7 +204,7 @@ export default function CommunityPage() {
               Join as a Volunteer
             </a>
             <a
-              href="https://www.instagram.com/kindly.co.in?igsh=MWw2bHh1OW51NzQz&utm_source=qr"
+              href="https://www.instagram.com/kindly.india?igsh=MWw2bHh1OW51NzQz&utm_source=qr"
               target="_blank"
               rel="noopener noreferrer"
               className="h-12 px-8 border-2 border-gray-200 hover:border-pink-300 text-[#1d1d1f] text-[15px] font-bold rounded-full inline-flex items-center gap-2 justify-center transition-colors"
