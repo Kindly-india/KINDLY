@@ -38,7 +38,7 @@ const stories = [
     quote: "It starts as one event. Somehow it becomes the plan for every weekend.",
     author: "Aditya Dhongade",
     role: "Co-Founder - Kindly",
-    image: "IMG_0138.JPG",
+    image: "disha.jpg",
   },
   {
     id: 3,
