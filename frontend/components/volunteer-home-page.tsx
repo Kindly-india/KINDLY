@@ -38,28 +38,28 @@ const stories = [
     quote: "It starts as one event. Somehow it becomes the plan for every weekend.",
     author: "Aditya Dhongade",
     role: "Co-Founder - Kindly",
-    image: "IMG_1891.JPG",
+    image: "IMG_0138.JPG",
   },
   {
     id: 3,
     quote: "Less time on the feed. More time actually living it.",
     author: "Sarah Jenkins",
     role: "Animal Shelter Volunteer",
-    image: "dclassic 2024-08-04 213104.880.JPG",
+    image: "garbage.JPG",
   },
   {
     id: 4,
     quote: "Stay for the events. Live for the afters.",
     author: "Rahul Verma",
     role: "Community Leader",
-    image: "IMG_8180.JPG",
+    image: "dclassic 2024-08-04 213104.880.JPG",
   },
   {
     id: 5,
     quote: "You come for the cause. You stay for the people.",
     author: "Neha Gupta",
     role: "Elderly Care Assistant",
-    image: "201154.JPG",
+    image: "IMG_8180.JPG",
   },
   {
     id: 6,
@@ -68,7 +68,7 @@ const stories = [
     role: "Medical Volunteer",
     category: "Health",
     categoryColor: "bg-red-500",
-    image: "IMG_8180.JPG",
+    image: "nurse.JPG",
   },
 ]
 
