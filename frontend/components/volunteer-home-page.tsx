@@ -45,14 +45,14 @@ const stories = [
     quote: "Less time on the feed. More time actually living it.",
     author: "Sarah Jenkins",
     role: "Animal Shelter Volunteer",
-    image: "garbage.JPG",
+    image: "IMG_6205.jpg",
   },
   {
     id: 4,
-    quote: "Stay for the events. Live for the afters.",
+    quote: "Connections through shared efforts.",
     author: "Rahul Verma",
     role: "Community Leader",
-    image: "dclassic 2024-08-04 213104.880.JPG",
+    image: "IMG_7299.JEPG",
   },
   {
     id: 5,
@@ -63,12 +63,12 @@ const stories = [
   },
   {
     id: 6,
-    quote: "Connections through shared efforts",
+    quote: "Stay for the events. Live for the afters.",
     author: "Dr. Arjun K.",
     role: "Medical Volunteer",
     category: "Health",
     categoryColor: "bg-red-500",
-    image: "nurse.JPG",
+    image: "dclassic 2024-08-04 213104.880.JPG",
   },
 ]
 
