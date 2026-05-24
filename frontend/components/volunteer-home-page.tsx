@@ -52,7 +52,7 @@ const stories = [
     quote: "Connections through shared efforts.",
     author: "Rahul Verma",
     role: "Community Leader",
-    image: "IMG_7299.JEPG",
+    image: "IMG_7299.JPEG",
   },
   {
     id: 5,
