@@ -236,7 +236,7 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
       return {
         ...event,
         registered_count: registrations.length,
-        checked_in_count: registrations.filter((r: any) => r.status === 'checked_in').length,
+        checked_in_count: registrations.filter((r: any) => r.status === 'checked_in' || r.status === 'completed').length,
         event_registrations: undefined
       };
     });

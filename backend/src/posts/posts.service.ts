@@ -73,7 +73,85 @@ export class PostsService {
     return post;
   }
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // PRIVATE HELPER: privacy gate for a single post
+  // Accepts a post row that already includes the volunteer join with is_private.
+  // Throws ForbiddenException if the viewer cannot see the post.
+  // ─────────────────────────────────────────────────────────────────────────
+  private async assertCanViewPost(
+    post: any,
+    viewerUserId: string | null,
+    client: any,
+  ): Promise<void> {
+    const vol = post.volunteer as any;
+    if (!vol?.is_private) return; // public account — no restriction
+
+    const authorUserId = vol.user_id;
+    if (viewerUserId && viewerUserId === authorUserId) return; // own post
+
+    if (viewerUserId) {
+      const { data: fr } = await client
+        .from('follows')
+        .select('id')
+        .eq('follower_id', viewerUserId)
+        .eq('following_id', authorUserId)
+        .eq('status', 'accepted')
+        .maybeSingle();
+      if (fr) return; // accepted follower
+    }
+
+    throw new ForbiddenException('This post is from a private account');
+  }
+
+  // Lightweight gate when we only have a post ID (no pre-fetched volunteer join).
+  // Runs two small indexed lookups. Use for like/comment/getComments/getPostLikes.
+  private async assertCanViewPostById(
+    postId: string,
+    viewerUserId: string | null,
+    client: any,
+  ): Promise<void> {
+    const { data: post } = await client
+      .from('posts')
+      .select('volunteer_id')
+      .eq('id', postId)
+      .maybeSingle();
+
+    if (!post) throw new NotFoundException('Post not found');
+
+    const { data: vol } = await client
+      .from('volunteer_profiles')
+      .select('user_id, is_private')
+      .eq('id', post.volunteer_id)
+      .maybeSingle();
+
+    if (!vol?.is_private) return; // public account
+
+    const authorUserId = vol.user_id;
+    if (viewerUserId && viewerUserId === authorUserId) return; // own post
+
+    if (viewerUserId) {
+      const { data: fr } = await client
+        .from('follows')
+        .select('id')
+        .eq('follower_id', viewerUserId)
+        .eq('following_id', authorUserId)
+        .eq('status', 'accepted')
+        .maybeSingle();
+      if (fr) return;
+    }
+
+    throw new ForbiddenException('This post is from a private account');
+  }
+
   // --- FEED ---
+  // Ranking rule:
+  //   Tier 1 (high) — viewer's own posts + accepted-followed accounts (public OR private)
+  //   Tier 2 (low)  — public accounts the viewer does NOT follow
+  //   Hidden        — private accounts the viewer does NOT have an accepted follow with
+  //
+  // Within each tier posts are ordered by created_at DESC (as returned by the DB).
+  // We fetch a large batch (FEED_BATCH) in one query, rank in JS, then slice the page.
+  // This approach is correct and fast at KINDLY's current user scale.
   async getFeed(userId: string, page = 1, limit = 20) {
     const client = this.supabase.getClient();
 
@@ -85,7 +163,7 @@ export class PostsService {
 
     if (!viewerProfile) throw new ForbiddenException('Profile not found');
 
-    // Followed user_ids (auth UUIDs)
+    // 1. Accepted-followed user IDs (auth UUIDs)
     const { data: followedRows } = await client
       .from('follows')
       .select('following_id')
@@ -94,50 +172,77 @@ export class PostsService {
 
     const followedUserIds = (followedRows ?? []).map((f: any) => f.following_id);
 
-    // Resolve to volunteer_profiles.id (profile PKs)
+    // 2. Resolve followed user IDs → volunteer profile PKs
     let followedProfileIds: string[] = [];
     if (followedUserIds.length > 0) {
-      const { data: followedProfiles } = await client
+      const { data: fp } = await client
         .from('volunteer_profiles')
         .select('id')
         .in('user_id', followedUserIds);
-      followedProfileIds = (followedProfiles ?? []).map((p: any) => p.id);
+      followedProfileIds = (fp ?? []).map((p: any) => p.id);
     }
 
-    const allProfileIds = [...new Set([viewerProfile.id, ...followedProfileIds])];
-    const offset = (page - 1) * limit;
+    // High-priority set: viewer's own profile + accepted follows (includes private accounts)
+    const highPriorityProfileIds = [...new Set([viewerProfile.id, ...followedProfileIds])];
+    const highPrioritySet = new Set(highPriorityProfileIds);
 
-    const { data: posts, error } = await client
+    // 3. Public profiles the viewer does NOT follow (low-priority)
+    //    Cap at 500 rows — just UUIDs, very small payload.
+    const { data: allPublicProfiles } = await client
+      .from('volunteer_profiles')
+      .select('id, user_id')
+      .eq('is_private', false)
+      .limit(500);
+
+    const excludeUserIdSet = new Set([userId, ...followedUserIds]);
+    const publicNonFollowedProfileIds = (allPublicProfiles ?? [])
+      .filter((p: any) => !excludeUserIdSet.has(p.user_id))
+      .map((p: any) => p.id);
+
+    // 4. Union of all eligible profile IDs for the single DB query
+    const allEligibleIds = [...new Set([...highPriorityProfileIds, ...publicNonFollowedProfileIds])];
+
+    if (!allEligibleIds.length) return { posts: [], page, limit };
+
+    // 5. Fetch a large recent batch; sort in JS for correct tier ordering.
+    //    FEED_BATCH covers ~15 pages of 20 posts. Adjust if needed.
+    const FEED_BATCH = 300;
+    const { data: rawPosts, error } = await client
       .from('posts')
       .select(`
         id, volunteer_id, event_id, photo_urls, caption, created_at,
         volunteer:volunteer_profiles(id, user_id, full_name, avatar_url, is_verified),
         event:events(id, title)
       `)
-      .in('volunteer_id', allProfileIds)
+      .in('volunteer_id', allEligibleIds)
       .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1);
+      .limit(FEED_BATCH);
 
     if (error) throw new BadRequestException(error.message);
 
-    const postIds = (posts ?? []).map((p: any) => p.id);
-    if (!postIds.length) return { posts: [], page, limit };
+    // 6. Two-tier ranking: followed+self first (already sorted by DB), then public
+    const highGroup = (rawPosts ?? []).filter((p: any) => highPrioritySet.has(p.volunteer_id));
+    const lowGroup  = (rawPosts ?? []).filter((p: any) => !highPrioritySet.has(p.volunteer_id));
+    const ranked = [...highGroup, ...lowGroup];
 
-    // Batch-fetch like counts and viewer's own likes in parallel
-    const [{ data: allLikes }, { data: viewerLikes }] = await Promise.all([
+    // 7. Paginate the ranked list
+    const offset = (page - 1) * limit;
+    const posts = ranked.slice(offset, offset + limit);
+
+    if (!posts.length) return { posts: [], page, limit };
+
+    // 8. Batch-fetch engagement data only for the current page's posts
+    const postIds = posts.map((p: any) => p.id);
+
+    const [{ data: allLikes }, { data: viewerLikes }, { data: allComments }] = await Promise.all([
       client.from('post_likes').select('post_id').in('post_id', postIds),
       client
         .from('post_likes')
         .select('post_id')
         .in('post_id', postIds)
         .eq('volunteer_id', viewerProfile.id),
+      client.from('post_comments').select('post_id').in('post_id', postIds),
     ]);
-
-    // Batch-fetch comment counts
-    const { data: allComments } = await client
-      .from('post_comments')
-      .select('post_id')
-      .in('post_id', postIds);
 
     const likeCountMap: Record<string, number> = {};
     for (const l of allLikes ?? []) {
@@ -150,7 +255,7 @@ export class PostsService {
     const viewerLikedSet = new Set((viewerLikes ?? []).map((l: any) => l.post_id));
 
     return {
-      posts: (posts ?? []).map((p: any) => ({
+      posts: posts.map((p: any) => ({
         ...p,
         like_count: likeCountMap[p.id] ?? 0,
         comment_count: commentCountMap[p.id] ?? 0,
@@ -165,17 +270,22 @@ export class PostsService {
   async getPost(postId: string, userId: string | null) {
     const client = this.supabase.getClient();
 
+    // Include is_private so the privacy gate can inspect it without an extra round-trip.
     const { data: post } = await client
       .from('posts')
       .select(`
         id, volunteer_id, event_id, photo_urls, caption, created_at,
-        volunteer:volunteer_profiles(id, user_id, full_name, avatar_url, is_verified),
+        volunteer:volunteer_profiles(id, user_id, full_name, avatar_url, is_verified, is_private),
         event:events(id, title)
       `)
       .eq('id', postId)
       .maybeSingle();
 
     if (!post) throw new NotFoundException('Post not found');
+
+    // ── Privacy gate (Bouncer) ─────────────────────────────────────────────
+    await this.assertCanViewPost(post, userId, client);
+    // ──────────────────────────────────────────────────────────────────────
 
     // Viewer profile for like status
     let viewerProfileId: string | null = null;
@@ -201,8 +311,12 @@ export class PostsService {
         .limit(100),
     ]);
 
+    // Strip internal privacy field before returning to the client
+    const { is_private: _priv, ...volunteerPublic } = (post.volunteer as any) ?? {};
+
     return {
       ...post,
+      volunteer: volunteerPublic,
       like_count: (likes ?? []).length,
       viewer_has_liked: viewerProfileId
         ? (likes ?? []).some((l: any) => l.volunteer_id === viewerProfileId)
@@ -250,6 +364,10 @@ export class PostsService {
       .maybeSingle();
 
     if (!profile) throw new ForbiddenException('Profile not found');
+
+    // ── Privacy gate: cannot like posts from private accounts you don't follow ──
+    await this.assertCanViewPostById(postId, userId, client);
+    // ─────────────────────────────────────────────────────────────────────────
 
     const { data: post } = await client
       .from('posts')
@@ -372,8 +490,12 @@ export class PostsService {
   }
 
   // --- COMMENTS ---
-  async getComments(postId: string) {
+  async getComments(postId: string, viewerUserId: string | null = null) {
     const client = this.supabase.getClient();
+
+    // ── Privacy gate ──────────────────────────────────────────────────────
+    await this.assertCanViewPostById(postId, viewerUserId, client);
+    // ─────────────────────────────────────────────────────────────────────
 
     const { data: comments, error } = await client
       .from('post_comments')
@@ -440,6 +562,10 @@ export class PostsService {
       .maybeSingle();
 
     if (!profile) throw new ForbiddenException('Profile not found');
+
+    // ── Privacy gate: cannot comment on posts from private accounts you don't follow ──
+    await this.assertCanViewPostById(postId, userId, client);
+    // ──────────────────────────────────────────────────────────────────────────────────
 
     const { data: post } = await client
       .from('posts')
@@ -553,8 +679,13 @@ export class PostsService {
   }
 
   // --- POST LIKES LIST ---
-  async getPostLikes(postId: string) {
+  async getPostLikes(postId: string, viewerUserId: string | null = null) {
     const client = this.supabase.getClient();
+
+    // ── Privacy gate: cannot view likes on posts from private accounts ──
+    // (assertCanViewPostById also verifies the post exists)
+    await this.assertCanViewPostById(postId, viewerUserId, client);
+    // ────────────────────────────────────────────────────────────────────
 
     const { data: post } = await client
       .from('posts')

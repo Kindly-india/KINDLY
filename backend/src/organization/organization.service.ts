@@ -123,13 +123,13 @@ export class OrganizationService {
     const { data: attendedRegs } = eventIds.length
       ? await client
           .from('event_registrations')
-          .select('event_id, user_id')
+          .select('event_id, volunteer_id')
           .in('event_id', eventIds)
           .in('status', ['completed', 'checked_in'])
       : { data: [] };
 
     const eventsHosted = completedEvents?.length ?? 0;
-    const volunteersEngaged = new Set((attendedRegs || []).map((r: any) => r.user_id)).size;
+    const volunteersEngaged = new Set((attendedRegs || []).map((r: any) => r.volunteer_id)).size;
 
     let totalHours = 0;
     for (const ev of completedEvents || []) {

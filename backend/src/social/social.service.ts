@@ -510,7 +510,6 @@ export class SocialService {
       .from('event_registrations')
       .select(`
         volunteer_id,
-        hours_contributed,
         events ( start_time, end_time, status )
       `)
       .in('volunteer_id', profileIds)
@@ -519,8 +518,8 @@ export class SocialService {
     const hoursMap: Record<string, number> = {};
     for (const reg of (allRegs ?? []) as any[]) {
       if (reg.events?.status === 'cancelled') continue;
-      let hrs = reg.hours_contributed || 0;
-      if (!hrs && reg.events?.start_time && reg.events?.end_time) {
+      let hrs = 0;
+      if (reg.events?.start_time && reg.events?.end_time) {
         const [sh, sm] = reg.events.start_time.split(':').map(Number);
         const [eh, em] = reg.events.end_time.split(':').map(Number);
         hrs = Math.max(0, (eh * 60 + em) - (sh * 60 + sm)) / 60;

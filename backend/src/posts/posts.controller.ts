@@ -39,8 +39,8 @@ export class PostsController {
   // List of volunteers who liked a post
   @UseGuards(OptionalAuthGuard)
   @Get(':id/likes')
-  async getPostLikes(@Param('id') id: string) {
-    return this.postsService.getPostLikes(id);
+  async getPostLikes(@Request() req: any, @Param('id') id: string) {
+    return this.postsService.getPostLikes(id, req.user?.id ?? null);
   }
 
   // Single post detail with comments
@@ -67,8 +67,8 @@ export class PostsController {
   // Get all comments for a post
   @UseGuards(OptionalAuthGuard)
   @Get(':id/comments')
-  async getComments(@Param('id') id: string) {
-    return this.postsService.getComments(id);
+  async getComments(@Request() req: any, @Param('id') id: string) {
+    return this.postsService.getComments(id, req.user?.id ?? null);
   }
 
   // Delete a comment (comment author OR post owner)
