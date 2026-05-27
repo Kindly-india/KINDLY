@@ -12,6 +12,7 @@ import {
   Star, Award
 } from "lucide-react"
 import { api, VolunteerCertificate, ShowcaseData } from "@/lib/api"
+import { downloadFromUrl } from "@/lib/utils"
 
 type AccessState = 'loading' | 'full' | 'waiting' | 'redirecting'
 
@@ -35,6 +36,9 @@ export default function EventShowcasePage() {
   // Certificate state
   const [cert, setCert] = useState<VolunteerCertificate | null>(null)
   const [downloadingCert, setDownloadingCert] = useState(false)
+
+  // Gallery lightbox
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
 
   useEffect(() => {
     const loadData = async () => {
@@ -122,7 +126,7 @@ export default function EventShowcasePage() {
     setDownloadingCert(true)
     try {
       const { signedUrl } = await api.downloadCertificate(cert.id)
-      window.open(signedUrl, '_blank')
+      await downloadFromUrl(signedUrl, 'kindly-certificate.pdf')
     } catch (err: any) {
       alert(err.message || 'Failed to get download link')
     } finally {
@@ -219,6 +223,27 @@ export default function EventShowcasePage() {
   return (
     <div className="min-h-screen bg-white pb-20">
 
+      {/* Gallery Lightbox */}
+      {lightboxUrl && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+          onClick={() => setLightboxUrl(null)}
+        >
+          <button
+            className="absolute top-4 right-4 p-2 text-white/70 hover:text-white bg-white/10 rounded-full transition-colors"
+            onClick={() => setLightboxUrl(null)}
+          >
+            <X className="w-6 h-6" />
+          </button>
+          <img
+            src={lightboxUrl}
+            alt="Full size"
+            className="max-w-full max-h-[90vh] rounded-xl object-contain shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
+
       {/* HERO SECTION */}
       <div className="relative h-[50vh] md:h-[60vh] w-full bg-gray-900">
         <img src={event.cover_image_url || "/placeholder-event.jpg"} alt={event.title} className="absolute inset-0 w-full h-full object-cover opacity-60" />
@@ -278,8 +303,13 @@ export default function EventShowcasePage() {
               {displayImages.length > 0 ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
                   {displayImages.map((src, idx) => (
-                    <div key={idx} className={`relative rounded-xl overflow-hidden shadow-sm aspect-square`}>
-                      <img src={src} className="w-full h-full object-cover" />
+                    <div
+                      key={idx}
+                      className="relative rounded-xl overflow-hidden shadow-sm aspect-square cursor-pointer group"
+                      onClick={() => setLightboxUrl(src)}
+                    >
+                      <img src={src} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
                     </div>
                   ))}
                 </div>

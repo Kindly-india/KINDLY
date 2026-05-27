@@ -74,7 +74,7 @@ export class CertificateService {
   // ─────────────────────────────────────────────
   // 1. issueForEvent — combined org/admin auth check + generation
   // ─────────────────────────────────────────────
-  async issueForEvent(userId: string, eventId: string) {
+  async issueForEvent(userId: string, eventId: string, volunteerUserIds?: string[]) {
     const supabase = this.supabaseService.getClient();
 
     // Check if admin
@@ -126,7 +126,7 @@ export class CertificateService {
       );
     }
 
-    const result = await this.generateForEvent(eventId);
+    const result = await this.generateForEvent(eventId, volunteerUserIds);
 
     // Keep the backward-compat flag updated
     await supabase
@@ -140,8 +140,13 @@ export class CertificateService {
   // ─────────────────────────────────────────────
   // 2. generateForEvent — core generation loop, idempotent
   // ─────────────────────────────────────────────
+  /**
+   * @param volunteerUserIds When provided, only issue certificates for these
+   * volunteer user IDs (auth.uid). When omitted, issue for all checked-in volunteers.
+   */
   async generateForEvent(
     eventId: string,
+    volunteerUserIds?: string[],
   ): Promise<{ issued: number; skipped: number; failed: number; total: number }> {
     const supabase = this.supabaseService.getClient();
 
@@ -162,14 +167,26 @@ export class CertificateService {
     );
 
     // Fetch eligible registrations
-    const { data: registrations, error: regError } = await supabase
+    const { data: allRegistrations, error: regError } = await supabase
       .from('event_registrations')
-      .select('id, volunteer_id, volunteer_profiles(id, full_name)')
+      .select('id, volunteer_id, volunteer_profiles(id, user_id, full_name)')
       .eq('event_id', eventId)
       .in('status', ['checked_in', 'completed']);
 
     if (regError) throw new InternalServerErrorException(regError.message);
-    if (!registrations?.length) {
+    if (!allRegistrations?.length) {
+      return { issued: 0, skipped: 0, failed: 0, total: 0 };
+    }
+
+    // When volunteerUserIds is specified, filter to only the selected volunteers
+    const registrations = volunteerUserIds?.length
+      ? allRegistrations.filter((r: any) => {
+          const userIdOnProfile = r.volunteer_profiles?.user_id;
+          return userIdOnProfile && volunteerUserIds.includes(userIdOnProfile);
+        })
+      : allRegistrations;
+
+    if (!registrations.length) {
       return { issued: 0, skipped: 0, failed: 0, total: 0 };
     }
 

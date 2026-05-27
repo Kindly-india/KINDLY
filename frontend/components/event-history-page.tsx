@@ -16,6 +16,7 @@ import {
 import { api } from "@/lib/api"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
+import { downloadFromUrl } from "@/lib/utils"
 
 type FilterType = "all" | "attended" | "missed" | "cancelled" | "registered"
 
@@ -198,7 +199,7 @@ export function EventHistoryPage() {
     setDownloadingCertId(certId)
     try {
       const { signedUrl } = await api.downloadCertificate(certId)
-      window.open(signedUrl, '_blank')
+      await downloadFromUrl(signedUrl, 'kindly-certificate.pdf')
     } catch (err: any) {
       alert(err.message || "Failed to get download link")
     } finally {

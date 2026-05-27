@@ -3,11 +3,15 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Body,
   Param,
   UseGuards,
-  Request
+  Request,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { OrganizationService } from './organization.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { OptionalAuthGuard } from '../auth/guards/optional-auth.guard';
@@ -74,5 +78,34 @@ export class OrganizationController {
   @Post('reviews')
   async addReview(@Request() req: any, @Body() dto: AddReviewDto) {
     return this.organizationService.addReview(req.user.id, dto);
+  }
+
+  // ─── Action Gallery ────────────────────────────────────────────────────────
+
+  // GET /organizations/:id/gallery — public
+  @Get(':id/gallery')
+  async getOrgGallery(@Param('id') id: string) {
+    return this.organizationService.getOrgGallery(id);
+  }
+
+  // POST /organizations/gallery — org owner only
+  @UseGuards(JwtAuthGuard)
+  @Post('gallery')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadOrgGalleryPhoto(
+    @Request() req: any,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.organizationService.addToOrgGallery(req.user.id, file);
+  }
+
+  // DELETE /organizations/gallery/:photoId — org owner only
+  @UseGuards(JwtAuthGuard)
+  @Delete('gallery/:photoId')
+  async deleteOrgGalleryPhoto(
+    @Request() req: any,
+    @Param('photoId') photoId: string,
+  ) {
+    return this.organizationService.deleteFromOrgGallery(req.user.id, photoId);
   }
 }

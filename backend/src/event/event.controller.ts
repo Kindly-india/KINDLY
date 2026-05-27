@@ -117,10 +117,21 @@ export class EventController {
   }
 
   // Issue certificates for an event (org owner or admin)
+  // Body is optional: { volunteerUserIds?: string[] }
+  // When volunteerUserIds is present, only those volunteers receive a certificate.
+  // When absent, all checked-in volunteers receive one.
   @Post(':id/certificates/issue')
   @UseGuards(JwtAuthGuard)
-  async issueCertificates(@Request() req: any, @Param('id') id: string) {
-    return this.certificateService.issueForEvent(req.user.id, id);
+  async issueCertificates(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body() body?: { volunteerUserIds?: string[] },
+  ) {
+    return this.certificateService.issueForEvent(
+      req.user.id,
+      id,
+      body?.volunteerUserIds?.length ? body.volunteerUserIds : undefined,
+    );
   }
 
   // List all certificates for an event (org owner or admin)

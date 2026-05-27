@@ -4,13 +4,12 @@ import { useEffect, useState } from "react"
 import { api } from "@/lib/api"
 import { 
   Loader2,
-  Award, 
-  Clock, 
-  Heart, 
-  CheckCircle2, 
-  Zap, 
-  Globe, 
-  Download, 
+  Award,
+  Clock,
+  Heart,
+  CheckCircle2,
+  Zap,
+  Globe,
   Share2,
 } from "lucide-react"
 import { 
@@ -226,7 +225,7 @@ useEffect(() => {
         {/* DETAILED ANALYSIS GRID */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
            
-           {/* LEFT COL: SKILLS & SDGs */}
+           {/* LEFT COL: SKILLS */}
            <div className="space-y-6">
               {/* SKILLS */}
               <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
@@ -244,21 +243,6 @@ useEffect(() => {
                  )}
               </div>
 
-              {/* SDGs */}
-              <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
-                 <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2"><Globe className="w-5 h-5 text-blue-500" /> UN SDGs Supported</h3>
-                 {stats.sdgs.length > 0 ? (
-                   <div className="space-y-2">
-                     {stats.sdgs.map((sdg, i) => (
-                       <div key={i} className="flex items-center gap-2 text-sm text-gray-600">
-                         <div className="w-2 h-2 rounded-full bg-blue-500" /> {sdg}
-                       </div>
-                     ))}
-                   </div>
-                 ) : (
-                   <p className="text-sm text-gray-400 italic">No specific SDG data yet.</p>
-                 )}
-              </div>
            </div>
 
            {/* MIDDLE COL: CHARTS */}
@@ -279,38 +263,25 @@ useEffect(() => {
               </div>
 
               {/* CAUSES BREAKDOWN */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                 <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
-                    <h3 className="font-bold text-gray-900 mb-4">Top Causes</h3>
-                    <div className="h-48 flex items-center justify-center">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          {stats.causesBreakdown.length > 0 ? (
-                              <Pie data={stats.causesBreakdown} innerRadius={50} outerRadius={70} paddingAngle={5} dataKey="value">
-                                {stats.causesBreakdown.map((entry, index) => (
-                                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                ))}
-                              </Pie>
-                          ) : (
-                              <Pie data={[{ name: 'None', value: 1 }]} innerRadius={50} outerRadius={70} dataKey="value">
-                                  <Cell fill="#f3f4f6" />
-                              </Pie>
-                          )}
-                          <Tooltip />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </div>
-                 </div>
-
-                 <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col justify-center items-center text-center">
-                    <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-4">
-                       <Award className="w-8 h-8 text-blue-600" />
-                    </div>
-                    <h3 className="font-bold text-gray-900">Certificate Ready</h3>
-                    <p className="text-xs text-gray-500 mt-1 mb-4">You have pending certificates for your verified hours.</p>
-                    <button className="px-4 py-2 bg-gray-900 text-white text-xs font-bold rounded-full flex items-center gap-2 hover:bg-black transition-colors">
-                       <Download className="w-3.5 h-3.5" /> Download
-                    </button>
+              <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+                 <h3 className="font-bold text-gray-900 mb-4">Top Causes</h3>
+                 <div className="h-48 flex items-center justify-center">
+                   <ResponsiveContainer width="100%" height="100%">
+                     <PieChart>
+                       {stats.causesBreakdown.length > 0 ? (
+                           <Pie data={stats.causesBreakdown} innerRadius={50} outerRadius={70} paddingAngle={5} dataKey="value">
+                             {stats.causesBreakdown.map((entry, index) => (
+                               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                             ))}
+                           </Pie>
+                       ) : (
+                           <Pie data={[{ name: 'None', value: 1 }]} innerRadius={50} outerRadius={70} dataKey="value">
+                               <Cell fill="#f3f4f6" />
+                           </Pie>
+                       )}
+                       <Tooltip />
+                     </PieChart>
+                   </ResponsiveContainer>
                  </div>
               </div>
            </div>

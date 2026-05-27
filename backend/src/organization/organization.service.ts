@@ -3,6 +3,7 @@ import { SupabaseService } from '../supabase/supabase.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { UpdateOrganizationProfileDto } from './dto/update-organization-profile.dto';
 import { AddReviewDto } from './dto/add-review.dto';
+import { validateImageFile } from '../common/file-validation.util';
 
 export interface OrgProfilePublic {
   id: string;
@@ -124,7 +125,7 @@ export class OrganizationService {
           .from('event_registrations')
           .select('event_id, user_id')
           .in('event_id', eventIds)
-          .in('registration_status', ['completed', 'checked_in'])
+          .in('status', ['completed', 'checked_in'])
       : { data: [] };
 
     const eventsHosted = completedEvents?.length ?? 0;
@@ -353,5 +354,83 @@ export class OrganizationService {
 
     if (error) throw error;
     return { review: data };
+  }
+
+  // ─────────────────────────────────────────────
+  // ORG ACTION GALLERY
+  // Requires: run backend/migrations/add_org_gallery.sql in Supabase first.
+  // ─────────────────────────────────────────────
+
+  /** GET /organizations/:id/gallery — public */
+  async getOrgGallery(orgId: string) {
+    const client = this.supabase.getClient();
+
+    // orgId may be either the profile UUID or a user_id — resolve to profile id
+    const { data: profile } = await client
+      .from('organization_profiles')
+      .select('id')
+      .or(`id.eq.${orgId},user_id.eq.${orgId}`)
+      .maybeSingle();
+
+    const resolvedOrgId = profile?.id ?? orgId;
+
+    const { data, error } = await client
+      .from('org_gallery')
+      .select('id, image_url, caption, created_at')
+      .eq('org_id', resolvedOrgId)
+      .order('created_at', { ascending: false });
+
+    if (error) return [];
+    return data;
+  }
+
+  /** POST /organizations/gallery — auth required, org only */
+  async addToOrgGallery(userId: string, file: Express.Multer.File, caption?: string) {
+    validateImageFile(file);
+    const client = this.supabase.getClient();
+
+    const { data: orgProfile, error: profileError } = await client
+      .from('organization_profiles')
+      .select('id')
+      .eq('user_id', userId)
+      .single();
+
+    if (profileError || !orgProfile) throw new ForbiddenException('Organization profile not found');
+
+    const fileName = `org/${orgProfile.id}/${Date.now()}-${file.originalname}`;
+    const { error: uploadError } = await client
+      .storage
+      .from('gallery_images')
+      .upload(fileName, file.buffer, { contentType: file.mimetype, upsert: false });
+
+    if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
+
+    const { data: { publicUrl } } = client
+      .storage
+      .from('gallery_images')
+      .getPublicUrl(fileName);
+
+    const { data, error } = await client
+      .from('org_gallery')
+      .insert({ org_id: orgProfile.id, user_id: userId, image_url: publicUrl, caption })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
+  /** DELETE /organizations/gallery/:photoId — auth required, org owner only */
+  async deleteFromOrgGallery(userId: string, photoId: string) {
+    const client = this.supabase.getClient();
+
+    const { error } = await client
+      .from('org_gallery')
+      .delete()
+      .eq('id', photoId)
+      .eq('user_id', userId);
+
+    if (error) throw error;
+    return { success: true };
   }
 }

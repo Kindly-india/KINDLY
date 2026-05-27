@@ -34,7 +34,7 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { api, VolunteerCertificate } from "@/lib/api"
-import { cn } from "@/lib/utils"
+import { cn, downloadFromUrl } from "@/lib/utils"
 
 // Define formats outside to prevent re-renders in the scanner
 const QR_FORMATS: any = ['qr_code']
@@ -184,7 +184,7 @@ export default function RegisteredEventDetailPage() {
     setDownloadingCert(true)
     try {
       const { signedUrl } = await api.downloadCertificate(cert.id)
-      window.open(signedUrl, '_blank')
+      await downloadFromUrl(signedUrl, 'kindly-certificate.pdf')
     } catch (err: any) {
       alert(err.message || "Failed to get download link")
     } finally {

@@ -480,6 +480,7 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
         checked_in_at,
         volunteer_profiles (
           id,
+          user_id,
           full_name,
           phone,
           city,

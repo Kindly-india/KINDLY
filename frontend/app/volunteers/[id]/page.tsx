@@ -52,6 +52,7 @@ function Testimonials({ journey }: { journey: any[] }) {
 function ActionGallery({ userId, isOwnProfile }: { userId: string, isOwnProfile: boolean }) {
   const [photos, setPhotos] = useState<any[]>([])
   const [uploading, setUploading] = useState(false)
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -89,50 +90,77 @@ function ActionGallery({ userId, isOwnProfile }: { userId: string, isOwnProfile:
   if (!photos.length && !isOwnProfile) return null;
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-          <ImageIcon className="w-5 h-5 text-pink-500" /> Action Gallery
-        </h3>
-        {isOwnProfile && (
+    <>
+      {/* Lightbox overlay */}
+      {lightboxUrl && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+          onClick={() => setLightboxUrl(null)}
+        >
           <button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
-            className="text-xs flex items-center gap-1 bg-black text-white px-3 py-1.5 rounded-full hover:bg-gray-800 transition-colors"
+            className="absolute top-4 right-4 p-2 text-white/70 hover:text-white bg-white/10 rounded-full transition-colors"
+            onClick={() => setLightboxUrl(null)}
           >
-            {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
-            Add Photo
+            <X className="w-6 h-6" />
           </button>
-        )}
-        <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleUpload} />
-      </div>
-
-      {photos.length === 0 ? (
-        <div className="text-center py-8 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-          <ImageIcon className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-          <p className="text-xs text-gray-500">Share moments from your volunteering drives.</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {photos.map((photo) => (
-            <div key={photo.id} className="group relative aspect-square rounded-xl overflow-hidden bg-gray-100">
-              <img src={photo.image_url} alt="Gallery" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-
-              {isOwnProfile && (
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                  <button
-                    onClick={() => handleDelete(photo.id)}
-                    className="p-2 bg-red-500/80 backdrop-blur rounded-full text-white hover:bg-red-600 transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              )}
-            </div>
-          ))}
+          <img
+            src={lightboxUrl}
+            alt="Full size"
+            className="max-w-full max-h-[90vh] rounded-xl object-contain shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
         </div>
       )}
-    </div>
+
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+            <ImageIcon className="w-5 h-5 text-pink-500" /> Action Gallery
+          </h3>
+          {isOwnProfile && (
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="text-xs flex items-center gap-1 bg-black text-white px-3 py-1.5 rounded-full hover:bg-gray-800 transition-colors"
+            >
+              {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
+              Add Photo
+            </button>
+          )}
+          <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleUpload} />
+        </div>
+
+        {photos.length === 0 ? (
+          <div className="text-center py-8 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+            <ImageIcon className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+            <p className="text-xs text-gray-500">Share moments from your volunteering drives.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {photos.map((photo) => (
+              <div
+                key={photo.id}
+                className="group relative aspect-square rounded-xl overflow-hidden bg-gray-100 cursor-pointer"
+                onClick={() => setLightboxUrl(photo.image_url)}
+              >
+                <img src={photo.image_url} alt="Gallery" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+
+                {isOwnProfile && (
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleDelete(photo.id); }}
+                      className="p-2 bg-red-500/80 backdrop-blur rounded-full text-white hover:bg-red-600 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </>
   )
 }
 

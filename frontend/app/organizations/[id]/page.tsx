@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import {
@@ -8,7 +8,8 @@ import {
   Mail, Phone, UserPlus, UserMinus,
   Share2, Linkedin, Instagram, Globe,
   Check, Quote, Building2, Users, CalendarDays,
-  Hash, FileBadge, Users2, Trophy, LogOut // ✅ Added LogOut Icon
+  Hash, FileBadge, Users2, Trophy, LogOut,
+  Image as ImageIcon, Plus, Trash2, X,
 } from "lucide-react"
 import { api } from "@/lib/api"
 import { cn } from "@/lib/utils"
@@ -126,6 +127,119 @@ function OrgDetails({ profile }: { profile: any }) {
         )}
       </div>
     </div>
+  )
+}
+
+function OrgGallery({ orgId, isOwnProfile }: { orgId: string; isOwnProfile: boolean }) {
+  const [photos, setPhotos] = useState<any[]>([])
+  const [uploading, setUploading] = useState(false)
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (!orgId) return
+    api.getOrgGallery(orgId).then(setPhotos).catch(() => {})
+  }, [orgId])
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files?.[0]) return
+    setUploading(true)
+    try {
+      const newPhoto = await api.uploadOrgGalleryPhoto(e.target.files[0])
+      setPhotos(prev => [newPhoto, ...prev])
+    } catch {
+      alert('Failed to upload photo')
+    } finally {
+      setUploading(false)
+      if (e.target) e.target.value = ''
+    }
+  }
+
+  const handleDelete = async (photoId: string) => {
+    if (!confirm('Delete this photo?')) return
+    try {
+      await api.deleteOrgGalleryPhoto(photoId)
+      setPhotos(prev => prev.filter(p => p.id !== photoId))
+    } catch {
+      alert('Delete failed')
+    }
+  }
+
+  if (!photos.length && !isOwnProfile) return null
+
+  return (
+    <>
+      {/* Lightbox overlay */}
+      {lightboxUrl && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+          onClick={() => setLightboxUrl(null)}
+        >
+          <button
+            className="absolute top-4 right-4 p-2 text-white/70 hover:text-white bg-white/10 rounded-full transition-colors"
+            onClick={() => setLightboxUrl(null)}
+          >
+            <X className="w-6 h-6" />
+          </button>
+          <img
+            src={lightboxUrl}
+            alt="Full size"
+            className="max-w-full max-h-[90vh] rounded-xl object-contain shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
+
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+            <ImageIcon className="w-5 h-5 text-pink-500" /> Action Gallery
+          </h3>
+          {isOwnProfile && (
+            <>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="text-xs flex items-center gap-1 bg-black text-white px-3 py-1.5 rounded-full hover:bg-gray-800 transition-colors"
+              >
+                {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
+                Add Photo
+              </button>
+              <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleUpload} />
+            </>
+          )}
+        </div>
+
+        {photos.length === 0 ? (
+          <div className="text-center py-8 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+            <ImageIcon className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+            <p className="text-xs text-gray-500">Share moments from your events and drives.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {photos.map((photo) => (
+              <div
+                key={photo.id}
+                className="group relative aspect-square rounded-xl overflow-hidden bg-gray-100 cursor-pointer"
+                onClick={() => setLightboxUrl(photo.image_url)}
+              >
+                <img src={photo.image_url} alt="Gallery" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                {isOwnProfile && (
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleDelete(photo.id) }}
+                      className="p-2 bg-red-500/80 backdrop-blur rounded-full text-white hover:bg-red-600 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </>
   )
 }
 
@@ -333,6 +447,8 @@ export default function OrganizationProfile() {
 
           {/* MAIN CONTENT (Events, Stats, Etc) */}
           <div className="lg:col-span-8 space-y-6">
+            <OrgGallery orgId={profile.id} isOwnProfile={isOwnProfile} />
+
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
               <h3 className="text-lg font-bold text-gray-900 mb-4">Our Mission</h3>
               <p className="text-gray-600 leading-relaxed text-sm md:text-base">{profile.mission_statement || "No mission statement added yet."}</p>

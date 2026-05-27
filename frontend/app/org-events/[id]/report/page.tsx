@@ -6,9 +6,10 @@ import Link from "next/link"
 import {
   ArrowLeft, Users, Clock, Star, Share2,
   CheckCircle2, XCircle, Award, Loader2, Upload, Trash2, Plus,
-  Download, RefreshCw
+  Download, RefreshCw, X, Square, CheckSquare, UserCheck,
 } from "lucide-react"
 import { api, EventCertificate } from "@/lib/api"
+import { downloadFromUrl } from "@/lib/utils"
 
 export default function EventReportPage() {
   const params = useParams()
@@ -31,6 +32,11 @@ export default function EventReportPage() {
   const [issueResult, setIssueResult] = useState<{ issued: number; skipped: number; total: number } | null>(null)
   const [issueError, setIssueError] = useState<string | null>(null)
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
+
+  // Selective issuance state
+  const [selectMode, setSelectMode] = useState(false)
+  const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     const fetchData = async () => {
@@ -108,13 +114,16 @@ export default function EventReportPage() {
     }
   }
 
-  const handleIssueCertificates = async () => {
+  const handleIssueCertificates = async (userIds?: string[]) => {
     setIssuingCerts(true)
     setIssueError(null)
     setIssueResult(null)
     try {
-      const result = await api.issueCertificatesForEvent(eventId)
+      const result = await api.issueCertificatesForEvent(eventId, userIds)
       setIssueResult({ issued: result.issued, skipped: result.skipped, total: result.total })
+      // Reset selection after issuing
+      setSelectMode(false)
+      setSelectedUserIds(new Set())
       // Refresh certificate list
       const certRes = await api.getEventCertificates(eventId)
       setCerts(certRes.certificates || [])
@@ -125,11 +134,20 @@ export default function EventReportPage() {
     }
   }
 
+  const toggleSelectVolunteer = (userId: string) => {
+    setSelectedUserIds(prev => {
+      const next = new Set(prev)
+      if (next.has(userId)) next.delete(userId)
+      else next.add(userId)
+      return next
+    })
+  }
+
   const handleDownload = async (certId: string) => {
     setDownloadingId(certId)
     try {
       const { signedUrl } = await api.downloadCertificate(certId)
-      window.open(signedUrl, '_blank')
+      await downloadFromUrl(signedUrl, 'kindly-certificate.pdf')
     } catch (err: any) {
       alert(err.message || "Failed to get download link")
     } finally {
@@ -147,6 +165,28 @@ export default function EventReportPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
+
+      {/* Gallery Lightbox */}
+      {lightboxUrl && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+          onClick={() => setLightboxUrl(null)}
+        >
+          <button
+            className="absolute top-4 right-4 p-2 text-white/70 hover:text-white bg-white/10 rounded-full transition-colors"
+            onClick={() => setLightboxUrl(null)}
+          >
+            <X className="w-6 h-6" />
+          </button>
+          <img
+            src={lightboxUrl}
+            alt="Full size"
+            className="max-w-full max-h-[90vh] rounded-xl object-contain shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
+
       {/* Header */}
       <div className="bg-white border-b border-gray-100 sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center gap-4">
@@ -227,11 +267,15 @@ export default function EventReportPage() {
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {event?.gallery_images && event.gallery_images.map((img: string, idx: number) => (
-              <div key={idx} className="relative group aspect-square rounded-xl overflow-hidden bg-gray-100 border border-gray-200">
+              <div
+                key={idx}
+                className="relative group aspect-square rounded-xl overflow-hidden bg-gray-100 border border-gray-200 cursor-pointer"
+                onClick={() => setLightboxUrl(img)}
+              >
                 <img src={img} alt={`Gallery ${idx}`} className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                   <button
-                    onClick={() => removeImage(idx)}
+                    onClick={(e) => { e.stopPropagation(); removeImage(idx); }}
                     className="p-2 bg-white/20 hover:bg-red-500 text-white rounded-full backdrop-blur-sm transition-colors"
                   >
                     <Trash2 className="w-5 h-5" />
@@ -252,58 +296,92 @@ export default function EventReportPage() {
 
         {/* Volunteer Attendance */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+          <div className="p-6 border-b border-gray-100 flex justify-between items-center gap-3 flex-wrap">
             <h2 className="font-bold text-gray-900">Volunteer Attendance</h2>
-            <div className="flex gap-2 text-sm">
+            <div className="flex items-center gap-2 text-sm flex-wrap">
               <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full font-medium">
                 Present ({stats.presentCount})
               </span>
               <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full font-medium">
                 Absent ({stats.absentCount})
               </span>
+              {stats.presentCount > 0 && (
+                <button
+                  onClick={() => { setSelectMode(m => !m); setSelectedUserIds(new Set()) }}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-colors ${selectMode ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                >
+                  <UserCheck className="w-3.5 h-3.5" />
+                  {selectMode ? 'Cancel Selection' : 'Select for Cert'}
+                </button>
+              )}
             </div>
           </div>
+          {selectMode && (
+            <div className="px-6 py-3 bg-indigo-50 border-b border-indigo-100 text-xs text-indigo-700 flex items-center gap-2">
+              <CheckSquare className="w-4 h-4" />
+              {selectedUserIds.size === 0
+                ? 'Tap volunteers below to select them for certificate issuance.'
+                : `${selectedUserIds.size} volunteer${selectedUserIds.size !== 1 ? 's' : ''} selected.`}
+            </div>
+          )}
           <div className="divide-y divide-gray-50 max-h-96 overflow-y-auto">
-            {registrations.map((reg) => (
-              <div key={reg.id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center font-bold text-gray-500">
-                    {reg.volunteer_profiles?.full_name?.charAt(0) || "V"}
+            {registrations.map((reg) => {
+              const isPresent = reg.status === 'checked_in' || reg.status === 'completed'
+              const userId = reg.volunteer_profiles?.user_id || reg.user_id
+              const isSelected = userId && selectedUserIds.has(userId)
+              return (
+                <div
+                  key={reg.id}
+                  className={`p-4 flex items-center justify-between hover:bg-gray-50 transition-colors ${selectMode && isPresent ? 'cursor-pointer' : ''} ${isSelected ? 'bg-indigo-50' : ''}`}
+                  onClick={() => selectMode && isPresent && userId && toggleSelectVolunteer(userId)}
+                >
+                  <div className="flex items-center gap-3">
+                    {selectMode && isPresent && (
+                      <div className="text-indigo-500 shrink-0">
+                        {isSelected
+                          ? <CheckSquare className="w-5 h-5" />
+                          : <Square className="w-5 h-5 text-gray-300" />}
+                      </div>
+                    )}
+                    <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center font-bold text-gray-500">
+                      {reg.volunteer_profiles?.full_name?.charAt(0) || "V"}
+                    </div>
+                    <div>
+                      <Link
+                        href={`/volunteers/${reg.volunteer_profiles?.id}`}
+                        className="text-sm font-semibold text-gray-900 hover:text-teal-600 hover:underline transition-colors block"
+                        onClick={(e) => selectMode && e.preventDefault()}
+                      >
+                        {reg.volunteer_profiles?.full_name || "Volunteer"}
+                      </Link>
+                      <p className="text-xs text-gray-500">{reg.volunteer_profiles?.city || "Nashik"}</p>
+                    </div>
                   </div>
-                  <div>
-                    <Link
-                      href={`/volunteers/${reg.volunteer_profiles?.id}`}
-                      className="text-sm font-semibold text-gray-900 hover:text-teal-600 hover:underline transition-colors block"
-                    >
-                      {reg.volunteer_profiles?.full_name || "Volunteer"}
-                    </Link>
-                    <p className="text-xs text-gray-500">{reg.volunteer_profiles?.city || "Nashik"}</p>
-                  </div>
+                  {isPresent ? (
+                    <div className="flex items-center gap-2 text-emerald-600 text-sm font-medium">
+                      <CheckCircle2 className="w-4 h-4" />
+                      Present
+                    </div>
+                  ) : reg.status === 'cancelled' ? (
+                    <div className="flex items-center gap-2 text-gray-300 text-sm">
+                      <XCircle className="w-4 h-4" />
+                      Cancelled
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 text-gray-400 text-sm">
+                      <XCircle className="w-4 h-4" />
+                      Absent
+                    </div>
+                  )}
                 </div>
-                {(reg.status === 'checked_in' || reg.status === 'completed') ? (
-                  <div className="flex items-center gap-2 text-emerald-600 text-sm font-medium">
-                    <CheckCircle2 className="w-4 h-4" />
-                    Present
-                  </div>
-                ) : reg.status === 'cancelled' ? (
-                  <div className="flex items-center gap-2 text-gray-300 text-sm">
-                    <XCircle className="w-4 h-4" />
-                    Cancelled
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2 text-gray-400 text-sm">
-                    <XCircle className="w-4 h-4" />
-                    Absent
-                  </div>
-                )}
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
 
         {/* Certificates Section */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+          <div className="p-6 border-b border-gray-100 flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-amber-50 rounded-xl text-amber-500">
                 <Award className="w-6 h-6" />
@@ -317,19 +395,33 @@ export default function EventReportPage() {
                 </p>
               </div>
             </div>
-            <button
-              onClick={handleIssueCertificates}
-              disabled={issuingCerts || stats.presentCount === 0}
-              className="flex items-center gap-2 px-5 py-2.5 bg-[#0F4F3F] hover:bg-[#0a3d30] disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-xl transition-colors"
-            >
-              {issuingCerts ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> Generating PDFs…</>
-              ) : certs.length > 0 ? (
-                <><RefreshCw className="w-4 h-4" /> Re-issue Missing</>
-              ) : (
-                <><Award className="w-4 h-4" /> Issue Certificates</>
+            <div className="flex items-center gap-2 flex-wrap">
+              {selectMode && selectedUserIds.size > 0 && (
+                <button
+                  onClick={() => handleIssueCertificates(Array.from(selectedUserIds))}
+                  disabled={issuingCerts}
+                  className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-xl transition-colors"
+                >
+                  {issuingCerts
+                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating…</>
+                    : <><CheckSquare className="w-4 h-4" /> Issue to {selectedUserIds.size} Selected</>
+                  }
+                </button>
               )}
-            </button>
+              <button
+                onClick={() => handleIssueCertificates()}
+                disabled={issuingCerts || stats.presentCount === 0}
+                className="flex items-center gap-2 px-5 py-2.5 bg-[#0F4F3F] hover:bg-[#0a3d30] disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-xl transition-colors"
+              >
+                {issuingCerts ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> Generating PDFs…</>
+                ) : certs.length > 0 ? (
+                  <><RefreshCw className="w-4 h-4" /> Re-issue Missing</>
+                ) : (
+                  <><Award className="w-4 h-4" /> Issue to All</>
+                )}
+              </button>
+            </div>
           </div>
 
           {/* Issue result banner */}

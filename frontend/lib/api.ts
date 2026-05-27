@@ -903,9 +903,14 @@ export const api = {
     return response.json();
   },
 
-  issueCertificatesForEvent: async (eventId: string): Promise<{ message: string; issued: number; skipped: number; total: number }> => {
+  issueCertificatesForEvent: async (
+    eventId: string,
+    volunteerUserIds?: string[],
+  ): Promise<{ message: string; issued: number; skipped: number; total: number }> => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error('Not authenticated');
+
+    const body = volunteerUserIds?.length ? { volunteerUserIds } : {};
 
     const response = await fetch(`${API_URL}/events/${eventId}/certificates/issue`, {
       method: 'POST',
@@ -913,6 +918,7 @@ export const api = {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${session.access_token}`,
       },
+      body: JSON.stringify(body),
     });
 
     if (!response.ok) {
@@ -1052,6 +1058,50 @@ export const api = {
 
     if (!response.ok) throw new Error('Delete failed');
     return true;
+  },
+
+  // ── Org Action Gallery ─────────────────────────────────────────────────────
+
+  getOrgGallery: async (orgId: string): Promise<any[]> => {
+    try {
+      const response = await fetch(`${API_URL}/organizations/${orgId}/gallery`);
+      if (!response.ok) return [];
+      return await response.json();
+    } catch {
+      return [];
+    }
+  },
+
+  uploadOrgGalleryPhoto: async (file: File): Promise<any> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(`${API_URL}/organizations/gallery`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${session.access_token}` },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.message || 'Upload failed');
+    }
+    return await response.json();
+  },
+
+  deleteOrgGalleryPhoto: async (photoId: string): Promise<void> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const response = await fetch(`${API_URL}/organizations/gallery/${photoId}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${session.access_token}` },
+    });
+
+    if (!response.ok) throw new Error('Delete failed');
   },
 
   getOrgEvents: async (orgId: string) => {
