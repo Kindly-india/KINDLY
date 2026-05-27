@@ -312,6 +312,55 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
     return { events };
   }
 
+  async getCompletedEvents() {
+    const supabase = this.supabaseService.getClient();
+
+    const { data: events, error } = await supabase
+      .from('events')
+      .select(`
+        id, title, cover_image_url,
+        event_date, start_time, end_time, location,
+        organization_id,
+        organization_profiles ( name, logo_url ),
+        event_registrations ( id, status )
+      `)
+      .eq('status', 'completed')
+      .order('event_date', { ascending: false })
+      .limit(50);
+
+    if (error) throw error;
+
+    return {
+      events: (events || []).map((ev: any) => {
+        const regs: any[] = ev.event_registrations || [];
+        const attendeeCount = regs.filter(
+          (r) => r.status === 'checked_in' || r.status === 'completed',
+        ).length;
+
+        let totalHours = 0;
+        if (ev.start_time && ev.end_time) {
+          const [sh, sm] = (ev.start_time as string).split(':').map(Number);
+          const [eh, em] = (ev.end_time as string).split(':').map(Number);
+          const hrs = Math.max(0, (eh * 60 + em - sh * 60 - sm) / 60);
+          totalHours = Math.round(hrs * attendeeCount * 10) / 10;
+        }
+
+        return {
+          id: ev.id,
+          title: ev.title,
+          cover_image_url: ev.cover_image_url ?? null,
+          event_date: ev.event_date,
+          location: ev.location,
+          org_name: (ev.organization_profiles as any)?.name ?? null,
+          org_logo_url: (ev.organization_profiles as any)?.logo_url ?? null,
+          org_id: ev.organization_id,
+          attendee_count: attendeeCount,
+          total_hours: totalHours,
+        };
+      }),
+    };
+  }
+
   async getTopEvents() {
     const supabase = this.supabaseService.getClient();
 
@@ -376,6 +425,7 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
       *,
       organization_profiles (
         name,
+        logo_url,
         org_type,
         email,
         phone

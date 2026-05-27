@@ -343,6 +343,24 @@ export const api = {
     return response.json();
   },
 
+  // All completed events across all organisations (public, no auth needed)
+  getCompletedEvents: async (): Promise<{ events: Array<{
+    id: string;
+    title: string;
+    cover_image_url: string | null;
+    event_date: string;
+    location: string;
+    org_name: string | null;
+    org_logo_url: string | null;
+    org_id: string;
+    attendee_count: number;
+    total_hours: number;
+  }> }> => {
+    const response = await fetch(`${API_URL}/events/completed`);
+    if (!response.ok) throw new Error('Failed to fetch completed events');
+    return response.json();
+  },
+
   // Get public events (passes token if logged in for personalized feed ordering)
   getPublicEvents: async (location?: string) => {
     const { data: { session } } = await supabase.auth.getSession();

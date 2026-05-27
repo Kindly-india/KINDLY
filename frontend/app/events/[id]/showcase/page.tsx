@@ -2,19 +2,19 @@
 
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
-import Image from "next/image"
 import Link from "next/link"
-import { toast } from "sonner"
 import {
-  Calendar, MapPin, Users, Clock,
-  Share2, CheckCircle2, Building2, Loader2,
-  Download, Check, Menu, X, Sparkles,
-  Star, Award
+  Calendar, MapPin,
+  CheckCircle2, Building2, Loader2,
+  Download, X, Award, Star
 } from "lucide-react"
 import { api, VolunteerCertificate, ShowcaseData } from "@/lib/api"
 import { downloadFromUrl } from "@/lib/utils"
 
-type AccessState = 'loading' | 'full' | 'waiting' | 'redirecting'
+// 'public'   — anyone (unauthed / no registration / didn't attend) — sees gallery + summary, no cert
+// 'waiting'  — attended, but org hasn't marked event complete yet
+// 'full'     — attended + event completed → full showcase with cert + review
+type AccessState = 'loading' | 'public' | 'waiting' | 'full'
 
 export default function EventShowcasePage() {
   const { id } = useParams()
@@ -23,9 +23,7 @@ export default function EventShowcasePage() {
   const [accessState, setAccessState] = useState<AccessState>('loading')
   const [event, setEvent] = useState<any>(null)
   const [orgProfile, setOrgProfile] = useState<any>(null)
-  const [profile, setProfile] = useState<any>(null)
   const [myRegistration, setMyRegistration] = useState<any>(null)
-  const [menuOpen, setMenuOpen] = useState(false)
 
   // Review State
   const [rating, setRating] = useState(0)
@@ -45,77 +43,67 @@ export default function EventShowcasePage() {
       try {
         if (!id) return
 
-        // 1. Auth check — unauthenticated visitors go to the public event page
-        const profileRes = await api.getUserProfile().catch(() => null)
-        const currentUser = profileRes?.profile
-        if (!currentUser) {
-          router.replace(`/events/${id}`)
-          setAccessState('redirecting')
-          return
-        }
-        setProfile(currentUser)
-
-        // 2. Event + registrations in parallel
-        const [publicEventRes, regsRes] = await Promise.all([
-          api.getPublicEventById(id as string).catch(() => null),
-          api.getVolunteerRegistrations().catch(() => null),
-        ])
-
+        // Step 1: Always load public event data — no auth needed
+        const publicEventRes = await api.getPublicEventById(id as string).catch(() => null)
         const eventData = publicEventRes?.event
         if (!eventData) {
           router.replace(`/events/${id}`)
-          setAccessState('redirecting')
           return
         }
         setEvent(eventData)
+        setOrgProfile(eventData.organization_profiles ?? null)
 
-        // 3. Access gate — check registration status
+        // Step 2: Try to get authenticated user — safe failure
+        const profileRes = await api.getUserProfile().catch(() => null)
+        const currentUser = profileRes?.profile
+
+        // Step 3: Unauthenticated → public view only
+        if (!currentUser) {
+          setAccessState('public')
+          return
+        }
+
+        // Step 4: Check if this user attended this event
+        const regsRes = await api.getVolunteerRegistrations().catch(() => null)
         const thisEventReg = regsRes?.events?.find((e: any) => e.id === eventData.id)
         const regStatus = thisEventReg?.registration_status
         const attended = regStatus === 'checked_in' || regStatus === 'completed'
 
+        // Step 5: Not an attendee → public view
         if (!attended) {
-          if (thisEventReg) {
-            // Registered but didn't attend (registered / missed / absent / cancelled)
-            toast.error("You did not attend this event.")
-            router.replace('/history')
-          } else {
-            // Random visitor who knows the URL
-            router.replace(`/events/${id}`)
-          }
-          setAccessState('redirecting')
+          setAccessState('public')
           return
         }
 
         setMyRegistration(thisEventReg)
 
-        // 4. Load showcase data — backend enforces attendance, returns org + cert + review
-        const showcase: ShowcaseData = await api.getShowcaseData(id as string)
-
-        // Use the richer event from the showcase endpoint (includes org join)
-        setEvent(showcase.event)
-        setOrgProfile(showcase.event?.organization_profiles ?? null)
-
-        // 5. Event not yet marked complete — show waiting state
-        if (showcase.event.status !== 'completed') {
+        // Step 6: Attended but event not yet completed by org → waiting state
+        if (eventData.status !== 'completed') {
           setAccessState('waiting')
           return
         }
 
-        // 6. Full state
-        setAccessState('full')
+        // Step 7: Attended + event completed → load showcase data (cert + review)
+        try {
+          const showcase: ShowcaseData = await api.getShowcaseData(id as string)
+          // Use richer event from showcase (includes org join with logo_url)
+          setEvent(showcase.event)
+          setOrgProfile(showcase.event?.organization_profiles ?? orgProfile)
 
-        if (showcase.review) {
-          setSubmitted(true)
-          setRating(showcase.review.rating)
-          setReviewText(showcase.review.comment)
+          if (showcase.review) {
+            setSubmitted(true)
+            setRating(showcase.review.rating)
+            setReviewText(showcase.review.comment)
+          }
+          if (showcase.certificate) setCert(showcase.certificate)
+        } catch {
+          // Showcase fetch failed — still show public view rather than blocking
         }
 
-        if (showcase.certificate) setCert(showcase.certificate)
+        setAccessState('full')
 
       } catch {
-        router.replace(`/events/${id}`)
-        setAccessState('redirecting')
+        setAccessState('public')
       }
     }
     loadData()
@@ -135,28 +123,26 @@ export default function EventShowcasePage() {
   }
 
   const handleSubmitReview = async () => {
-    if (rating === 0) return alert("Please select a rating star.");
-    setSubmitting(true);
+    if (rating === 0) return alert("Please select a rating star.")
+    setSubmitting(true)
     try {
-      await api.submitEventReview(id as string, rating, reviewText);
-      setSubmitted(true);
-    } catch (error) {
-      alert("Failed to submit review.");
+      await api.submitEventReview(id as string, rating, reviewText)
+      setSubmitted(true)
+    } catch {
+      alert("Failed to submit review.")
     } finally {
-      setSubmitting(false);
+      setSubmitting(false)
     }
   }
 
-  // ── Render guards ────────────────────────────────────────────────────────────
+  // ── Loading ───────────────────────────────────────────────────────────────────
   if (accessState === 'loading') {
     return <div className="h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-gray-900" /></div>
   }
 
-  if (accessState === 'redirecting') return null
-
-  // ── Waiting state ─────────────────────────────────────────────────────────────
+  // ── Waiting state (attended but org hasn't closed the event yet) ─────────────
   if (accessState === 'waiting') {
-    const orgName = orgProfile?.name || event?.organization_name || event?.organization?.name || "Organization"
+    const orgName = orgProfile?.name || event?.organization_name || "Organization"
     return (
       <div className="min-h-screen bg-white flex flex-col items-center justify-center px-4">
         <div className="max-w-md w-full text-center space-y-6">
@@ -190,7 +176,7 @@ export default function EventShowcasePage() {
 
   if (!event) return <div className="h-screen flex items-center justify-center text-gray-500">Event not found</div>
 
-  // ── Derived stats ─────────────────────────────────────────────────────────────
+  // ── Derived values ────────────────────────────────────────────────────────────
   const calcDurationHours = () => {
     const start = event.start_time
     const end = event.end_time
@@ -203,23 +189,19 @@ export default function EventShowcasePage() {
   }
   const durationLabel = calcDurationHours() ?? '—'
 
-  const regStatusMap: Record<string, string> = {
-    completed: 'Verified',
-    checked_in: 'Attended',
-    registered: 'Registered',
-  }
-  const regStatus = myRegistration?.registration_status ?? event.status ?? ''
-  const statusLabel = regStatusMap[regStatus] ?? regStatus.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())
+  const galleryImages = [event?.cover_image_url, ...(event?.gallery_images || [])].filter(Boolean)
+  const displayImages = galleryImages.length > 0
+    ? galleryImages
+    : [
+        "https://images.unsplash.com/photo-1593113598332-cd288d649433?w=800&auto=format&fit=crop&q=60",
+        "https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=800&auto=format&fit=crop&q=60",
+      ]
 
-  // ── Full showcase (event.status === 'completed' && attended) ─────────────────
-  const galleryImages = [event?.cover_image_url, ...(event?.gallery_images || [])].filter(Boolean);
-  const displayImages = galleryImages.length > 0 ? galleryImages : ["https://images.unsplash.com/photo-1593113598332-cd288d649433?w=800&auto=format&fit=crop&q=60", "https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=800&auto=format&fit=crop&q=60"];
-  const displayImage = profile?.avatar_url || profile?.logo_url;
-  const displayName = profile?.full_name || profile?.name || "User";
-  const displayInitial = displayName ? displayName.charAt(0).toUpperCase() : "U";
+  const orgName = orgProfile?.name || event?.organization_name || "Organization"
 
-  const orgName = orgProfile?.name || event?.organization_name || event?.organization?.name || "Organization";
+  const isAttendee = accessState === 'full'
 
+  // ── Shared page layout (public + full) ───────────────────────────────────────
   return (
     <div className="min-h-screen bg-white pb-20">
 
@@ -244,9 +226,13 @@ export default function EventShowcasePage() {
         </div>
       )}
 
-      {/* HERO SECTION */}
+      {/* HERO */}
       <div className="relative h-[50vh] md:h-[60vh] w-full bg-gray-900">
-        <img src={event.cover_image_url || "/placeholder-event.jpg"} alt={event.title} className="absolute inset-0 w-full h-full object-cover opacity-60" />
+        <img
+          src={event.cover_image_url || "/placeholder-event.jpg"}
+          alt={event.title}
+          className="absolute inset-0 w-full h-full object-cover opacity-60"
+        />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
         <div className="absolute bottom-0 left-0 w-full p-6 md:p-12">
           <div className="max-w-5xl mx-auto">
@@ -255,17 +241,23 @@ export default function EventShowcasePage() {
             </div>
             <h1 className="text-2xl md:text-5xl font-bold text-white mb-4 leading-tight">{event.title}</h1>
             <div className="flex flex-wrap items-center gap-4 md:gap-6 text-gray-200 text-xs md:text-base">
-              <div className="flex items-center gap-2"><Calendar className="w-4 h-4 md:w-5 md:h-5" /> {new Date(event.event_date).toLocaleDateString()}</div>
-              <div className="flex items-center gap-2"><MapPin className="w-4 h-4 md:w-5 md:h-5" /> {event.location}</div>
-              
-              {/* ✅ Display Org Name in Hero */}
               <div className="flex items-center gap-2">
-                  <Building2 className="w-4 h-4 md:w-5 md:h-5" /> 
-                  <Link href={`/organizations/${event.organization_id}`} className="hover:text-blue-400 underline decoration-dotted underline-offset-4">
-                    Organized by {orgName}
-                  </Link>
+                <Calendar className="w-4 h-4 md:w-5 md:h-5" />
+                {new Date(event.event_date).toLocaleDateString()}
               </div>
-
+              <div className="flex items-center gap-2">
+                <MapPin className="w-4 h-4 md:w-5 md:h-5" />
+                {event.location}
+              </div>
+              <div className="flex items-center gap-2">
+                <Building2 className="w-4 h-4 md:w-5 md:h-5" />
+                <Link
+                  href={`/organizations/${event.organization_id}`}
+                  className="hover:text-blue-400 underline decoration-dotted underline-offset-4"
+                >
+                  Organized by {orgName}
+                </Link>
+              </div>
             </div>
           </div>
         </div>
@@ -274,9 +266,10 @@ export default function EventShowcasePage() {
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-8 md:py-12">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12">
 
-          {/* LEFT COLUMN: Main Content (8 Cols) */}
+          {/* LEFT: Main Content */}
           <div className="md:col-span-8 space-y-8 md:space-y-12">
-            {/* Stats */}
+
+            {/* Quick Stats */}
             <div className="flex gap-2 md:gap-4 p-4 md:p-6 bg-gray-50 rounded-2xl border border-gray-100 justify-around">
               <div className="text-center">
                 <div className="text-xl md:text-2xl font-bold text-gray-900">{event.registered_count || 0}</div>
@@ -287,11 +280,14 @@ export default function EventShowcasePage() {
                 <div className="text-[10px] md:text-xs text-gray-500 uppercase">Hours</div>
               </div>
               <div className="text-center border-l border-gray-200 pl-4">
-                <div className="text-xl md:text-2xl font-bold text-gray-900">{statusLabel}</div>
+                <div className="text-xl md:text-2xl font-bold text-gray-900 capitalize">
+                  {event.status?.replace(/_/g, ' ') ?? '—'}
+                </div>
                 <div className="text-[10px] md:text-xs text-gray-500 uppercase">Status</div>
               </div>
             </div>
 
+            {/* About */}
             <div className="space-y-4">
               <h2 className="text-xl md:text-2xl font-bold text-gray-900">About the Impact</h2>
               <p className="text-sm md:text-base text-gray-600 leading-relaxed">{event.description}</p>
@@ -308,52 +304,64 @@ export default function EventShowcasePage() {
                       className="relative rounded-xl overflow-hidden shadow-sm aspect-square cursor-pointer group"
                       onClick={() => setLightboxUrl(src)}
                     >
-                      <img src={src} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                      <img
+                        src={src}
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
                     </div>
                   ))}
                 </div>
-              ) : <p className="text-gray-500 italic">No images available.</p>}
+              ) : (
+                <p className="text-gray-500 italic">No images available.</p>
+              )}
             </div>
           </div>
 
-          {/* RIGHT COLUMN: Sidebar (4 Cols) */}
+          {/* RIGHT: Sidebar */}
           <div className="md:col-span-4 space-y-6">
-            
-            {/* ✅ ORGANIZER CARD (Always Visible) */}
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 sticky top-24">
-                <h3 className="font-bold text-gray-900 mb-4">Organizer</h3>
-                <Link href={`/organizations/${event.organization_id || '#'}`} className="flex items-center gap-3 mb-4 group">
-                    <div className="w-12 h-12 bg-gray-100 rounded-full border border-gray-200 flex items-center justify-center overflow-hidden">
-                        {orgProfile?.logo_url ? (
-                            <img src={orgProfile.logo_url} className="w-full h-full object-cover"/>
-                        ) : (
-                            <Building2 className="w-6 h-6 text-gray-400"/>
-                        )}
-                    </div>
-                    <div>
-                        <div className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors">{orgName}</div>
-                        <div className="text-xs text-gray-500">View Profile</div>
-                    </div>
-                </Link>
-                
-                {/* CERTIFICATE & REVIEW SECTION */}
-                {cert ? (
+
+              {/* Organizer card — always visible */}
+              <h3 className="font-bold text-gray-900 mb-4">Organizer</h3>
+              <Link
+                href={`/organizations/${event.organization_id || '#'}`}
+                className="flex items-center gap-3 mb-4 group"
+              >
+                <div className="w-12 h-12 bg-gray-100 rounded-full border border-gray-200 flex items-center justify-center overflow-hidden">
+                  {orgProfile?.logo_url ? (
+                    <img src={orgProfile.logo_url} className="w-full h-full object-cover" />
+                  ) : (
+                    <Building2 className="w-6 h-6 text-gray-400" />
+                  )}
+                </div>
+                <div>
+                  <div className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors">{orgName}</div>
+                  <div className="text-xs text-gray-500">View Profile</div>
+                </div>
+              </Link>
+
+              {/* Certificate + Review — attendees only */}
+              {isAttendee ? (
+                cert ? (
                   <div className="mt-6 pt-6 border-t border-gray-100">
                     <h2 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
                       <Award className="w-4 h-4 text-amber-500" /> Your Certificate
                     </h2>
 
-                    {/* Certificate info */}
                     <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
                       <p className="text-xs font-semibold text-amber-900">{cert.event_title}</p>
                       <p className="text-[10px] text-amber-700 mt-0.5">
-                        {cert.hours_credited}h · Issued {new Date(cert.issued_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        {cert.hours_credited}h · Issued{' '}
+                        {new Date(cert.issued_at).toLocaleDateString('en-IN', {
+                          day: 'numeric', month: 'short', year: 'numeric',
+                        })}
                       </p>
-                      <p className="text-[9px] text-amber-600 font-mono mt-1">ID: {cert.verification_id?.substring(0, 16)}…</p>
+                      <p className="text-[9px] text-amber-600 font-mono mt-1">
+                        ID: {cert.verification_id?.substring(0, 16)}…
+                      </p>
                     </div>
 
-                    {/* Download button */}
                     <button
                       onClick={handleCertDownload}
                       disabled={downloadingCert}
@@ -361,20 +369,21 @@ export default function EventShowcasePage() {
                     >
                       {downloadingCert
                         ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        : <Download className="w-3.5 h-3.5" />
-                      }
+                        : <Download className="w-3.5 h-3.5" />}
                       Download PDF Certificate
                     </button>
 
-                    {/* Review Section */}
+                    {/* Review section */}
                     {submitted ? (
                       <div className="border-t border-gray-100 pt-4 text-center">
                         <div className="flex items-center justify-center gap-2 text-green-600 mb-1">
-                            <CheckCircle2 className="w-4 h-4"/>
-                            <span className="text-sm font-bold">Review Submitted</span>
+                          <CheckCircle2 className="w-4 h-4" />
+                          <span className="text-sm font-bold">Review Submitted</span>
                         </div>
                         <div className="flex justify-center gap-1">
-                          {[1, 2, 3, 4, 5].map(s => <Star key={s} className={`w-3 h-3 ${s <= rating ? 'fill-amber-400 text-amber-400' : 'text-gray-200'}`} />)}
+                          {[1, 2, 3, 4, 5].map(s => (
+                            <Star key={s} className={`w-3 h-3 ${s <= rating ? 'fill-amber-400 text-amber-400' : 'text-gray-200'}`} />
+                          ))}
                         </div>
                       </div>
                     ) : (
@@ -382,31 +391,53 @@ export default function EventShowcasePage() {
                         <h3 className="font-semibold text-xs mb-2">Rate Your Experience</h3>
                         <div className="flex gap-1 mb-2 justify-center">
                           {[1, 2, 3, 4, 5].map((star) => (
-                            <button key={star} onClick={() => setRating(star)} className="hover:scale-110 transition-transform focus:outline-none">
-                              <Star className={`w-5 h-5 ${rating >= star ? "fill-amber-400 text-amber-400" : "text-gray-300"}`} />
+                            <button
+                              key={star}
+                              onClick={() => setRating(star)}
+                              className="hover:scale-110 transition-transform focus:outline-none"
+                            >
+                              <Star className={`w-5 h-5 ${rating >= star ? 'fill-amber-400 text-amber-400' : 'text-gray-300'}`} />
                             </button>
                           ))}
                         </div>
                         <textarea
-                          value={reviewText} onChange={(e) => setReviewText(e.target.value)}
+                          value={reviewText}
+                          onChange={(e) => setReviewText(e.target.value)}
                           placeholder="How was the event?"
                           className="w-full h-16 p-2 bg-gray-50 rounded-lg resize-none text-xs focus:outline-none border border-transparent focus:border-gray-200 focus:bg-white transition-all mb-2"
                         />
-                        <button onClick={handleSubmitReview} disabled={submitting} className="w-full h-9 bg-orange-600 text-white rounded-lg font-bold text-xs hover:bg-orange-700 disabled:opacity-50">
+                        <button
+                          onClick={handleSubmitReview}
+                          disabled={submitting}
+                          className="w-full h-9 bg-orange-600 text-white rounded-lg font-bold text-xs hover:bg-orange-700 disabled:opacity-50"
+                        >
                           {submitting ? "Submitting..." : "Submit Feedback"}
                         </button>
                       </div>
                     )}
                   </div>
                 ) : (
-                    <div className="mt-6 pt-4 border-t border-gray-100 text-center">
-                        <p className="text-xs text-gray-500">Participate to earn certificates!</p>
-                    </div>
-                )}
+                  /* Attended but org hasn't issued certificate yet */
+                  <div className="mt-6 pt-4 border-t border-gray-100 text-center">
+                    <Award className="w-6 h-6 text-gray-300 mx-auto mb-2" />
+                    <p className="text-xs text-gray-500">Certificate not yet issued by the organization.</p>
+                  </div>
+                )
+              ) : (
+                /* Not an attendee — neutral CTA */
+                <div className="mt-6 pt-4 border-t border-gray-100 text-center space-y-2">
+                  <p className="text-xs text-gray-500">Volunteer at upcoming events to earn certificates!</p>
+                  <Link
+                    href="/events"
+                    className="inline-block text-xs font-semibold text-emerald-600 hover:text-emerald-700 transition-colors"
+                  >
+                    Browse Events →
+                  </Link>
+                </div>
+              )}
             </div>
-
           </div>
-          
+
         </div>
       </div>
     </div>

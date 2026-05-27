@@ -70,6 +70,12 @@ export class EventController {
     return this.eventService.getTopEvents();
   }
 
+  @Get('completed')
+  @Header('Cache-Control', 'public, max-age=60, stale-while-revalidate=300')
+  async getCompletedEvents() {
+    return this.eventService.getCompletedEvents();
+  }
+
   // This matches the error URL you saw: /events/:id/public
   @Get('details/:id')
   @Header('Cache-Control', 'public, max-age=60, stale-while-revalidate=300')

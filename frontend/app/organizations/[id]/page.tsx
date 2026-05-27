@@ -481,38 +481,56 @@ export default function OrganizationProfile() {
             {/* EVENTS SECTION */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-bold text-gray-900">Events</h3>
+                <h3 className="text-lg font-bold text-gray-900">
+                  {isOwnProfile ? 'Events' : 'Past Events'}
+                </h3>
                 {isOwnProfile && <Link href="/org-events/create" className="text-sm text-blue-600 hover:underline font-medium">Create New +</Link>}
               </div>
 
               {displayedEvents.length === 0 ? (
-                <div className="text-center py-10"><CalendarDays className="w-10 h-10 text-gray-300 mx-auto mb-3" /><p className="text-gray-500 text-sm">No events found.</p></div>
+                <div className="text-center py-10">
+                  <CalendarDays className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-500 text-sm">No past events yet.</p>
+                </div>
               ) : (
                 <div className="space-y-4">
                   {displayedEvents.map((event, idx) => {
                     const isCompleted = event.status === 'completed';
-                    let linkHref;
-                    if (isOwnProfile) {
-                      linkHref = isCompleted ? `/org-events/${event.id}/report` : `/org-events/${event.id}`;
-                    } else {
-                      linkHref = `/events/${event.id}/showcase`;
-                    }
+                    // Org owners: completed events → org report page, active events → org management page
+                    // All other visitors: past completed events → volunteer showcase/report page
+                    const linkHref = isOwnProfile
+                      ? (isCompleted ? `/org-events/${event.id}/report` : `/org-events/${event.id}`)
+                      : `/events/${event.id}/showcase`;
 
                     return (
                       <Link key={idx} href={linkHref} className="block group">
                         <div className="flex gap-4 p-4 border border-gray-100 rounded-xl hover:border-blue-200 hover:shadow-md transition-all bg-white relative">
                           <div className="w-14 shrink-0 flex flex-col items-center justify-center bg-gray-50 rounded-lg border border-gray-200 h-14">
-                            <span className="text-xs font-bold text-red-500 uppercase">{new Date(event.event_date).toLocaleString('default', { month: 'short' })}</span>
-                            <span className="text-xl font-bold text-gray-900">{new Date(event.event_date).getDate()}</span>
+                            <span className="text-xs font-bold text-red-500 uppercase">
+                              {new Date(event.event_date).toLocaleString('default', { month: 'short' })}
+                            </span>
+                            <span className="text-xl font-bold text-gray-900">
+                              {new Date(event.event_date).getDate()}
+                            </span>
                           </div>
                           <div className="flex-1 min-w-0 pr-20">
-                            <h4 className="font-bold text-gray-900 truncate group-hover:text-blue-600 transition-colors">{event.title}</h4>
+                            <h4 className="font-bold text-gray-900 truncate group-hover:text-blue-600 transition-colors">
+                              {event.title}
+                            </h4>
                             <div className="flex items-center gap-4 text-xs text-gray-500 mt-1">
                               <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {event.location}</span>
-                              <span className="flex items-center gap-1"><Users className="w-3 h-3" /> {event.registered_count || 0} Registered</span>
+                              <span className="flex items-center gap-1">
+                                <Users className="w-3 h-3" />
+                                {isOwnProfile
+                                  ? `${event.registered_count || 0} Registered`
+                                  : `${event.checked_in_count || 0} Attended`}
+                              </span>
                             </div>
                           </div>
-                          <div className={cn("absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-medium capitalize", isCompleted ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600")}>
+                          <div className={cn(
+                            "absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-medium capitalize",
+                            isCompleted ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"
+                          )}>
                             {event.status || "Draft"}
                           </div>
                         </div>
