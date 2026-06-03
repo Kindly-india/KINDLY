@@ -26,6 +26,9 @@ import {
     Gift,
     Palette,
     Building2,
+    Instagram,
+    Clock,
+    CheckCircle2,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -85,9 +88,12 @@ export default function EventsDiscoveryPage() {
 
     const [sortBy, setSortBy] = useState("newest")
     const [isFilterOpen, setIsFilterOpen] = useState(false)
-    const [visibleEvents, setVisibleEvents] = useState(10) // Increased initial load for compact view
+    const [visibleEvents, setVisibleEvents] = useState(10)
 
-    // Fetch events & Profile — refetch whenever debouncedLocation changes
+    const [completedEvents, setCompletedEvents] = useState<any[]>([])
+    const [completedLoading, setCompletedLoading] = useState(true)
+
+    // Fetch events & Profile
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -114,6 +120,15 @@ export default function EventsDiscoveryPage() {
 
         fetchData()
     }, [router])
+
+    useEffect(() => {
+        let mounted = true
+        api.getCompletedEvents()
+            .then(res => { if (mounted) setCompletedEvents(res.events || []) })
+            .catch(() => {})
+            .finally(() => { if (mounted) setCompletedLoading(false) })
+        return () => { mounted = false }
+    }, [])
 
     const toggleCause = (causeId: string) => {
         setSelectedCauses((prev) => (prev.includes(causeId) ? prev.filter((c) => c !== causeId) : [...prev, causeId]))
@@ -515,149 +530,252 @@ const FilterContent = () => (
                         </div>
                     )}
 
-                    {/* Events Grid - HYPER COMPACT MOBILE LIST, DESKTOP GRID */}
+                    {/* Events Grid */}
                     <div className="p-2 sm:p-4 md:p-6">
-                        {/* 1 col list on mobile, 2/3 cols on desktop */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2.5 md:gap-5">
-                            {loading ? (
-                                <div className="col-span-full text-center py-12">
-                                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#ff6b6b] mb-4"></div>
-                                    <p className="text-sm text-gray-600">Loading events...</p>
-                                </div>
-                            ) : error ? (
-                                <div className="col-span-full text-center py-12">
-                                    <p className="text-sm text-red-600">{error}</p>
-                                </div>
-                            ) : sortedEvents.length === 0 ? (
-                                <div className="col-span-full text-center py-12">
-                                    <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                                    <p className="text-sm text-gray-600">No events found</p>
-                                    {hasActiveFilters && (
-                                        <button
-                                            onClick={clearAllFilters}
-                                            className="mt-2 text-sm text-[#ff6b6b] hover:underline"
+
+                        {loading ? (
+                            <div className="text-center py-12">
+                                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#ff6b6b] mb-4" />
+                                <p className="text-sm text-gray-600">Loading events...</p>
+                            </div>
+                        ) : error ? (
+                            <div className="text-center py-12">
+                                <p className="text-sm text-red-600">{error}</p>
+                            </div>
+                        ) : (
+                            <>
+                                {/* ── UPCOMING EVENTS ── */}
+                                {events.length === 0 ? (
+                                    /* No upcoming events at all — designed empty state */
+                                    <div className="flex flex-col items-center justify-center py-14 text-center">
+                                        <div className="w-20 h-20 rounded-full bg-[#fff5f5] flex items-center justify-center mb-5 shadow-inner">
+                                            <Calendar className="w-9 h-9 text-[#ff6b6b]" />
+                                        </div>
+                                        <h2 className="text-[20px] font-bold text-[#1d1d1f] mb-2 tracking-tight">
+                                            No events right now.
+                                        </h2>
+                                        <p className="text-[14px] text-[#86868b] mb-7 max-w-[260px] leading-relaxed">
+                                            Next drop coming soon. Follow us to be the first to know when new events go live.
+                                        </p>
+                                        <a
+                                            href="https://www.instagram.com/kindly.co.in"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex items-center gap-2.5 px-6 py-3.5 rounded-full font-bold text-[14px] text-white shadow-md active:scale-95 transition-all"
+                                            style={{ background: 'linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)' }}
                                         >
+                                            <Instagram className="w-5 h-5" />
+                                            Follow @kindly.co.in for event drops
+                                        </a>
+                                    </div>
+                                ) : sortedEvents.length === 0 ? (
+                                    /* Filters applied, no matches */
+                                    <div className="text-center py-12">
+                                        <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                                        <p className="text-sm text-gray-600">No events match your filters</p>
+                                        <button onClick={clearAllFilters} className="mt-2 text-sm text-[#ff6b6b] hover:underline">
                                             Clear filters
                                         </button>
-                                    )}
-                                </div>
-                            ) : (
-                                sortedEvents.slice(0, visibleEvents).map((event) => {
-                                    const spotsLeft = event.total_slots - event.registered_count
-                                    const isFastFilling = spotsLeft <= 5 && spotsLeft > 0
-                                    const isAlmostFull = spotsLeft === 1
+                                    </div>
+                                ) : (
+                                    /* Event cards grid */
+                                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2.5 md:gap-5">
+                                        {sortedEvents.slice(0, visibleEvents).map((event) => {
+                                            const spotsLeft = event.total_slots - event.registered_count
+                                            const isFastFilling = spotsLeft <= 5 && spotsLeft > 0
+                                            const isAlmostFull = spotsLeft === 1
 
-                                    return (
-                                        <Link
-                                            key={event.id}
-                                            href={`/events/${event.id}`}
-                                            className="group flex flex-row md:flex-col h-auto md:h-full bg-white rounded-[16px] md:rounded-[24px] overflow-hidden shadow-sm hover:shadow-xl border border-[#e8e8ed] active:scale-[0.98] transition-all duration-200"
-                                        >
-                                            {/* IMAGE CONTAINER - Thumbnail on Mobile, Hero on Desktop */}
-                                            <div className="relative shrink-0 w-[100px] md:w-full aspect-square md:aspect-[4/3] bg-gray-100 p-2 md:p-0">
-                                                <div className="w-full h-full rounded-[12px] md:rounded-none overflow-hidden relative">
-                                                    {event.cover_image_url ? (
-                                                        <img
-                                                            src={event.cover_image_url}
-                                                            alt={event.title}
-                                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                                                        />
-                                                    ) : (
-                                                        <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                                                            <Calendar className="w-6 h-6 md:w-12 md:h-12 text-gray-400" />
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                
-                                                {/* Desktop Badges - Hidden on mobile */}
-                                                <div
-                                                    className={cn(
-                                                        "hidden md:block absolute top-3 left-3 px-3 py-1 rounded-full text-[10px] font-bold text-white backdrop-blur-sm shadow-sm capitalize",
-                                                        getCategoryColor(event.category),
-                                                    )}
+                                            return (
+                                                <Link
+                                                    key={event.id}
+                                                    href={`/events/${event.id}`}
+                                                    className="group flex flex-row md:flex-col h-auto md:h-full bg-white rounded-[16px] md:rounded-[24px] overflow-hidden shadow-sm hover:shadow-xl border border-[#e8e8ed] active:scale-[0.98] transition-all duration-200"
                                                 >
-                                                    {event.category}
-                                                </div>
-                                                {isFastFilling && (
-                                                    <div className="hidden md:block absolute top-3 right-3 px-3 py-1 bg-[#ff6b6b] rounded-full text-[10px] font-bold text-white backdrop-blur-sm shadow-sm animate-pulse">
-                                                        {isAlmostFull ? 'Almost Full' : 'Fast Filling'}
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            {/* CONTENT CONTAINER */}
-                                            <div className="p-3 md:p-4 flex flex-col flex-1 min-w-0">
-                                                {/* Mobile Badge + Fast Filling - Shown only on mobile inline */}
-                                                <div className="flex md:hidden items-center gap-1.5 mb-1.5">
-                                                     <div className={cn("w-2 h-2 rounded-full", getCategoryColor(event.category))} />
-                                                     <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">{event.category}</span>
-                                                     {isFastFilling && (
-                                                        <span className="text-[10px] font-bold text-[#ff6b6b] ml-auto">
-                                                            {isAlmostFull ? '1 left' : 'Filling'}
-                                                        </span>
-                                                     )}
-                                                </div>
-
-                                                <h3 className="text-[14px] md:text-lg font-bold text-[#1d1d1f] mb-1.5 md:mb-3 line-clamp-2 md:line-clamp-2 group-hover:text-[#ff6b6b] transition-colors leading-tight">
-                                                    {event.title}
-                                                </h3>
-
-                                                {/* Date & Location Details */}
-                                                <div className="space-y-1 md:space-y-2 mb-2 md:mb-4">
-                                                    <div className="flex items-center gap-1.5 md:gap-2 text-[#6e6e73]">
-                                                        <Calendar className="w-3.5 h-3.5 md:w-4 md:h-4 text-[#ff6b6b] shrink-0" />
-                                                        <span className="text-[11px] md:text-[13px] font-medium truncate">
-                                                            {formatDate(event.event_date)} • {formatTime(event.start_time)}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex items-center gap-1.5 md:gap-2 text-[#6e6e73]">
-                                                        <MapPin className="w-3.5 h-3.5 md:w-4 md:h-4 text-[#10b981] shrink-0" />
-                                                        <span className="text-[11px] md:text-[13px] font-medium truncate">{event.location}</span>
-                                                    </div>
-                                                    {event.connect_plan && (
-                                                        <div className="flex items-center gap-1.5 md:gap-2">
-                                                            <Coffee className="w-3.5 h-3.5 md:w-4 md:h-4 text-amber-500 shrink-0" />
-                                                            <span className="text-[11px] md:text-[13px] font-medium text-amber-700 truncate">
-                                                                The After: {event.connect_plan}
-                                                            </span>
+                                                    {/* IMAGE — thumbnail on mobile, hero on desktop */}
+                                                    <div className="relative shrink-0 w-[100px] md:w-full aspect-square md:aspect-[4/3] bg-gray-100 p-2 md:p-0">
+                                                        <div className="w-full h-full rounded-[12px] md:rounded-none overflow-hidden relative">
+                                                            {event.cover_image_url ? (
+                                                                <img
+                                                                    src={event.cover_image_url}
+                                                                    alt={event.title}
+                                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                                                                />
+                                                            ) : (
+                                                                <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                                                                    <Calendar className="w-6 h-6 md:w-12 md:h-12 text-gray-400" />
+                                                                </div>
+                                                            )}
                                                         </div>
-                                                    )}
-                                                </div>
-
-                                                {/* Desktop Footer (Hidden on mobile) */}
-                                                <div className="hidden md:flex mt-auto items-center justify-between pt-4 border-t border-[#f5f5f7]">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="flex items-center gap-1.5 text-[#10b981]">
-                                                            <Users className="w-4 h-4" />
-                                                            <span className="text-[13px] font-bold">{event.registered_count}</span>
+                                                        <div className={cn("hidden md:block absolute top-3 left-3 px-3 py-1 rounded-full text-[10px] font-bold text-white backdrop-blur-sm shadow-sm capitalize", getCategoryColor(event.category))}>
+                                                            {event.category}
                                                         </div>
-                                                        {isRegistrationOpen(event.registration_deadline) && spotsLeft > 0 && (
-                                                            <span className="text-[11px] font-semibold text-[#ff6b6b]">
-                                                                {spotsLeft} left
-                                                            </span>
+                                                        {isFastFilling && (
+                                                            <div className="hidden md:block absolute top-3 right-3 px-3 py-1 bg-[#ff6b6b] rounded-full text-[10px] font-bold text-white backdrop-blur-sm shadow-sm animate-pulse">
+                                                                {isAlmostFull ? 'Almost Full' : 'Fast Filling'}
+                                                            </div>
                                                         )}
                                                     </div>
-                                                    <span className="h-8 px-5 bg-[#1d1d1f] text-white rounded-full text-[12px] font-bold flex items-center justify-center group-hover:bg-[#ff6b6b] transition-colors">
-                                                        Book
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </Link>
-                                    )
-                                })
-                            )}
-                        </div>
 
-                        {/* Load More */}
-                        {visibleEvents < filteredEvents.length && (
-                            <div className="flex justify-center mt-6 md:mt-8">
-                                <Button
-                                    onClick={loadMore}
-                                    className="px-6 py-5 md:px-8 md:py-6 bg-white border border-gray-200 text-[#1d1d1f] rounded-full text-[13px] md:text-[14px] font-bold shadow-sm hover:bg-gray-50 active:scale-95 transition-all"
-                                >
-                                    Load More
-                                </Button>
-                            </div>
+                                                    {/* CONTENT */}
+                                                    <div className="p-3 md:p-4 flex flex-col flex-1 min-w-0">
+                                                        <div className="flex md:hidden items-center gap-1.5 mb-1.5">
+                                                            <div className={cn("w-2 h-2 rounded-full", getCategoryColor(event.category))} />
+                                                            <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">{event.category}</span>
+                                                            {isFastFilling && (
+                                                                <span className="text-[10px] font-bold text-[#ff6b6b] ml-auto">
+                                                                    {isAlmostFull ? '1 left' : 'Filling'}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <h3 className="text-[14px] md:text-lg font-bold text-[#1d1d1f] mb-1.5 md:mb-3 line-clamp-2 group-hover:text-[#ff6b6b] transition-colors leading-tight">
+                                                            {event.title}
+                                                        </h3>
+                                                        <div className="space-y-1 md:space-y-2 mb-2 md:mb-4">
+                                                            <div className="flex items-center gap-1.5 md:gap-2 text-[#6e6e73]">
+                                                                <Calendar className="w-3.5 h-3.5 md:w-4 md:h-4 text-[#ff6b6b] shrink-0" />
+                                                                <span className="text-[11px] md:text-[13px] font-medium truncate">
+                                                                    {formatDate(event.event_date)} • {formatTime(event.start_time)}
+                                                                </span>
+                                                            </div>
+                                                            <div className="flex items-center gap-1.5 md:gap-2 text-[#6e6e73]">
+                                                                <MapPin className="w-3.5 h-3.5 md:w-4 md:h-4 text-[#10b981] shrink-0" />
+                                                                <span className="text-[11px] md:text-[13px] font-medium truncate">{event.location}</span>
+                                                            </div>
+                                                            {event.connect_plan && (
+                                                                <div className="flex items-center gap-1.5 md:gap-2">
+                                                                    <Coffee className="w-3.5 h-3.5 md:w-4 md:h-4 text-amber-500 shrink-0" />
+                                                                    <span className="text-[11px] md:text-[13px] font-medium text-amber-700 truncate">
+                                                                        The After: {event.connect_plan}
+                                                                    </span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <div className="hidden md:flex mt-auto items-center justify-between pt-4 border-t border-[#f5f5f7]">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="flex items-center gap-1.5 text-[#10b981]">
+                                                                    <Users className="w-4 h-4" />
+                                                                    <span className="text-[13px] font-bold">{event.registered_count}</span>
+                                                                </div>
+                                                                {isRegistrationOpen(event.registration_deadline) && spotsLeft > 0 && (
+                                                                    <span className="text-[11px] font-semibold text-[#ff6b6b]">{spotsLeft} left</span>
+                                                                )}
+                                                            </div>
+                                                            <span className="h-8 px-5 bg-[#1d1d1f] text-white rounded-full text-[12px] font-bold flex items-center justify-center group-hover:bg-[#ff6b6b] transition-colors">
+                                                                Book
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </Link>
+                                            )
+                                        })}
+                                    </div>
+                                )}
+
+                                {/* Load More — upcoming events only */}
+                                {visibleEvents < filteredEvents.length && (
+                                    <div className="flex justify-center mt-6 md:mt-8">
+                                        <Button
+                                            onClick={loadMore}
+                                            className="px-6 py-5 md:px-8 md:py-6 bg-white border border-gray-200 text-[#1d1d1f] rounded-full text-[13px] md:text-[14px] font-bold shadow-sm hover:bg-gray-50 active:scale-95 transition-all"
+                                        >
+                                            Load More
+                                        </Button>
+                                    </div>
+                                )}
+
+                                {/* ── RECENTLY COMPLETED ── */}
+                                {(completedLoading || completedEvents.length > 0) && (
+                                    <div className="mt-10">
+                                        {/* Section divider */}
+                                        <div className="flex items-center gap-3 mb-5">
+                                            <div className="flex-1 h-px bg-gray-200" />
+                                            <div className="flex items-center gap-2 px-1">
+                                                <CheckCircle2 className="w-3.5 h-3.5 text-gray-400" />
+                                                <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                                                    Recently Completed
+                                                </span>
+                                            </div>
+                                            <div className="flex-1 h-px bg-gray-200" />
+                                        </div>
+
+                                        {completedLoading ? (
+                                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2.5 md:gap-5">
+                                                {[1, 2, 3].map(i => (
+                                                    <div key={i} className="flex flex-row md:flex-col bg-white rounded-[16px] md:rounded-[24px] overflow-hidden border border-[#e8e8ed] animate-pulse">
+                                                        <div className="shrink-0 w-[100px] md:w-full aspect-square md:aspect-[4/3] bg-gray-200" />
+                                                        <div className="p-3 md:p-4 flex-1 space-y-2">
+                                                            <div className="h-3.5 bg-gray-200 rounded-full w-3/4" />
+                                                            <div className="h-3 bg-gray-100 rounded-full w-1/2" />
+                                                            <div className="h-3 bg-gray-100 rounded-full w-1/3" />
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2.5 md:gap-5">
+                                                {completedEvents.map((ev) => (
+                                                    <Link
+                                                        key={ev.id}
+                                                        href={`/events/${ev.id}/showcase`}
+                                                        className="group flex flex-row md:flex-col h-auto md:h-full bg-white rounded-[16px] md:rounded-[24px] overflow-hidden border border-[#e8e8ed] shadow-sm active:scale-[0.98] transition-all duration-200"
+                                                    >
+                                                        {/* IMAGE with dark overlay */}
+                                                        <div className="relative shrink-0 w-[100px] md:w-full aspect-square md:aspect-[4/3] bg-gray-800 p-2 md:p-0">
+                                                            <div className="w-full h-full rounded-[12px] md:rounded-none overflow-hidden relative">
+                                                                {ev.cover_image_url ? (
+                                                                    <img
+                                                                        src={ev.cover_image_url}
+                                                                        alt={ev.title}
+                                                                        className="w-full h-full object-cover"
+                                                                    />
+                                                                ) : (
+                                                                    <div className="w-full h-full bg-gradient-to-br from-gray-700 to-gray-800" />
+                                                                )}
+                                                                {/* ~50% dark overlay */}
+                                                                <div className="absolute inset-0 bg-black/50" />
+                                                                {/* Event Ended badge */}
+                                                                <div className="absolute bottom-2 left-2 px-2 py-0.5 bg-gray-900/70 backdrop-blur-sm rounded-full">
+                                                                    <span className="text-[9px] font-semibold text-gray-300 uppercase tracking-wider">
+                                                                        Event Ended
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* CONTENT */}
+                                                        <div className="p-3 md:p-4 flex flex-col flex-1 min-w-0">
+                                                            <h3 className="text-[14px] md:text-base font-bold text-gray-500 mb-1 line-clamp-2 leading-tight group-hover:text-gray-700 transition-colors">
+                                                                {ev.title}
+                                                            </h3>
+                                                            {ev.org_name && (
+                                                                <p className="text-[11px] text-gray-400 font-medium mb-2 truncate">
+                                                                    {ev.org_name}
+                                                                </p>
+                                                            )}
+                                                            <div className="flex items-center gap-3 mt-auto text-[11px] text-gray-400">
+                                                                <span className="flex items-center gap-1">
+                                                                    <Calendar className="w-3 h-3 shrink-0" />
+                                                                    {formatDate(ev.event_date)}
+                                                                </span>
+                                                                <span className="flex items-center gap-1">
+                                                                    <Users className="w-3 h-3 shrink-0" />
+                                                                    {ev.attendee_count}
+                                                                </span>
+                                                                {ev.total_hours > 0 && (
+                                                                    <span className="flex items-center gap-1">
+                                                                        <Clock className="w-3 h-3 shrink-0" />
+                                                                        {ev.total_hours}h
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </Link>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </>
                         )}
                     </div>
                 </main>
