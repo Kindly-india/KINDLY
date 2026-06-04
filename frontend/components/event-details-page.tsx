@@ -7,6 +7,7 @@ import { useParams, useRouter } from "next/navigation"
 import {
   ArrowLeft,
   Share2,
+  Check,
   Heart,
   Clock,
   MapPin,
@@ -44,6 +45,23 @@ export default function EventDetailsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isSaved, setIsSaved] = useState(false)
+  const [copied, setCopied] = useState(false)
+
+  const handleShare = async () => {
+    const url = `${window.location.origin}/events/${eventId}`
+    const shareData = {
+      title: event?.title ?? 'KINDLY Event',
+      text: event?.title ? `Join me at "${event.title}" on KINDLY!` : 'Check out this volunteer event on KINDLY!',
+      url,
+    }
+    if (navigator.share) {
+      await navigator.share(shareData).catch(() => {})
+    } else {
+      await navigator.clipboard.writeText(url).catch(() => {})
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }
   const [showFullDescription, setShowFullDescription] = useState(false)
   const [isRegistering, setIsRegistering] = useState(false)
   const [isRegistered, setIsRegistered] = useState(false)
@@ -243,8 +261,13 @@ export default function EventDetailsPage() {
                 </Link>
 
                 <div className="flex gap-2">
-                  <button className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-white/90 backdrop-blur-xl flex items-center justify-center shadow-xl hover:scale-105 transition-all">
-                    <Share2 className="w-5 h-5 text-gray-900" />
+                  <button
+                    onClick={handleShare}
+                    className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-white/90 backdrop-blur-xl flex items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition-all"
+                  >
+                    {copied
+                      ? <Check className="w-5 h-5 text-green-600" />
+                      : <Share2 className="w-5 h-5 text-gray-900" />}
                   </button>
                   <button
                     onClick={() => setIsSaved(!isSaved)}
