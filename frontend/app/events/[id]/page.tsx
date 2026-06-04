@@ -73,9 +73,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const description = [dateStr && `${dateStr}`, locationStr && `at ${locationStr}`, body]
     .filter(Boolean).join('. ')
 
-  // Use the cover image URL directly — fast, reliable, no Edge Function needed.
-  // WhatsApp fetches the Supabase Storage URL directly without any server-side proxy.
-  const ogImage = event.cover_image_url || DEFAULT_OG_IMAGE
+  // Proxy through /api/og-image — strips Supabase's x-robots-tag:none header which
+  // blocks WhatsApp's crawler from showing the image in link previews.
+  const ogImage = event.cover_image_url
+    ? `${SITE_URL}/api/og-image?url=${encodeURIComponent(event.cover_image_url)}`
+    : DEFAULT_OG_IMAGE
 
   return {
     title,

@@ -69,7 +69,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     ?? (profile.area_locality ? `Volunteer organization in ${profile.area_locality}` : null)
     ?? 'Verified volunteer organization on KINDLY'
 
-  const image = profile.cover_url || profile.logo_url || DEFAULT_OG_IMAGE
+  const rawImage = profile.cover_url || profile.logo_url
+  const image = rawImage
+    ? `${SITE_URL}/api/og-image?url=${encodeURIComponent(rawImage)}`
+    : DEFAULT_OG_IMAGE
 
   return {
     title,

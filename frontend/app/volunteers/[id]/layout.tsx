@@ -75,7 +75,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       ?? (profile.city ? `Volunteer in ${profile.city}` : 'Volunteer on KINDLY')
     const hours = profile.total_hours ? ` ${profile.total_hours} hours contributed.` : ''
     description = `${headline}.${hours}`
-    image = profile.avatar_url || DEFAULT_OG_IMAGE
+    const rawAvatar = profile.avatar_url
+    image = rawAvatar
+      ? `${SITE_URL}/api/og-image?url=${encodeURIComponent(rawAvatar)}`
+      : DEFAULT_OG_IMAGE
   }
 
   return {
