@@ -6,34 +6,43 @@ const DEFAULT_OG_IMAGE = `${SITE_URL}/og-default.png`
 
 type Props = { params: Promise<{ id: string }> }
 
-// Fetch event data for OG metadata.
-// Uses Supabase REST directly — no backend cold-start dependency.
-// Falls back to the NestJS API if Supabase returns nothing.
+// Fetch event data for OG metadata — three-tier, fastest first:
+//  1. Supabase service role key (server-only env var, bypasses RLS, no cold start)
+//  2. Supabase anon key (works if events table has a public SELECT policy)
+//  3. Render backend as last resort (may cold-start on free tier)
 async function fetchEventForMeta(id: string) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-  if (supabaseUrl && supabaseKey) {
-    try {
-      const res = await fetch(
-        `${supabaseUrl}/rest/v1/events?id=eq.${id}&select=title,cover_image_url,event_date,location,description,connect_plan,organization_profiles(name)&limit=1`,
-        {
-          headers: {
-            apikey: supabaseKey,
-            Authorization: `Bearer ${supabaseKey}`,
-            Accept: 'application/json',
-          },
-          next: { revalidate: 60 },
+  if (supabaseUrl) {
+    const keys = [
+      process.env.SUPABASE_SERVICE_ROLE_KEY,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    ].filter(Boolean) as string[]
+
+    for (const key of keys) {
+      try {
+        const res = await fetch(
+          `${supabaseUrl}/rest/v1/events?id=eq.${id}&select=title,cover_image_url,event_date,location,description,connect_plan,organization_profiles(name)&limit=1`,
+          {
+            headers: {
+              apikey: key,
+              Authorization: `Bearer ${key}`,
+              Accept: 'application/json',
+            },
+            next: { revalidate: 60 },
+          }
+        )
+        if (res.ok) {
+          const rows = await res.json()
+          if (rows?.[0]) return rows[0]
         }
-      )
-      if (res.ok) {
-        const rows = await res.json()
-        if (rows?.[0]) return rows[0]
-      }
-    } catch { /* fall through to backend */ }
+      } catch { /* try next */ }
+    }
   }
 
-  const apiUrl = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+  const apiUrl = process.env.API_URL
+    ?? process.env.NEXT_PUBLIC_API_URL
+    ?? 'https://kindly-2ggv.onrender.com'
   try {
     const res = await fetch(`${apiUrl}/events/details/${id}`, { next: { revalidate: 60 } })
     if (!res.ok) return null
