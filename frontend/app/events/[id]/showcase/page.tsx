@@ -72,7 +72,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     .filter(Boolean).join('. ')
 
   const ogImage = event.cover_image_url
-    ? `${SITE_URL}/api/og-image?url=${encodeURIComponent(event.cover_image_url)}`
+    ? `${SITE_URL}/_next/image?url=${encodeURIComponent(event.cover_image_url)}&w=1200&q=75`
     : DEFAULT_OG_IMAGE
 
   return {

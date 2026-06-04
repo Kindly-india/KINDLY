@@ -73,10 +73,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const description = [dateStr && `${dateStr}`, locationStr && `at ${locationStr}`, body]
     .filter(Boolean).join('. ')
 
-  // Proxy through /api/og-image — strips Supabase's x-robots-tag:none header which
-  // blocks WhatsApp's crawler from showing the image in link previews.
+  // Next.js image optimization resizes + compresses to ~150KB.
+  // WhatsApp silently drops og:images over ~300KB — the raw Supabase upload can be 2MB+.
   const ogImage = event.cover_image_url
-    ? `${SITE_URL}/api/og-image?url=${encodeURIComponent(event.cover_image_url)}`
+    ? `${SITE_URL}/_next/image?url=${encodeURIComponent(event.cover_image_url)}&w=1200&q=75`
     : DEFAULT_OG_IMAGE
 
   return {
@@ -88,7 +88,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title,
       description,
       url: `${SITE_URL}/events/${id}`,
-      images: [{ url: ogImage, width: 1200, height: 630, alt: title }],
+      images: [{ url: ogImage, width: 1200, alt: title }],
     },
     twitter: {
       card: 'summary_large_image',

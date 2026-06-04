@@ -28,6 +28,7 @@ const nextConfig: NextConfig = {
         pathname: "/storage/v1/object/public/**",
       },
     ],
+    minimumCacheTTL: 86400, // cache optimized images for 24h so WhatsApp CDN doesn't miss
   },
   async headers() {
     return [

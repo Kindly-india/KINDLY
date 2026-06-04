@@ -71,7 +71,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const rawImage = profile.cover_url || profile.logo_url
   const image = rawImage
-    ? `${SITE_URL}/api/og-image?url=${encodeURIComponent(rawImage)}`
+    ? `${SITE_URL}/_next/image?url=${encodeURIComponent(rawImage)}&w=1200&q=75`
     : DEFAULT_OG_IMAGE
 
   return {
