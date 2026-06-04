@@ -73,16 +73,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const description = [dateStr && `${dateStr}`, locationStr && `at ${locationStr}`, body]
     .filter(Boolean).join('. ')
 
-  // Build the branded poster URL — passed as query params so the Edge Function
-  // doesn't need its own DB fetch (all data comes from this generateMetadata call)
-  const ogParams = new URLSearchParams({
-    title: event.title || 'KINDLY Event',
-    org: orgName,
-    date: dateStr,
-    loc: locationStr,
-    ...(event.cover_image_url ? { img: event.cover_image_url } : {}),
-  })
-  const ogImage = `${SITE_URL}/api/og/event?${ogParams}`
+  // Use the cover image URL directly — fast, reliable, no Edge Function needed.
+  // WhatsApp fetches the Supabase Storage URL directly without any server-side proxy.
+  const ogImage = event.cover_image_url || DEFAULT_OG_IMAGE
 
   return {
     title,
