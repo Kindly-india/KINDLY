@@ -62,9 +62,10 @@ export class CreateEventDto {
   @MaxLength(3000)
   connectPlan?: string;
 
+  @IsOptional()
   @IsInt()
   @Min(1)
-  totalSlots: number;
+  totalSlots?: number | null;
 
   @IsDateString()
   @IsNotEmpty()

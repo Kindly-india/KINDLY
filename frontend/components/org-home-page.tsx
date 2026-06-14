@@ -372,16 +372,25 @@ export function OrgHomePage() {
 
                       {/* mt-auto ensures the progress section stays pinned to the bottom */}
                       <div className="mt-auto pt-2 border-t border-[#f5f5f7]">
-                        <div className="flex items-center justify-between text-[10px] md:text-[11px] mb-1">
-                          <span className="text-[#86868b]">{event.registered_count}/{event.total_slots} registered</span>
-                          <span className="font-medium text-[#10b981]">{Math.round((event.registered_count / event.total_slots) * 100) || 0}%</span>
-                        </div>
-                        <div className="h-1.5 bg-[#f5f5f7] rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-gradient-to-r from-[#10b981] to-[#34d399] rounded-full transition-all" 
-                            style={{ width: `${(event.registered_count / event.total_slots) * 100}%` }} 
-                          />
-                        </div>
+                        {event.total_slots == null ? (
+                          <div className="flex items-center justify-between text-[10px] md:text-[11px]">
+                            <span className="text-[#86868b]">{event.registered_count} registered</span>
+                            <span className="font-medium text-[#10b981]">Unlimited</span>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="flex items-center justify-between text-[10px] md:text-[11px] mb-1">
+                              <span className="text-[#86868b]">{event.registered_count}/{event.total_slots} registered</span>
+                              <span className="font-medium text-[#10b981]">{Math.round((event.registered_count / event.total_slots) * 100) || 0}%</span>
+                            </div>
+                            <div className="h-1.5 bg-[#f5f5f7] rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-gradient-to-r from-[#10b981] to-[#34d399] rounded-full transition-all"
+                                style={{ width: `${(event.registered_count / event.total_slots) * 100}%` }}
+                              />
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
                   </Link>

@@ -43,6 +43,7 @@ export default function EditEventPage() {
 
   // OPTION C State: Lock editing if not pending
   const [isLocked, setIsLocked] = useState(false)
+  const [limitVolunteers, setLimitVolunteers] = useState(false)
 
   // Form State
   const [formData, setFormData] = useState({
@@ -116,11 +117,13 @@ export default function EditEventPage() {
           pointOfContact: event.point_of_contact || "",
           connectPlan: event.connect_plan || "",
           // ---------------------------
-          totalSlots: event.total_slots?.toString() || "",
+          totalSlots: event.total_slots != null ? event.total_slots.toString() : "",
           registrationDeadline: formattedDeadline,
           minimumAge: event.minimum_age?.toString() || "",
           coverImageUrl: event.cover_image_url || "",
         })
+
+        setLimitVolunteers(event.total_slots != null)
 
         if (event.cover_image_url) {
           setImagePreview(event.cover_image_url)
@@ -226,7 +229,7 @@ export default function EditEventPage() {
         pointOfContact: formData.pointOfContact,
         connectPlan: formData.connectPlan || undefined,
         // -----------------------
-        totalSlots: parseInt(formData.totalSlots),
+        totalSlots: limitVolunteers ? (parseInt(formData.totalSlots) || undefined) : null,
         registrationDeadline: formData.registrationDeadline,
         minimumAge: formData.minimumAge ? parseInt(formData.minimumAge) : undefined,
         latitude: formData.latitude,
@@ -579,17 +582,31 @@ export default function EditEventPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide">
-                  Total Slots
-                </label>
-                <input
-                  type="number"
-                  required
-                  min="1"
-                  value={formData.totalSlots}
-                  onChange={(e) => setFormData({ ...formData, totalSlots: e.target.value })}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                />
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                    Volunteer Limit
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setLimitVolunteers(v => !v)}
+                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${limitVolunteers ? 'bg-teal-500' : 'bg-gray-200'}`}
+                  >
+                    <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${limitVolunteers ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                  </button>
+                </div>
+                {limitVolunteers ? (
+                  <input
+                    type="number"
+                    min="1"
+                    value={formData.totalSlots}
+                    onChange={(e) => setFormData({ ...formData, totalSlots: e.target.value })}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  />
+                ) : (
+                  <p className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-400">
+                    Unlimited
+                  </p>
+                )}
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide">

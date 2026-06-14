@@ -217,8 +217,9 @@ export default function EventDetailsPage() {
     ? new Date(event.registration_deadline) > new Date()
     : true
 
-  const slotsLeft = Math.max(0, event.total_slots - (event.registered_count || 0))
-  const isFull = slotsLeft <= 0
+  const isUnlimited = event.total_slots == null
+  const slotsLeft = isUnlimited ? Infinity : Math.max(0, event.total_slots - (event.registered_count || 0))
+  const isFull = !isUnlimited && slotsLeft <= 0
   const canRegister = isRegistrationOpen && !isFull && !isRegistered
 
   const shortDescription = event.description?.length > 150
@@ -521,14 +522,16 @@ export default function EventDetailsPage() {
                     <Users className="w-3.5 h-3.5" />
                     {event.registered_count || 0} Joined
                   </span>
-                  <span>Goal: {event.total_slots}</span>
+                  <span>{isUnlimited ? 'Unlimited slots' : `Goal: ${event.total_slots}`}</span>
                 </div>
-                <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-teal-400 to-emerald-500 rounded-full transition-all duration-700 ease-out shadow-inner"
-                    style={{ width: `${((event.registered_count || 0) / event.total_slots) * 100}%` }}
-                  />
-                </div>
+                {!isUnlimited && (
+                  <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-teal-400 to-emerald-500 rounded-full transition-all duration-700 ease-out shadow-inner"
+                      style={{ width: `${((event.registered_count || 0) / event.total_slots) * 100}%` }}
+                    />
+                  </div>
+                )}
               </div>
             </div>
 

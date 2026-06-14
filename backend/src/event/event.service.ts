@@ -129,7 +129,7 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
       point_of_contact: dto.pointOfContact,
       connect_plan: dto.connectPlan,
       // -----------------------
-      total_slots: dto.totalSlots,
+      total_slots: dto.totalSlots ?? null,
       registration_deadline: dto.registrationDeadline,
       minimum_age: dto.minimumAge,
       updated_at: new Date().toISOString(),
@@ -1003,7 +1003,7 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
         point_of_contact: dto.pointOfContact,
         connect_plan: dto.connectPlan,
         // -----------------------
-        total_slots: dto.totalSlots,
+        total_slots: dto.totalSlots ?? null,
         registration_deadline: dto.registrationDeadline,
         minimum_age: dto.minimumAge,
         latitude: coords?.lat ?? dto.latitude ?? null,

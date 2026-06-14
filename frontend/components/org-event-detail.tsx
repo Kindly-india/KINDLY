@@ -422,7 +422,9 @@ export function OrgEventDetail() {
           </div>
           <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white rounded-full shadow-sm border border-gray-100 text-xs md:text-sm">
             <Clock className="w-3.5 h-3.5 text-amber-500" />
-            <span className="font-medium text-gray-700">{event.total_slots - registrations.length} Slots Left</span>
+            <span className="font-medium text-gray-700">
+              {event.total_slots == null ? 'Unlimited slots' : `${event.total_slots - registrations.length} Slots Left`}
+            </span>
           </div>
         </div>
       </div>
@@ -642,7 +644,9 @@ export function OrgEventDetail() {
                     <Users className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
                     <div>
                       <p className="text-gray-500 text-xs mb-0.5">Capacity</p>
-                      <p className="text-gray-900 font-medium">{event.total_slots} volunteer slots</p>
+                      <p className="text-gray-900 font-medium">
+                        {event.total_slots == null ? 'Unlimited' : `${event.total_slots} volunteer slots`}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">

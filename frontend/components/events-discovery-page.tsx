@@ -373,7 +373,7 @@ const FilterContent = () => (
             if (selectedDuration === 'full-day' && duration <= 8) return false
         }
 
-        if (!showFilledEvents && event.registered_count >= event.total_slots) {
+        if (!showFilledEvents && event.total_slots != null && event.registered_count >= event.total_slots) {
             return false
         }
 
@@ -581,8 +581,9 @@ const FilterContent = () => (
                                     /* Event cards grid */
                                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2.5 md:gap-5">
                                         {sortedEvents.slice(0, visibleEvents).map((event) => {
-                                            const spotsLeft = event.total_slots - event.registered_count
-                                            const isFastFilling = spotsLeft <= 5 && spotsLeft > 0
+                                            const isUnlimited = event.total_slots == null
+                                            const spotsLeft = isUnlimited ? Infinity : Math.max(0, event.total_slots - event.registered_count)
+                                            const isFastFilling = !isUnlimited && spotsLeft <= 5 && spotsLeft > 0
                                             const isAlmostFull = spotsLeft === 1
 
                                             return (
@@ -609,11 +610,15 @@ const FilterContent = () => (
                                                         <div className={cn("hidden md:block absolute top-3 left-3 px-3 py-1 rounded-full text-[10px] font-bold text-white backdrop-blur-sm shadow-sm capitalize", getCategoryColor(event.category))}>
                                                             {event.category}
                                                         </div>
-                                                        {isFastFilling && (
+                                                        {isUnlimited ? (
+                                                            <div className="hidden md:block absolute top-3 right-3 px-3 py-1 bg-emerald-500/90 rounded-full text-[10px] font-bold text-white backdrop-blur-sm shadow-sm">
+                                                                Unlimited
+                                                            </div>
+                                                        ) : isFastFilling ? (
                                                             <div className="hidden md:block absolute top-3 right-3 px-3 py-1 bg-[#ff6b6b] rounded-full text-[10px] font-bold text-white backdrop-blur-sm shadow-sm animate-pulse">
                                                                 {isAlmostFull ? 'Almost Full' : 'Fast Filling'}
                                                             </div>
-                                                        )}
+                                                        ) : null}
                                                     </div>
 
                                                     {/* CONTENT */}
@@ -621,11 +626,13 @@ const FilterContent = () => (
                                                         <div className="flex md:hidden items-center gap-1.5 mb-1.5">
                                                             <div className={cn("w-2 h-2 rounded-full", getCategoryColor(event.category))} />
                                                             <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">{event.category}</span>
-                                                            {isFastFilling && (
+                                                            {isUnlimited ? (
+                                                                <span className="text-[10px] font-bold text-emerald-600 ml-auto">Unlimited</span>
+                                                            ) : isFastFilling ? (
                                                                 <span className="text-[10px] font-bold text-[#ff6b6b] ml-auto">
                                                                     {isAlmostFull ? '1 left' : 'Filling'}
                                                                 </span>
-                                                            )}
+                                                            ) : null}
                                                         </div>
                                                         <h3 className="text-[14px] md:text-lg font-bold text-[#1d1d1f] mb-1.5 md:mb-3 line-clamp-2 group-hover:text-[#ff6b6b] transition-colors leading-tight">
                                                             {event.title}
@@ -656,9 +663,11 @@ const FilterContent = () => (
                                                                     <Users className="w-4 h-4" />
                                                                     <span className="text-[13px] font-bold">{event.registered_count}</span>
                                                                 </div>
-                                                                {isRegistrationOpen(event.registration_deadline) && spotsLeft > 0 && (
+                                                                {isUnlimited ? (
+                                                                    <span className="text-[11px] font-semibold text-emerald-600">Unlimited slots</span>
+                                                                ) : isRegistrationOpen(event.registration_deadline) && spotsLeft > 0 ? (
                                                                     <span className="text-[11px] font-semibold text-[#ff6b6b]">{spotsLeft} left</span>
-                                                                )}
+                                                                ) : null}
                                                             </div>
                                                             <span className="h-8 px-5 bg-[#1d1d1f] text-white rounded-full text-[12px] font-bold flex items-center justify-center group-hover:bg-[#ff6b6b] transition-colors">
                                                                 Book

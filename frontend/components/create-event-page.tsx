@@ -55,6 +55,7 @@ export function CreateEventPage() {
     const [uploading, setUploading] = useState(false);
     const [gettingLocation, setGettingLocation] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [limitVolunteers, setLimitVolunteers] = useState(false);
     const [suggestions, setSuggestions] = useState<any[]>([])
     const [showSuggestions, setShowSuggestions] = useState(false)
     const [searchLoading, setSearchLoading] = useState(false)
@@ -79,7 +80,7 @@ export function CreateEventPage() {
         pointOfContact: '',
         connectPlan: '',
         // ------------------
-        totalSlots: 50,
+        totalSlots: 0,
         registrationDeadline: '', 
         minimumAge: undefined as number | undefined,
     });
@@ -203,8 +204,8 @@ export function CreateEventPage() {
                 return;
             }
 
-            if (!formData.totalSlots || formData.totalSlots < 1) {
-                alert('Please set valid volunteer slots');
+            if (limitVolunteers && (!formData.totalSlots || formData.totalSlots < 1)) {
+                alert('Please set a valid volunteer slot count, or turn off the limit');
                 return;
             }
 
@@ -263,7 +264,7 @@ export function CreateEventPage() {
                 thingsToBring: formData.thingsToBring,
                 pointOfContact: formData.pointOfContact,
                 connectPlan: formData.connectPlan,
-                totalSlots: formData.totalSlots,
+                totalSlots: limitVolunteers ? formData.totalSlots : null,
                 registrationDeadline: deadlineISO,
                 minimumAge: formData.minimumAge,
                 latitude: formData.latitude,
@@ -689,21 +690,36 @@ export function CreateEventPage() {
                         {/* --------------------------------------------- */}
 
                         <div>
-                            <label className="block text-sm font-semibold text-[#1d1d1f] mb-3">
-                                <Users className="w-4 h-4 inline mr-2 text-emerald-500" />
-                                Total Volunteer Slots
-                            </label>
-                            <input
-                                type="number"
-                                min="1"
-                                placeholder="50"
-                                value={formData.totalSlots || ''}
-                                onKeyDown={(e) => {
-                                    if (e.key === '-' || e.key === 'e' || e.key === '.') e.preventDefault();
-                                }}
-                                onChange={(e) => setFormData({ ...formData, totalSlots: parseInt(e.target.value) || 0 as any })}
-                                className="w-full h-12 md:h-14 px-4 bg-[#f5f5f7] rounded-xl border-0 text-[#1d1d1f] placeholder:text-[#86868b] focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all text-sm md:text-base"
-                            />
+                            <div className="flex items-center justify-between mb-3">
+                                <label className="text-sm font-semibold text-[#1d1d1f] flex items-center gap-2">
+                                    <Users className="w-4 h-4 text-emerald-500" />
+                                    Volunteer Limit
+                                </label>
+                                <button
+                                    type="button"
+                                    onClick={() => setLimitVolunteers(v => !v)}
+                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${limitVolunteers ? 'bg-emerald-500' : 'bg-gray-200'}`}
+                                >
+                                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${limitVolunteers ? 'translate-x-6' : 'translate-x-1'}`} />
+                                </button>
+                            </div>
+                            {limitVolunteers ? (
+                                <input
+                                    type="number"
+                                    min="1"
+                                    placeholder="e.g. 50"
+                                    value={formData.totalSlots || ''}
+                                    onKeyDown={(e) => {
+                                        if (e.key === '-' || e.key === 'e' || e.key === '.') e.preventDefault();
+                                    }}
+                                    onChange={(e) => setFormData({ ...formData, totalSlots: parseInt(e.target.value) || 0 as any })}
+                                    className="w-full h-12 md:h-14 px-4 bg-[#f5f5f7] rounded-xl border-0 text-[#1d1d1f] placeholder:text-[#86868b] focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all text-sm md:text-base"
+                                />
+                            ) : (
+                                <p className="text-sm text-[#86868b] bg-[#f5f5f7] rounded-xl px-4 py-3">
+                                    Unlimited — anyone can register
+                                </p>
+                            )}
                         </div>
 
                         <div>
@@ -804,20 +820,24 @@ export function CreateEventPage() {
                                     )}
                                 </div>
 
-                                {formData.totalSlots > 0 && (
-                                    <div>
-                                        <div className="flex items-center justify-between text-xs text-gray-600 mb-1.5">
-                                            <span className="flex items-center gap-1">
-                                                <Users className="w-3.5 h-3.5" />
-                                                0/{formData.totalSlots} Registered
-                                            </span>
-                                            <span className="font-medium text-emerald-600">0%</span>
-                                        </div>
+                                <div>
+                                    <div className="flex items-center justify-between text-xs text-gray-600 mb-1.5">
+                                        <span className="flex items-center gap-1">
+                                            <Users className="w-3.5 h-3.5" />
+                                            {limitVolunteers && formData.totalSlots > 0
+                                                ? `0/${formData.totalSlots} Registered`
+                                                : '0 Registered'}
+                                        </span>
+                                        {limitVolunteers && formData.totalSlots > 0
+                                            ? <span className="font-medium text-emerald-600">0%</span>
+                                            : <span className="font-medium text-emerald-600">Unlimited</span>}
+                                    </div>
+                                    {limitVolunteers && formData.totalSlots > 0 && (
                                         <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
                                             <div className="h-full bg-gradient-to-r from-emerald-400 to-teal-500 rounded-full" style={{ width: '0%' }} />
                                         </div>
-                                    </div>
-                                )}
+                                    )}
+                                </div>
 
                                 {isUrgent && (
                                     <div className="mt-3 flex items-center gap-1.5 px-2 py-1 bg-amber-100 rounded-lg w-fit">

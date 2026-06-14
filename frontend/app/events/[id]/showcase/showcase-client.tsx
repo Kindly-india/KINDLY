@@ -6,7 +6,7 @@ import Link from "next/link"
 import {
   Calendar, MapPin,
   CheckCircle2, Building2, Loader2,
-  Download, X, Award, Star
+  Download, X, Award, Star, Sparkles, Share2
 } from "lucide-react"
 import { api, VolunteerCertificate, ShowcaseData } from "@/lib/api"
 import { downloadFromUrl } from "@/lib/utils"
@@ -15,6 +15,123 @@ import { downloadFromUrl } from "@/lib/utils"
 // 'waiting'  — attended, but org hasn't marked event complete yet
 // 'full'     — attended + event completed → full showcase with cert + review
 type AccessState = 'loading' | 'public' | 'waiting' | 'full'
+
+// ── Moment card generator ─────────────────────────────────────────────────────
+// Draws a 540×960 (9:16 = Instagram story proportion) fully transparent PNG.
+// White text + shadows so the card is readable over any photo or video.
+async function drawMomentCard(params: {
+  title: string
+  orgName: string
+  eventDate: string
+  hours: string | null
+}): Promise<string> {
+  const W = 540, H = 960, S = 2, P = 40
+  const WHITE = '#ffffff'
+  const FONT = '"Helvetica Neue", Helvetica, Arial, sans-serif'
+
+  const canvas = document.createElement('canvas')
+  canvas.width = W * S
+  canvas.height = H * S
+  const ctx = canvas.getContext('2d')!
+  ctx.scale(S, S)
+  ctx.clearRect(0, 0, W, H) // fully transparent
+
+  // Global shadow so text stays legible on any background
+  ctx.shadowColor = 'rgba(0,0,0,0.60)'
+  ctx.shadowBlur = 14
+  ctx.shadowOffsetX = 0
+  ctx.shadowOffsetY = 2
+
+  // ── Logo (top-left) ──────────────────────────────────────────────────────────
+  let logoDrawn = false
+  try {
+    const logoImg = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const img = new window.Image()
+      img.onload = () => resolve(img)
+      img.onerror = reject
+      img.src = '/logowhite.png'
+    })
+    const logoH = 40
+    const logoW = (logoImg.naturalWidth / logoImg.naturalHeight) * logoH
+    ctx.drawImage(logoImg, P, P, logoW, logoH)
+    logoDrawn = true
+  } catch { /* fallback below */ }
+
+  if (!logoDrawn) {
+    ctx.font = `800 24px ${FONT}`
+    ctx.fillStyle = WHITE
+    ctx.fillText('KINDLY', P, P + 24)
+  }
+
+  // ── Content block in lower section ───────────────────────────────────────────
+  let y = H * 0.56
+
+  // Top separator
+  ctx.shadowColor = 'transparent'
+  ctx.beginPath(); ctx.moveTo(P, y); ctx.lineTo(W - P, y)
+  ctx.strokeStyle = 'rgba(255,255,255,0.30)'; ctx.lineWidth = 1.5; ctx.stroke()
+  ctx.shadowColor = 'rgba(0,0,0,0.60)'
+  y += 26
+
+  // "I volunteered at"
+  ctx.font = `400 14px ${FONT}`
+  ctx.fillStyle = 'rgba(255,255,255,0.62)'
+  ctx.fillText('I volunteered at', P, y)
+  y += 46
+
+  // Event title (max 2 lines)
+  ctx.font = `700 36px ${FONT}`
+  ctx.fillStyle = WHITE
+  const maxW = W - P * 2
+  const words = params.title.split(' ')
+  let line1 = '', line2 = '', onLine2 = false
+  for (const w of words) {
+    if (!onLine2) {
+      const t = line1 ? line1 + ' ' + w : w
+      if (ctx.measureText(t).width > maxW) { onLine2 = true; line2 = w }
+      else line1 = t
+    } else {
+      const t = line2 + ' ' + w
+      if (ctx.measureText(t).width > maxW) { line2 = line2.trimEnd() + '…'; break }
+      line2 = t
+    }
+  }
+  ctx.fillText(line1, P, y)
+  if (line2) { y += 46; ctx.fillText(line2, P, y) }
+  y += 34
+
+  // Org · Date
+  const dateStr = params.eventDate
+    ? new Date(params.eventDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+    : ''
+  const meta = [params.orgName, dateStr].filter(Boolean).join('  ·  ')
+  ctx.font = `400 15px ${FONT}`
+  ctx.fillStyle = 'rgba(255,255,255,0.72)'
+  ctx.fillText(meta, P, y)
+  y += 32
+
+  // Hours
+  if (params.hours) {
+    ctx.font = `600 18px ${FONT}`
+    ctx.fillStyle = 'rgba(255,255,255,0.92)'
+    ctx.fillText(`${params.hours} volunteered`, P, y)
+    y += 38
+  }
+
+  // Bottom separator
+  ctx.shadowColor = 'transparent'
+  ctx.beginPath(); ctx.moveTo(P, y + 4); ctx.lineTo(W - P, y + 4)
+  ctx.strokeStyle = 'rgba(255,255,255,0.30)'; ctx.lineWidth = 1.5; ctx.stroke()
+  ctx.shadowColor = 'rgba(0,0,0,0.60)'
+  y += 26
+
+  // kindly.co.in
+  ctx.font = `600 13px ${FONT}`
+  ctx.fillStyle = 'rgba(255,255,255,0.55)'
+  ctx.fillText('kindly.co.in', P, y)
+
+  return canvas.toDataURL('image/png')
+}
 
 export default function ShowcaseClient() {
   const { id } = useParams()
@@ -37,6 +154,10 @@ export default function ShowcaseClient() {
 
   // Gallery lightbox
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
+
+  // Moment card
+  const [momentCardUrl, setMomentCardUrl] = useState<string | null>(null)
+  const [generatingCard, setGeneratingCard] = useState(false)
 
   useEffect(() => {
     const loadData = async () => {
@@ -133,6 +254,50 @@ export default function ShowcaseClient() {
     } finally {
       setSubmitting(false)
     }
+  }
+
+  const handleGenerateMomentCard = async () => {
+    if (!event) return
+    setGeneratingCard(true)
+    try {
+      const hoursRaw = (() => {
+        if (!event.start_time || !event.end_time) return null
+        const [sh, sm] = event.start_time.split(':').map(Number)
+        const [eh, em] = event.end_time.split(':').map(Number)
+        const diff = (eh * 60 + em - (sh * 60 + sm)) / 60
+        if (diff <= 0) return null
+        return Number.isInteger(diff) ? `${diff} hrs` : `${diff.toFixed(1)} hrs`
+      })()
+      const url = await drawMomentCard({
+        title: event.title ?? 'KINDLY Event',
+        orgName: orgProfile?.name ?? event?.organization_name ?? 'KINDLY',
+        eventDate: event.event_date ?? '',
+        hours: hoursRaw,
+      })
+      setMomentCardUrl(url)
+    } finally {
+      setGeneratingCard(false)
+    }
+  }
+
+  const handleShareMomentCard = async () => {
+    if (!momentCardUrl) return
+    try {
+      const res = await fetch(momentCardUrl)
+      const blob = await res.blob()
+      const file = new File([blob], 'kindly-moment.png', { type: 'image/png' })
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: 'My KINDLY Moment' })
+        return
+      }
+    } catch { /* fall through */ }
+    // Fallback: trigger download
+    const a = document.createElement('a')
+    a.href = momentCardUrl
+    a.download = `kindly-moment-${event?.title?.replace(/\s+/g, '-').toLowerCase() ?? 'card'}.png`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
   }
 
   // ── Loading ───────────────────────────────────────────────────────────────────
@@ -316,6 +481,66 @@ export default function ShowcaseClient() {
                 <p className="text-gray-500 italic">No images available.</p>
               )}
             </div>
+
+            {/* Share your Moment — attendees only */}
+            {isAttendee && (
+              <div className="space-y-4 pt-2">
+                <div className="flex items-center gap-2">
+                  <Share2 className="w-5 h-5 text-[#7c2529]" />
+                  <h2 className="text-xl md:text-2xl font-bold text-gray-900">Share your Moment</h2>
+                </div>
+
+                {!momentCardUrl ? (
+                  <button
+                    onClick={handleGenerateMomentCard}
+                    disabled={generatingCard}
+                    className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm text-white transition-all active:scale-95 disabled:opacity-60"
+                    style={{ background: 'linear-gradient(135deg, #7c2529 0%, #a33030 100%)' }}
+                  >
+                    {generatingCard
+                      ? <Loader2 className="w-4 h-4 animate-spin" />
+                      : <Sparkles className="w-4 h-4" />}
+                    {generatingCard ? 'Generating…' : 'Create Story Card'}
+                  </button>
+                ) : (
+                  <div className="space-y-4">
+                    {/* Preview on dark gradient to simulate an Instagram story background */}
+                    <div
+                      className="w-full max-w-[220px] mx-auto rounded-2xl overflow-hidden shadow-xl"
+                      style={{ background: 'linear-gradient(160deg, #1a1035 0%, #2d1f4e 40%, #1a2f5e 100%)' }}
+                    >
+                      <img
+                        src={momentCardUrl}
+                        alt="Moment Card Preview"
+                        className="w-full h-auto block"
+                      />
+                    </div>
+
+                    {/* Share button */}
+                    <button
+                      onClick={handleShareMomentCard}
+                      className="w-full flex items-center justify-center gap-2 h-12 rounded-xl font-bold text-sm text-white transition-all active:scale-95"
+                      style={{ background: 'linear-gradient(135deg, #833ab4 0%, #fd1d1d 50%, #fcb045 100%)' }}
+                    >
+                      <Share2 className="w-4 h-4" />
+                      Share to Instagram Story
+                    </button>
+
+                    <p className="text-xs text-gray-500 text-center leading-relaxed">
+                      Opens your share sheet — pick Instagram to post directly to your story
+                    </p>
+
+                    {/* Regenerate option */}
+                    <button
+                      onClick={() => setMomentCardUrl(null)}
+                      className="w-full text-xs text-gray-400 hover:text-gray-600 transition-colors py-1"
+                    >
+                      ↺ Regenerate card
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* RIGHT: Sidebar */}

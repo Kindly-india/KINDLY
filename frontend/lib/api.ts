@@ -91,7 +91,7 @@ export interface CreateEventData {
   location: string;
   dressCode?: string;
   thingsToBring?: string;
-  totalSlots: number;
+  totalSlots?: number | null;
   registrationDeadline: string;
   minimumAge?: number;
   gallery_images?: string[];
