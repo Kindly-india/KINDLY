@@ -47,9 +47,8 @@ function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
 type CheckInState =
   | 'idle'             // haven't tapped yet
   | 'denied'           // geolocation permission denied
-  | 'fetching'         // waiting for GPS fix
-  | 'ready'            // within 200m — confirm tap
-  | 'too_far'          // outside 200m
+  | 'fetching'         // waiting for GPS fix — then fires check-in immediately
+  | 'too_far'          // outside 200m or GPS unavailable
   | 'checking_in'      // API call in flight
   | 'success'          // just checked in
   | 'already_checked_in' // was checked in before page load
@@ -68,7 +67,7 @@ export default function RegisteredEventDetailPage() {
 
   // ── check-in state machine ────────────────────────────────────────────────────
   const [checkInState, setCheckInState] = useState<CheckInState>('idle')
-  const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null)
+  const [locationError, setLocationError] = useState('')   // subtext for too_far
   const [retryCountdown, setRetryCountdown] = useState(0)
 
   // ── other state ───────────────────────────────────────────────────────────────
@@ -134,10 +133,10 @@ export default function RegisteredEventDetailPage() {
     loadData()
   }, [eventId])
 
-  // ── check-in handlers ─────────────────────────────────────────────────────────
+  // ── single-tap check-in: get location then call API immediately ───────────────
 
-  const handleRequestLocation = () => {
-    // Guard: don't allow check-in before event starts
+  const handleCheckIn = async () => {
+    // Guard: event must have started
     if (event?.event_date && event?.start_time) {
       const eventStart = new Date(`${event.event_date}T${event.start_time}+05:30`)
       if (!isNaN(eventStart.getTime()) && new Date() < eventStart) {
@@ -145,44 +144,59 @@ export default function RegisteredEventDetailPage() {
         return
       }
     }
+
     if (!navigator.geolocation) {
       setCheckInState('denied')
       return
     }
+
+    setLocationError('')
     setCheckInState('fetching')
+
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude }
-        setUserCoords(coords)
-        // Client-side pre-check (saves a round trip if clearly outside)
+      async (pos) => {
+        const lat = pos.coords.latitude
+        const lng = pos.coords.longitude
+
+        // Client-side distance pre-check
         if (event?.latitude && event?.longitude) {
-          const dist = haversineDistance(event.latitude, event.longitude, coords.lat, coords.lng)
-          if (dist > 200) { setCheckInState('too_far'); return }
+          const dist = haversineDistance(event.latitude, event.longitude, lat, lng)
+          if (dist > 200) {
+            setLocationError('You need to be at the event location to check in')
+            setCheckInState('too_far')
+            return
+          }
         }
-        setCheckInState('ready')
+
+        // Location verified — fire API immediately (one tap!)
+        setCheckInState('checking_in')
+        try {
+          await api.selfCheckIn({ eventId, latitude: lat, longitude: lng })
+          setCheckInState('success')
+        } catch (err: any) {
+          const msg: string = err.message || ''
+          if (msg.toLowerCase().includes('within')) {
+            setLocationError('You need to be at the event location to check in')
+            setCheckInState('too_far')
+          } else {
+            alert(msg || 'Check-in failed. Please try again.')
+            setCheckInState('idle')
+          }
+        }
       },
       (err) => {
-        setCheckInState(err.code === err.PERMISSION_DENIED ? 'denied' : 'too_far')
+        if (err.code === err.PERMISSION_DENIED) {
+          setCheckInState('denied')
+        } else if (err.code === err.POSITION_UNAVAILABLE) {
+          setLocationError('Turn on your device GPS / Location Services and try again')
+          setCheckInState('too_far')
+        } else {
+          setLocationError("Couldn't get your location. Make sure GPS is on and try again.")
+          setCheckInState('too_far')
+        }
       },
       { enableHighAccuracy: true, timeout: 10000 }
     )
-  }
-
-  const handleDoCheckIn = async () => {
-    if (!userCoords || checkInState !== 'ready') return
-    setCheckInState('checking_in')
-    try {
-      await api.selfCheckIn({ eventId, latitude: userCoords.lat, longitude: userCoords.lng })
-      setCheckInState('success')
-    } catch (err: any) {
-      // Backend says too far → reflect it; otherwise reset
-      if (err.message?.toLowerCase().includes('within')) {
-        setCheckInState('too_far')
-      } else {
-        alert(err.message || 'Check-in failed. Please try again.')
-        setCheckInState('idle')
-      }
-    }
   }
 
   // ── other handlers (unchanged) ────────────────────────────────────────────────
@@ -289,7 +303,7 @@ export default function RegisteredEventDetailPage() {
     const base = `${fullWidth ? 'w-full' : 'h-14 px-6'} h-14 rounded-2xl font-black text-sm flex items-center justify-center gap-3 transition-all active:scale-95`
 
     if (checkInState === 'idle') return (
-      <button onClick={handleRequestLocation} className={cn(base, 'bg-gray-900 text-white shadow-xl hover:bg-black')}>
+      <button onClick={handleCheckIn} className={cn(base, 'bg-gray-900 text-white shadow-xl hover:bg-black')}>
         <LocateFixed className="w-5 h-5" />
         Tap to Check In
       </button>
@@ -303,13 +317,7 @@ export default function RegisteredEventDetailPage() {
     if (checkInState === 'fetching') return (
       <button disabled className={cn(base, 'bg-gray-200 text-gray-500 cursor-not-allowed')}>
         <Loader2 className="w-5 h-5 animate-spin" />
-        Verifying your location...
-      </button>
-    )
-    if (checkInState === 'ready') return (
-      <button onClick={handleDoCheckIn} className={cn(base, 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-xl')}>
-        <CheckCircle2 className="w-5 h-5" />
-        You're here! Tap to Check In 🎯
+        Getting your location...
       </button>
     )
     if (checkInState === 'too_far') return (
@@ -336,15 +344,19 @@ export default function RegisteredEventDetailPage() {
     if (checkInState === 'fetching') return (
       <p className="text-xs text-gray-500 text-center mt-2">Verifying your location...</p>
     )
-    if (checkInState === 'too_far') return (
-      <p className="text-xs text-gray-500 text-center mt-2">
-        You need to be at the event location to check in
-        {retryCountdown > 0
-          ? <span className="text-gray-400"> · Retry in {retryCountdown}s</span>
-          : <button onClick={handleRequestLocation} className="ml-1 text-blue-500 font-semibold hover:underline">Try again</button>
-        }
-      </p>
-    )
+    if (checkInState === 'too_far') {
+      // GPS/unavailable errors should skip the countdown and show actionable text
+      const isGpsError = locationError.toLowerCase().includes('gps') || locationError.toLowerCase().includes("couldn't get")
+      return (
+        <p className="text-xs text-gray-500 text-center mt-2 leading-relaxed">
+          {locationError || 'You need to be at the event location to check in'}
+          {!isGpsError && retryCountdown > 0
+            ? <span className="text-gray-400"> · Retry in {retryCountdown}s</span>
+            : <button onClick={handleCheckIn} className="ml-1 text-blue-500 font-semibold hover:underline">Try again</button>
+          }
+        </p>
+      )
+    }
     return null
   }
 
