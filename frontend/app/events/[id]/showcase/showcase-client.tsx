@@ -17,15 +17,16 @@ import { downloadFromUrl } from "@/lib/utils"
 type AccessState = 'loading' | 'public' | 'waiting' | 'full'
 
 // ── Moment card generator ─────────────────────────────────────────────────────
-// Draws a 540×960 (9:16 = Instagram story proportion) fully transparent PNG.
-// White text + shadows so the card is readable over any photo or video.
+// 9:16 transparent PNG — white text over a frosted dark panel in the lower half.
+// Users download this and add it as an Instagram sticker over their own photo.
 async function drawMomentCard(params: {
   title: string
   orgName: string
   eventDate: string
   hours: string | null
 }): Promise<string> {
-  const W = 540, H = 960, S = 2, P = 40
+  const W = 540, H = 960, S = 2
+  const MAROON = '#7c2529'
   const WHITE = '#ffffff'
   const FONT = '"Helvetica Neue", Helvetica, Arial, sans-serif'
 
@@ -36,53 +37,95 @@ async function drawMomentCard(params: {
   ctx.scale(S, S)
   ctx.clearRect(0, 0, W, H) // fully transparent
 
-  // Global shadow so text stays legible on any background
-  ctx.shadowColor = 'rgba(0,0,0,0.60)'
-  ctx.shadowBlur = 14
-  ctx.shadowOffsetX = 0
-  ctx.shadowOffsetY = 2
-
-  // ── Logo (top-left) ──────────────────────────────────────────────────────────
-  let logoDrawn = false
-  try {
-    const logoImg = await new Promise<HTMLImageElement>((resolve, reject) => {
-      const img = new window.Image()
-      img.onload = () => resolve(img)
-      img.onerror = reject
-      img.src = '/logowhite.png'
-    })
-    const logoH = 40
-    const logoW = (logoImg.naturalWidth / logoImg.naturalHeight) * logoH
-    ctx.drawImage(logoImg, P, P, logoW, logoH)
-    logoDrawn = true
-  } catch { /* fallback below */ }
-
-  if (!logoDrawn) {
-    ctx.font = `800 24px ${FONT}`
-    ctx.fillStyle = WHITE
-    ctx.fillText('KINDLY', P, P + 24)
+  // ── Helper: rounded rect path ──────────────────────────────────────────────
+  const rrect = (x: number, y: number, w: number, h: number, r: number) => {
+    ctx.beginPath()
+    ctx.moveTo(x + r, y)
+    ctx.lineTo(x + w - r, y); ctx.arcTo(x + w, y, x + w, y + r, r)
+    ctx.lineTo(x + w, y + h - r); ctx.arcTo(x + w, y + h, x + w - r, y + h, r)
+    ctx.lineTo(x + r, y + h); ctx.arcTo(x, y + h, x, y + h - r, r)
+    ctx.lineTo(x, y + r); ctx.arcTo(x, y, x + r, y, r)
+    ctx.closePath()
   }
 
-  // ── Content block in lower section ───────────────────────────────────────────
-  let y = H * 0.56
+  // ── Shadow helper ──────────────────────────────────────────────────────────
+  const shadow = (on: boolean) => {
+    ctx.shadowColor = on ? 'rgba(0,0,0,0.65)' : 'transparent'
+    ctx.shadowBlur = on ? 14 : 0
+    ctx.shadowOffsetX = 0; ctx.shadowOffsetY = on ? 2 : 0
+  }
 
-  // Top separator
-  ctx.shadowColor = 'transparent'
-  ctx.beginPath(); ctx.moveTo(P, y); ctx.lineTo(W - P, y)
-  ctx.strokeStyle = 'rgba(255,255,255,0.30)'; ctx.lineWidth = 1.5; ctx.stroke()
-  ctx.shadowColor = 'rgba(0,0,0,0.60)'
-  y += 26
+  // ── Load logo ──────────────────────────────────────────────────────────────
+  let logoImg: HTMLImageElement | null = null
+  try {
+    logoImg = await new Promise<HTMLImageElement>((res, rej) => {
+      const img = new window.Image()
+      img.onload = () => res(img); img.onerror = rej; img.src = '/logowhite.png'
+    })
+  } catch { /* text fallback */ }
 
-  // "I volunteered at"
-  ctx.font = `400 14px ${FONT}`
-  ctx.fillStyle = 'rgba(255,255,255,0.62)'
-  ctx.fillText('I volunteered at', P, y)
-  y += 46
+  // ── TOP: Logo ──────────────────────────────────────────────────────────────
+  shadow(true)
+  if (logoImg) {
+    const lH = 38
+    const lW = (logoImg.naturalWidth / logoImg.naturalHeight) * lH
+    ctx.drawImage(logoImg, 36, 36, lW, lH)
+  } else {
+    ctx.font = `800 22px ${FONT}`; ctx.fillStyle = WHITE
+    ctx.fillText('KINDLY', 36, 60)
+  }
+
+  // "MOMENT" pill badge — top right
+  shadow(false)
+  const bText = 'MOMENT'
+  ctx.font = `700 10px ${FONT}`
+  const bW = ctx.measureText(bText).width + 24
+  const bX = W - bW - 32
+  rrect(bX, 38, bW, 26, 13)
+  ctx.fillStyle = 'rgba(124,37,41,0.80)'; ctx.fill()
+  ctx.strokeStyle = 'rgba(255,255,255,0.22)'; ctx.lineWidth = 1; ctx.stroke()
+  shadow(true)
+  ctx.fillStyle = 'rgba(255,255,255,0.92)'
+  ctx.fillText(bText, bX + 12, 38 + 17)
+
+  // ── FROSTED PANEL (bottom ~50%) ────────────────────────────────────────────
+  const panelY = Math.floor(H * 0.50)
+  const PR = 26 // panel corner radius
+
+  shadow(false)
+  // Panel background — rounded top corners only
+  ctx.beginPath()
+  ctx.moveTo(PR, panelY)
+  ctx.lineTo(W - PR, panelY); ctx.arcTo(W, panelY, W, panelY + PR, PR)
+  ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.lineTo(0, panelY + PR)
+  ctx.arcTo(0, panelY, PR, panelY, PR)
+  ctx.closePath()
+  ctx.fillStyle = 'rgba(6,4,16,0.68)'
+  ctx.fill()
+
+  // Maroon left accent stripe inside panel
+  rrect(0, panelY + PR, 5, 200, 2)
+  ctx.fillStyle = MAROON; ctx.fill()
+
+  // Subtle top edge highlight
+  ctx.beginPath(); ctx.moveTo(PR, panelY); ctx.lineTo(W - PR, panelY)
+  ctx.strokeStyle = 'rgba(255,255,255,0.10)'; ctx.lineWidth = 1; ctx.stroke()
+
+  // ── PANEL CONTENT ─────────────────────────────────────────────────────────
+  const X = 28
+  let y = panelY + 36
+
+  // "I  V O L U N T E E R E D  A T"  (spaced caps)
+  shadow(true)
+  ctx.font = `500 10px ${FONT}`
+  ctx.fillStyle = 'rgba(255,255,255,0.48)'
+  ctx.fillText('I  V O L U N T E E R E D  A T', X, y)
+  y += 38
 
   // Event title (max 2 lines)
-  ctx.font = `700 36px ${FONT}`
+  ctx.font = `700 30px ${FONT}`
   ctx.fillStyle = WHITE
-  const maxW = W - P * 2
+  const maxW = W - X - 24
   const words = params.title.split(' ')
   let line1 = '', line2 = '', onLine2 = false
   for (const w of words) {
@@ -96,39 +139,59 @@ async function drawMomentCard(params: {
       line2 = t
     }
   }
-  ctx.fillText(line1, P, y)
-  if (line2) { y += 46; ctx.fillText(line2, P, y) }
-  y += 34
+  ctx.fillText(line1, X, y)
+  if (line2) { y += 38; ctx.fillText(line2, X, y) }
+  y += 24
 
-  // Org · Date
-  const dateStr = params.eventDate
-    ? new Date(params.eventDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
-    : ''
-  const meta = [params.orgName, dateStr].filter(Boolean).join('  ·  ')
-  ctx.font = `400 15px ${FONT}`
+  // Thin maroon rule
+  shadow(false)
+  ctx.beginPath(); ctx.moveTo(X, y); ctx.lineTo(W - 24, y)
+  ctx.strokeStyle = 'rgba(124,37,41,0.55)'; ctx.lineWidth = 1.5; ctx.stroke()
+  y += 22
+
+  // Org name
+  shadow(true)
+  ctx.font = `500 13px ${FONT}`
   ctx.fillStyle = 'rgba(255,255,255,0.72)'
-  ctx.fillText(meta, P, y)
-  y += 32
+  ctx.fillText(params.orgName, X, y)
+  y += 22
 
-  // Hours
-  if (params.hours) {
-    ctx.font = `600 18px ${FONT}`
-    ctx.fillStyle = 'rgba(255,255,255,0.92)'
-    ctx.fillText(`${params.hours} volunteered`, P, y)
-    y += 38
+  // Date
+  const dateStr = params.eventDate
+    ? new Date(params.eventDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
+    : ''
+  if (dateStr) {
+    ctx.font = `400 12px ${FONT}`
+    ctx.fillStyle = 'rgba(255,255,255,0.42)'
+    ctx.fillText(dateStr, X, y)
+    y += 32
   }
 
-  // Bottom separator
-  ctx.shadowColor = 'transparent'
-  ctx.beginPath(); ctx.moveTo(P, y + 4); ctx.lineTo(W - P, y + 4)
-  ctx.strokeStyle = 'rgba(255,255,255,0.30)'; ctx.lineWidth = 1.5; ctx.stroke()
-  ctx.shadowColor = 'rgba(0,0,0,0.60)'
-  y += 26
+  // Hours stat — big number display
+  if (params.hours) {
+    const numPart = params.hours.split(' ')[0]
+    // Big number
+    ctx.font = `800 62px ${FONT}`
+    ctx.fillStyle = WHITE
+    ctx.fillText(numPart, X, y + 60)
+    // "hrs volunteered" label to the right of the number
+    const numW = ctx.measureText(numPart).width
+    ctx.font = `400 13px ${FONT}`
+    ctx.fillStyle = 'rgba(255,255,255,0.60)'
+    ctx.fillText('hrs', X + numW + 10, y + 38)
+    ctx.fillText('volunteered', X + numW + 10, y + 58)
+    y += 80
+  }
 
-  // kindly.co.in
-  ctx.font = `600 13px ${FONT}`
-  ctx.fillStyle = 'rgba(255,255,255,0.55)'
-  ctx.fillText('kindly.co.in', P, y)
+  // ── BOTTOM: kindly.co.in ───────────────────────────────────────────────────
+  shadow(false)
+  ctx.beginPath(); ctx.moveTo(X, H - 54); ctx.lineTo(W - 24, H - 54)
+  ctx.strokeStyle = 'rgba(255,255,255,0.12)'; ctx.lineWidth = 1; ctx.stroke()
+
+  shadow(true)
+  ctx.font = `600 11px ${FONT}`
+  ctx.fillStyle = 'rgba(255,255,255,0.38)'
+  ctx.fillText('kindly.co.in', X, H - 30)
 
   return canvas.toDataURL('image/png')
 }
@@ -280,18 +343,8 @@ export default function ShowcaseClient() {
     }
   }
 
-  const handleShareMomentCard = async () => {
+  const handleDownloadMomentCard = () => {
     if (!momentCardUrl) return
-    try {
-      const res = await fetch(momentCardUrl)
-      const blob = await res.blob()
-      const file = new File([blob], 'kindly-moment.png', { type: 'image/png' })
-      if (navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], title: 'My KINDLY Moment' })
-        return
-      }
-    } catch { /* fall through */ }
-    // Fallback: trigger download
     const a = document.createElement('a')
     a.href = momentCardUrl
     a.download = `kindly-moment-${event?.title?.replace(/\s+/g, '-').toLowerCase() ?? 'card'}.png`
@@ -516,18 +569,18 @@ export default function ShowcaseClient() {
                       />
                     </div>
 
-                    {/* Share button */}
+                    {/* Download button */}
                     <button
-                      onClick={handleShareMomentCard}
+                      onClick={handleDownloadMomentCard}
                       className="w-full flex items-center justify-center gap-2 h-12 rounded-xl font-bold text-sm text-white transition-all active:scale-95"
-                      style={{ background: 'linear-gradient(135deg, #833ab4 0%, #fd1d1d 50%, #fcb045 100%)' }}
+                      style={{ background: 'linear-gradient(135deg, #7c2529 0%, #a33030 100%)' }}
                     >
-                      <Share2 className="w-4 h-4" />
-                      Share to Instagram Story
+                      <Download className="w-4 h-4" />
+                      Download Moment Card
                     </button>
 
                     <p className="text-xs text-gray-500 text-center leading-relaxed">
-                      Opens your share sheet — pick Instagram to post directly to your story
+                      In Instagram Stories, tap the sticker icon → tap the image to add your card on top of your photo
                     </p>
 
                     {/* Regenerate option */}
