@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
-import QRCode from "react-qr-code"
 import {
   ChevronLeft,
   Users,
@@ -15,7 +14,6 @@ import {
   Calendar,
   MapPin,
   Send,
-  QrCode,
   Sparkles,
   Heart,
   CheckCircle2,
@@ -23,7 +21,7 @@ import {
   X,
   Trash2,
   Loader2,
-  Upload,   
+  Upload,
   FileText,
   Hourglass, // For pending view
   Edit       // For pending view
@@ -74,7 +72,6 @@ export function OrgEventDetail() {
   const [cancelLoading, setCancelLoading] = useState(false)
   const [completeLoading, setCompleteLoading] = useState(false)
 
-  const [showQR, setShowQR] = useState(false)
 
   useEffect(() => {
     const fetchEventData = async () => {
@@ -351,46 +348,6 @@ export function OrgEventDetail() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 relative">
 
-      {/* QR CODE MODAL */}
-      {showQR && (
-        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-8 max-w-sm w-full text-center relative shadow-2xl">
-            <button
-              onClick={() => setShowQR(false)}
-              className="absolute top-4 right-4 p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
-            >
-              <X className="w-5 h-5 text-gray-600" />
-            </button>
-
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Check-In Code</h2>
-              <p className="text-gray-500 text-sm">Ask volunteers to scan this code to mark their attendance.</p>
-            </div>
-
-            <div className="bg-white p-4 rounded-xl border-2 border-dashed border-gray-200 inline-block mb-6">
-              {event.check_in_code ? (
-                <QRCode
-                  value={JSON.stringify({
-                    eventId: event.id,
-                    code: event.check_in_code
-                  })}
-                  size={200}
-                  level="H"
-                />
-              ) : (
-                <div className="w-50 h-50 flex items-center justify-center text-gray-400 text-xs">
-                  Error: No Code Found
-                </div>
-              )}
-            </div>
-
-            <div className="flex items-center justify-center gap-2 text-sm text-emerald-600 font-medium bg-emerald-50 py-3 rounded-xl">
-              <Sparkles className="w-4 h-4" />
-              <span>Geo-Lock Active: 200m Range</span>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Floating Icons */}
       <div className="fixed top-20 left-8 w-12 h-12 bg-white rounded-xl shadow-lg hidden md:flex items-center justify-center pointer-events-none">
@@ -476,18 +433,6 @@ export function OrgEventDetail() {
                   />
                 </div>
 
-                <button
-                  onClick={() => setShowQR(true)}
-                  disabled={!eventStarted}
-                  className={`h-11 px-4 rounded-xl font-medium text-sm flex items-center gap-2 shadow-sm transition-all
-                       ${!eventStarted
-                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                      : "bg-white text-gray-900 border border-gray-200 hover:bg-gray-50 hover:border-gray-300"
-                    }`}
-                >
-                  <QrCode className="w-4 h-4" />
-                  <span className="hidden sm:inline">Show QR Code</span>
-                </button>
               </div>
 
               {!eventStarted && (
@@ -750,7 +695,6 @@ export function OrgEventDetail() {
         </div>
       </div>
 
-      <button onClick={() => { if (eventStarted) setShowQR(true); else alert("Event has not started yet."); }} className="fixed bottom-20 right-6 md:bottom-8 md:right-8 w-14 h-14 md:w-16 md:h-16 bg-gradient-to-br from-emerald-500 to-teal-500 text-white rounded-full shadow-xl flex items-center justify-center hover:shadow-2xl hover:scale-105 transition-all z-[60]"><QrCode className="w-6 h-6 md:w-7 md:h-7" /></button>
     </div>
   )
 }

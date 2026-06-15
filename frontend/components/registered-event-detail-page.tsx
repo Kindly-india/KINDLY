@@ -137,6 +137,14 @@ export default function RegisteredEventDetailPage() {
   // ── check-in handlers ─────────────────────────────────────────────────────────
 
   const handleRequestLocation = () => {
+    // Guard: don't allow check-in before event starts
+    if (event?.event_date && event?.start_time) {
+      const eventStart = new Date(`${event.event_date}T${event.start_time}+05:30`)
+      if (!isNaN(eventStart.getTime()) && new Date() < eventStart) {
+        alert(`Check-in opens at ${formatTime(event.start_time)}`)
+        return
+      }
+    }
     if (!navigator.geolocation) {
       setCheckInState('denied')
       return
@@ -181,7 +189,7 @@ export default function RegisteredEventDetailPage() {
 
   const canCancelRsvp = () => {
     if (!event || event.status !== 'published') return false
-    const eventStart = new Date(`${event.event_date}T${event.start_time}:00+05:30`)
+    const eventStart = new Date(`${event.event_date}T${event.start_time}+05:30`)
     return new Date() < new Date(eventStart.getTime() - 2 * 60 * 60 * 1000)
   }
 
@@ -664,12 +672,15 @@ export default function RegisteredEventDetailPage() {
 
               {/* ── CHECK-IN STATES (desktop sidebar) ── */}
               {isCheckedIn ? (
-                <Link href={`/events/${eventId}/showcase`} className="block">
-                  <Button className="w-full h-16 bg-[#7c2529] hover:bg-[#6a1f22] text-white font-black rounded-2xl text-base shadow-xl flex items-center justify-center gap-3">
-                    <Sparkles className="w-5 h-5" />
-                    Share your Moment
-                  </Button>
-                </Link>
+                <div className="flex flex-col items-center gap-3 py-2">
+                  <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold text-sm px-5 py-2.5 rounded-full w-full justify-center">
+                    <CheckCircle2 className="w-4 h-4" />
+                    You're checked in ✓
+                  </div>
+                  <p className="text-[11px] text-gray-400 text-center leading-relaxed">
+                    Your certificate and moment will be available once the organizer marks the event complete.
+                  </p>
+                </div>
               ) : (
                 <>
                   <div className="space-y-2">
@@ -766,19 +777,14 @@ export default function RegisteredEventDetailPage() {
 
         {/* Already checked in */}
         {isCheckedIn ? (
-          <div className="bg-white border-t border-gray-100 shadow-[0_-8px_30px_rgba(0,0,0,0.08)] px-5 pt-4 pb-5">
-            <div className="flex items-center justify-center mb-3">
-              <span className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold text-sm px-5 py-2 rounded-full">
-                <CheckCircle2 className="w-4 h-4" />
-                You're checked in ✓
-              </span>
+          <div className="bg-white border-t border-gray-100 shadow-[0_-8px_30px_rgba(0,0,0,0.08)] px-5 py-4">
+            <div className="flex items-center justify-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold text-sm px-5 py-2.5 rounded-full">
+              <CheckCircle2 className="w-4 h-4" />
+              You're checked in ✓
             </div>
-            <Link href={`/events/${eventId}/showcase`}>
-              <button className="w-full h-12 border-2 border-[#7c2529] text-[#7c2529] font-black rounded-2xl text-sm flex items-center justify-center gap-2 hover:bg-[#7c2529]/5 active:scale-95 transition-all">
-                <Sparkles className="w-4 h-4" />
-                Share your Moment
-              </button>
-            </Link>
+            <p className="text-[11px] text-gray-400 text-center mt-2 leading-relaxed">
+              Hang tight — your moment unlocks once the org wraps up.
+            </p>
           </div>
         ) : (
           /* Active check-in states */

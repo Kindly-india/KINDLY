@@ -621,7 +621,7 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
       throw new ForbiddenException('You do not have access to this event');
     }
 
-    const eventStart = new Date(`${event.event_date}T${event.start_time}:00+05:30`);
+    const eventStart = new Date(`${event.event_date}T${event.start_time}+05:30`);
     if (new Date() < eventStart) {
       throw new BadRequestException('Cannot check in volunteers before the event has started');
     }
@@ -672,7 +672,7 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
 
     if (!event) throw new NotFoundException('Event not found');
 
-    const eventStart = new Date(`${event.event_date}T${event.start_time}:00+05:30`);
+    const eventStart = new Date(`${event.event_date}T${event.start_time}+05:30`);
     if (new Date() < eventStart) {
       throw new BadRequestException('Check-in not open yet. Please wait for event start.');
     }
@@ -809,7 +809,7 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
     }
 
     // Time-lock: block cancellation within 2 hours of start time
-    const eventStart = new Date(`${event.event_date}T${event.start_time}:00+05:30`);
+    const eventStart = new Date(`${event.event_date}T${event.start_time}+05:30`);
     const twoHoursBefore = new Date(eventStart.getTime() - 2 * 60 * 60 * 1000);
     if (new Date() >= twoHoursBefore) {
       throw new BadRequestException('Events cannot be cancelled within 2 hours of the start time. Contact support for emergency cancellations.');
@@ -867,7 +867,7 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
 
     if (fetchError || !eventData) throw new NotFoundException('Event not found');
 
-    const eventStart = new Date(`${eventData.event_date}T${eventData.start_time}:00+05:30`);
+    const eventStart = new Date(`${eventData.event_date}T${eventData.start_time}+05:30`);
     if (new Date() < eventStart) {
       throw new BadRequestException('Cannot mark event as completed before it has started');
     }
