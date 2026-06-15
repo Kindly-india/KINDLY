@@ -677,7 +677,7 @@ export const api = {
   },
 
   // Self Check-in
-  selfCheckIn: async (data: { eventId: string; code: string; latitude: number; longitude: number }) => {
+  selfCheckIn: async (data: { eventId: string; latitude: number; longitude: number }) => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error('Not authenticated');
 

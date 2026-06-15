@@ -1,10 +1,8 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
-import Image from "next/image"
 import Link from "next/link"
-import { Scanner } from '@yudiel/react-qr-scanner'
 import {
   ArrowLeft,
   Share2,
@@ -19,80 +17,116 @@ import {
   Bell,
   Loader2,
   Calendar as CalendarIcon,
-  QrCode,
   X,
-  Camera,
   Coffee,
   ShieldCheck,
   Sparkles,
   Info,
   AlertCircle,
-  Phone,
   MessageSquare,
   Award,
   Download,
+  LocateFixed,
+  MapPinOff,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { api, VolunteerCertificate } from "@/lib/api"
 import { cn, downloadFromUrl } from "@/lib/utils"
 
-// Define formats outside to prevent re-renders in the scanner
-const QR_FORMATS: any = ['qr_code']
+// Client-side Haversine distance (metres) — mirrors backend 200m geofence logic
+function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371000
+  const φ1 = (lat1 * Math.PI) / 180
+  const φ2 = (lat2 * Math.PI) / 180
+  const Δφ = ((lat2 - lat1) * Math.PI) / 180
+  const Δλ = ((lon2 - lon1) * Math.PI) / 180
+  const a = Math.sin(Δφ / 2) ** 2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+}
+
+type CheckInState =
+  | 'idle'             // haven't tapped yet
+  | 'denied'           // geolocation permission denied
+  | 'fetching'         // waiting for GPS fix
+  | 'ready'            // within 200m — confirm tap
+  | 'too_far'          // outside 200m
+  | 'checking_in'      // API call in flight
+  | 'success'          // just checked in
+  | 'already_checked_in' // was checked in before page load
 
 export default function RegisteredEventDetailPage() {
   const params = useParams()
   const router = useRouter()
   const eventId = params?.id as string
 
-  // --- UI & DATA STATE ---
+  // ── data state ────────────────────────────────────────────────────────────────
   const [loading, setLoading] = useState(true)
   const [event, setEvent] = useState<any>(null)
   const [broadcasts, setBroadcasts] = useState<any[]>([])
   const [isSaved, setIsSaved] = useState(false)
   const [showFullDescription, setShowFullDescription] = useState(false)
 
-  // --- SCANNER & CHECK-IN STATE ---
-  const [showScanner, setShowScanner] = useState(false)
-  const [checkingIn, setCheckingIn] = useState(false)
-  const [geoBlocked, setGeoBlocked] = useState(false)
+  // ── check-in state machine ────────────────────────────────────────────────────
+  const [checkInState, setCheckInState] = useState<CheckInState>('idle')
+  const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null)
+  const [retryCountdown, setRetryCountdown] = useState(0)
 
-  // --- CERTIFICATE STATE ---
+  // ── other state ───────────────────────────────────────────────────────────────
   const [cert, setCert] = useState<VolunteerCertificate | null>(null)
   const [downloadingCert, setDownloadingCert] = useState(false)
-
-  // --- CANCEL RSVP STATE ---
   const [cancellingRsvp, setCancellingRsvp] = useState(false)
 
-  const handleOpenScanner = () => {
-    if (!navigator.geolocation) {
-      setGeoBlocked(true)
-      return
-    }
-    navigator.geolocation.getCurrentPosition(
-      () => { setGeoBlocked(false); setShowScanner(true) },
-      () => { setGeoBlocked(true) },
-      { timeout: 8000 }
-    )
-  }
+  // ── retry countdown when too_far ──────────────────────────────────────────────
+  useEffect(() => {
+    if (checkInState !== 'too_far') return
+    setRetryCountdown(30)
+    const id = setInterval(() => {
+      setRetryCountdown(prev => {
+        if (prev <= 1) { clearInterval(id); return 0 }
+        return prev - 1
+      })
+    }, 1000)
+    return () => clearInterval(id)
+  }, [checkInState])
 
+  // ── auto-dismiss success overlay after 2s ────────────────────────────────────
+  useEffect(() => {
+    if (checkInState !== 'success') return
+    const id = setTimeout(() => setCheckInState('already_checked_in'), 2000)
+    return () => clearTimeout(id)
+  }, [checkInState])
+
+  // ── initial data load ─────────────────────────────────────────────────────────
   useEffect(() => {
     const loadData = async () => {
       if (!eventId) return
       try {
         setLoading(true)
-        const [eventRes, broadcastRes, certRes] = await Promise.all([
+        const [eventRes, broadcastRes, certRes, regsRes] = await Promise.all([
           api.getEventById(eventId),
           api.getEventBroadcasts(eventId),
-          api.getMyCertificates().catch(() => ({ certificates: [] }))
+          api.getMyCertificates().catch(() => ({ certificates: [] })),
+          api.getVolunteerRegistrations().catch(() => ({ events: [] })),
         ])
 
         setEvent(eventRes.event)
         setBroadcasts(broadcastRes.broadcasts || [])
 
-        const myCert = certRes.certificates.find((c: VolunteerCertificate) => c.event_id === eventId)
+        const myCert = certRes.certificates.find(
+          (c: VolunteerCertificate) => c.event_id === eventId
+        )
         if (myCert) setCert(myCert)
-      } catch (error) {
-        console.error("Failed to load event details", error)
+
+        // Detect already-checked-in before this session
+        const myReg = regsRes.events?.find((e: any) => e.id === eventId)
+        if (
+          myReg?.registration_status === 'checked_in' ||
+          myReg?.registration_status === 'completed'
+        ) {
+          setCheckInState('already_checked_in')
+        }
+      } catch (err) {
+        console.error('Failed to load event details', err)
       } finally {
         setLoading(false)
       }
@@ -100,66 +134,50 @@ export default function RegisteredEventDetailPage() {
     loadData()
   }, [eventId])
 
-  // --- HANDLERS ---
+  // ── check-in handlers ─────────────────────────────────────────────────────────
 
-  /**
-   * handleScan
-   * Processes the QR result, validates the event ID, fetches high-accuracy GPS,
-   * and verifies the volunteer's presence at the venue via the backend.
-   */
-  const handleScan = useCallback(async (results: any[]) => {
-    if (!results || results.length === 0 || checkingIn) return;
-    const rawText = results[0]?.rawValue;
-    if (!rawText) return;
-
-    setCheckingIn(true); // Prevent concurrent check-in attempts
-
-    try {
-      let qrData;
-      try {
-        qrData = JSON.parse(rawText);
-      } catch (e) {
-        throw new Error("Invalid QR Code. Please scan the official event code.");
-      }
-
-      if (qrData.eventId !== eventId) {
-        throw new Error("This QR code is for a different event.");
-      }
-
-      if (!navigator.geolocation) {
-        throw new Error("Geolocation is required to verify your arrival.");
-      }
-
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          try {
-            await api.selfCheckIn({
-              eventId: eventId,
-              code: qrData.code,
-              latitude: position.coords.latitude,
-              longitude: position.coords.longitude
-            });
-
-            alert("Check-in Successful! Welcome to the event.");
-            setShowScanner(false);
-            window.location.reload();
-          } catch (apiError: any) {
-            alert(apiError.message || "Check-in failed.");
-            setTimeout(() => setCheckingIn(false), 3000);
-          }
-        },
-        (geoError) => {
-          alert("Location access denied. We need GPS to confirm you're at the venue.");
-          setCheckingIn(false);
-        },
-        { enableHighAccuracy: true }
-      );
-
-    } catch (err: any) {
-      alert(err.message);
-      setTimeout(() => setCheckingIn(false), 3000);
+  const handleRequestLocation = () => {
+    if (!navigator.geolocation) {
+      setCheckInState('denied')
+      return
     }
-  }, [checkingIn, eventId]);
+    setCheckInState('fetching')
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude }
+        setUserCoords(coords)
+        // Client-side pre-check (saves a round trip if clearly outside)
+        if (event?.latitude && event?.longitude) {
+          const dist = haversineDistance(event.latitude, event.longitude, coords.lat, coords.lng)
+          if (dist > 200) { setCheckInState('too_far'); return }
+        }
+        setCheckInState('ready')
+      },
+      (err) => {
+        setCheckInState(err.code === err.PERMISSION_DENIED ? 'denied' : 'too_far')
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    )
+  }
+
+  const handleDoCheckIn = async () => {
+    if (!userCoords || checkInState !== 'ready') return
+    setCheckInState('checking_in')
+    try {
+      await api.selfCheckIn({ eventId, latitude: userCoords.lat, longitude: userCoords.lng })
+      setCheckInState('success')
+    } catch (err: any) {
+      // Backend says too far → reflect it; otherwise reset
+      if (err.message?.toLowerCase().includes('within')) {
+        setCheckInState('too_far')
+      } else {
+        alert(err.message || 'Check-in failed. Please try again.')
+        setCheckInState('idle')
+      }
+    }
+  }
+
+  // ── other handlers (unchanged) ────────────────────────────────────────────────
 
   const canCancelRsvp = () => {
     if (!event || event.status !== 'published') return false
@@ -186,7 +204,7 @@ export default function RegisteredEventDetailPage() {
       const { signedUrl } = await api.downloadCertificate(cert.id)
       await downloadFromUrl(signedUrl, 'kindly-certificate.pdf')
     } catch (err: any) {
-      alert(err.message || "Failed to get download link")
+      alert(err.message || 'Failed to get download link')
     } finally {
       setDownloadingCert(false)
     }
@@ -195,12 +213,14 @@ export default function RegisteredEventDetailPage() {
   const handleAddToCalendar = () => {
     if (!event) return
     const title = encodeURIComponent(`KINDLY: ${event.title}`)
-    const details = encodeURIComponent(event.description || "")
-    const location = encodeURIComponent(event.location || "")
-    const startDate = new Date(`${event.event_date}T${event.start_time || '00:00'}`).toISOString().replace(/-|:|\.\d\d\d/g, "")
-    const endDate = new Date(`${event.event_date}T${event.end_time || '23:59'}`).toISOString().replace(/-|:|\.\d\d\d/g, "")
-    const url = `https://www.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${details}&location=${location}&dates=${startDate}/${endDate}`
-    window.open(url, '_blank')
+    const details = encodeURIComponent(event.description || '')
+    const location = encodeURIComponent(event.location || '')
+    const startDate = new Date(`${event.event_date}T${event.start_time || '00:00'}`).toISOString().replace(/-|:|\.\d\d\d/g, '')
+    const endDate = new Date(`${event.event_date}T${event.end_time || '23:59'}`).toISOString().replace(/-|:|\.\d\d\d/g, '')
+    window.open(
+      `https://www.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${details}&location=${location}&dates=${startDate}/${endDate}`,
+      '_blank'
+    )
   }
 
   const handleShare = async () => {
@@ -208,47 +228,36 @@ export default function RegisteredEventDetailPage() {
       try {
         await navigator.share({
           title: event.title,
-          text: `I'm volunteering for ${event.title} in Nashik! Join me?`,
+          text: `I'm volunteering for ${event.title}! Join me?`,
           url: window.location.href,
         })
-      } catch (err) {
-        console.log("Error sharing", err)
-      }
+      } catch { /* user cancelled */ }
     } else {
-      alert("Link copied to clipboard!")
       navigator.clipboard.writeText(window.location.href)
     }
   }
 
-  // --- FORMATTING HELPERS ---
-
   const formatDate = (dateStr: string) => {
-    if (!dateStr) return ""
+    if (!dateStr) return ''
     return new Date(dateStr).toLocaleDateString('en-US', {
-      weekday: 'short',
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
+      weekday: 'short', day: 'numeric', month: 'short', year: 'numeric',
     })
   }
 
   const formatTime = (timeStr: string) => {
-    if (!timeStr) return ""
+    if (!timeStr) return ''
     const [h, m] = timeStr.split(':')
     const hour = parseInt(h)
-    const ampm = hour >= 12 ? 'PM' : 'AM'
-    return `${hour % 12 || 12}:${m} ${ampm}`
+    return `${hour % 12 || 12}:${m} ${hour >= 12 ? 'PM' : 'AM'}`
   }
 
-  // --- RENDER LOGIC ---
+  // ── loading / error ───────────────────────────────────────────────────────────
 
   if (loading) {
     return (
       <div className="min-h-screen bg-[#F9F9F9] flex flex-col items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-10 h-10 text-emerald-600 animate-spin mb-4 mx-auto" />
-          <p className="text-xs font-bold text-gray-400 tracking-widest uppercase">Securing Logistics...</p>
-        </div>
+        <Loader2 className="w-10 h-10 text-emerald-600 animate-spin mb-4" />
+        <p className="text-xs font-bold text-gray-400 tracking-widest uppercase">Securing Logistics...</p>
       </div>
     )
   }
@@ -263,93 +272,111 @@ export default function RegisteredEventDetailPage() {
     )
   }
 
-  const shortDescription = event.description?.slice(0, 150) + "..." || ""
+  const shortDescription = event.description?.slice(0, 150) + '...' || ''
+  const isCheckedIn = checkInState === 'already_checked_in' || checkInState === 'success'
+
+  // ── derived check-in button content ──────────────────────────────────────────
+
+  const CheckInButton = ({ fullWidth = false }: { fullWidth?: boolean }) => {
+    const base = `${fullWidth ? 'w-full' : 'h-14 px-6'} h-14 rounded-2xl font-black text-sm flex items-center justify-center gap-3 transition-all active:scale-95`
+
+    if (checkInState === 'idle') return (
+      <button onClick={handleRequestLocation} className={cn(base, 'bg-gray-900 text-white shadow-xl hover:bg-black')}>
+        <LocateFixed className="w-5 h-5" />
+        Tap to Check In
+      </button>
+    )
+    if (checkInState === 'denied') return (
+      <button disabled className={cn(base, 'bg-gray-200 text-gray-400 cursor-not-allowed')}>
+        <MapPinOff className="w-5 h-5" />
+        Check In
+      </button>
+    )
+    if (checkInState === 'fetching') return (
+      <button disabled className={cn(base, 'bg-gray-200 text-gray-500 cursor-not-allowed')}>
+        <Loader2 className="w-5 h-5 animate-spin" />
+        Verifying your location...
+      </button>
+    )
+    if (checkInState === 'ready') return (
+      <button onClick={handleDoCheckIn} className={cn(base, 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-xl')}>
+        <CheckCircle2 className="w-5 h-5" />
+        You're here! Tap to Check In 🎯
+      </button>
+    )
+    if (checkInState === 'too_far') return (
+      <button disabled className={cn(base, 'bg-gray-200 text-gray-400 cursor-not-allowed')}>
+        <MapPinOff className="w-5 h-5" />
+        Check In
+      </button>
+    )
+    if (checkInState === 'checking_in') return (
+      <button disabled className={cn(base, 'bg-emerald-500/60 text-white cursor-not-allowed')}>
+        <Loader2 className="w-5 h-5 animate-spin" />
+        Checking you in...
+      </button>
+    )
+    return null
+  }
+
+  const CheckInSubtext = () => {
+    if (checkInState === 'denied') return (
+      <p className="text-xs text-gray-500 text-center mt-2 leading-relaxed">
+        Enable location access in your browser settings to check in
+      </p>
+    )
+    if (checkInState === 'fetching') return (
+      <p className="text-xs text-gray-500 text-center mt-2">Verifying your location...</p>
+    )
+    if (checkInState === 'too_far') return (
+      <p className="text-xs text-gray-500 text-center mt-2">
+        You need to be at the event location to check in
+        {retryCountdown > 0
+          ? <span className="text-gray-400"> · Retry in {retryCountdown}s</span>
+          : <button onClick={handleRequestLocation} className="ml-1 text-blue-500 font-semibold hover:underline">Try again</button>
+        }
+      </p>
+    )
+    return null
+  }
+
+  // ── render ────────────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-white pb-40 md:pb-12 relative overflow-x-hidden">
+    <div className="min-h-screen bg-white pb-36 md:pb-12 relative overflow-x-hidden">
 
-      {/* --- SCANNER OVERLAY MODAL --- */}
-      {showScanner && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-md p-4">
-          <div className="w-full max-w-sm relative">
-            <button
-              onClick={() => { setShowScanner(false); setCheckingIn(false); }}
-              className="absolute -top-14 right-0 p-3 bg-white/10 rounded-full text-white hover:bg-white/20 transition-all"
-            >
-              <X className="w-6 h-6" />
-            </button>
-
-            <div className="bg-white rounded-[32px] overflow-hidden shadow-2xl relative border border-gray-100">
-              <div className="p-6 bg-[#064e3b] text-white text-center">
-                <div className="w-12 h-12 bg-emerald-500/20 rounded-2xl flex items-center justify-center mx-auto mb-3">
-                  <QrCode className="w-6 h-6 text-emerald-400" />
-                </div>
-                <h3 className="font-black text-xl tracking-tight">Arrival Check-In</h3>
-                <p className="text-xs text-emerald-200 mt-1">Scan the code provided by the organizer</p>
-              </div>
-
-              <div className="h-[320px] relative bg-black">
-                <Scanner
-                  onScan={handleScan}
-                  formats={QR_FORMATS}
-                  styles={{
-                    container: { height: 320, width: '100%' },
-                    video: { objectFit: 'cover' }
-                  }}
-                />
-
-                {checkingIn && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-30">
-                    <Loader2 className="w-12 h-12 text-emerald-500 animate-spin mb-4" />
-                    <p className="text-white text-sm font-bold tracking-tight">Verifying Location...</p>
-                  </div>
-                )}
-
-                {/* UI Guide Frame */}
-                <div className="absolute inset-0 border-[50px] border-black/40 pointer-events-none flex items-center justify-center z-10">
-                  <div className="w-52 h-52 border-2 border-emerald-500/50 rounded-3xl animate-pulse relative">
-                    <div className="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-emerald-500 -mt-1 -ml-1 rounded-tl-xl"></div>
-                    <div className="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 border-emerald-500 -mt-1 -mr-1 rounded-tr-xl"></div>
-                    <div className="absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 border-emerald-500 -mb-1 -ml-1 rounded-bl-xl"></div>
-                    <div className="absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 border-emerald-500 -mb-1 -mr-1 rounded-br-xl"></div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-6 bg-gray-50 text-center">
-                <div className="flex items-center justify-center gap-2 text-xs font-bold text-emerald-700 uppercase tracking-widest">
-                  <Sparkles className="w-3.5 h-3.5" />
-                  Geo-Lock Active (200m)
-                </div>
-              </div>
-            </div>
+      {/* ── SUCCESS OVERLAY (full-screen, auto-dismisses after 2s) ── */}
+      {checkInState === 'success' && (
+        <div className="fixed inset-0 z-[200] bg-white flex flex-col items-center justify-center p-8 animate-in fade-in duration-200">
+          <div className="w-28 h-28 rounded-full bg-emerald-500 flex items-center justify-center mb-8 shadow-2xl animate-bounce">
+            <CheckCircle2 className="w-14 h-14 text-white" strokeWidth={2.5} />
           </div>
+          <h1 className="text-3xl font-black text-gray-900 mb-3">You're checked in ✓</h1>
+          <p className="text-lg font-bold text-gray-500 text-center mb-2">{event.title}</p>
+          <p className="text-3xl mt-4">Enjoy your time 🙌</p>
         </div>
       )}
 
-      {/* --- MAIN LAYOUT --- */}
+      {/* ── MAIN LAYOUT ── */}
       <div className="md:flex md:max-w-6xl md:mx-auto md:gap-10 md:py-10 md:px-8">
 
         {/* LEFT CONTENT COLUMN */}
         <div className="md:flex-1">
 
-          {/* HERO IMAGE SECTION */}
+          {/* HERO */}
           <div className="relative">
             <div className="relative h-72 md:h-110 md:rounded-[40px] md:overflow-hidden md:shadow-2xl md:border border-gray-100">
               <img
-                src={event.cover_image_url || "/placeholder.svg"}
+                src={event.cover_image_url || '/placeholder.svg'}
                 alt={event.title}
                 className="w-full h-full object-cover"
               />
-
-              {/* NAVIGATION OVERLAYS */}
               <div className="absolute top-4 left-4 right-4 flex justify-between items-center z-20">
                 <Link href="/home">
                   <button className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-white/90 backdrop-blur-xl flex items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition-all">
                     <ArrowLeft className="w-5 h-5 text-gray-900" />
                   </button>
                 </Link>
-
                 <div className="flex gap-2">
                   <button onClick={handleShare} className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-white/90 backdrop-blur-xl flex items-center justify-center shadow-xl hover:scale-105 transition-all">
                     <Share2 className="w-5 h-5 text-gray-900" />
@@ -358,20 +385,27 @@ export default function RegisteredEventDetailPage() {
                     onClick={() => setIsSaved(!isSaved)}
                     className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-white/90 backdrop-blur-xl flex items-center justify-center shadow-xl hover:scale-105 transition-all"
                   >
-                    <Heart
-                      className={`w-5 h-5 transition-colors ${isSaved ? "fill-red-500 text-red-500" : "text-gray-900"}`}
-                    />
+                    <Heart className={`w-5 h-5 transition-colors ${isSaved ? 'fill-red-500 text-red-500' : 'text-gray-900'}`} />
                   </button>
                 </div>
               </div>
 
-              {/* CONFIRMATION BADGE */}
-              <div className="absolute bottom-6 left-0 right-0 flex justify-center">
-                <div className="flex items-center gap-2.5 px-6 py-3 bg-emerald-500 text-white rounded-full shadow-2xl border-2 border-white/20 backdrop-blur-sm animate-in fade-in slide-in-from-bottom-4 duration-700">
-                  <CheckCircle2 className="w-5 h-5" />
-                  <span className="text-sm font-black tracking-tight uppercase">Reservation Secured</span>
+              {/* Already-checked-in badge on hero */}
+              {isCheckedIn ? (
+                <div className="absolute bottom-6 left-0 right-0 flex justify-center">
+                  <div className="flex items-center gap-2.5 px-6 py-3 bg-emerald-500 text-white rounded-full shadow-2xl border-2 border-white/20 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <CheckCircle2 className="w-5 h-5" />
+                    <span className="text-sm font-black tracking-tight uppercase">Checked In ✓</span>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="absolute bottom-6 left-0 right-0 flex justify-center">
+                  <div className="flex items-center gap-2.5 px-6 py-3 bg-emerald-500 text-white rounded-full shadow-2xl border-2 border-white/20 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                    <CheckCircle2 className="w-5 h-5" />
+                    <span className="text-sm font-black tracking-tight uppercase">Reservation Secured</span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -384,17 +418,13 @@ export default function RegisteredEventDetailPage() {
                 </span>
                 {event.is_urgent && (
                   <span className="px-3 py-1 bg-red-50 text-red-600 text-[10px] font-bold rounded-full uppercase tracking-widest border border-red-100 flex items-center gap-1">
-                    <AlertCircle className="w-3 h-3" />
-                    Urgent
+                    <AlertCircle className="w-3 h-3" /> Urgent
                   </span>
                 )}
               </div>
-              <h1 className="text-2xl md:text-4xl font-black text-gray-900 leading-tight mt-2">
-                {event.title}
-              </h1>
+              <h1 className="text-2xl md:text-4xl font-black text-gray-900 leading-tight mt-2">{event.title}</h1>
             </div>
 
-            {/* ORGANIZER PROFILE CARD */}
             <div className="flex items-center justify-between mt-4">
               <Link href={`/organizations/${event.organization_id}`}>
                 <div className="flex items-center gap-3 group">
@@ -415,7 +445,7 @@ export default function RegisteredEventDetailPage() {
             </div>
           </div>
 
-          {/* LOGISTICS GRID (Know Before You Go) */}
+          {/* LOGISTICS GRID */}
           <div className="px-5 md:px-0 py-6">
             <div className="bg-[#F5F5F7] rounded-[32px] p-6 md:p-10 border border-gray-100">
               <div className="flex items-center justify-between mb-8">
@@ -424,23 +454,19 @@ export default function RegisteredEventDetailPage() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 mb-10">
-                {/* TIMELINE */}
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-sm border border-gray-100 shrink-0">
                     <Clock className="w-6 h-6 text-teal-600" />
                   </div>
                   <div>
                     <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Timeline</p>
-                    <p className="text-base font-bold text-gray-900">
-                      {formatDate(event.event_date)}
-                    </p>
+                    <p className="text-base font-bold text-gray-900">{formatDate(event.event_date)}</p>
                     <p className="text-sm text-gray-500 font-medium">
                       {formatTime(event.start_time)} — {formatTime(event.end_time)}
                     </p>
                   </div>
                 </div>
 
-                {/* VENUE */}
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-sm border border-gray-100 shrink-0">
                     <MapPin className="w-6 h-6 text-rose-500" />
@@ -452,34 +478,30 @@ export default function RegisteredEventDetailPage() {
                   </div>
                 </div>
 
-                {/* ON-SITE HOST (The Concierge Addition) */}
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-sm border border-gray-100 shrink-0">
                     <User className="w-6 h-6 text-purple-500" />
                   </div>
                   <div>
                     <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">On-Site Host</p>
-                    <p className="text-base font-bold text-gray-900">
-                      {event.point_of_contact || "Event Coordinator"}
-                    </p>
+                    <p className="text-base font-bold text-gray-900">{event.point_of_contact || 'Event Coordinator'}</p>
                     <p className="text-sm text-gray-500 font-medium italic">Look for this person</p>
                   </div>
                 </div>
 
-                {/* DRESS CODE */}
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-sm border border-gray-100 shrink-0">
                     <Footprints className="w-6 h-6 text-amber-500" />
                   </div>
                   <div>
                     <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Dress Code</p>
-                    <p className="text-base font-bold text-gray-900">{event.dress_code || "Comfortable / Casual"}</p>
+                    <p className="text-base font-bold text-gray-900">{event.dress_code || 'Comfortable / Casual'}</p>
                     <p className="text-sm text-gray-500 font-medium">Prepare accordingly</p>
                   </div>
                 </div>
               </div>
 
-              {/* MAP EMBED (Fixed Standard Embed) */}
+              {/* MAP */}
               <div className="rounded-[24px] overflow-hidden h-44 relative group border border-gray-200 shadow-inner bg-gray-100">
                 <a
                   href={
@@ -502,7 +524,7 @@ export default function RegisteredEventDetailPage() {
                         : `https://googleusercontent.com/maps.google.com/maps?q=${encodeURIComponent(event.location)}&t=&z=15&ie=UTF8&iwloc=&output=embed`
                     }
                     className="absolute inset-0 w-full h-full pointer-events-none opacity-80 group-hover:opacity-100 transition-opacity"
-                  ></iframe>
+                  />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
                   <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-md px-5 py-2.5 rounded-2xl text-xs font-black text-gray-900 shadow-2xl flex items-center gap-2 hover:bg-white transition-all transform group-hover:translate-y-[-2px]">
                     <Navigation className="w-4 h-4 text-blue-600" />
@@ -513,14 +535,13 @@ export default function RegisteredEventDetailPage() {
             </div>
           </div>
 
-          {/* --- THE AFTER: KINDLY EXCLUSIVE --- */}
+          {/* THE AFTER */}
           {event.connect_plan && (
             <div className="px-5 md:px-0 pb-10 mt-4">
               <div className="bg-[#064e3b] rounded-[40px] p-8 md:p-12 shadow-2xl relative overflow-hidden border border-emerald-800">
                 <div className="absolute -top-8 -right-8 opacity-10">
                   <Coffee className="w-44 h-44 text-emerald-400" />
                 </div>
-
                 <div className="flex items-center gap-4 mb-5">
                   <div className="w-12 h-12 bg-emerald-500/20 rounded-2xl flex items-center justify-center border border-emerald-700/50">
                     <Coffee className="w-6 h-6 text-emerald-400" />
@@ -530,17 +551,12 @@ export default function RegisteredEventDetailPage() {
                     <p className="text-emerald-400/90 text-[10px] font-bold uppercase tracking-widest">Official Post-Event Hangout</p>
                   </div>
                 </div>
-
                 <p className="text-emerald-200 text-sm italic mb-4 font-medium pr-4">
-                  Because the community is built after the work is done. Join your fellow volunteers to chill, network, and hang out.
+                  Because the community is built after the work is done.
                 </p>
-
                 <div className="bg-emerald-900/40 border border-emerald-700/50 rounded-2xl p-5 mb-6 shadow-inner">
-                  <p className="text-emerald-50 text-base md:text-lg leading-relaxed font-bold">
-                    {event.connect_plan}
-                  </p>
+                  <p className="text-emerald-50 text-base md:text-lg leading-relaxed font-bold">{event.connect_plan}</p>
                 </div>
-
                 <div className="flex items-center gap-2 text-[11px] font-black text-emerald-400 uppercase tracking-[0.15em] bg-emerald-950/50 w-fit px-5 py-2.5 rounded-2xl border border-emerald-800">
                   <Sparkles className="w-4 h-4" />
                   Curated Experience
@@ -549,7 +565,7 @@ export default function RegisteredEventDetailPage() {
             </div>
           )}
 
-          {/* DESCRIPTION SECTION */}
+          {/* DESCRIPTION */}
           <div className="px-5 md:px-0 pb-10">
             <h3 className="text-lg font-black text-gray-900 mb-4 flex items-center gap-3">
               <Info className="w-6 h-6 text-blue-500" />
@@ -563,12 +579,12 @@ export default function RegisteredEventDetailPage() {
                 onClick={() => setShowFullDescription(!showFullDescription)}
                 className="text-sm font-black text-blue-600 hover:text-blue-700 mt-4 underline underline-offset-4 decoration-2"
               >
-                {showFullDescription ? "Show Less" : "Read Full Mission"}
+                {showFullDescription ? 'Show Less' : 'Read Full Mission'}
               </button>
             )}
           </div>
 
-          {/* ORGANIZER BROADCAST UPDATES */}
+          {/* BROADCASTS */}
           <div className="px-5 md:px-0 pb-12">
             <div className="bg-gradient-to-br from-[#fffbeb] to-[#fef3c7] rounded-[32px] p-8 border border-amber-200 shadow-sm">
               <div className="flex items-center gap-4 mb-8">
@@ -577,33 +593,30 @@ export default function RegisteredEventDetailPage() {
                 </div>
                 <div>
                   <h3 className="text-lg font-black text-amber-900 tracking-tight">Mission Briefings</h3>
-                  <p className="text-xs text-amber-800/70 font-bold uppercase tracking-wider">From {event.organization_profiles?.name}</p>
+                  <p className="text-xs text-amber-800/70 font-bold uppercase tracking-wider">
+                    From {event.organization_profiles?.name}
+                  </p>
                 </div>
               </div>
-
               <div className="space-y-4">
                 {broadcasts.length > 0 ? (
-                  broadcasts.map((broadcast) => (
+                  broadcasts.map((b) => (
                     <div
-                      key={broadcast.id}
+                      key={b.id}
                       className={cn(
-                        "p-5 rounded-2xl border transition-all",
-                        broadcast.is_important
-                          ? "bg-white border-amber-300 shadow-md"
-                          : "bg-amber-50/60 border-amber-200/50"
+                        'p-5 rounded-2xl border transition-all',
+                        b.is_important ? 'bg-white border-amber-300 shadow-md' : 'bg-amber-50/60 border-amber-200/50'
                       )}
                     >
                       <div className="flex items-start gap-3">
-                        {broadcast.is_important && (
-                          <div className="mt-1">
-                            <Bell className="w-4 h-4 text-amber-600 fill-amber-500" />
-                          </div>
-                        )}
-                        <p className="text-sm md:text-base text-gray-900 leading-relaxed font-bold flex-1">{broadcast.message}</p>
+                        {b.is_important && <Bell className="w-4 h-4 text-amber-600 fill-amber-500 mt-1 shrink-0" />}
+                        <p className="text-sm md:text-base text-gray-900 leading-relaxed font-bold flex-1">{b.message}</p>
                       </div>
                       <div className="flex items-center gap-2 mt-4 ml-7 text-xs font-bold text-amber-600/60 uppercase tracking-tighter">
                         <Clock className="w-3 h-3" />
-                        {new Date(broadcast.created_at).toLocaleString([], { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' })}
+                        {new Date(b.created_at).toLocaleString([], {
+                          hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short',
+                        })}
                       </div>
                     </div>
                   ))
@@ -619,64 +632,69 @@ export default function RegisteredEventDetailPage() {
 
         </div>
 
-        {/* --- RIGHT SIDEBAR: BOOKING STATUS (Desktop) --- */}
+        {/* ── DESKTOP SIDEBAR ── */}
         <div className="hidden md:block md:w-96">
           <div className="sticky top-10 bg-white rounded-[40px] shadow-2xl border border-gray-100 overflow-hidden">
 
-            {/* Status Header */}
+            {/* Status header */}
             <div className="p-10 bg-gradient-to-br from-emerald-50 to-teal-50 border-b border-emerald-100 text-center">
-              <div className="w-16 h-16 rounded-3xl bg-emerald-500 flex items-center justify-center mx-auto mb-4 shadow-xl border-4 border-white/30">
+              <div className={cn(
+                'w-16 h-16 rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-xl border-4 border-white/30',
+                isCheckedIn ? 'bg-emerald-500' : 'bg-emerald-500'
+              )}>
                 <CheckCircle2 className="w-8 h-8 text-white" />
               </div>
-              <h2 className="text-2xl font-black text-emerald-900 tracking-tight mb-1">Confirmed</h2>
-              <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em]">Registration ID: {event.id.substring(0, 8)}</p>
+              <h2 className="text-2xl font-black text-emerald-900 tracking-tight mb-1">
+                {isCheckedIn ? 'Checked In ✓' : 'Confirmed'}
+              </h2>
+              <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em]">
+                {isCheckedIn ? event.title : `Registration ID: ${event.id.substring(0, 8)}`}
+              </p>
             </div>
 
-            {/* Quick Actions */}
             <div className="p-10 space-y-4">
               <Button
                 onClick={handleAddToCalendar}
                 variant="outline"
-                className="w-full h-14 border-gray-200 rounded-2xl font-black text-gray-900 hover:bg-gray-50 flex items-center justify-center gap-3 transition-all"
+                className="w-full h-14 border-gray-200 rounded-2xl font-black text-gray-900 hover:bg-gray-50 flex items-center justify-center gap-3"
               >
                 <CalendarIcon className="w-5 h-5 text-emerald-600" />
                 Add to Calendar
               </Button>
 
-              <Button
-                onClick={handleOpenScanner}
-                className="w-full h-16 bg-gray-900 hover:bg-black text-white font-black rounded-2xl text-lg shadow-2xl flex items-center justify-center gap-3 group transition-all active:scale-95"
-              >
-                <Camera className="w-6 h-6 group-hover:rotate-12 transition-transform" />
-                Scan to Check In
-              </Button>
-
-              {geoBlocked && (
-                <p className="text-center text-xs text-red-500 font-medium px-2">
-                  Location required to check in. Please enable location in your browser settings and try again.
-                </p>
+              {/* ── CHECK-IN STATES (desktop sidebar) ── */}
+              {isCheckedIn ? (
+                <Link href={`/events/${eventId}/showcase`} className="block">
+                  <Button className="w-full h-16 bg-[#7c2529] hover:bg-[#6a1f22] text-white font-black rounded-2xl text-base shadow-xl flex items-center justify-center gap-3">
+                    <Sparkles className="w-5 h-5" />
+                    Share your Moment
+                  </Button>
+                </Link>
+              ) : (
+                <>
+                  <div className="space-y-2">
+                    <CheckInButton fullWidth />
+                    <CheckInSubtext />
+                  </div>
+                  <p className="text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest pt-2">
+                    Tap to check in with your location
+                  </p>
+                </>
               )}
 
-              <p className="text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest pt-4">
-                Scan arrival QR to log hours
-              </p>
-
-              {/* Certificate Download */}
+              {/* Certificate */}
               {cert && (
                 <button
                   onClick={handleCertDownload}
                   disabled={downloadingCert}
                   className="w-full h-14 flex items-center justify-center gap-3 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 font-black rounded-2xl transition-all disabled:opacity-60"
                 >
-                  {downloadingCert
-                    ? <Loader2 className="w-5 h-5 animate-spin" />
-                    : <Award className="w-5 h-5 text-amber-500" />
-                  }
+                  {downloadingCert ? <Loader2 className="w-5 h-5 animate-spin" /> : <Award className="w-5 h-5 text-amber-500" />}
                   Download Certificate
                 </button>
               )}
 
-              {/* Cancel RSVP */}
+              {/* Cancel */}
               {canCancelRsvp() ? (
                 <button
                   onClick={handleCancelRsvp}
@@ -693,7 +711,7 @@ export default function RegisteredEventDetailPage() {
               ) : null}
             </div>
 
-            {/* Support Block */}
+            {/* Support block */}
             <div className="px-10 pb-10">
               <div className="p-6 bg-blue-50 rounded-[28px] border border-blue-100 flex items-center gap-4">
                 <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shrink-0">
@@ -701,7 +719,9 @@ export default function RegisteredEventDetailPage() {
                 </div>
                 <div>
                   <p className="text-xs font-black text-blue-900 uppercase tracking-tight mb-0.5">Need Help?</p>
-                  <p className="text-[11px] text-blue-700 font-medium">Contact organization at {event.organization_profiles?.email || "the help desk"}</p>
+                  <p className="text-[11px] text-blue-700 font-medium">
+                    Contact organization at {event.organization_profiles?.email || 'the help desk'}
+                  </p>
                 </div>
               </div>
             </div>
@@ -709,7 +729,7 @@ export default function RegisteredEventDetailPage() {
         </div>
       </div>
 
-      {/* --- MOBILE: CERTIFICATE BLOCK (shown above footer when cert exists) --- */}
+      {/* ── MOBILE: certificate ── */}
       {cert && (
         <div className="mx-4 mb-4 md:hidden">
           <button
@@ -717,16 +737,13 @@ export default function RegisteredEventDetailPage() {
             disabled={downloadingCert}
             className="w-full flex items-center justify-center gap-3 py-4 bg-amber-50 border border-amber-200 rounded-2xl text-amber-800 font-black text-sm shadow-sm active:scale-95 transition-all disabled:opacity-60"
           >
-            {downloadingCert
-              ? <Loader2 className="w-5 h-5 animate-spin" />
-              : <Download className="w-5 h-5 text-amber-500" />
-            }
+            {downloadingCert ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5 text-amber-500" />}
             Download My Certificate
           </button>
         </div>
       )}
 
-      {/* --- MOBILE: CANCEL RSVP --- */}
+      {/* ── MOBILE: cancel RSVP ── */}
       {canCancelRsvp() ? (
         <div className="mx-4 mb-3 md:hidden">
           <button
@@ -744,25 +761,42 @@ export default function RegisteredEventDetailPage() {
         </p>
       ) : null}
 
-      {/* --- MOBILE STICKY NAVIGATION (High Impact) --- */}
-      <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-r from-emerald-600 to-teal-600 shadow-[0_-12px_40px_rgba(0,0,0,0.15)] z-[60] md:hidden pb-[env(safe-area-inset-bottom)]">
-        <div className="flex items-center justify-between px-6 py-5">
-          <div className="flex flex-col">
-            <p className="text-[10px] text-white/70 font-black uppercase tracking-[0.2em] mb-1 leading-none">Arrival Time</p>
-            <p className="text-xl font-black text-white leading-none tracking-tight">
-              {formatTime(event.start_time)}
-            </p>
-          </div>
+      {/* ── MOBILE STICKY BAR ── */}
+      <div className="fixed bottom-0 left-0 right-0 z-[60] md:hidden pb-[env(safe-area-inset-bottom)]">
 
-          <Button
-            onClick={handleOpenScanner}
-            className="h-14 px-8 bg-white hover:bg-gray-100 text-emerald-700 font-black rounded-2xl text-sm shadow-2xl flex items-center gap-3 transition-all active:scale-95"
-          >
-            <Camera className="w-5 h-5" />
-            CHECK IN
-          </Button>
-        </div>
+        {/* Already checked in */}
+        {isCheckedIn ? (
+          <div className="bg-white border-t border-gray-100 shadow-[0_-8px_30px_rgba(0,0,0,0.08)] px-5 pt-4 pb-5">
+            <div className="flex items-center justify-center mb-3">
+              <span className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold text-sm px-5 py-2 rounded-full">
+                <CheckCircle2 className="w-4 h-4" />
+                You're checked in ✓
+              </span>
+            </div>
+            <Link href={`/events/${eventId}/showcase`}>
+              <button className="w-full h-12 border-2 border-[#7c2529] text-[#7c2529] font-black rounded-2xl text-sm flex items-center justify-center gap-2 hover:bg-[#7c2529]/5 active:scale-95 transition-all">
+                <Sparkles className="w-4 h-4" />
+                Share your Moment
+              </button>
+            </Link>
+          </div>
+        ) : (
+          /* Active check-in states */
+          <div className="bg-white border-t border-gray-100 shadow-[0_-8px_30px_rgba(0,0,0,0.08)] px-5 pt-4 pb-5">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="shrink-0">
+                <p className="text-[9px] text-gray-400 font-bold uppercase tracking-[0.2em] leading-none mb-1">Arrival</p>
+                <p className="text-base font-black text-gray-900 leading-none">{formatTime(event.start_time)}</p>
+              </div>
+              <div className="flex-1">
+                <CheckInButton fullWidth />
+              </div>
+            </div>
+            <CheckInSubtext />
+          </div>
+        )}
       </div>
+
     </div>
   )
 }

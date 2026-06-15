@@ -653,7 +653,7 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
     };
   }
 
-  async selfCheckIn(userId: string, data: { eventId: string; code: string; latitude: number; longitude: number }) {
+  async selfCheckIn(userId: string, data: { eventId: string; latitude: number; longitude: number }) {
     const supabase = this.supabaseService.getClient();
 
     const { data: volProfile } = await supabase
@@ -666,15 +666,11 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
 
     const { data: event } = await supabase
       .from('events')
-      .select('id, latitude, longitude, check_in_code, event_date, start_time')
+      .select('id, latitude, longitude, event_date, start_time')
       .eq('id', data.eventId)
       .single();
 
     if (!event) throw new NotFoundException('Event not found');
-
-    if (event.check_in_code !== data.code) {
-      throw new BadRequestException('Invalid QR Code. Please scan the official event code.');
-    }
 
     const eventStart = new Date(`${event.event_date}T${event.start_time}:00+05:30`);
     if (new Date() < eventStart) {

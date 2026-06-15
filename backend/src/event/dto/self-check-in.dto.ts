@@ -5,10 +5,6 @@ export class SelfCheckInDto {
   @IsNotEmpty()
   eventId: string;
 
-  @IsString()
-  @IsNotEmpty()
-  code: string;
-
   @IsNumber()
   latitude: number;
 
