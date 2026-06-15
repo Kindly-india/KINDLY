@@ -17,8 +17,8 @@ import { downloadFromUrl } from "@/lib/utils"
 type AccessState = 'loading' | 'public' | 'waiting' | 'full'
 
 // ── Moment card generator ─────────────────────────────────────────────────────
-// 9:16 transparent PNG — white text over a frosted dark panel in the lower half.
-// Users download this and add it as an Instagram sticker over their own photo.
+// 9:16 transparent PNG — Strava-style: centered text stack, no background panel,
+// stats one below another in the middle, logo at the bottom center.
 async function drawMomentCard(params: {
   title: string
   orgName: string
@@ -26,9 +26,8 @@ async function drawMomentCard(params: {
   hours: string | null
 }): Promise<string> {
   const W = 540, H = 960, S = 2
-  const MAROON = '#7c2529'
-  const WHITE = '#ffffff'
-  const FONT = '"Helvetica Neue", Helvetica, Arial, sans-serif'
+  // SF Pro Display on iOS/macOS, Helvetica Neue everywhere else
+  const FONT = '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif'
 
   const canvas = document.createElement('canvas')
   canvas.width = W * S
@@ -37,161 +36,114 @@ async function drawMomentCard(params: {
   ctx.scale(S, S)
   ctx.clearRect(0, 0, W, H) // fully transparent
 
-  // ── Helper: rounded rect path ──────────────────────────────────────────────
-  const rrect = (x: number, y: number, w: number, h: number, r: number) => {
-    ctx.beginPath()
-    ctx.moveTo(x + r, y)
-    ctx.lineTo(x + w - r, y); ctx.arcTo(x + w, y, x + w, y + r, r)
-    ctx.lineTo(x + w, y + h - r); ctx.arcTo(x + w, y + h, x + w - r, y + h, r)
-    ctx.lineTo(x + r, y + h); ctx.arcTo(x, y + h, x, y + h - r, r)
-    ctx.lineTo(x, y + r); ctx.arcTo(x, y, x + r, y, r)
-    ctx.closePath()
-  }
+  // Strong shadow so white text reads on any photo background
+  ctx.shadowColor = 'rgba(0,0,0,0.85)'
+  ctx.shadowBlur = 22
+  ctx.shadowOffsetX = 0
+  ctx.shadowOffsetY = 3
 
-  // ── Shadow helper ──────────────────────────────────────────────────────────
-  const shadow = (on: boolean) => {
-    ctx.shadowColor = on ? 'rgba(0,0,0,0.65)' : 'transparent'
-    ctx.shadowBlur = on ? 14 : 0
-    ctx.shadowOffsetX = 0; ctx.shadowOffsetY = on ? 2 : 0
-  }
+  // Center all text
+  ctx.textAlign = 'center'
+  const cx = W / 2
 
-  // ── Load logo ──────────────────────────────────────────────────────────────
+  // ── Load logo ────────────────────────────────────────────────────────────────
   let logoImg: HTMLImageElement | null = null
   try {
     logoImg = await new Promise<HTMLImageElement>((res, rej) => {
       const img = new window.Image()
       img.onload = () => res(img); img.onerror = rej; img.src = '/logowhite.png'
     })
-  } catch { /* text fallback */ }
+  } catch { /* text fallback at bottom */ }
 
-  // ── TOP: Logo ──────────────────────────────────────────────────────────────
-  shadow(true)
-  if (logoImg) {
-    const lH = 38
-    const lW = (logoImg.naturalWidth / logoImg.naturalHeight) * lH
-    ctx.drawImage(logoImg, 36, 36, lW, lH)
-  } else {
-    ctx.font = `800 22px ${FONT}`; ctx.fillStyle = WHITE
-    ctx.fillText('KINDLY', 36, 60)
-  }
-
-  // "MOMENT" pill badge — top right
-  shadow(false)
-  const bText = 'MOMENT'
-  ctx.font = `700 10px ${FONT}`
-  const bW = ctx.measureText(bText).width + 24
-  const bX = W - bW - 32
-  rrect(bX, 38, bW, 26, 13)
-  ctx.fillStyle = 'rgba(124,37,41,0.80)'; ctx.fill()
-  ctx.strokeStyle = 'rgba(255,255,255,0.22)'; ctx.lineWidth = 1; ctx.stroke()
-  shadow(true)
-  ctx.fillStyle = 'rgba(255,255,255,0.92)'
-  ctx.fillText(bText, bX + 12, 38 + 17)
-
-  // ── FROSTED PANEL (bottom ~50%) ────────────────────────────────────────────
-  const panelY = Math.floor(H * 0.50)
-  const PR = 26 // panel corner radius
-
-  shadow(false)
-  // Panel background — rounded top corners only
-  ctx.beginPath()
-  ctx.moveTo(PR, panelY)
-  ctx.lineTo(W - PR, panelY); ctx.arcTo(W, panelY, W, panelY + PR, PR)
-  ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.lineTo(0, panelY + PR)
-  ctx.arcTo(0, panelY, PR, panelY, PR)
-  ctx.closePath()
-  ctx.fillStyle = 'rgba(6,4,16,0.68)'
-  ctx.fill()
-
-  // Maroon left accent stripe inside panel
-  rrect(0, panelY + PR, 5, 200, 2)
-  ctx.fillStyle = MAROON; ctx.fill()
-
-  // Subtle top edge highlight
-  ctx.beginPath(); ctx.moveTo(PR, panelY); ctx.lineTo(W - PR, panelY)
-  ctx.strokeStyle = 'rgba(255,255,255,0.10)'; ctx.lineWidth = 1; ctx.stroke()
-
-  // ── PANEL CONTENT ─────────────────────────────────────────────────────────
-  const X = 28
-  let y = panelY + 36
-
-  // "I  V O L U N T E E R E D  A T"  (spaced caps)
-  shadow(true)
-  ctx.font = `500 10px ${FONT}`
-  ctx.fillStyle = 'rgba(255,255,255,0.48)'
-  ctx.fillText('I  V O L U N T E E R E D  A T', X, y)
-  y += 38
-
-  // Event title (max 2 lines)
-  ctx.font = `700 30px ${FONT}`
-  ctx.fillStyle = WHITE
-  const maxW = W - X - 24
-  const words = params.title.split(' ')
-  let line1 = '', line2 = '', onLine2 = false
-  for (const w of words) {
-    if (!onLine2) {
-      const t = line1 ? line1 + ' ' + w : w
-      if (ctx.measureText(t).width > maxW) { onLine2 = true; line2 = w }
-      else line1 = t
-    } else {
-      const t = line2 + ' ' + w
-      if (ctx.measureText(t).width > maxW) { line2 = line2.trimEnd() + '…'; break }
-      line2 = t
+  // ── Helper: word-wrap to N lines ─────────────────────────────────────────────
+  const wrapLines = (text: string, maxW: number): string[] => {
+    const words = text.split(' ')
+    const lines: string[] = []
+    let cur = ''
+    for (const w of words) {
+      const test = cur ? cur + ' ' + w : w
+      if (ctx.measureText(test).width > maxW) { lines.push(cur); cur = w }
+      else cur = test
     }
+    if (cur) lines.push(cur)
+    if (lines.length > 2) { lines[1] = lines[1].trimEnd() + '…'; return lines.slice(0, 2) }
+    return lines
   }
-  ctx.fillText(line1, X, y)
-  if (line2) { y += 38; ctx.fillText(line2, X, y) }
-  y += 24
 
-  // Thin maroon rule
-  shadow(false)
-  ctx.beginPath(); ctx.moveTo(X, y); ctx.lineTo(W - 24, y)
-  ctx.strokeStyle = 'rgba(124,37,41,0.55)'; ctx.lineWidth = 1.5; ctx.stroke()
-  y += 22
+  // ── Content — start at ~30% and flow down ────────────────────────────────────
+  const maxTitleW = W - 80
 
-  // Org name
-  shadow(true)
-  ctx.font = `500 13px ${FONT}`
-  ctx.fillStyle = 'rgba(255,255,255,0.72)'
-  ctx.fillText(params.orgName, X, y)
-  y += 22
+  ctx.font = `700 48px ${FONT}`
+  const titleLines = wrapLines(params.title, maxTitleW)
 
-  // Date
   const dateStr = params.eventDate
     ? new Date(params.eventDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
     : ''
+  const hoursNum = params.hours ? params.hours.split(' ')[0] : null
+
+  let y = Math.floor(H * 0.30)
+
+  // "I VOLUNTEERED AT" — spaced caps
+  ctx.font = `500 15px ${FONT}`
+  ctx.fillStyle = 'rgba(255,255,255,0.80)'
+  ctx.fillText('I  V O L U N T E E R E D  A T', cx, y)
+  y += 50
+
+  // Event title
+  ctx.font = `700 48px ${FONT}`
+  ctx.fillStyle = '#ffffff'
+  for (const line of titleLines) {
+    ctx.fillText(line, cx, y)
+    y += 58
+  }
+  y += 10
+
+  // Thin white rule — short, centred
+  ctx.shadowColor = 'transparent'
+  ctx.beginPath(); ctx.moveTo(cx - 60, y); ctx.lineTo(cx + 60, y)
+  ctx.strokeStyle = 'rgba(255,255,255,0.35)'; ctx.lineWidth = 1.5; ctx.stroke()
+  ctx.shadowColor = 'rgba(0,0,0,0.85)'
+  y += 28
+
+  // Org name
+  ctx.font = `600 20px ${FONT}`
+  ctx.fillStyle = 'rgba(255,255,255,0.88)'
+  ctx.fillText(params.orgName, cx, y)
+  y += 32
+
+  // Date
   if (dateStr) {
-    ctx.font = `400 12px ${FONT}`
-    ctx.fillStyle = 'rgba(255,255,255,0.42)'
-    ctx.fillText(dateStr, X, y)
+    ctx.font = `500 17px ${FONT}`
+    ctx.fillStyle = 'rgba(255,255,255,0.72)'
+    ctx.fillText(dateStr, cx, y)
     y += 32
   }
 
-  // Hours stat — big number display
-  if (params.hours) {
-    const numPart = params.hours.split(' ')[0]
-    // Big number
-    ctx.font = `800 62px ${FONT}`
-    ctx.fillStyle = WHITE
-    ctx.fillText(numPart, X, y + 60)
-    // "hrs volunteered" label to the right of the number
-    const numW = ctx.measureText(numPart).width
-    ctx.font = `400 13px ${FONT}`
-    ctx.fillStyle = 'rgba(255,255,255,0.60)'
-    ctx.fillText('hrs', X + numW + 10, y + 38)
-    ctx.fillText('volunteered', X + numW + 10, y + 58)
-    y += 80
+  // Hours — big bold stat, Strava-style
+  if (hoursNum) {
+    y += 22
+    ctx.font = `800 80px ${FONT}`
+    ctx.fillStyle = '#ffffff'
+    ctx.fillText(hoursNum, cx, y + 74)
+    ctx.font = `500 18px ${FONT}`
+    ctx.fillStyle = 'rgba(255,255,255,0.78)'
+    ctx.fillText('hrs volunteered', cx, y + 100)
+    y += 116
   }
 
-  // ── BOTTOM: kindly.co.in ───────────────────────────────────────────────────
-  shadow(false)
-  ctx.beginPath(); ctx.moveTo(X, H - 54); ctx.lineTo(W - 24, H - 54)
-  ctx.strokeStyle = 'rgba(255,255,255,0.12)'; ctx.lineWidth = 1; ctx.stroke()
-
-  shadow(true)
-  ctx.font = `600 11px ${FONT}`
-  ctx.fillStyle = 'rgba(255,255,255,0.38)'
-  ctx.fillText('kindly.co.in', X, H - 30)
+  // ── Logo — just below the last content element ────────────────────────────────
+  y += 40
+  ctx.shadowColor = 'rgba(0,0,0,0.70)'
+  ctx.shadowBlur = 14
+  if (logoImg) {
+    const lH = 34
+    const lW = (logoImg.naturalWidth / logoImg.naturalHeight) * lH
+    ctx.drawImage(logoImg, cx - lW / 2, y, lW, lH)
+  } else {
+    ctx.font = `800 18px ${FONT}`
+    ctx.fillStyle = 'rgba(255,255,255,0.78)'
+    ctx.fillText('KINDLY', cx, y + 24)
+  }
 
   return canvas.toDataURL('image/png')
 }
@@ -557,10 +509,10 @@ export default function ShowcaseClient() {
                   </button>
                 ) : (
                   <div className="space-y-4">
-                    {/* Preview on dark gradient to simulate an Instagram story background */}
+                    {/* Preview on dark bg so white text is visible — real use is over your own photo */}
                     <div
                       className="w-full max-w-[220px] mx-auto rounded-2xl overflow-hidden shadow-xl"
-                      style={{ background: 'linear-gradient(160deg, #1a1035 0%, #2d1f4e 40%, #1a2f5e 100%)' }}
+                      style={{ background: 'linear-gradient(180deg, #2a2a2a 0%, #111 100%)' }}
                     >
                       <img
                         src={momentCardUrl}
