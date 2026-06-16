@@ -22,7 +22,7 @@ export function TestimonialsSection() {
             </p>
             <div className="flex items-center gap-4">
               <img
-                src="dhivs.JPEG"
+                src="manya.jpeg"
                 alt="Manas Dhivare"
                 className="w-12 h-12 md:w-14 md:h-14 rounded-full object-cover border border-gray-100"
               />

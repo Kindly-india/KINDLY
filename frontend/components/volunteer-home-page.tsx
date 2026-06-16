@@ -38,7 +38,7 @@ const stories = [
     quote: "It starts as one event. Somehow it becomes the plan for every weekend.",
     author: "Aditya Dhongade",
     role: "Co-Founder - Kindly",
-    image: "disha.jpg",
+    image: "riya.jpeg",
   },
   {
     id: 3,
@@ -59,7 +59,7 @@ const stories = [
     quote: "You come for the cause. You stay for the people.",
     author: "Neha Gupta",
     role: "Elderly Care Assistant",
-    image: "IMG_8180.JPG",
+    image: "IMG_6559.jpg",
   },
   {
     id: 6,
@@ -68,7 +68,7 @@ const stories = [
     role: "Medical Volunteer",
     category: "Health",
     categoryColor: "bg-red-500",
-    image: "dclassic 2024-08-04 213104.880.JPG",
+    image: "yoyo.jpeg",
   },
 ]
 
