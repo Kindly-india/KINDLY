@@ -430,14 +430,14 @@ export function AuthCard() {
         </div>
 
         <div className="space-y-2">
-          <button
+          {/* <button
             type="button"
             onClick={handleGoogle}
             disabled={isSubmitting || isPasskeyBusy}
             className={`w-full ${FIELD_H} flex items-center justify-center gap-2 bg-muted hover:bg-border/60 text-foreground font-medium text-[13px] rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-muted`}
           >
             <GoogleIcon /> Sign in with Google
-          </button>
+          </button> */}
           <button
             type="button"
             onClick={handlePasskeySignIn}

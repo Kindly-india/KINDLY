@@ -26,7 +26,6 @@ import {
     Gift,
     Palette,
     Building2,
-    Instagram,
     Clock,
     CheckCircle2,
 } from "lucide-react"
@@ -36,6 +35,8 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
+import { ScrollReveal } from "@/components/ui/scroll-reveal"
+import { InstagramIcon } from "@/components/ui/social-icons"
 import { api } from "@/lib/api"
 
 const causes = [
@@ -168,10 +169,10 @@ const FilterContent = () => (
                             key={pill.id}
                             onClick={() => setSelectedDate(selectedDate === pill.id ? null : pill.id)}
                             className={cn(
-                                "rounded-full font-semibold transition-all px-4 py-2 text-[13px] lg:px-3 lg:py-1.5 lg:text-[11px]",
+                                "rounded-full font-semibold transition-all duration-300 ease-out px-4 py-2 text-[13px] lg:px-3 lg:py-1.5 lg:text-[11px] hover:scale-[1.03] active:scale-95",
                                 selectedDate === pill.id
-                                    ? "bg-primary text-primary-foreground shadow-md"
-                                    : "bg-muted text-foreground hover:bg-border",
+                                    ? "bg-primary text-primary-foreground dark:bg-white dark:text-black shadow-md"
+                                    : "bg-black/5 dark:bg-white/5 text-foreground hover:bg-black/10 dark:hover:bg-white/10",
                             )}
                         >
                             {pill.label}
@@ -190,10 +191,10 @@ const FilterContent = () => (
                         <label
                             key={cause.id}
                             className={cn(
-                                "flex items-center gap-2 lg:gap-1.5 rounded-xl cursor-pointer transition-all border p-3 lg:p-2",
+                                "flex items-center gap-2 lg:gap-1.5 rounded-xl cursor-pointer transition-all duration-300 ease-out border p-3 lg:p-2 hover:scale-[1.02]",
                                 selectedCauses.includes(cause.id)
-                                    ? "bg-muted border-black shadow-sm"
-                                    : "bg-card border-border hover:border-border",
+                                    ? "bg-primary/10 dark:bg-white/10 border-primary/30 dark:border-white/30 shadow-sm"
+                                    : "bg-white/50 dark:bg-white/5 border-black/5 dark:border-white/10 hover:border-black/10 dark:hover:border-white/20",
                             )}
                         >
                             <Checkbox
@@ -221,10 +222,10 @@ const FilterContent = () => (
                             key={duration.id}
                             onClick={() => setSelectedDuration(selectedDuration === duration.id ? null : duration.id)}
                             className={cn(
-                                "rounded-xl font-semibold transition-all border px-4 py-3 text-[13px] lg:px-3 lg:py-2 lg:text-[11px]",
+                                "rounded-xl font-semibold transition-all duration-300 ease-out border px-4 py-3 text-[13px] lg:px-3 lg:py-2 lg:text-[11px] hover:scale-[1.02]",
                                 selectedDuration === duration.id
-                                    ? "bg-[#d4f4dd] border-emerald-400 text-emerald-900"
-                                    : "bg-card border-border text-foreground hover:border-border",
+                                    ? "bg-[#d4f4dd] dark:bg-emerald-500/15 border-emerald-400 dark:border-emerald-500/40 text-emerald-900 dark:text-emerald-400"
+                                    : "bg-white/50 dark:bg-white/5 border-black/5 dark:border-white/10 text-foreground hover:border-black/10 dark:hover:border-white/20",
                             )}
                         >
                             {duration.label}
@@ -244,18 +245,18 @@ const FilterContent = () => (
                             key={time.id}
                             onClick={() => setSelectedTime(selectedTime === time.id ? null : time.id)}
                             className={cn(
-                                "w-full flex items-center gap-3 lg:gap-2 rounded-xl text-left transition-all border p-3 lg:p-2",
+                                "w-full flex items-center gap-3 lg:gap-2 rounded-xl text-left transition-all duration-300 ease-out border p-3 lg:p-2 hover:scale-[1.01]",
                                 selectedTime === time.id
-                                    ? "bg-[#fef3c7] border-amber-300"
-                                    : "bg-card border-border hover:border-border",
+                                    ? "bg-[#fef3c7] dark:bg-amber-500/15 border-amber-300 dark:border-amber-500/40"
+                                    : "bg-white/50 dark:bg-white/5 border-black/5 dark:border-white/10 hover:border-black/10 dark:hover:border-white/20",
                             )}
                         >
-                            <time.icon className={cn(selectedTime === time.id ? "text-amber-600" : "text-muted-foreground", "w-5 h-5 lg:w-4 lg:h-4")} />
+                            <time.icon className={cn(selectedTime === time.id ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground", "w-5 h-5 lg:w-4 lg:h-4")} />
                             <div className="flex-1">
-                                <div className={cn("font-bold text-[14px] lg:text-[12px]", selectedTime === time.id ? "text-amber-900" : "text-foreground")}>
+                                <div className={cn("font-bold text-[14px] lg:text-[12px]", selectedTime === time.id ? "text-amber-900 dark:text-amber-400" : "text-foreground")}>
                                     {time.label}
                                 </div>
-                                <div className={cn("text-[12px] lg:text-[10px] font-medium mt-0.5 lg:mt-0", selectedTime === time.id ? "text-amber-700" : "text-muted-foreground")}>
+                                <div className={cn("text-[12px] lg:text-[10px] font-medium mt-0.5 lg:mt-0", selectedTime === time.id ? "text-amber-700 dark:text-amber-500" : "text-muted-foreground")}>
                                     {time.time}
                                 </div>
                             </div>
@@ -265,7 +266,7 @@ const FilterContent = () => (
             </div>
 
             {/* Show Filled Events */}
-            <div className="bg-muted rounded-xl lg:rounded-lg p-4 lg:p-3">
+            <div className="bg-white/50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-xl lg:rounded-lg p-4 lg:p-3">
                 <label className="flex items-center justify-between cursor-pointer">
                     <div>
                         <div className="font-bold text-foreground text-[14px] lg:text-[12px]">
@@ -395,10 +396,15 @@ const FilterContent = () => (
     })
 
     return (
-        <div className="min-h-screen bg-background overflow-x-hidden">
-            <div className="flex">
+        <div className="min-h-screen bg-background dark:bg-black overflow-x-hidden relative">
+            {/* Ambient glow — same subtle navy motif as the rest of the redesign */}
+            <div
+                aria-hidden="true"
+                className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[380px] max-w-[200vw] bg-gradient-to-b from-indigo-200/20 dark:from-indigo-500/10 to-transparent blur-3xl pointer-events-none"
+            />
+            <div className="flex relative">
                 {/* Left Sidebar - Desktop Only */}
-                <aside className="hidden lg:block w-70 shrink-0 sticky top-16 h-[calc(100vh-64px)] overflow-y-auto border-r border-border bg-gradient-to-b from-white dark:from-background to-muted">
+                <aside className="hidden lg:block w-70 shrink-0 sticky top-16 h-[calc(100vh-64px)] overflow-y-auto border-r border-black/5 dark:border-white/5 bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl">
                     <div className="p-5">
                         <div className="flex items-center justify-between mb-5">
                             <div className="flex items-center gap-2">
@@ -416,10 +422,10 @@ const FilterContent = () => (
                 </aside>
 
                 {/* Right Content Area */}
-                <main className="flex-1 bg-gradient-to-br from-muted via-white dark:via-background to-muted min-h-screen pb-24">
+                <main className="flex-1 bg-gradient-to-br from-muted via-white dark:via-black to-muted dark:to-black min-h-screen pb-24">
 
                     {/* Mobile-Optimized Search Bar */}
-                    <div className="px-3 sm:px-6 pt-4 pb-2 bg-card/50 backdrop-blur-sm">
+                    <div className="px-3 sm:px-6 pt-4 pb-2">
                         <div className="relative max-w-2xl mx-auto">
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-muted-foreground" />
                             <input
@@ -427,7 +433,7 @@ const FilterContent = () => (
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 placeholder="Search by title, location, or description..."
-                                className="w-full h-11 md:h-12 pl-11 md:pl-12 pr-10 py-3 bg-card border border-border rounded-full text-[14px] md:text-[15px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[#ff6b6b]/20 focus:border-[#ff6b6b]/30 transition-all shadow-sm"
+                                className="w-full h-11 md:h-12 pl-11 md:pl-12 pr-10 py-3 bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl border border-black/5 dark:border-white/10 rounded-full text-[14px] md:text-[15px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[#ff6b6b]/20 focus:border-[#ff6b6b]/30 transition-all shadow-sm"
                             />
                             {searchQuery ? (
                                 <button onClick={() => setSearchQuery("")} className="absolute right-4 top-1/2 -translate-y-1/2">
@@ -437,7 +443,7 @@ const FilterContent = () => (
                         </div>
                     </div>
 
-                    <div className="sticky top-12 md:top-16 z-40 bg-card/80 backdrop-blur-xl border-b border-border shadow-sm">
+                    <div className="sticky top-12 md:top-16 z-40 bg-white/70 dark:bg-black/60 backdrop-blur-xl border-b border-black/5 dark:border-white/10 shadow-sm">
                         <div className="px-3 sm:px-6 py-2 md:py-3">
                             <div className="flex items-center justify-between gap-2 flex-wrap">
                                 {/* Left - Results & Filters */}
@@ -445,18 +451,18 @@ const FilterContent = () => (
                                     {/* Mobile Filter Button */}
                                     <Sheet open={isFilterOpen} onOpenChange={setIsFilterOpen}>
                                         <SheetTrigger asChild>
-                                            <button className="lg:hidden flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground rounded-full shadow-sm active:scale-95 transition-all">
+                                            <Button variant="nav-pill" className="lg:hidden h-9 px-4 gap-1.5">
                                                 <SlidersHorizontal className="w-3.5 h-3.5" />
                                                 <span className="text-[12px] font-bold">Filters</span>
-                                                {hasActiveFilters && <span className="w-1.5 h-1.5 bg-card rounded-full animate-pulse ml-1" />}
-                                            </button>
+                                                {hasActiveFilters && <span className="w-1.5 h-1.5 bg-current rounded-full animate-pulse ml-1" />}
+                                            </Button>
                                         </SheetTrigger>
-                                        
+
                                         {/* Added z-[100] to overlay the Bottom Nav */}
-                                        <SheetContent side="bottom" className="h-[90vh] rounded-t-3xl bg-card px-0 z-[100] flex flex-col">
-                                            <SheetHeader className="px-5 pt-2 pb-4 border-b border-border shrink-0">
-                                                <div className="flex items-center justify-between">
-                                                    <SheetTitle className="text-[18px] font-bold">Filters</SheetTitle>
+                                        <SheetContent side="bottom" className="h-[90vh] rounded-t-3xl bg-white/95 dark:bg-black/95 backdrop-blur-xl px-0 z-[100] flex flex-col">
+                                            <SheetHeader className="px-5 pt-4 pb-4 border-b border-black/5 dark:border-white/10 shrink-0">
+                                                <div className="flex items-center justify-between h-8">
+                                                    <SheetTitle className="text-[18px] font-bold leading-none">Filters</SheetTitle>
                                                     {hasActiveFilters && (
                                                         <button onClick={clearAllFilters} className="text-[13px] text-red-500 font-bold active:opacity-70">
                                                             Clear All
@@ -464,15 +470,16 @@ const FilterContent = () => (
                                                     )}
                                                 </div>
                                             </SheetHeader>
-                                            
+
                                             <div className="flex-1 overflow-y-auto px-5 py-4">
                                                 <FilterContent />
                                             </div>
-                                            
-                                            <div className="shrink-0 p-5 bg-card border-t border-border pb-[env(safe-area-inset-bottom,20px)]">
+
+                                            <div className="shrink-0 p-5 bg-white/95 dark:bg-black/95 backdrop-blur-xl border-t border-black/5 dark:border-white/10 pb-[env(safe-area-inset-bottom,20px)]">
                                                 <Button
+                                                    variant="outline-pill"
                                                     onClick={() => setIsFilterOpen(false)}
-                                                    className="w-full h-14 bg-primary hover:bg-primary text-primary-foreground rounded-xl text-[15px] font-bold shadow-lg active:scale-[0.98] transition-all"
+                                                    className="w-full h-14 text-[15px] shadow-lg"
                                                 >
                                                     Show {filteredEvents.length} Events
                                                 </Button>
@@ -491,7 +498,7 @@ const FilterContent = () => (
                                 {/* Right - Sort */}
                                 <div className="flex items-center gap-1.5">
                                     <Select value={sortBy} onValueChange={setSortBy}>
-                                        <SelectTrigger className="w-auto min-w-[120px] md:min-w-35 h-8 md:h-9 px-3 md:px-4 bg-card border border-border hover:border-[#d1d1d6] shadow-sm rounded-full text-[11px] md:text-[12px] font-medium gap-1">
+                                        <SelectTrigger className="w-auto min-w-[120px] md:min-w-35 h-8 md:h-9 px-3 md:px-4 bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-black/5 dark:border-white/10 hover:border-black/10 dark:hover:border-white/20 shadow-sm rounded-full text-[11px] md:text-[12px] font-medium gap-1 transition-all duration-300">
                                             <span className="text-muted-foreground hidden md:inline">Sort:</span>
                                             <SelectValue />
                                         </SelectTrigger>
@@ -509,7 +516,7 @@ const FilterContent = () => (
 
                     {/* Active Filters Pills */}
                     {hasActiveFilters && (
-                        <div className="px-3 sm:px-6 py-2 bg-gradient-to-r from-[#fff5f5] dark:from-[#fff5f5]/10 to-[#fffbeb] dark:to-[#fffbeb]/10 border-b border-[#ffe8e8] overflow-x-auto no-scrollbar">
+                        <div className="px-3 sm:px-6 py-2 bg-gradient-to-r from-[#fff5f5] to-[#fffbeb] dark:from-neutral-900/60 dark:to-neutral-900/60 border-b border-[#ffe8e8] dark:border-white/5 overflow-x-auto no-scrollbar">
                             <div className="flex items-center gap-1.5 whitespace-nowrap">
                                 <span className="text-[10px] md:text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
                                     Active:
@@ -548,8 +555,8 @@ const FilterContent = () => (
                                 {/* ── UPCOMING EVENTS ── */}
                                 {events.length === 0 ? (
                                     /* No upcoming events at all — designed empty state */
-                                    <div className="flex flex-col items-center justify-center py-14 text-center">
-                                        <div className="w-20 h-20 rounded-full bg-[#fff5f5] flex items-center justify-center mb-5 shadow-inner">
+                                    <ScrollReveal className="flex flex-col items-center justify-center py-14 text-center">
+                                        <div className="w-20 h-20 rounded-full bg-[#fff5f5] dark:bg-white/5 flex items-center justify-center mb-5 shadow-inner">
                                             <Calendar className="w-9 h-9 text-[#ff6b6b]" />
                                         </div>
                                         <h2 className="text-[20px] font-bold text-foreground mb-2 tracking-tight">
@@ -562,24 +569,24 @@ const FilterContent = () => (
                                             href="https://www.instagram.com/kindly.co.in"
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="flex items-center gap-2.5 px-6 py-3.5 rounded-full font-bold text-[14px] text-white shadow-md active:scale-95 transition-all"
-                                            style={{ background: 'linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)' }}
+                                            className="flex items-center gap-2.5 px-6 py-3.5 rounded-full font-bold text-[14px] text-foreground bg-black/5 dark:bg-white/5 backdrop-blur-xl border border-black/5 dark:border-white/10 hover:bg-black/10 dark:hover:bg-white/10 hover:scale-[1.02] active:scale-95 transition-all duration-300 ease-out"
                                         >
-                                            <Instagram className="w-5 h-5" />
+                                            <InstagramIcon className="w-5 h-5" />
                                             Follow @kindly.co.in for event drops
                                         </a>
-                                    </div>
+                                    </ScrollReveal>
                                 ) : sortedEvents.length === 0 ? (
                                     /* Filters applied, no matches */
-                                    <div className="text-center py-12">
+                                    <ScrollReveal className="text-center py-12">
                                         <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
                                         <p className="text-sm text-muted-foreground">No events match your filters</p>
                                         <button onClick={clearAllFilters} className="mt-2 text-sm text-[#ff6b6b] hover:underline">
                                             Clear filters
                                         </button>
-                                    </div>
+                                    </ScrollReveal>
                                 ) : (
                                     /* Event cards grid */
+                                    <ScrollReveal>
                                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2.5 md:gap-5">
                                         {sortedEvents.slice(0, visibleEvents).map((event) => {
                                             const isUnlimited = event.total_slots == null
@@ -591,7 +598,7 @@ const FilterContent = () => (
                                                 <Link
                                                     key={event.id}
                                                     href={`/events/${event.id}`}
-                                                    className="group flex flex-row md:flex-col h-auto md:h-full bg-white/70 dark:bg-white/5 backdrop-blur-xl rounded-2xl md:rounded-3xl overflow-hidden shadow-sm hover:shadow-xl border border-black/5 dark:border-white/10 active:scale-[0.98] transition-all duration-200"
+                                                    className="group flex flex-row md:flex-col h-auto md:h-full bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl rounded-2xl md:rounded-3xl overflow-hidden shadow-sm dark:shadow-2xl dark:shadow-black/50 hover:shadow-xl border border-black/5 dark:border-white/5 active:scale-[0.98] hover:-translate-y-0.5 transition-all duration-300 ease-out"
                                                 >
                                                     {/* IMAGE — thumbnail on mobile, hero on desktop */}
                                                     <div className="relative shrink-0 w-[100px] md:w-full aspect-square md:aspect-[4/3] bg-muted p-2 md:p-0">
@@ -670,7 +677,7 @@ const FilterContent = () => (
                                                                     <span className="text-[11px] font-semibold text-[#ff6b6b]">{spotsLeft} left</span>
                                                                 ) : null}
                                                             </div>
-                                                            <span className="h-8 px-5 bg-primary text-primary-foreground rounded-full text-[12px] font-bold flex items-center justify-center group-hover:bg-[#ff6b6b] transition-colors">
+                                                            <span className="h-8 px-5 bg-primary text-primary-foreground dark:bg-white dark:text-black rounded-full text-[12px] font-bold flex items-center justify-center group-hover:bg-[#ff6b6b] dark:group-hover:bg-[#ff6b6b] dark:group-hover:text-white transition-colors">
                                                                 Book
                                                             </span>
                                                         </div>
@@ -679,6 +686,7 @@ const FilterContent = () => (
                                             )
                                         })}
                                     </div>
+                                    </ScrollReveal>
                                 )}
 
                                 {/* Load More — upcoming events only */}
@@ -696,7 +704,7 @@ const FilterContent = () => (
 
                                 {/* ── RECENTLY COMPLETED ── */}
                                 {(completedLoading || completedEvents.length > 0) && (
-                                    <div className="mt-10">
+                                    <ScrollReveal delay={0.1} className="mt-10">
                                         {/* Section divider */}
                                         <div className="flex items-center gap-3 mb-5">
                                             <div className="flex-1 h-px bg-muted" />
@@ -712,7 +720,7 @@ const FilterContent = () => (
                                         {completedLoading ? (
                                             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2.5 md:gap-5">
                                                 {[1, 2, 3].map(i => (
-                                                    <div key={i} className="flex flex-row md:flex-col bg-white/70 dark:bg-white/5 backdrop-blur-xl rounded-2xl md:rounded-3xl overflow-hidden border border-black/5 dark:border-white/10 animate-pulse">
+                                                    <div key={i} className="flex flex-row md:flex-col bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl rounded-2xl md:rounded-3xl overflow-hidden border border-black/5 dark:border-white/5 animate-pulse">
                                                         <div className="shrink-0 w-[100px] md:w-full aspect-square md:aspect-[4/3] bg-muted" />
                                                         <div className="p-3 md:p-4 flex-1 space-y-2">
                                                             <div className="h-3.5 bg-muted rounded-full w-3/4" />
@@ -728,7 +736,7 @@ const FilterContent = () => (
                                                     <Link
                                                         key={ev.id}
                                                         href={`/events/${ev.id}/showcase`}
-                                                        className="group flex flex-row md:flex-col h-auto md:h-full bg-white/70 dark:bg-white/5 backdrop-blur-xl rounded-2xl md:rounded-3xl overflow-hidden border border-black/5 dark:border-white/10 shadow-sm active:scale-[0.98] transition-all duration-200"
+                                                        className="group flex flex-row md:flex-col h-auto md:h-full bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl rounded-2xl md:rounded-3xl overflow-hidden border border-black/5 dark:border-white/5 shadow-sm dark:shadow-2xl dark:shadow-black/50 active:scale-[0.98] hover:-translate-y-0.5 transition-all duration-300 ease-out"
                                                     >
                                                         {/* IMAGE with dark overlay */}
                                                         <div className="relative shrink-0 w-[100px] md:w-full aspect-square md:aspect-[4/3] bg-muted p-2 md:p-0">
@@ -782,7 +790,7 @@ const FilterContent = () => (
                                                 ))}
                                             </div>
                                         )}
-                                    </div>
+                                    </ScrollReveal>
                                 )}
                             </>
                         )}

@@ -15,13 +15,16 @@ interface BrandSplashProps {
  * BrandSplash
  *
  * A full-screen brand wipe that plays on explicit login events.
- * Two panels sweep up from the bottom (cream then KINDLY red), the logo
- * springs in, then `onDone` fires so the caller can navigate.
+ * Two panels sweep up from the bottom (neutral-900 then black, with an
+ * indigo glow behind the logo — same palette as the rest of the redesign,
+ * not the old maroon/beige one), the logo springs in, then `onDone` fires
+ * so the caller can navigate. Always renders this way regardless of site
+ * theme — it's a brand moment, not a themed surface.
  *
  * Timing (default 1400ms):
- *   0ms   – cream panel starts wiping up  (600ms)
- *   100ms – red panel starts wiping up    (700ms, done at 800ms)
- *   600ms – logo fades + scales in        (~700ms spring, done ~1100ms)
+ *   0ms   – neutral-900 panel starts wiping up  (600ms)
+ *   100ms – black panel starts wiping up        (700ms, done at 800ms)
+ *   600ms – logo fades + scales in               (~700ms spring, done ~1100ms)
  *   1400ms – onDone fires → navigation
  */
 export function BrandSplash({ show, onDone, duration = 1400 }: BrandSplashProps) {
@@ -48,28 +51,29 @@ export function BrandSplash({ show, onDone, duration = 1400 }: BrandSplashProps)
     <AnimatePresence>
       {show && (
         <div className="fixed inset-0 z-[100] pointer-events-none">
-          {/* Layer 1 — cream wipe */}
+          {/* Layer 1 — neutral-900 wipe */}
           <motion.div
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
             transition={{ duration: 0.6, ease: [0.76, 0, 0.24, 1] }}
-            className="absolute inset-0 bg-[#F5F5DC]"
+            className="absolute inset-0 bg-neutral-900"
           />
 
-          {/* Layer 2 — brand red wipe + logo */}
+          {/* Layer 2 — black wipe + indigo glow + logo */}
           <motion.div
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
             transition={{ delay: 0.1, duration: 0.7, ease: [0.76, 0, 0.24, 1] }}
-            className="absolute inset-0 bg-[#80242a] flex items-center justify-center"
+            className="absolute inset-0 bg-black flex items-center justify-center overflow-hidden"
           >
+            <div className="absolute w-[600px] h-[600px] bg-indigo-500/20 rounded-full blur-3xl pointer-events-none" />
             <motion.img
-              src="/logo-light.png"
+              src="/logowhite.png"
               alt="KINDLY"
               initial={{ opacity: 0, scale: 0.7, filter: "blur(10px)" }}
               animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
               transition={{ delay: 0.5, duration: 0.7, type: "spring", bounce: 0.4 }}
-              className="w-48 object-contain"
+              className="relative w-48 object-contain"
             />
           </motion.div>
         </div>

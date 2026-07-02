@@ -10,6 +10,27 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        // SF Pro Display/Text aren't legally distributable as web-font files
+        // (Apple restricts them to Apple-platform apps) — the correct way to
+        // get real SF on the web is the system-font stack below: -apple-system
+        // /BlinkMacSystemFont resolve to SF Pro in Safari/Chrome on macOS and
+        // iOS automatically. `var(--font-sans)` (Inter, loaded in layout.tsx)
+        // sits right after as the fallback on Windows/Linux/Android instead
+        // of dropping straight to each OS's plainer default UI font.
+        sans: [
+          "-apple-system",
+          "BlinkMacSystemFont",
+          "SF Pro Display",
+          "SF Pro Text",
+          "var(--font-sans)",
+          "Segoe UI",
+          "Roboto",
+          "Helvetica Neue",
+          "Arial",
+          "sans-serif",
+        ],
+      },
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",

@@ -7,7 +7,15 @@ import { Card } from "@/components/ui/card"
 
 export function HeroSection() {
   return (
-    <section id="hero" className="min-h-screen bg-background dark:bg-black md:bg-gradient-to-b md:from-orange-50 dark:md:from-black md:via-white dark:md:via-black md:to-green-50 dark:md:to-black flex flex-col items-center justify-center px-4 md:px-6 py-12 md:py-20 relative overflow-x-hidden">
+    <section id="hero" className="min-h-screen bg-background dark:bg-black md:bg-gradient-to-b md:from-orange-50 dark:md:from-black md:via-white dark:md:via-black md:to-green-50 dark:md:to-black flex flex-col items-center justify-center px-4 md:px-6 py-12 md:py-20 relative overflow-x-hidden overflow-y-hidden">
+
+      {/* Ambient glow, kept subtle — same navy motif as the footer's, just
+          toned down since this is the very top of the page, not a section
+          transition that needs to hide a seam. */}
+      <div
+        aria-hidden="true"
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[380px] max-w-[200vw] bg-indigo-200/20 dark:bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"
+      />
 
       {/* Hide floating icons on mobile for a cleaner form experience */}
       <div className="hidden md:flex absolute top-28 left-20 w-14 h-14 rounded-2xl bg-card shadow-lg items-center justify-center z-10">

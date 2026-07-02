@@ -1,8 +1,10 @@
 "use client"
 
-import { Mail, Phone, MapPin, ChevronRight, Heart } from "lucide-react"
+import { MapPin, ChevronRight } from "lucide-react"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { ScrollReveal } from "@/components/ui/scroll-reveal"
+import { InstagramIcon, LinkedinIcon, WhatsappIcon } from "@/components/ui/social-icons"
 import { useRouter } from "next/navigation"
 
 export function ContactSection() {
@@ -22,27 +24,26 @@ export function ContactSection() {
   }
 
   return (
-    // Increased mobile padding (py-16) so it doesn't feel like an afterthought
     // This band is intentionally always-dark (brand footer), independent of the site theme.
-    <section id="contact" className="bg-[#1d1d1f] dark:bg-black py-16 md:py-16">
-      <div className="max-w-5xl mx-auto px-6 md:px-6">
+    <section id="contact" className="relative bg-[#1d1d1f] dark:bg-black py-16 md:py-16 overflow-hidden">
+      {/* Ambient glow — one section start to finish (CTA + footer live in the
+          same box here, unlike volunteer-home-page's separate sections), so
+          a single glow spans both without needing to be stitched together. */}
+      <div
+        aria-hidden="true"
+        className="absolute top-0 right-0 w-[600px] h-[420px] bg-indigo-500/20 rounded-full blur-3xl pointer-events-none"
+      />
+
+      <div className="max-w-5xl mx-auto px-6 md:px-6 relative">
 
         {/* Top CTA */}
         <ScrollReveal className="text-center pb-12 md:pb-12 border-b border-white/10">
-          <div className="flex justify-center mb-6 md:mb-6">
-            <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-gradient-to-br from-[#ff6b6b] to-[#f59e0b] flex items-center justify-center shadow-lg shadow-black/20">
-              <Heart className="w-7 h-7 md:w-8 md:h-8 text-white" />
-            </div>
-          </div>
-          {/* Title: 28px for mobile prominence */}
           <h2 className="text-[28px] md:text-[40px] font-semibold text-white tracking-tight mb-3 md:mb-4">
             Ready to make a difference?
           </h2>
-          {/* Paragraph: 15px is readable and professional */}
           <p className="text-[15px] md:text-[17px] text-white/60 mb-8 md:mb-6 px-4">
             Join people creating a positive change.
           </p>
-          {/* Button: h-12 for a better mobile tap target */}
           <Button
             onClick={handleSignUpClick}
             className="h-12 md:h-11 px-8 md:px-6 bg-gradient-to-r from-[#ff6b6b] to-[#f59e0b] hover:from-[#ff5252] hover:to-[#e68a00] text-white text-[15px] md:text-[15px] font-bold rounded-full border-0 active:scale-95 transition-all"
@@ -52,113 +53,66 @@ export function ContactSection() {
           </Button>
         </ScrollReveal>
 
-        {/* Footer Links - 2x2 grid is good, but bumped text sizes */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-y-10 gap-x-6 py-12 md:py-12 border-b border-white/10">
-          <div>
-            {/* Header: text-[12px] is the minimum for uppercase labels */}
-            <h3 className="text-[12px] md:text-xs text-white/50 font-bold uppercase tracking-widest mb-4 md:mb-4">
-              Platform
-            </h3>
-            <ul className="space-y-3 md:space-y-3">
-              <li>
-                <a href="/how-it-works" className="text-[14px] md:text-sm text-white/70 hover:text-white transition-colors">
-                  How it Works
-                </a>
-              </li>
-              <li>
-                <a href="/for-volunteers" className="text-[14px] md:text-sm text-white/70 hover:text-white transition-colors">
-                  For Volunteers
-                </a>
-              </li>
-              <li>
-                <a href="/for-organisations" className="text-[14px] md:text-sm text-white/70 hover:text-white transition-colors">
-                  For Organisations
-                </a>
-              </li>
-            </ul>
-          </div>
+        {/* Footer — Luma-style: one clean band (brand + links + icons), not a
+            boxy 4-column directory. */}
+        <ScrollReveal delay={0.1} className="py-10 md:py-10 border-b border-white/10">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+            <Image src="/logowhite.png" alt="KINDLY" width={188} height={44} className="h-5 w-auto self-start shrink-0" />
 
-          <div>
-            <h3 className="text-[12px] md:text-xs text-white/50 font-bold uppercase tracking-widest mb-4 md:mb-4">
-              Company
-            </h3>
-            <ul className="space-y-3 md:space-y-3">
-              <li>
-                <a href="/company/about" className="text-[14px] md:text-sm text-white/70 hover:text-white transition-colors">
-                  About
-                </a>
-              </li>
-              <li>
-                <a href="/company/careers" className="text-[14px] md:text-sm text-white/70 hover:text-white transition-colors">
-                  Careers
-                </a>
-              </li>
-              <li>
-                <a href="/company/press" className="text-[14px] md:text-sm text-white/70 hover:text-white transition-colors">
-                  Press
-                </a>
-              </li>
-            </ul>
-          </div>
+            <nav className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[13px]">
+              <a href="/how-it-works" className="text-white/60 hover:text-white transition-colors">How it Works</a>
+              <a href="/for-volunteers" className="text-white/60 hover:text-white transition-colors">For Volunteers</a>
+              <a href="/for-organisations" className="text-white/60 hover:text-white transition-colors">For Organisations</a>
+              <a href="/company/about" className="text-white/60 hover:text-white transition-colors">About</a>
+              <a href="/company/careers" className="text-white/60 hover:text-white transition-colors">Careers</a>
+              <a href="/company/press" className="text-white/60 hover:text-white transition-colors">Press</a>
+              <a href="/resources/feedback" className="text-white/60 hover:text-white transition-colors">Feedback</a>
+              <a href="/resources/help-center" className="text-white/60 hover:text-white transition-colors">Help Center</a>
+              <a href="/resources/community" className="text-white/60 hover:text-white transition-colors">Community</a>
+            </nav>
 
-          <div>
-            <h3 className="text-[12px] md:text-xs text-white/50 font-bold uppercase tracking-widest mb-4 md:mb-4">
-              Resources
-            </h3>
-            <ul className="space-y-3 md:space-y-3">
-              <li>
-                <a href="/resources/feedback" className="text-[14px] md:text-sm text-white/70 hover:text-white transition-colors">
-                  Feedback
-                </a>
-              </li>
-              <li>
-                <a href="/resources/help-center" className="text-[14px] md:text-sm text-white/70 hover:text-white transition-colors">
-                  Help Center
-                </a>
-              </li>
-              <li>
-                <a href="/resources/community" className="text-[14px] md:text-sm text-white/70 hover:text-white transition-colors">
-                  Community
-                </a>
-              </li>
-            </ul>
+            <div className="flex items-center gap-4">
+              <a
+                href="https://www.instagram.com/kindly.india"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Instagram"
+                className="text-white/60 hover:text-white transition-colors"
+              >
+                <InstagramIcon className="w-5 h-5" />
+              </a>
+              {/* TODO: no LinkedIn URL exists anywhere in the codebase yet — swap in the real company page link */}
+              <a
+                href="#"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="LinkedIn"
+                className="text-white/60 hover:text-white transition-colors"
+              >
+                <LinkedinIcon className="w-5 h-5" />
+              </a>
+              <a
+                href="https://chat.whatsapp.com/JLTD1iP3m8p63Mnz7SjISt"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="WhatsApp"
+                className="text-white/60 hover:text-white transition-colors"
+              >
+                <WhatsappIcon className="w-5 h-5" />
+              </a>
+            </div>
           </div>
+        </ScrollReveal>
 
-          <div>
-            <h3 className="text-[12px] md:text-xs text-white/50 font-bold uppercase tracking-widest mb-4 md:mb-4">
-              Contact
-            </h3>
-            <ul className="space-y-3 md:space-y-3">
-              <li className="flex items-center gap-2 text-[14px] md:text-sm text-white/70">
-                <Mail className="w-4 h-4 md:w-4 md:h-4 shrink-0 text-white/50" />
-                <span className="truncate">manasdhivare@gmail.com</span>
-              </li>
-              <li className="flex items-center gap-2 text-[14px] md:text-sm text-white/70">
-                <Phone className="w-4 h-4 md:w-4 md:h-4 shrink-0 text-white/50" />
-                +91 7517018954
-              </li>
-              <li className="flex items-center gap-2 text-[14px] md:text-sm text-white/70">
-                <MapPin className="w-4 h-4 md:w-4 md:h-4 shrink-0 text-white/50" />
-                Nashik, India
-              </li>
-            </ul>
-          </div>
-        </div>
-
-        {/* Copyright */}
-        <div className="pt-8 md:pt-8 flex flex-col md:flex-row items-center justify-between gap-6 md:gap-4">
-          <p className="text-[12px] md:text-xs text-white/50 font-medium">Copyright © 2026 Kindly. All rights reserved.</p>
-          <div className="flex items-center gap-5 md:gap-6">
-            <a href="/legal/privacy" className="text-[12px] md:text-xs text-white/50 hover:text-white transition-colors font-medium">
-              Privacy Policy
-            </a>
-            <a href="/legal/terms" className="text-[12px] md:text-xs text-white/50 hover:text-white transition-colors font-medium">
-              Terms of Use
-            </a>
-            <a href="/legal/cookies" className="text-[12px] md:text-xs text-white/50 hover:text-white transition-colors font-medium">
-              Cookie Policy
-            </a>
-          </div>
+        {/* Bottom row — contact info + legal, no copyright line */}
+        <div className="pt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[12px] text-white/50">
+          <span className="whitespace-nowrap">manasdhivare@gmail.com</span>
+          <span className="whitespace-nowrap">+91 7517018954</span>
+          <span className="flex items-center gap-1 whitespace-nowrap"><MapPin className="w-3 h-3" /> Nashik, India</span>
+          <span className="text-white/20">•</span>
+          <a href="/legal/privacy" className="whitespace-nowrap hover:text-white transition-colors">Privacy Policy</a>
+          <a href="/legal/terms" className="whitespace-nowrap hover:text-white transition-colors">Terms of Use</a>
+          <a href="/legal/cookies" className="whitespace-nowrap hover:text-white transition-colors">Cookie Policy</a>
         </div>
       </div>
     </section>

@@ -19,7 +19,15 @@ body {
   -webkit-overflow-scrolling: touch;
   
   /* Allow pull-to-refresh but prevent the weird grey bounce background */
-  overscroll-behavior-y: auto; 
+  overscroll-behavior-y: auto;
+
+  /* Apple/Luma-style base weight — semibold by default, headings carry
+     their own explicit font-bold utility and win via the cascade */
+  font-weight: 600;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
 }
 
 /* Apple-inspired LIGHT theme */

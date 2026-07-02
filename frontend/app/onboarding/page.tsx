@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform, Variants } from "framer-motion"
 import { api } from "@/lib/api"
+import { BrandSplash } from "@/components/brand-splash"
 
 // ─────────────────────────────────────────────
 // Data & Constants
@@ -385,8 +386,6 @@ export default function OnboardingPage() {
     }
 
     setShowSplash(true)
-    await wait(2200)
-    router.push("/home")
   }
 
   return (
@@ -505,34 +504,9 @@ export default function OnboardingPage() {
         )}
       </AnimatePresence>
 
-      {/* Final Brand Wipe Sequence */}
-      <AnimatePresence>
-        {showSplash && (
-          <div className="fixed inset-0 z-[60] pointer-events-none">
-            <motion.div
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              transition={{ duration: 0.7, ease: [0.76, 0, 0.24, 1] }}
-              className="absolute inset-0 bg-[#F5F5DC]"
-            />
-            <motion.div
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              transition={{ delay: 0.15, duration: 0.8, ease: [0.76, 0, 0.24, 1] }}
-              className="absolute inset-0 bg-[#80242a] flex items-center justify-center"
-            >
-              <motion.img
-                src="/logo-light.png"
-                alt="KINDLY"
-                initial={{ opacity: 0, scale: 0.7, filter: "blur(10px)" }}
-                animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-                transition={{ delay: 0.8, duration: 0.8, type: "spring", bounce: 0.4 }}
-                className="w-48 object-contain"
-              />
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      {/* Final Brand Wipe Sequence — shared component, not a hand-duplicated
+          copy, so it stays in sync with the AuthCard's splash automatically. */}
+      <BrandSplash show={showSplash} onDone={() => router.push("/home")} duration={2200} />
     </div>
   )
 }

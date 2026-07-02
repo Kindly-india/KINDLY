@@ -9,8 +9,9 @@ import {
   X,
   Download,
   Trophy,
-  Menu,
-  Sparkles,
+  Lock,
+  Clock,
+  Calendar,
   Loader2,
 } from "lucide-react"
 import { api } from "@/lib/api"
@@ -19,6 +20,7 @@ import { supabase } from "@/lib/supabase"
 import { downloadFromUrl, cn } from "@/lib/utils"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { ScrollReveal } from "@/components/ui/scroll-reveal"
 
 type FilterType = "all" | "attended" | "missed" | "cancelled" | "registered"
 
@@ -215,17 +217,42 @@ export function EventHistoryPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-muted flex items-center justify-center">
+      <div className="min-h-screen bg-neutral-50 dark:bg-black flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-muted-foreground animate-spin" />
       </div>
     )
   }
 
+  const attendedCount = historyEvents.filter((e) => e.status === "attended").length
+  const totalHours = historyEvents.reduce((sum, e) => sum + (e.status === "attended" ? e.hours : 0), 0)
+  const certCount = Object.keys(certMap).length
+
   return (
-    <div className="min-h-screen bg-muted overflow-x-hidden">
-      
-      <main className="max-w-[600px] mx-auto px-4 md:px-6 py-4 md:py-8">
+    <div className="min-h-screen bg-neutral-50 dark:bg-black overflow-x-hidden relative">
+      {/* Ambient top glow */}
+      <div className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-[760px] h-[420px] bg-gradient-to-b from-indigo-200/20 dark:from-indigo-500/[0.14] to-transparent blur-3xl" />
+
+      <main className="max-w-[600px] mx-auto px-4 md:px-6 py-4 md:py-8 relative">
         <h1 className="text-xl md:text-3xl font-bold text-foreground mb-4 md:mb-6">Event History</h1>
+
+        {/* YOUR JOURNEY — bento stats derived from the events already loaded above */}
+        <ScrollReveal className="grid grid-cols-3 gap-2 md:gap-3 mb-5 md:mb-6">
+          <Card className="p-3 md:p-4 items-center text-center gap-1">
+            <Calendar className="w-4 h-4 md:w-5 md:h-5 text-[#ff6b6b] mb-0.5" />
+            <p className="text-lg md:text-2xl font-bold text-foreground leading-none">{attendedCount}</p>
+            <p className="text-[10px] md:text-[12px] text-muted-foreground">Attended</p>
+          </Card>
+          <Card className="p-3 md:p-4 items-center text-center gap-1">
+            <Clock className="w-4 h-4 md:w-5 md:h-5 text-[#ff6b6b] mb-0.5" />
+            <p className="text-lg md:text-2xl font-bold text-foreground leading-none">{totalHours}</p>
+            <p className="text-[10px] md:text-[12px] text-muted-foreground">Hours</p>
+          </Card>
+          <Card className="p-3 md:p-4 items-center text-center gap-1">
+            <Trophy className="w-4 h-4 md:w-5 md:h-5 text-[#ff6b6b] mb-0.5" />
+            <p className="text-lg md:text-2xl font-bold text-foreground leading-none">{certCount}</p>
+            <p className="text-[10px] md:text-[12px] text-muted-foreground">Certificates</p>
+          </Card>
+        </ScrollReveal>
 
         <div className="relative mb-3 md:mb-4">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-muted-foreground" />
@@ -234,11 +261,10 @@ export function EventHistoryPage() {
             placeholder="Search past events..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full h-10 md:h-12 pl-9 md:pl-11 pr-4 bg-card rounded-xl text-[13px] md:text-[15px] text-foreground placeholder:text-muted-foreground border border-border focus:outline-none focus:ring-2 focus:ring-[#0066cc]/20 focus:border-[#0066cc] transition-all"
+            className="w-full h-10 md:h-12 pl-9 md:pl-11 pr-4 bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl rounded-2xl text-[13px] md:text-[15px] text-foreground placeholder:text-muted-foreground border border-black/5 dark:border-white/10 focus:outline-none focus:border-black/10 dark:focus:border-white/20 focus:shadow-md transition-all duration-300"
           />
         </div>
 
-        {/* ✅ UPDATED: Removed Certificate Filter Button */}
         <div className="flex gap-2 mb-6 overflow-x-auto pb-1 scrollbar-hide">
           {([
             ["all", "All"],
@@ -251,10 +277,10 @@ export function EventHistoryPage() {
               key={value}
               onClick={() => setActiveFilter(value)}
               className={cn(
-                "px-4 py-2 rounded-full text-[11px] md:text-sm font-medium whitespace-nowrap transition-all",
+                "px-4 py-2 rounded-full text-[11px] md:text-sm font-semibold whitespace-nowrap transition-all duration-300 ease-out hover:scale-[1.03] active:scale-95",
                 activeFilter === value
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-black/5 dark:bg-white/5 text-muted-foreground hover:text-foreground"
+                  ? "bg-primary text-primary-foreground dark:bg-white dark:text-black shadow-sm"
+                  : "bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 text-muted-foreground hover:text-foreground hover:bg-black/10 dark:hover:bg-white/10"
               )}
             >
               {label}
@@ -262,24 +288,24 @@ export function EventHistoryPage() {
           ))}
         </div>
 
-        <div className="space-y-2 md:space-y-3">
+        <ScrollReveal delay={0.05} className="space-y-2 md:space-y-3">
           {filteredEvents.map((event) => (
             <Card
               key={event.id}
-              className="w-full p-3 md:p-4 flex-row items-center gap-3 md:gap-4 transition-all hover:shadow-md"
+              className="w-full p-3 md:p-4 flex-row items-center gap-3 md:gap-4 group"
             >
               <button
                 onClick={() => { if (event.status === "attended") window.location.href = `/events/${event.id}/showcase` }}
                 disabled={event.status === "missed" || event.status === "registered" || event.status === "cancelled"}
                 className="flex items-center gap-3 md:gap-4 flex-1 min-w-0 text-left disabled:cursor-default"
               >
-                <div className="w-14 h-14 md:w-16 md:h-16 rounded-lg overflow-hidden flex-shrink-0 bg-muted">
+                <div className="w-14 h-14 md:w-16 md:h-16 rounded-xl overflow-hidden flex-shrink-0 bg-muted">
                   <img
                     src={event.image || "/placeholder.svg"}
                     alt={event.title}
                     width={64}
                     height={64}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -294,7 +320,7 @@ export function EventHistoryPage() {
                   <button
                     onClick={(e) => handleDownload(e, event.certId)}
                     disabled={downloadingCertId === event.certId}
-                    className="flex items-center gap-1 px-2.5 py-1.5 bg-amber-50 dark:bg-amber-500/15 hover:bg-amber-100 dark:bg-amber-500/15 text-amber-700 text-[10px] md:text-xs font-semibold rounded-lg transition-colors disabled:opacity-50"
+                    className="flex items-center gap-1 px-2.5 py-1.5 bg-amber-50 dark:bg-amber-500/15 hover:bg-amber-100 dark:hover:bg-amber-500/25 text-amber-700 dark:text-amber-400 text-[10px] md:text-xs font-semibold rounded-lg transition-all duration-300 hover:scale-[1.03] active:scale-95 disabled:opacity-50"
                   >
                     {downloadingCertId === event.certId
                       ? <Loader2 className="w-3 h-3 animate-spin" />
@@ -306,15 +332,16 @@ export function EventHistoryPage() {
                   isWithin24Hours(event.event_date, event.start_time) ? (
                     <span
                       title="Less than 24 hours to the event. Contact the organiser directly for emergency cancellations."
-                      className="flex items-center gap-1 px-2.5 py-1.5 bg-muted text-muted-foreground text-[10px] md:text-xs font-semibold rounded-lg cursor-not-allowed select-none"
+                      className="flex items-center gap-1 px-2.5 py-1.5 bg-black/5 dark:bg-white/5 text-muted-foreground text-[10px] md:text-xs font-semibold rounded-lg cursor-not-allowed select-none"
                     >
-                      🔒 Locked
+                      <Lock className="w-3 h-3" />
+                      Locked
                     </span>
                   ) : (
                     <button
                       onClick={(e) => handleCancelRsvp(e, event.id)}
                       disabled={cancellingId === event.id}
-                      className="flex items-center gap-1 px-2.5 py-1.5 bg-red-50 dark:bg-red-500/15 hover:bg-red-100 dark:bg-red-500/15 text-red-600 text-[10px] md:text-xs font-semibold rounded-lg transition-colors disabled:opacity-50"
+                      className="flex items-center gap-1 px-2.5 py-1.5 bg-red-50 dark:bg-red-500/15 hover:bg-red-100 dark:hover:bg-red-500/25 text-red-600 dark:text-red-400 text-[10px] md:text-xs font-semibold rounded-lg transition-all duration-300 hover:scale-[1.03] active:scale-95 disabled:opacity-50"
                     >
                       {cancellingId === event.id
                         ? <Loader2 className="w-3 h-3 animate-spin" />
@@ -325,17 +352,21 @@ export function EventHistoryPage() {
                   )
                 ) : (
                   event.status === "attended" && (
-                    <ChevronRight className="w-4 h-4 md:w-5 md:h-5 text-muted-foreground" />
+                    <ChevronRight className="w-4 h-4 md:w-5 md:h-5 text-muted-foreground transition-transform duration-300 group-hover:translate-x-0.5" />
                   )
                 )}
               </div>
             </Card>
           ))}
-        </div>
+        </ScrollReveal>
 
         {filteredEvents.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground text-sm">No events found</p>
+          <div className="flex flex-col items-center justify-center py-16 text-center px-4">
+            <div className="w-12 h-12 rounded-full bg-[#fff5f5] dark:bg-white/5 flex items-center justify-center mb-3">
+              <Calendar className="w-5 h-5 text-muted-foreground" />
+            </div>
+            <p className="text-[14px] font-semibold text-foreground mb-1">No events found</p>
+            <p className="text-[12px] text-muted-foreground">Try a different search or filter.</p>
           </div>
         )}
       </main>
