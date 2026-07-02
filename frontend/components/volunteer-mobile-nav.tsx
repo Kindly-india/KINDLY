@@ -26,30 +26,50 @@ export function VolunteerMobileNav() {
 
   const profileLink = profile?.id ? `/volunteers/${profile.id}` : "/login"
 
+  const items = [
+    { href: "/home", icon: Home, label: "Home", active: isActive("/home") },
+    { href: "/events", icon: Sparkles, label: "Discover", active: isActive("/events") },
+    { href: "/social", icon: Globe, label: "Social", active: isActive("/social") },
+    { href: "/history", icon: History, label: "History", active: isActive("/history") },
+    { href: profileLink, icon: User, label: "Profile", active: pathname.startsWith("/volunteers/") },
+  ]
+
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-lg border-t border-gray-200 pb-[env(safe-area-inset-bottom)]">
-      <div className="flex items-center justify-around h-16 px-2">
-        <Link href="/home" className="flex flex-col items-center justify-center w-full h-full space-y-1 prevent-select">
-          <Home className={cn("w-6 h-6 transition-colors", isActive("/home") ? "text-[#0066cc]" : "text-gray-400")} />
-          <span className={cn("text-[10px] font-medium", isActive("/home") ? "text-[#0066cc]" : "text-gray-400")}>Home</span>
-        </Link>
-        <Link href="/events" className="flex flex-col items-center justify-center w-full h-full space-y-1 prevent-select">
-          <Sparkles className={cn("w-6 h-6 transition-colors", isActive("/events") ? "text-[#0066cc]" : "text-gray-400")} />
-          <span className={cn("text-[10px] font-medium", isActive("/events") ? "text-[#0066cc]" : "text-gray-400")}>Discover</span>
-        </Link>
-        <Link href="/social" className="flex flex-col items-center justify-center w-full h-full space-y-1 prevent-select">
-          <Globe className={cn("w-6 h-6 transition-colors", isActive("/social") ? "text-[#0066cc]" : "text-gray-400")} />
-          <span className={cn("text-[10px] font-medium", isActive("/social") ? "text-[#0066cc]" : "text-gray-400")}>Social</span>
-        </Link>
-        {/* 3. History (Replaced Impact) */}
-        <Link href="/history" className="flex flex-col items-center justify-center w-full h-full space-y-1 prevent-select">
-          <History className={cn("w-6 h-6 transition-colors", isActive("/history") ? "text-[#0066cc]" : "text-gray-400")} />
-          <span className={cn("text-[10px] font-medium", isActive("/history") ? "text-[#0066cc]" : "text-gray-400")}>History</span>
-        </Link>
-        <Link href={profileLink} className="flex flex-col items-center justify-center w-full h-full space-y-1 prevent-select">
-          <User className={cn("w-6 h-6 transition-colors", pathname.startsWith('/volunteers/') ? "text-[#0066cc]" : "text-gray-400")} />
-          <span className={cn("text-[10px] font-medium", pathname.startsWith('/volunteers/') ? "text-[#0066cc]" : "text-gray-400")}>Profile</span>
-        </Link>
+    <nav
+      className={cn(
+        "md:hidden fixed left-1/2 -translate-x-1/2 z-50",
+        "bottom-[calc(1rem+env(safe-area-inset-bottom))]",
+        "bg-white/80 dark:bg-black/60 backdrop-blur-xl",
+        "border border-neutral-200/60 dark:border-white/10",
+        "shadow-xl shadow-neutral-200/40 dark:shadow-2xl dark:shadow-black/50 rounded-full"
+      )}
+    >
+      <div className="flex items-center gap-1 px-2 py-2">
+        {items.map(({ href, icon: Icon, label, active }) => (
+          <Link
+            key={href}
+            href={href}
+            className={cn(
+              "flex flex-col items-center justify-center w-14 h-12 rounded-full transition-colors prevent-select",
+              active && "bg-black/5 dark:bg-white/10"
+            )}
+          >
+            <Icon
+              className={cn(
+                "w-5 h-5 transition-colors",
+                active ? "text-foreground dark:text-white" : "text-muted-foreground dark:text-neutral-500"
+              )}
+            />
+            <span
+              className={cn(
+                "text-[9px] font-medium mt-0.5",
+                active ? "text-foreground dark:text-white" : "text-muted-foreground dark:text-neutral-500"
+              )}
+            >
+              {label}
+            </span>
+          </Link>
+        ))}
       </div>
     </nav>
   )

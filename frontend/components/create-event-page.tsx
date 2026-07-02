@@ -27,7 +27,7 @@ import { toast } from "sonner"
 
 const LocationPickerMap = dynamic(
     () => import("./location-picker-map").then((m) => ({ default: m.LocationPickerMap })),
-    { ssr: false, loading: () => <div className="w-full rounded-xl bg-[#f5f5f7] animate-pulse" style={{ height: 220 }} /> }
+    { ssr: false, loading: () => <div className="w-full rounded-xl bg-muted animate-pulse" style={{ height: 220 }} /> }
 )
 
 const categories = [
@@ -281,17 +281,17 @@ export function CreateEventPage() {
 
     if (showSuccess) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-[#f0fdf4] via-white to-[#f0f7ff] flex items-center justify-center p-4 overflow-hidden relative">
-                <div className="absolute top-8 left-8 md:top-16 md:left-24 w-10 h-10 md:w-14 md:h-14 bg-white rounded-2xl shadow-lg flex items-center justify-center">
+            <div className="min-h-screen bg-gradient-to-br from-[#f0fdf4] dark:from-[#f0fdf4]/10 via-white dark:via-background to-[#f0f7ff] dark:to-[#f0f7ff]/10 flex items-center justify-center p-4 overflow-hidden relative">
+                <div className="absolute top-8 left-8 md:top-16 md:left-24 w-10 h-10 md:w-14 md:h-14 bg-card rounded-2xl shadow-lg flex items-center justify-center">
                     <Sparkles className="w-5 h-5 md:w-6 md:h-6 text-amber-500" />
                 </div>
-                <div className="absolute top-12 right-8 md:top-20 md:right-32 w-10 h-10 md:w-14 md:h-14 bg-white rounded-2xl shadow-lg flex items-center justify-center">
+                <div className="absolute top-12 right-8 md:top-20 md:right-32 w-10 h-10 md:w-14 md:h-14 bg-card rounded-2xl shadow-lg flex items-center justify-center">
                     <Heart className="w-5 h-5 md:w-6 md:h-6 text-rose-500" />
                 </div>
-                <div className="absolute bottom-20 left-8 md:bottom-24 md:left-32 w-10 h-10 md:w-14 md:h-14 bg-white rounded-2xl shadow-lg flex items-center justify-center">
+                <div className="absolute bottom-20 left-8 md:bottom-24 md:left-32 w-10 h-10 md:w-14 md:h-14 bg-card rounded-2xl shadow-lg flex items-center justify-center">
                     <Users className="w-5 h-5 md:w-6 md:h-6 text-emerald-500" />
                 </div>
-                <div className="absolute bottom-16 right-8 md:bottom-20 md:right-24 w-10 h-10 md:w-14 md:h-14 bg-white rounded-2xl shadow-lg flex items-center justify-center">
+                <div className="absolute bottom-16 right-8 md:bottom-20 md:right-24 w-10 h-10 md:w-14 md:h-14 bg-card rounded-2xl shadow-lg flex items-center justify-center">
                     <Calendar className="w-5 h-5 md:w-6 md:h-6 text-blue-500" />
                 </div>
 
@@ -299,20 +299,20 @@ export function CreateEventPage() {
                     <div className="w-20 h-20 md:w-24 md:h-24 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
                         <CheckCircle className="w-10 h-10 md:w-12 md:h-12 text-white" />
                     </div>
-                    <h1 className="text-2xl md:text-4xl font-bold text-[#1d1d1f] mb-3">Event Submitted!</h1>
-                    <p className="text-[#86868b] text-sm md:text-base mb-8">
+                    <h1 className="text-2xl md:text-4xl font-bold text-foreground mb-3">Event Submitted!</h1>
+                    <p className="text-muted-foreground text-sm md:text-base mb-8">
                         Your event has been submitted for review. Our team will verify the details and may suggest an exciting post-event activity to help volunteers connect before making it live!
                     </p>
                     <div className="flex flex-col sm:flex-row gap-3 justify-center">
                         <Link
                             href="/org-events"
-                            className="px-6 py-3 bg-[#1d1d1f] text-white rounded-xl font-medium hover:bg-[#424245] transition-colors"
+                            className="px-6 py-3 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-muted transition-colors"
                         >
                             View Pending Events
                         </Link>
                         <Link
                             href="/org-home"
-                            className="px-6 py-3 bg-white text-[#1d1d1f] rounded-xl font-medium border border-[#d2d2d7] hover:bg-[#f5f5f7] transition-colors"
+                            className="px-6 py-3 bg-card text-foreground rounded-xl font-medium border border-border hover:bg-muted transition-colors"
                         >
                             Back to Home
                         </Link>
@@ -323,35 +323,35 @@ export function CreateEventPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-[#fef7f0] via-white to-[#f0fdf4] overflow-x-hidden">
-            <div className="fixed top-20 left-4 md:left-12 w-10 h-10 md:w-12 md:h-12 bg-white rounded-2xl shadow-lg flex items-center justify-center z-10 opacity-60">
+        <div className="min-h-screen bg-gradient-to-br from-[#fef7f0] dark:from-[#fef7f0]/10 via-white dark:via-background to-[#f0fdf4] dark:to-[#f0fdf4]/10 overflow-x-hidden">
+            <div className="fixed top-20 left-4 md:left-12 w-10 h-10 md:w-12 md:h-12 bg-card rounded-2xl shadow-lg flex items-center justify-center z-10 opacity-60">
                 <Heart className="w-5 h-5 text-rose-400" />
             </div>
-            <div className="fixed top-32 right-4 md:right-16 w-10 h-10 md:w-12 md:h-12 bg-white rounded-2xl shadow-lg flex items-center justify-center z-10 opacity-60">
+            <div className="fixed top-32 right-4 md:right-16 w-10 h-10 md:w-12 md:h-12 bg-card rounded-2xl shadow-lg flex items-center justify-center z-10 opacity-60">
                 <Sparkles className="w-5 h-5 text-amber-400" />
             </div>
-            <div className="fixed bottom-32 left-4 md:left-16 w-10 h-10 md:w-12 md:h-12 bg-white rounded-2xl shadow-lg flex items-center justify-center z-10 opacity-60">
+            <div className="fixed bottom-32 left-4 md:left-16 w-10 h-10 md:w-12 md:h-12 bg-card rounded-2xl shadow-lg flex items-center justify-center z-10 opacity-60">
                 <Building2 className="w-5 h-5 text-blue-400" />
             </div>
-            <div className="fixed bottom-20 right-4 md:right-12 w-10 h-10 md:w-12 md:h-12 bg-white rounded-2xl shadow-lg flex items-center justify-center z-10 opacity-60">
+            <div className="fixed bottom-20 right-4 md:right-12 w-10 h-10 md:w-12 md:h-12 bg-card rounded-2xl shadow-lg flex items-center justify-center z-10 opacity-60">
                 <Users className="w-5 h-5 text-emerald-400" />
             </div>
 
-            <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-[#f5f5f7]">
+            <header className="sticky top-0 z-50 bg-card/80 backdrop-blur-xl border-b border-border">
                 <div className="max-w-3xl mx-auto px-4 h-14 md:h-16 flex items-center justify-between">
                     <Link
                         href="/org-events"
-                        className="flex items-center gap-2 text-[#86868b] hover:text-[#1d1d1f] transition-colors"
+                        className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
                     >
                         <ChevronLeft className="w-5 h-5" />
                         <span className="text-sm font-medium hidden sm:inline">Back to Events</span>
                     </Link>
-                    <h1 className="text-base md:text-lg font-semibold text-[#1d1d1f]">Create Event</h1>
+                    <h1 className="text-base md:text-lg font-semibold text-foreground">Create Event</h1>
                     <div className="w-20" />
                 </div>
             </header>
 
-            <div className="bg-white border-b border-[#f5f5f7]">
+            <div className="bg-card border-b border-border">
                 <div className="max-w-3xl mx-auto px-4 py-4">
                     <div className="flex items-center gap-2">
                         {[
@@ -366,7 +366,7 @@ export function CreateEventPage() {
                                             "w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all",
                                             step >= s.num
                                                 ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md"
-                                                : "bg-[#f5f5f7] text-[#86868b]",
+                                                : "bg-muted text-muted-foreground",
                                         )}
                                     >
                                         {step > s.num ? <CheckCircle className="w-4 h-4" /> : s.num}
@@ -374,7 +374,7 @@ export function CreateEventPage() {
                                     <span
                                         className={cn(
                                             "text-xs md:text-sm font-medium hidden sm:inline",
-                                            step >= s.num ? "text-[#1d1d1f]" : "text-[#86868b]",
+                                            step >= s.num ? "text-foreground" : "text-muted-foreground",
                                         )}
                                     >
                                         {s.label}
@@ -384,7 +384,7 @@ export function CreateEventPage() {
                                     <div
                                         className={cn(
                                             "h-0.5 flex-1 mx-2 rounded-full transition-all",
-                                            step > s.num ? "bg-gradient-to-r from-emerald-500 to-teal-500" : "bg-[#e5e5e7]",
+                                            step > s.num ? "bg-gradient-to-r from-emerald-500 to-teal-500" : "bg-border",
                                         )}
                                     />
                                 )}
@@ -398,8 +398,8 @@ export function CreateEventPage() {
                 {step === 1 && (
                     <div className="space-y-6 md:space-y-8">
                         <div>
-                            <label className="block text-sm font-semibold text-[#1d1d1f] mb-3">Cover Image</label>
-                            <div className="aspect-video bg-gradient-to-br from-[#f0fdf4] to-[#e0f2fe] rounded-2xl border-2 border-dashed border-[#d2d2d7] hover:border-emerald-400 transition-colors cursor-pointer flex flex-col items-center justify-center group">
+                            <label className="block text-sm font-semibold text-foreground mb-3">Cover Image</label>
+                            <div className="aspect-video bg-gradient-to-br from-[#f0fdf4] dark:from-[#f0fdf4]/10 to-[#e0f2fe] dark:to-[#e0f2fe]/10 rounded-2xl border-2 border-dashed border-border hover:border-emerald-400 transition-colors cursor-pointer flex flex-col items-center justify-center group">
                                 <input
                                     type="file"
                                     id="coverImage"
@@ -427,13 +427,13 @@ export function CreateEventPage() {
                                         <img src={coverImageUrl} alt="Cover preview" className="w-full h-full object-cover rounded-2xl" />
                                     ) : (
                                         <>
-                                            <div className="w-16 h-16 bg-white rounded-2xl shadow-md flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
+                                            <div className="w-16 h-16 bg-card rounded-2xl shadow-md flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
                                                 <ImageIcon className="w-8 h-8 text-emerald-500" />
                                             </div>
-                                            <p className="text-[#1d1d1f] font-medium">
+                                            <p className="text-foreground font-medium">
                                                 {uploading ? 'Uploading...' : 'Click to upload cover image'}
                                             </p>
-                                            <p className="text-xs text-[#86868b] mt-1">16:9 ratio recommended • PNG, JPG up to 2MB</p>
+                                            <p className="text-xs text-muted-foreground mt-1">16:9 ratio recommended • PNG, JPG up to 2MB</p>
                                         </>
                                     )}
                                 </label>
@@ -441,18 +441,18 @@ export function CreateEventPage() {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-semibold text-[#1d1d1f] mb-3">Event Title</label>
+                            <label className="block text-sm font-semibold text-foreground mb-3">Event Title</label>
                             <input
                                 type="text"
                                 placeholder="Give your event a catchy name"
                                 value={formData.title}
                                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                                className="w-full h-12 md:h-14 px-4 bg-[#f5f5f7] rounded-xl border-0 text-[#1d1d1f] placeholder:text-[#86868b] focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all text-sm md:text-base"
+                                className="w-full h-12 md:h-14 px-4 bg-muted rounded-xl border-0 text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-emerald-500 focus:bg-card transition-all text-sm md:text-base"
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-semibold text-[#1d1d1f] mb-3">Category</label>
+                            <label className="block text-sm font-semibold text-foreground mb-3">Category</label>
                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                                 {categories.map((cat) => (
                                     <button
@@ -461,37 +461,37 @@ export function CreateEventPage() {
                                         className={cn(
                                             "p-4 rounded-xl border-2 transition-all text-left",
                                             formData.category === cat.id
-                                                ? "border-emerald-500 bg-emerald-50"
-                                                : "border-[#e5e5e7] bg-white hover:border-[#d2d2d7]",
+                                                ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-500/15"
+                                                : "border-border bg-card hover:border-border",
                                         )}
                                     >
                                         <span className="text-2xl mb-2 block">{cat.icon}</span>
-                                        <span className="text-sm font-medium text-[#1d1d1f]">{cat.name}</span>
+                                        <span className="text-sm font-medium text-foreground">{cat.name}</span>
                                     </button>
                                 ))}
                             </div>
                         </div>
 
-                        <div className="flex items-center justify-between p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border border-amber-200">
+                        <div className="flex items-center justify-between p-4 bg-gradient-to-r from-amber-50 dark:from-amber-50/10 to-orange-50 dark:to-orange-50/10 rounded-xl border border-amber-200">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center">
+                                <div className="w-10 h-10 bg-card rounded-xl shadow-sm flex items-center justify-center">
                                     <AlertTriangle className="w-5 h-5 text-amber-500" />
                                 </div>
                                 <div>
-                                    <p className="text-sm font-semibold text-[#1d1d1f]">Mark as Urgent</p>
-                                    <p className="text-xs text-[#86868b]">Highlight this event for immediate action</p>
+                                    <p className="text-sm font-semibold text-foreground">Mark as Urgent</p>
+                                    <p className="text-xs text-muted-foreground">Highlight this event for immediate action</p>
                                 </div>
                             </div>
                             <button
                                 onClick={() => setIsUrgent(!isUrgent)}
                                 className={cn(
                                     "w-12 h-7 rounded-full transition-all relative",
-                                    isUrgent ? "bg-amber-500" : "bg-[#e5e5e7]",
+                                    isUrgent ? "bg-amber-500" : "bg-border",
                                 )}
                             >
                                 <div
                                     className={cn(
-                                        "w-5 h-5 bg-white rounded-full shadow-md absolute top-1 transition-all",
+                                        "w-5 h-5 bg-card rounded-full shadow-md absolute top-1 transition-all",
                                         isUrgent ? "right-1" : "left-1",
                                     )}
                                 />
@@ -499,14 +499,14 @@ export function CreateEventPage() {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-semibold text-[#1d1d1f] mb-1">The Cause (Description)</label>
-                            <p className="text-xs text-[#86868b] mb-3">Why are you doing this? What impact will volunteers have?</p>
+                            <label className="block text-sm font-semibold text-foreground mb-1">The Cause (Description)</label>
+                            <p className="text-xs text-muted-foreground mb-3">Why are you doing this? What impact will volunteers have?</p>
                             <textarea
                                 placeholder="Share the story behind this event..."
                                 rows={5}
                                 value={formData.description}
                                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                className="w-full px-4 py-3 bg-[#f5f5f7] rounded-xl border-0 text-[#1d1d1f] placeholder:text-[#86868b] focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all resize-none text-sm md:text-base"
+                                className="w-full px-4 py-3 bg-muted rounded-xl border-0 text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-emerald-500 focus:bg-card transition-all resize-none text-sm md:text-base"
                             />
                         </div>
                     </div>
@@ -516,7 +516,7 @@ export function CreateEventPage() {
                     <div className="space-y-6 md:space-y-8">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-semibold text-[#1d1d1f] mb-3">
+                                <label className="block text-sm font-semibold text-foreground mb-3">
                                     <Calendar className="w-4 h-4 inline mr-2 text-emerald-500" />
                                     Event Date
                                 </label>
@@ -524,11 +524,11 @@ export function CreateEventPage() {
                                     type="date"
                                     value={formData.eventDate}
                                     onChange={(e) => setFormData({ ...formData, eventDate: e.target.value })}
-                                    className="w-full h-12 md:h-14 px-4 bg-[#f5f5f7] rounded-xl border-0 text-[#1d1d1f] focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all text-sm md:text-base"
+                                    className="w-full h-12 md:h-14 px-4 bg-muted rounded-xl border-0 text-foreground focus:ring-2 focus:ring-emerald-500 focus:bg-card transition-all text-sm md:text-base"
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-semibold text-[#1d1d1f] mb-3">
+                                <label className="block text-sm font-semibold text-foreground mb-3">
                                     <Clock className="w-4 h-4 inline mr-2 text-emerald-500" />
                                     Start Time
                                 </label>
@@ -536,13 +536,13 @@ export function CreateEventPage() {
                                     type="time"
                                     value={formData.startTime}
                                     onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
-                                    className="w-full h-12 md:h-14 px-4 bg-[#f5f5f7] rounded-xl border-0 text-[#1d1d1f] focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all text-sm md:text-base"
+                                    className="w-full h-12 md:h-14 px-4 bg-muted rounded-xl border-0 text-foreground focus:ring-2 focus:ring-emerald-500 focus:bg-card transition-all text-sm md:text-base"
                                 />
                             </div>
                         </div>
 
                         <div>
-                            <label className="block text-sm font-semibold text-[#1d1d1f] mb-3">
+                            <label className="block text-sm font-semibold text-foreground mb-3">
                                 <Clock className="w-4 h-4 inline mr-2 text-emerald-500" />
                                 End Time
                             </label>
@@ -550,12 +550,12 @@ export function CreateEventPage() {
                                 type="time"
                                 value={formData.endTime}
                                 onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
-                                className="w-full h-12 md:h-14 px-4 bg-[#f5f5f7] rounded-xl border-0 text-[#1d1d1f] focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all text-sm md:text-base"
+                                className="w-full h-12 md:h-14 px-4 bg-muted rounded-xl border-0 text-foreground focus:ring-2 focus:ring-emerald-500 focus:bg-card transition-all text-sm md:text-base"
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-semibold text-[#1d1d1f] mb-3">
+                            <label className="block text-sm font-semibold text-foreground mb-3">
                                 <MapPin className="w-4 h-4 inline mr-2 text-emerald-500" />
                                 Exact Location
                             </label>
@@ -565,7 +565,7 @@ export function CreateEventPage() {
                                     <div className="relative flex-1">
                                         {searchLoading
                                             ? <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500 animate-spin" />
-                                            : <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                            : <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                                         }
                                         <input
                                             type="text"
@@ -573,23 +573,23 @@ export function CreateEventPage() {
                                             value={formData.location}
                                             onChange={(e) => handleSearchChange(e.target.value)}
                                             onKeyDown={handleSearchKeyDown}
-                                            className="w-full h-12 px-4 pl-10 bg-[#f5f5f7] rounded-xl border-0 text-[#1d1d1f] placeholder:text-[#86868b] focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all text-sm"
+                                            className="w-full h-12 px-4 pl-10 bg-muted rounded-xl border-0 text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-emerald-500 focus:bg-card transition-all text-sm"
                                         />
                                     </div>
                                     <button
                                         onClick={handleGetCurrentLocation}
                                         disabled={gettingLocation}
-                                        className="h-12 px-4 bg-white border border-[#e5e5e7] hover:bg-[#f5f5f7] rounded-xl flex items-center gap-2 transition-colors disabled:opacity-50"
+                                        className="h-12 px-4 bg-card border border-border hover:bg-muted rounded-xl flex items-center gap-2 transition-colors disabled:opacity-50"
                                         title="Use my current location"
                                     >
                                         <Navigation className={`w-4 h-4 text-emerald-600 ${gettingLocation ? 'animate-spin' : ''}`} />
-                                        <span className="hidden sm:inline text-sm font-medium text-[#1d1d1f]">Locate Me</span>
+                                        <span className="hidden sm:inline text-sm font-medium text-foreground">Locate Me</span>
                                     </button>
                                 </div>
                                 {showSuggestions && (
-                                    <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl shadow-lg border border-[#e5e5e7] z-[1000] max-h-60 overflow-y-auto">
+                                    <div className="absolute top-full left-0 right-0 mt-1 bg-card rounded-xl shadow-lg border border-border z-[1000] max-h-60 overflow-y-auto">
                                         {suggestions.length === 0 ? (
-                                            <div className="px-4 py-3 text-sm text-[#86868b]">No locations found. Try a different search term.</div>
+                                            <div className="px-4 py-3 text-sm text-muted-foreground">No locations found. Try a different search term.</div>
                                         ) : (
                                             suggestions.map((feature, i) => {
                                                 const primary = feature.properties.name
@@ -598,10 +598,10 @@ export function CreateEventPage() {
                                                     <button
                                                         key={feature.properties.osm_id ?? i}
                                                         onMouseDown={(e) => { e.preventDefault(); handleSelectSuggestion(feature) }}
-                                                        className={`w-full px-4 py-3 text-left flex flex-col gap-0.5 transition-colors ${i === highlightedIndex ? 'bg-emerald-50' : 'hover:bg-[#f5f5f7]'} ${i > 0 ? 'border-t border-[#f5f5f7]' : ''}`}
+                                                        className={`w-full px-4 py-3 text-left flex flex-col gap-0.5 transition-colors ${i === highlightedIndex ? 'bg-emerald-50 dark:bg-emerald-500/15' : 'hover:bg-muted'} ${i > 0 ? 'border-t border-border' : ''}`}
                                                     >
-                                                        <span className="text-sm font-medium text-[#1d1d1f] truncate">{primary}</span>
-                                                        <span className="text-xs text-[#86868b] truncate">{secondary}</span>
+                                                        <span className="text-sm font-medium text-foreground truncate">{primary}</span>
+                                                        <span className="text-xs text-muted-foreground truncate">{secondary}</span>
                                                     </button>
                                                 )
                                             })
@@ -624,29 +624,29 @@ export function CreateEventPage() {
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-semibold text-[#1d1d1f] mb-3">
+                                <label className="block text-sm font-semibold text-foreground mb-3">
                                     Dress Code
-                                    <span className="text-xs text-[#86868b] font-normal ml-2">(Optional)</span>
+                                    <span className="text-xs text-muted-foreground font-normal ml-2">(Optional)</span>
                                 </label>
                                 <input
                                     type="text"
                                     placeholder="e.g., Comfortable clothes"
                                     value={formData.dressCode}
                                     onChange={(e) => setFormData({ ...formData, dressCode: e.target.value })}
-                                    className="w-full h-12 md:h-14 px-4 bg-[#f5f5f7] rounded-xl border-0 text-[#1d1d1f] placeholder:text-[#86868b] focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all text-sm md:text-base"
+                                    className="w-full h-12 md:h-14 px-4 bg-muted rounded-xl border-0 text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-emerald-500 focus:bg-card transition-all text-sm md:text-base"
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-semibold text-[#1d1d1f] mb-3">
+                                <label className="block text-sm font-semibold text-foreground mb-3">
                                     Things to Bring
-                                    <span className="text-xs text-[#86868b] font-normal ml-2">(Optional)</span>
+                                    <span className="text-xs text-muted-foreground font-normal ml-2">(Optional)</span>
                                 </label>
                                 <input
                                     type="text"
                                     placeholder="e.g., Water bottle, gloves"
                                     value={formData.thingsToBring}
                                     onChange={(e) => setFormData({ ...formData, thingsToBring: e.target.value })}
-                                    className="w-full h-12 md:h-14 px-4 bg-[#f5f5f7] rounded-xl border-0 text-[#1d1d1f] placeholder:text-[#86868b] focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all text-sm md:text-base"
+                                    className="w-full h-12 md:h-14 px-4 bg-muted rounded-xl border-0 text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-emerald-500 focus:bg-card transition-all text-sm md:text-base"
                                 />
                             </div>
                         </div>
@@ -658,49 +658,49 @@ export function CreateEventPage() {
                         
                         {/* --- THE NEW CLUB FIELDS YOU WERE MISSING! --- */}
                         <div>
-                            <label className="block text-sm font-semibold text-[#1d1d1f] mb-1">
+                            <label className="block text-sm font-semibold text-foreground mb-1">
                                 Point of Contact
                             </label>
-                            <p className="text-xs text-[#86868b] mb-3">Who should volunteers look for or call when they arrive?</p>
+                            <p className="text-xs text-muted-foreground mb-3">Who should volunteers look for or call when they arrive?</p>
                             <input
                                 type="text"
                                 placeholder="e.g., Rahul Verma (9876543210)"
                                 value={formData.pointOfContact}
                                 onChange={(e) => setFormData({ ...formData, pointOfContact: e.target.value })}
-                                className="w-full h-12 md:h-14 px-4 bg-[#f5f5f7] rounded-xl border-0 text-[#1d1d1f] placeholder:text-[#86868b] focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all text-sm md:text-base"
+                                className="w-full h-12 md:h-14 px-4 bg-muted rounded-xl border-0 text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-emerald-500 focus:bg-card transition-all text-sm md:text-base"
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-semibold text-[#1d1d1f] mb-1">
+                            <label className="block text-sm font-semibold text-foreground mb-1">
                                 The After
-                                <span className="text-xs text-[#86868b] font-normal ml-2">(Optional)</span>
+                                <span className="text-xs text-muted-foreground font-normal ml-2">(Optional)</span>
                             </label>
-                            <p className="text-xs text-[#86868b] mb-3">What's the after-event hangout? Chai? Walk? Breakfast together? If blank, our team may suggest one.</p>
+                            <p className="text-xs text-muted-foreground mb-3">What's the after-event hangout? Chai? Walk? Breakfast together? If blank, our team may suggest one.</p>
                             <input
                                 type="text"
                                 placeholder="e.g., Grabbing breakfast at Roastery Coffee after!"
                                 value={formData.connectPlan}
                                 onChange={(e) => setFormData({ ...formData, connectPlan: e.target.value })}
-                                className="w-full h-12 md:h-14 px-4 bg-[#f5f5f7] rounded-xl border-0 text-[#1d1d1f] placeholder:text-[#86868b] focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all text-sm md:text-base border border-emerald-200"
+                                className="w-full h-12 md:h-14 px-4 bg-muted rounded-xl border-0 text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-emerald-500 focus:bg-card transition-all text-sm md:text-base border border-emerald-200"
                             />
                         </div>
 
-                        <hr className="border-[#f5f5f7] my-6" />
+                        <hr className="border-border my-6" />
                         {/* --------------------------------------------- */}
 
                         <div>
                             <div className="flex items-center justify-between mb-3">
-                                <label className="text-sm font-semibold text-[#1d1d1f] flex items-center gap-2">
+                                <label className="text-sm font-semibold text-foreground flex items-center gap-2">
                                     <Users className="w-4 h-4 text-emerald-500" />
                                     Volunteer Limit
                                 </label>
                                 <button
                                     type="button"
                                     onClick={() => setLimitVolunteers(v => !v)}
-                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${limitVolunteers ? 'bg-emerald-500' : 'bg-gray-200'}`}
+                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${limitVolunteers ? 'bg-emerald-500' : 'bg-muted'}`}
                                 >
-                                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${limitVolunteers ? 'translate-x-6' : 'translate-x-1'}`} />
+                                    <span className={`inline-block h-4 w-4 transform rounded-full bg-card shadow transition-transform ${limitVolunteers ? 'translate-x-6' : 'translate-x-1'}`} />
                                 </button>
                             </div>
                             {limitVolunteers ? (
@@ -713,17 +713,17 @@ export function CreateEventPage() {
                                         if (e.key === '-' || e.key === 'e' || e.key === '.') e.preventDefault();
                                     }}
                                     onChange={(e) => setFormData({ ...formData, totalSlots: parseInt(e.target.value) || 0 as any })}
-                                    className="w-full h-12 md:h-14 px-4 bg-[#f5f5f7] rounded-xl border-0 text-[#1d1d1f] placeholder:text-[#86868b] focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all text-sm md:text-base"
+                                    className="w-full h-12 md:h-14 px-4 bg-muted rounded-xl border-0 text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-emerald-500 focus:bg-card transition-all text-sm md:text-base"
                                 />
                             ) : (
-                                <p className="text-sm text-[#86868b] bg-[#f5f5f7] rounded-xl px-4 py-3">
+                                <p className="text-sm text-muted-foreground bg-muted rounded-xl px-4 py-3">
                                     Unlimited — anyone can register
                                 </p>
                             )}
                         </div>
 
                         <div>
-                            <label className="block text-sm font-semibold text-[#1d1d1f] mb-3">
+                            <label className="block text-sm font-semibold text-foreground mb-3">
                                 <Clock className="w-4 h-4 inline mr-2 text-emerald-500" />
                                 Registration Deadline
                             </label>
@@ -742,17 +742,17 @@ export function CreateEventPage() {
                                     const pad = (n: number) => String(n).padStart(2, '0');
                                     return `${m.getFullYear()}-${pad(m.getMonth()+1)}-${pad(m.getDate())}T${pad(m.getHours())}:${pad(m.getMinutes())}`;
                                 })() : undefined}
-                                className="w-full h-12 md:h-14 px-4 bg-[#f5f5f7] rounded-xl border-0 text-[#1d1d1f] focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all text-sm md:text-base"
+                                className="w-full h-12 md:h-14 px-4 bg-muted rounded-xl border-0 text-foreground focus:ring-2 focus:ring-emerald-500 focus:bg-card transition-all text-sm md:text-base"
                             />
-                            <p className="text-xs text-[#86868b] mt-2">
+                            <p className="text-xs text-muted-foreground mt-2">
                                 Must be at least 1 hour before event start time
                             </p>
                         </div>
 
                         <div>
-                            <label className="block text-sm font-semibold text-[#1d1d1f] mb-3">
+                            <label className="block text-sm font-semibold text-foreground mb-3">
                                 Minimum Age
-                                <span className="text-xs text-[#86868b] font-normal ml-2">(Optional)</span>
+                                <span className="text-xs text-muted-foreground font-normal ml-2">(Optional)</span>
                             </label>
                             <input
                                 type="number"
@@ -763,32 +763,32 @@ export function CreateEventPage() {
                                     if (e.key === '-' || e.key === 'e' || e.key === '.') e.preventDefault();
                                 }}
                                 onChange={(e) => setFormData({ ...formData, minimumAge: parseInt(e.target.value) || undefined })}
-                                className="w-full h-12 md:h-14 px-4 bg-[#f5f5f7] rounded-xl border-0 text-[#1d1d1f] placeholder:text-[#86868b] focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all text-sm md:text-base"
+                                className="w-full h-12 md:h-14 px-4 bg-muted rounded-xl border-0 text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-emerald-500 focus:bg-card transition-all text-sm md:text-base"
                             />
                         </div>
 
-                        <div className="p-4 md:p-6 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl border border-emerald-200">
+                        <div className="p-4 md:p-6 bg-gradient-to-br from-emerald-50 dark:from-emerald-50/10 to-teal-50 dark:to-teal-50/10 rounded-2xl border border-emerald-200">
                             <div className="flex items-center gap-2 mb-4">
                                 <Info className="w-4 h-4 text-emerald-600" />
                                 <p className="text-sm font-semibold text-emerald-700">Event Preview</p>
                             </div>
-                            <div className="bg-white rounded-xl p-4 shadow-sm">
+                            <div className="bg-card rounded-xl p-4 shadow-sm">
                                 {coverImageUrl ? (
                                     <div className="aspect-video rounded-lg mb-3 overflow-hidden">
                                         <img src={coverImageUrl} alt="Event cover" className="w-full h-full object-cover" />
                                     </div>
                                 ) : (
-                                    <div className="aspect-video bg-gradient-to-br from-[#f5f5f7] to-[#e5e5e7] rounded-lg mb-3 flex items-center justify-center">
-                                        <ImageIcon className="w-8 h-8 text-gray-400" />
+                                    <div className="aspect-video bg-gradient-to-br from-muted to-border rounded-lg mb-3 flex items-center justify-center">
+                                        <ImageIcon className="w-8 h-8 text-muted-foreground" />
                                     </div>
                                 )}
 
-                                <h3 className="font-semibold text-gray-900 text-sm mb-2 line-clamp-2">
+                                <h3 className="font-semibold text-foreground text-sm mb-2 line-clamp-2">
                                     {formData.title || 'Event Title'}
                                 </h3>
 
                                 {formData.category && (
-                                    <div className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-100 rounded-full mb-3">
+                                    <div className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-100 dark:bg-emerald-500/15 rounded-full mb-3">
                                         <span className="text-xs">
                                             {categories.find(c => c.id === formData.category)?.icon}
                                         </span>
@@ -800,8 +800,8 @@ export function CreateEventPage() {
 
                                 <div className="space-y-1.5 mb-3">
                                     {formData.eventDate && (
-                                        <div className="flex items-center gap-2 text-xs text-gray-600">
-                                            <Calendar className="w-3.5 h-3.5 text-gray-400" />
+                                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                            <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
                                             <span>
                                                 {new Date(formData.eventDate).toLocaleDateString('en-US', {
                                                     month: 'short',
@@ -813,15 +813,15 @@ export function CreateEventPage() {
                                         </div>
                                     )}
                                     {formData.location && (
-                                        <div className="flex items-center gap-2 text-xs text-gray-600">
-                                            <MapPin className="w-3.5 h-3.5 text-gray-400" />
+                                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                            <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
                                             <span className="line-clamp-1">{formData.location}</span>
                                         </div>
                                     )}
                                 </div>
 
                                 <div>
-                                    <div className="flex items-center justify-between text-xs text-gray-600 mb-1.5">
+                                    <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
                                         <span className="flex items-center gap-1">
                                             <Users className="w-3.5 h-3.5" />
                                             {limitVolunteers && formData.totalSlots > 0
@@ -833,14 +833,14 @@ export function CreateEventPage() {
                                             : <span className="font-medium text-emerald-600">Unlimited</span>}
                                     </div>
                                     {limitVolunteers && formData.totalSlots > 0 && (
-                                        <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                        <div className="h-1.5 bg-muted rounded-full overflow-hidden">
                                             <div className="h-full bg-gradient-to-r from-emerald-400 to-teal-500 rounded-full" style={{ width: '0%' }} />
                                         </div>
                                     )}
                                 </div>
 
                                 {isUrgent && (
-                                    <div className="mt-3 flex items-center gap-1.5 px-2 py-1 bg-amber-100 rounded-lg w-fit">
+                                    <div className="mt-3 flex items-center gap-1.5 px-2 py-1 bg-amber-100 dark:bg-amber-500/15 rounded-lg w-fit">
                                         <AlertTriangle className="w-3 h-3 text-amber-600" />
                                         <span className="text-xs font-medium text-amber-700">Urgent</span>
                                     </div>
@@ -851,12 +851,12 @@ export function CreateEventPage() {
                 )}
             </main>
 
-            <footer className="sticky bottom-0 bg-white/80 backdrop-blur-xl border-t border-[#f5f5f7]">
+            <footer className="sticky bottom-0 bg-card/80 backdrop-blur-xl border-t border-border">
                 <div className="max-w-3xl mx-auto px-4 py-4 flex gap-3">
                     {step > 1 && (
                         <button
                             onClick={() => setStep(step - 1)}
-                            className="flex-1 h-12 md:h-14 bg-[#f5f5f7] text-[#1d1d1f] rounded-xl font-semibold hover:bg-[#e5e5e7] transition-colors text-sm md:text-base"
+                            className="flex-1 h-12 md:h-14 bg-muted text-foreground rounded-xl font-semibold hover:bg-border transition-colors text-sm md:text-base"
                         >
                             Back
                         </button>

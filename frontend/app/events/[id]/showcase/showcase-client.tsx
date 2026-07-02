@@ -307,36 +307,36 @@ export default function ShowcaseClient() {
 
   // ── Loading ───────────────────────────────────────────────────────────────────
   if (accessState === 'loading') {
-    return <div className="h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-gray-900" /></div>
+    return <div className="h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-foreground" /></div>
   }
 
   // ── Waiting state (attended but org hasn't closed the event yet) ─────────────
   if (accessState === 'waiting') {
     const orgName = orgProfile?.name || event?.organization_name || "Organization"
     return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center px-4">
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4">
         <div className="max-w-md w-full text-center space-y-6">
-          <div className="w-16 h-16 rounded-full bg-emerald-50 flex items-center justify-center mx-auto">
+          <div className="w-16 h-16 rounded-full bg-emerald-50 dark:bg-emerald-500/15 flex items-center justify-center mx-auto">
             <CheckCircle2 className="w-8 h-8 text-emerald-500" />
           </div>
           <div className="space-y-1">
-            <h1 className="text-xl font-bold text-gray-900">{event?.title}</h1>
-            <p className="text-sm text-gray-400">
+            <h1 className="text-xl font-bold text-foreground">{event?.title}</h1>
+            <p className="text-sm text-muted-foreground">
               {event?.event_date && new Date(event.event_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
             </p>
           </div>
           <div className="flex items-center gap-2 justify-center">
-            <div className="w-7 h-7 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center overflow-hidden shrink-0">
+            <div className="w-7 h-7 rounded-full bg-muted border border-border flex items-center justify-center overflow-hidden shrink-0">
               {orgProfile?.logo_url
                 ? <img src={orgProfile.logo_url} className="w-full h-full object-cover" alt="" />
-                : <Building2 className="w-3.5 h-3.5 text-gray-400" />}
+                : <Building2 className="w-3.5 h-3.5 text-muted-foreground" />}
             </div>
-            <span className="text-sm text-gray-600">{orgName}</span>
+            <span className="text-sm text-muted-foreground">{orgName}</span>
           </div>
-          <p className="text-sm text-gray-500 leading-relaxed max-w-sm mx-auto">
+          <p className="text-sm text-muted-foreground leading-relaxed max-w-sm mx-auto">
             You were there. The organization hasn't wrapped up the event report yet — your certificate and event photos will appear here once they do. Usually within 24 hours.
           </p>
-          <Link href="/history" className="block text-xs text-gray-400 hover:text-gray-600 transition-colors">
+          <Link href="/history" className="block text-xs text-muted-foreground hover:text-muted-foreground transition-colors">
             Back to my events
           </Link>
         </div>
@@ -344,7 +344,7 @@ export default function ShowcaseClient() {
     )
   }
 
-  if (!event) return <div className="h-screen flex items-center justify-center text-gray-500">Event not found</div>
+  if (!event) return <div className="h-screen flex items-center justify-center text-muted-foreground">Event not found</div>
 
   // ── Derived values ────────────────────────────────────────────────────────────
   const calcDurationHours = () => {
@@ -373,7 +373,7 @@ export default function ShowcaseClient() {
 
   // ── Shared page layout (public + full) ───────────────────────────────────────
   return (
-    <div className="min-h-screen bg-white pb-20">
+    <div className="min-h-screen bg-background pb-20">
 
       {/* Gallery Lightbox */}
       {lightboxUrl && (
@@ -382,7 +382,7 @@ export default function ShowcaseClient() {
           onClick={() => setLightboxUrl(null)}
         >
           <button
-            className="absolute top-4 right-4 p-2 text-white/70 hover:text-white bg-white/10 rounded-full transition-colors"
+            className="absolute top-4 right-4 p-2 text-white/70 hover:text-white bg-card/10 rounded-full transition-colors"
             onClick={() => setLightboxUrl(null)}
           >
             <X className="w-6 h-6" />
@@ -397,7 +397,7 @@ export default function ShowcaseClient() {
       )}
 
       {/* HERO */}
-      <div className="relative h-[50vh] md:h-[60vh] w-full bg-gray-900">
+      <div className="relative h-[50vh] md:h-[60vh] w-full bg-muted">
         <img
           src={event.cover_image_url || "/placeholder-event.jpg"}
           alt={event.title}
@@ -410,7 +410,7 @@ export default function ShowcaseClient() {
               <CheckCircle2 className="w-4 h-4" /> Completed Event
             </div>
             <h1 className="text-2xl md:text-5xl font-bold text-white mb-4 leading-tight">{event.title}</h1>
-            <div className="flex flex-wrap items-center gap-4 md:gap-6 text-gray-200 text-xs md:text-base">
+            <div className="flex flex-wrap items-center gap-4 md:gap-6 text-muted-foreground text-xs md:text-base">
               <div className="flex items-center gap-2">
                 <Calendar className="w-4 h-4 md:w-5 md:h-5" />
                 {new Date(event.event_date).toLocaleDateString()}
@@ -440,32 +440,32 @@ export default function ShowcaseClient() {
           <div className="md:col-span-8 space-y-8 md:space-y-12">
 
             {/* Quick Stats */}
-            <div className="flex gap-2 md:gap-4 p-4 md:p-6 bg-gray-50 rounded-2xl border border-gray-100 justify-around">
+            <div className="flex gap-2 md:gap-4 p-4 md:p-6 bg-muted rounded-2xl border border-border justify-around">
               <div className="text-center">
-                <div className="text-xl md:text-2xl font-bold text-gray-900">{event.registered_count || 0}</div>
-                <div className="text-[10px] md:text-xs text-gray-500 uppercase">Volunteers</div>
+                <div className="text-xl md:text-2xl font-bold text-foreground">{event.registered_count || 0}</div>
+                <div className="text-[10px] md:text-xs text-muted-foreground uppercase">Volunteers</div>
               </div>
-              <div className="text-center border-l border-gray-200 pl-4">
-                <div className="text-xl md:text-2xl font-bold text-gray-900">{durationLabel}</div>
-                <div className="text-[10px] md:text-xs text-gray-500 uppercase">Hours</div>
+              <div className="text-center border-l border-border pl-4">
+                <div className="text-xl md:text-2xl font-bold text-foreground">{durationLabel}</div>
+                <div className="text-[10px] md:text-xs text-muted-foreground uppercase">Hours</div>
               </div>
-              <div className="text-center border-l border-gray-200 pl-4">
-                <div className="text-xl md:text-2xl font-bold text-gray-900 capitalize">
+              <div className="text-center border-l border-border pl-4">
+                <div className="text-xl md:text-2xl font-bold text-foreground capitalize">
                   {event.status?.replace(/_/g, ' ') ?? '—'}
                 </div>
-                <div className="text-[10px] md:text-xs text-gray-500 uppercase">Status</div>
+                <div className="text-[10px] md:text-xs text-muted-foreground uppercase">Status</div>
               </div>
             </div>
 
             {/* About */}
             <div className="space-y-4">
-              <h2 className="text-xl md:text-2xl font-bold text-gray-900">About the Impact</h2>
-              <p className="text-sm md:text-base text-gray-600 leading-relaxed">{event.description}</p>
+              <h2 className="text-xl md:text-2xl font-bold text-foreground">About the Impact</h2>
+              <p className="text-sm md:text-base text-muted-foreground leading-relaxed">{event.description}</p>
             </div>
 
             {/* Gallery */}
             <div className="space-y-4">
-              <h2 className="text-xl md:text-2xl font-bold text-gray-900">Event Gallery</h2>
+              <h2 className="text-xl md:text-2xl font-bold text-foreground">Event Gallery</h2>
               {displayImages.length > 0 ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
                   {displayImages.map((src, idx) => (
@@ -483,7 +483,7 @@ export default function ShowcaseClient() {
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-500 italic">No images available.</p>
+                <p className="text-muted-foreground italic">No images available.</p>
               )}
             </div>
 
@@ -492,7 +492,7 @@ export default function ShowcaseClient() {
               <div className="space-y-4 pt-2">
                 <div className="flex items-center gap-2">
                   <Share2 className="w-5 h-5 text-[#7c2529]" />
-                  <h2 className="text-xl md:text-2xl font-bold text-gray-900">Share your Moment</h2>
+                  <h2 className="text-xl md:text-2xl font-bold text-foreground">Share your Moment</h2>
                 </div>
 
                 {!momentCardUrl ? (
@@ -531,14 +531,14 @@ export default function ShowcaseClient() {
                       Download Moment Card
                     </button>
 
-                    <p className="text-xs text-gray-500 text-center leading-relaxed">
+                    <p className="text-xs text-muted-foreground text-center leading-relaxed">
                       In Instagram Stories, tap the sticker icon → tap the image to add your card on top of your photo
                     </p>
 
                     {/* Regenerate option */}
                     <button
                       onClick={() => setMomentCardUrl(null)}
-                      className="w-full text-xs text-gray-400 hover:text-gray-600 transition-colors py-1"
+                      className="w-full text-xs text-muted-foreground hover:text-muted-foreground transition-colors py-1"
                     >
                       ↺ Regenerate card
                     </button>
@@ -550,36 +550,36 @@ export default function ShowcaseClient() {
 
           {/* RIGHT: Sidebar */}
           <div className="md:col-span-4 space-y-6">
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 sticky top-24">
+            <div className="bg-card rounded-2xl border border-border shadow-sm p-6 sticky top-24">
 
               {/* Organizer card — always visible */}
-              <h3 className="font-bold text-gray-900 mb-4">Organizer</h3>
+              <h3 className="font-bold text-foreground mb-4">Organizer</h3>
               <Link
                 href={`/organizations/${event.organization_id || '#'}`}
                 className="flex items-center gap-3 mb-4 group"
               >
-                <div className="w-12 h-12 bg-gray-100 rounded-full border border-gray-200 flex items-center justify-center overflow-hidden">
+                <div className="w-12 h-12 bg-muted rounded-full border border-border flex items-center justify-center overflow-hidden">
                   {orgProfile?.logo_url ? (
                     <img src={orgProfile.logo_url} className="w-full h-full object-cover" />
                   ) : (
-                    <Building2 className="w-6 h-6 text-gray-400" />
+                    <Building2 className="w-6 h-6 text-muted-foreground" />
                   )}
                 </div>
                 <div>
-                  <div className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors">{orgName}</div>
-                  <div className="text-xs text-gray-500">View Profile</div>
+                  <div className="font-bold text-foreground group-hover:text-blue-600 transition-colors">{orgName}</div>
+                  <div className="text-xs text-muted-foreground">View Profile</div>
                 </div>
               </Link>
 
               {/* Certificate + Review — attendees only */}
               {isAttendee ? (
                 cert ? (
-                  <div className="mt-6 pt-6 border-t border-gray-100">
-                    <h2 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  <div className="mt-6 pt-6 border-t border-border">
+                    <h2 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
                       <Award className="w-4 h-4 text-amber-500" /> Your Certificate
                     </h2>
 
-                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
+                    <div className="bg-amber-50 dark:bg-amber-500/15 border border-amber-200 rounded-xl p-4 mb-4">
                       <p className="text-xs font-semibold text-amber-900">{cert.event_title}</p>
                       <p className="text-[10px] text-amber-700 mt-0.5">
                         {cert.hours_credited}h · Issued{' '}
@@ -605,19 +605,19 @@ export default function ShowcaseClient() {
 
                     {/* Review section */}
                     {submitted ? (
-                      <div className="border-t border-gray-100 pt-4 text-center">
+                      <div className="border-t border-border pt-4 text-center">
                         <div className="flex items-center justify-center gap-2 text-green-600 mb-1">
                           <CheckCircle2 className="w-4 h-4" />
                           <span className="text-sm font-bold">Review Submitted</span>
                         </div>
                         <div className="flex justify-center gap-1">
                           {[1, 2, 3, 4, 5].map(s => (
-                            <Star key={s} className={`w-3 h-3 ${s <= rating ? 'fill-amber-400 text-amber-400' : 'text-gray-200'}`} />
+                            <Star key={s} className={`w-3 h-3 ${s <= rating ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground'}`} />
                           ))}
                         </div>
                       </div>
                     ) : (
-                      <div className="border-t border-gray-100 pt-4">
+                      <div className="border-t border-border pt-4">
                         <h3 className="font-semibold text-xs mb-2">Rate Your Experience</h3>
                         <div className="flex gap-1 mb-2 justify-center">
                           {[1, 2, 3, 4, 5].map((star) => (
@@ -626,7 +626,7 @@ export default function ShowcaseClient() {
                               onClick={() => setRating(star)}
                               className="hover:scale-110 transition-transform focus:outline-none"
                             >
-                              <Star className={`w-5 h-5 ${rating >= star ? 'fill-amber-400 text-amber-400' : 'text-gray-300'}`} />
+                              <Star className={`w-5 h-5 ${rating >= star ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground'}`} />
                             </button>
                           ))}
                         </div>
@@ -634,7 +634,7 @@ export default function ShowcaseClient() {
                           value={reviewText}
                           onChange={(e) => setReviewText(e.target.value)}
                           placeholder="How was the event?"
-                          className="w-full h-16 p-2 bg-gray-50 rounded-lg resize-none text-xs focus:outline-none border border-transparent focus:border-gray-200 focus:bg-white transition-all mb-2"
+                          className="w-full h-16 p-2 bg-muted rounded-lg resize-none text-xs focus:outline-none border border-transparent focus:border-border focus:bg-card transition-all mb-2"
                         />
                         <button
                           onClick={handleSubmitReview}
@@ -648,15 +648,15 @@ export default function ShowcaseClient() {
                   </div>
                 ) : (
                   /* Attended but org hasn't issued certificate yet */
-                  <div className="mt-6 pt-4 border-t border-gray-100 text-center">
-                    <Award className="w-6 h-6 text-gray-300 mx-auto mb-2" />
-                    <p className="text-xs text-gray-500">Certificate not yet issued by the organization.</p>
+                  <div className="mt-6 pt-4 border-t border-border text-center">
+                    <Award className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-xs text-muted-foreground">Certificate not yet issued by the organization.</p>
                   </div>
                 )
               ) : (
                 /* Not an attendee — neutral CTA */
-                <div className="mt-6 pt-4 border-t border-gray-100 text-center space-y-2">
-                  <p className="text-xs text-gray-500">Volunteer at upcoming events to earn certificates!</p>
+                <div className="mt-6 pt-4 border-t border-border text-center space-y-2">
+                  <p className="text-xs text-muted-foreground">Volunteer at upcoming events to earn certificates!</p>
                   <Link
                     href="/events"
                     className="inline-block text-xs font-semibold text-emerald-600 hover:text-emerald-700 transition-colors"

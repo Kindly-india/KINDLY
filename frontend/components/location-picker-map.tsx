@@ -98,10 +98,10 @@ export function LocationPickerMap({ latitude, longitude, onCoordinatesChange, on
     <div className="relative">
       <div
         ref={containerRef}
-        className="w-full rounded-xl overflow-hidden border border-[#e5e5e7]"
+        className="w-full rounded-xl overflow-hidden border border-border"
         style={{ height: 220 }}
       />
-      <p className="text-[11px] text-[#86868b] mt-1.5 text-center">
+      <p className="text-[11px] text-muted-foreground mt-1.5 text-center">
         Drag the pin to your exact location
       </p>
     </div>

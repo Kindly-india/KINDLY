@@ -5,6 +5,7 @@ import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 import { NavbarManager } from "@/components/navbar-manager"
 import { Toaster } from "sonner"
+import { ThemeProvider } from "@/components/theme-provider"
 
 
 const inter = Inter({
@@ -53,7 +54,10 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: "#ffffff",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#09090b" },
+  ],
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -67,19 +71,25 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={inter.variable}>
-      <body className="font-sans antialiased flex flex-col min-h-screen">
-        
-        {/* The Traffic Cop: Decides which navbars to show */}
-        <NavbarManager />
-        <Toaster position="top-center" richColors />
-        
-        {/* pb-24 ensures space for the bottom navbars on mobile */}
-        <main className="flex-1 w-full pb-20 md:pb-0">
-          {children}
-        </main>
+    <html lang="en" className={inter.variable} suppressHydrationWarning>
+      <body className="font-sans antialiased flex flex-col min-h-screen bg-neutral-50 dark:bg-black text-foreground">
+        <ThemeProvider>
+          {/* No global ambient glow here — every page section paints its own
+              opaque background, so a body-level glow sits behind all of them
+              and never shows. Glows live inside the section that wants one
+              instead (see volunteer-home-page.tsx's hero/footer glows). */}
 
-        <Analytics />
+          {/* The Traffic Cop: Decides which navbars to show */}
+          <NavbarManager />
+          <Toaster position="top-center" richColors theme="system" />
+
+          {/* pb-24 ensures space for the bottom navbars on mobile */}
+          <main className="flex-1 w-full pb-20 md:pb-0">
+            {children}
+          </main>
+
+          <Analytics />
+        </ThemeProvider>
       </body>
     </html>
   )

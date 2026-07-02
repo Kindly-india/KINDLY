@@ -265,6 +265,29 @@ export const api = {
     return null;
   },
 
+  // Backfill volunteer_profiles for OTP signups (AuthCard's name-capture step) —
+  // password-based signupVolunteer() creates this row inline, OTP signups don't.
+  ensureVolunteerProfile: async (fullName: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const response = await fetch(`${API_URL}/volunteers/me/profile`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ full_name: fullName }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || 'Failed to save your name');
+    }
+
+    return response.json();
+  },
+
   // Upload event cover image
   uploadEventImage: async (file: File): Promise<string> => {
     // Validate file

@@ -43,7 +43,8 @@ export function NavbarManager() {
     pathname.startsWith("/how-it-works") ||
     pathname.startsWith("/for-") ||
     pathname.startsWith("/legal") ||
-    pathname === "/onboarding" 
+    pathname === "/onboarding" ||
+    pathname === "/org-signup"
 
 
   if (isStaticOrAuth) return null
@@ -51,6 +52,15 @@ export function NavbarManager() {
   // 3. Determine if the user belongs to the Org portal
   const isOrgRoute = pathname.startsWith('/org-') || pathname.startsWith('/organizations')
   const isOrgUser = userType === 'org' || (userType === null && isOrgRoute)
+
+  // 4. Individual post detail (/posts/[id]) is a full-bleed immersive view
+  // with its own floating back/delete controls and fixed comment bar — like
+  // opening a single post/story, it hides all shared chrome so the hero photo
+  // can run edge-to-edge. Keep the shared nav on /posts/create and
+  // /posts/select-event, which are normal flow pages.
+  const isPostDetail = pathname.startsWith('/posts/') && pathname !== '/posts/create' && pathname !== '/posts/select-event'
+
+  if (isPostDetail) return null
 
   return (
     <>

@@ -17,6 +17,7 @@ import { CertificateService } from '../certificate/certificate.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UpdateVolunteerProfileDto } from './dto/update-volunteer-profile.dto';
 import { OnboardingDto } from './dto/onboarding.dto';
+import { EnsureProfileDto } from './dto/ensure-profile.dto';
 import { OptionalAuthGuard } from '../auth/guards/optional-auth.guard';
 
 @Controller('volunteers')
@@ -111,5 +112,15 @@ export class VolunteerController {
     @Body() dto: OnboardingDto,
   ) {
     return this.volunteerService.updateOnboarding(req.user.id, dto);
+  }
+
+  // 11. Ensure Profile Exists (OTP signups — no volunteer_profiles row yet)
+  @UseGuards(JwtAuthGuard)
+  @Post('me/profile')
+  async ensureProfile(
+    @Request() req: any,
+    @Body() dto: EnsureProfileDto,
+  ) {
+    return this.volunteerService.ensureProfile(req.user.id, dto.full_name);
   }
 }

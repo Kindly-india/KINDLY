@@ -27,32 +27,51 @@ export function OrgMobileNav() {
 
     const profileLink = profile?.id ? `/organizations/${profile.id}` : "/login"
 
+    const items = [
+        { href: "/org-home", icon: LayoutDashboard, label: "Dash", active: isActive("/org-home") },
+        { href: "/org-events", icon: Calendar, label: "Events", active: isActive("/org-events") },
+        // Points to the shared social page!
+        { href: "/social", icon: Globe, label: "Social", active: isActive("/social") },
+        { href: "/org-analytics", icon: BarChart3, label: "Analytics", active: isActive("/org-analytics") },
+        { href: profileLink, icon: User, label: "Profile", active: pathname.startsWith("/organizations/") },
+    ]
+
     return (
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-lg border-t border-gray-200 pb-[env(safe-area-inset-bottom)]">
-            <div className="flex items-center justify-around h-16 px-2">
-                <Link href="/org-home" className="flex flex-col items-center justify-center w-full h-full space-y-1 prevent-select">
-                    <LayoutDashboard className={cn("w-6 h-6 transition-colors", isActive("/org-home") ? "text-orange-600" : "text-gray-400")} />
-                    <span className={cn("text-[10px] font-medium", isActive("/org-home") ? "text-orange-600" : "text-gray-400")}>Dash</span>
-                </Link>
-                <Link href="/org-events" className="flex flex-col items-center justify-center w-full h-full space-y-1 prevent-select">
-                    <Calendar className={cn("w-6 h-6 transition-colors", isActive("/org-events") ? "text-orange-600" : "text-gray-400")} />
-                    <span className={cn("text-[10px] font-medium", isActive("/org-events") ? "text-orange-600" : "text-gray-400")}>Events</span>
-                </Link>
-                
-                {/* Points to the shared social page! */}
-                <Link href="/social" className="flex flex-col items-center justify-center w-full h-full space-y-1 prevent-select">
-                    <Globe className={cn("w-6 h-6 transition-colors", isActive("/social") ? "text-orange-600" : "text-gray-400")} />
-                    <span className={cn("text-[10px] font-medium", isActive("/social") ? "text-orange-600" : "text-gray-400")}>Social</span>
-                </Link>
-                
-                <Link href="/org-analytics" className="flex flex-col items-center justify-center w-full h-full space-y-1 prevent-select">
-                    <BarChart3 className={cn("w-6 h-6 transition-colors", isActive("/org-analytics") ? "text-orange-600" : "text-gray-400")} />
-                    <span className={cn("text-[10px] font-medium", isActive("/org-analytics") ? "text-orange-600" : "text-gray-400")}>Analytics</span>
-                </Link>
-                <Link href={profileLink} className="flex flex-col items-center justify-center w-full h-full space-y-1 prevent-select">
-                    <User className={cn("w-6 h-6 transition-colors", pathname.startsWith('/organizations/') ? "text-orange-600" : "text-gray-400")} />
-                    <span className={cn("text-[10px] font-medium", pathname.startsWith('/organizations/') ? "text-orange-600" : "text-gray-400")}>Profile</span>
-                </Link>
+        <nav
+            className={cn(
+                "md:hidden fixed left-1/2 -translate-x-1/2 z-50",
+                "bottom-[calc(1rem+env(safe-area-inset-bottom))]",
+                "bg-white/80 dark:bg-black/60 backdrop-blur-xl",
+                "border border-neutral-200/60 dark:border-white/10",
+                "shadow-xl shadow-neutral-200/40 dark:shadow-2xl dark:shadow-black/50 rounded-full"
+            )}
+        >
+            <div className="flex items-center gap-1 px-2 py-2">
+                {items.map(({ href, icon: Icon, label, active }) => (
+                    <Link
+                        key={href}
+                        href={href}
+                        className={cn(
+                            "flex flex-col items-center justify-center w-14 h-12 rounded-full transition-colors prevent-select",
+                            active && "bg-orange-500/10 dark:bg-white/10"
+                        )}
+                    >
+                        <Icon
+                            className={cn(
+                                "w-5 h-5 transition-colors",
+                                active ? "text-orange-600 dark:text-white" : "text-muted-foreground dark:text-neutral-500"
+                            )}
+                        />
+                        <span
+                            className={cn(
+                                "text-[9px] font-medium mt-0.5",
+                                active ? "text-orange-600 dark:text-white" : "text-muted-foreground dark:text-neutral-500"
+                            )}
+                        >
+                            {label}
+                        </span>
+                    </Link>
+                ))}
             </div>
         </nav>
     )
