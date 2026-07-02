@@ -74,14 +74,10 @@ export default function RootLayout({
     <html lang="en" className={inter.variable} suppressHydrationWarning>
       <body className="font-sans antialiased flex flex-col min-h-screen bg-neutral-50 dark:bg-black text-foreground">
         <ThemeProvider>
-          {/* Global ambient canvas glow — top-centered, sits behind every page.
-              `absolute` (not `fixed`) so it scrolls away with the hero area
-              instead of hovering mid-screen forever; body has `position:
-              relative` in globals.css so this anchors to the document top. */}
-          <div
-            aria-hidden="true"
-            className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[520px] max-w-[200vw] bg-neutral-200/40 dark:bg-emerald-500/5 rounded-full blur-3xl pointer-events-none -z-10"
-          />
+          {/* No global ambient glow here — every page section paints its own
+              opaque background, so a body-level glow sits behind all of them
+              and never shows. Glows live inside the section that wants one
+              instead (see volunteer-home-page.tsx's hero/footer glows). */}
 
           {/* The Traffic Cop: Decides which navbars to show */}
           <NavbarManager />
