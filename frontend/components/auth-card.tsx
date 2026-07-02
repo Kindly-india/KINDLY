@@ -13,7 +13,6 @@ import { supabase, supabaseAuthClient } from "@/lib/supabase"
 import { api } from "@/lib/api"
 import { BrandSplash } from "@/components/brand-splash"
 
-type Mode = "email" | "phone"
 type Step = "entry" | "code" | "name" | "passkey-offer"
 
 // Shared sizing so every field/button in the flow reads as one small, tight
@@ -127,12 +126,14 @@ function NameCapture({
 /**
  * Unified passwordless entry point (Luma-style): one card, one continue action,
  * used for both signup and login. Email OTP + verification + Passkey sign-in/
- * registration are wired to real Supabase calls. Phone-OTP/Google are still
- * stubbed — wire the remaining TODO(auth-provider) spots up when ready.
+ * registration are wired to real Supabase calls. Google is still stubbed —
+ * wire the remaining TODO(auth-provider) spot up when ready.
+ *
+ * Phone/SMS OTP is intentionally not implemented yet (no SMS provider wired
+ * up) — email is the only path for now, revisit when that's ready.
  */
 export function AuthCard() {
   const router = useRouter()
-  const [mode, setMode] = useState<Mode>("email")
   const [step, setStep] = useState<Step>("entry")
   const [identifier, setIdentifier] = useState("")
   const [code, setCode] = useState("")
@@ -147,8 +148,6 @@ export function AuthCard() {
   useEffect(() => {
     setPasskeySupported(typeof window !== "undefined" && !!window.PublicKeyCredential)
   }, [])
-
-  const label = mode === "email" ? "Email" : "Phone Number"
 
   const goWithSplash = (route: string) => {
     setPendingRoute(route)
@@ -171,17 +170,11 @@ export function AuthCard() {
     if (!identifier) return
     setIsSubmitting(true)
     try {
-      if (mode === "email") {
-        const { error } = await supabaseAuthClient.auth.signInWithOtp({
-          email: identifier,
-          options: { shouldCreateUser: true },
-        })
-        if (error) throw error
-      } else {
-        // TODO(auth-provider): phone OTP needs an SMS provider configured in Supabase first, e.g.
-        //   await supabaseAuthClient.auth.signInWithOtp({ phone: identifier, options: { shouldCreateUser: true } })
-        await new Promise((resolve) => setTimeout(resolve, 500))
-      }
+      const { error } = await supabaseAuthClient.auth.signInWithOtp({
+        email: identifier,
+        options: { shouldCreateUser: true },
+      })
+      if (error) throw error
       setStep("code")
     } catch (error: any) {
       toast.error(error.message || "Something went wrong. Please try again.")
@@ -195,37 +188,31 @@ export function AuthCard() {
     if (code.length !== 6) return
     setIsSubmitting(true)
     try {
-      if (mode === "email") {
-        const { data, error } = await supabase.auth.verifyOtp({
-          email: identifier,
-          token: code,
-          type: "email",
-        })
-        if (error) throw error
-        const { role, home } = destinationForUserType(data.user?.user_metadata?.user_type)
-        applyRoleSession(role)
-        setHomeDestination(home)
+      const { data, error } = await supabase.auth.verifyOtp({
+        email: identifier,
+        token: code,
+        type: "email",
+      })
+      if (error) throw error
+      const { role, home } = destinationForUserType(data.user?.user_metadata?.user_type)
+      applyRoleSession(role)
+      setHomeDestination(home)
 
-        if (role === "org") {
-          await goHomeOrOfferPasskey(home)
-          return
-        }
+      if (role === "org") {
+        await goHomeOrOfferPasskey(home)
+        return
+      }
 
-        // Brand-new OTP signups never get a volunteer_profiles row created
-        // (unlike the old password-based signup, which always inserted one
-        // alongside the auth user) — verifyOtp succeeding is not the same as
-        // having a profile. Detect that here and route through name capture
-        // + onboarding instead of dropping them on /home with no data.
-        const profileRes = await api.getUserProfile().catch(() => null)
-        if (profileRes?.profile) {
-          await goHomeOrOfferPasskey(home)
-        } else {
-          setStep("name")
-        }
+      // Brand-new OTP signups never get a volunteer_profiles row created
+      // (unlike the old password-based signup, which always inserted one
+      // alongside the auth user) — verifyOtp succeeding is not the same as
+      // having a profile. Detect that here and route through name capture
+      // + onboarding instead of dropping them on /home with no data.
+      const profileRes = await api.getUserProfile().catch(() => null)
+      if (profileRes?.profile) {
+        await goHomeOrOfferPasskey(home)
       } else {
-        // TODO(auth-provider): phone OTP verification once phone sending is wired up, e.g.
-        //   await supabase.auth.verifyOtp({ phone: identifier, token: code, type: "sms" })
-        toast.info("Phone verification is coming soon.")
+        setStep("name")
       }
     } catch (error: any) {
       toast.error(error.message || "Invalid code. Please try again.")
@@ -405,27 +392,14 @@ export function AuthCard() {
 
         <form onSubmit={handleContinue} className="space-y-3">
           <div className="space-y-1.5">
-            <div className="flex items-center justify-between ml-1 mr-1">
-              <Label htmlFor="identifier" className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                {label}
-              </Label>
-              <button
-                type="button"
-                onClick={() => {
-                  setMode((m) => (m === "email" ? "phone" : "email"))
-                  setIdentifier("")
-                }}
-                className="text-[12px] font-semibold text-primary hover:underline"
-              >
-                Use {mode === "email" ? "Phone Number" : "Email"}
-              </button>
-            </div>
+            <Label htmlFor="identifier" className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider ml-1">
+              Email
+            </Label>
             <Input
               id="identifier"
               name="identifier"
-              type={mode === "email" ? "email" : "tel"}
-              inputMode={mode === "phone" ? "numeric" : undefined}
-              placeholder={mode === "email" ? "name@example.com" : "10-digit mobile number"}
+              type="email"
+              placeholder="name@example.com"
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
               required
@@ -444,7 +418,7 @@ export function AuthCard() {
                 <Loader2 className="w-4 h-4 animate-spin" /> Sending code...
               </span>
             ) : (
-              `Continue with ${mode === "email" ? "Email" : "Phone"}`
+              "Continue with Email"
             )}
           </Button>
         </form>
