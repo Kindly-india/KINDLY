@@ -42,24 +42,24 @@ export function PhoneVerificationModal({ onSaved, onClose }: Props) {
       <div className="fixed inset-0 bg-black/40 z-50" onClick={onClose} />
 
       <div className="fixed inset-x-0 bottom-0 md:inset-0 md:flex md:items-center md:justify-center z-50 pointer-events-none">
-        <div className="pointer-events-auto w-full md:max-w-sm bg-white rounded-t-2xl md:rounded-2xl shadow-xl px-6 pt-5 pb-10 md:pb-6">
+        <div className="pointer-events-auto w-full md:max-w-sm bg-card rounded-t-2xl md:rounded-2xl shadow-xl px-6 pt-5 pb-10 md:pb-6">
 
           <div className="flex items-center justify-end mb-5">
-            <button onClick={onClose} className="p-1 -mr-1 text-gray-400 hover:text-gray-900 active:scale-95 transition-all">
+            <button onClick={onClose} className="p-1 -mr-1 text-muted-foreground hover:text-foreground active:scale-95 transition-all">
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          <h2 className="text-[22px] font-bold text-gray-900 mb-1.5">One quick thing</h2>
-          <p className="text-[14px] text-gray-500 mb-6 leading-snug">
+          <h2 className="text-[22px] font-bold text-foreground mb-1.5">One quick thing</h2>
+          <p className="text-[14px] text-muted-foreground mb-6 leading-snug">
             Add your phone number so the organizer can reach you if anything changes.
           </p>
 
-          <label className="text-[11px] font-bold text-gray-400 uppercase tracking-wider ml-0.5">
+          <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider ml-0.5">
             Phone number
           </label>
           <div className="flex gap-2 mt-1.5">
-            <div className="h-12 px-4 bg-gray-100 rounded-xl flex items-center text-gray-500 font-bold shrink-0 text-[15px]">
+            <div className="h-12 px-4 bg-muted rounded-xl flex items-center text-muted-foreground font-bold shrink-0 text-[15px]">
               +91
             </div>
             <input
@@ -70,7 +70,7 @@ export function PhoneVerificationModal({ onSaved, onClose }: Props) {
               onChange={(e) => setPhone(e.target.value)}
               onBlur={() => setTouched(true)}
               autoFocus
-              className={`flex-1 h-12 px-4 bg-gray-100 rounded-xl text-[16px] outline-none transition-all ${
+              className={`flex-1 h-12 px-4 bg-muted rounded-xl text-[16px] outline-none transition-all ${
                 touched && !phoneValid && phone !== ""
                   ? "ring-2 ring-red-400"
                   : "focus:ring-2 focus:ring-[#80242a]/30"
@@ -87,7 +87,7 @@ export function PhoneVerificationModal({ onSaved, onClose }: Props) {
             onClick={handleSave}
             disabled={!phoneValid || saving}
             className="w-full h-[52px] rounded-full font-bold text-[15px] mt-5 flex items-center justify-center gap-2 transition-all
-              disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed
+              disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed
               enabled:bg-[#80242a] enabled:text-white enabled:hover:opacity-90 enabled:active:scale-[0.98]"
           >
             {saving ? (

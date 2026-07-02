@@ -277,18 +277,18 @@ export default function RegisteredEventDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F9F9F9] flex flex-col items-center justify-center">
+      <div className="min-h-screen bg-muted flex flex-col items-center justify-center">
         <Loader2 className="w-10 h-10 text-emerald-600 animate-spin mb-4" />
-        <p className="text-xs font-bold text-gray-400 tracking-widest uppercase">Securing Logistics...</p>
+        <p className="text-xs font-bold text-muted-foreground tracking-widest uppercase">Securing Logistics...</p>
       </div>
     )
   }
 
   if (!event) {
     return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6">
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
         <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
-        <h2 className="text-xl font-bold text-gray-900">Event Not Found</h2>
+        <h2 className="text-xl font-bold text-foreground">Event Not Found</h2>
         <Link href="/home" className="mt-4 text-emerald-600 font-medium hover:underline">Return to Dashboard</Link>
       </div>
     )
@@ -303,25 +303,25 @@ export default function RegisteredEventDetailPage() {
     const base = `${fullWidth ? 'w-full' : 'h-14 px-6'} h-14 rounded-2xl font-black text-sm flex items-center justify-center gap-3 transition-all active:scale-95`
 
     if (checkInState === 'idle') return (
-      <button onClick={handleCheckIn} className={cn(base, 'bg-gray-900 text-white shadow-xl hover:bg-black')}>
+      <button onClick={handleCheckIn} className={cn(base, 'bg-primary text-primary-foreground shadow-xl hover:bg-primary')}>
         <LocateFixed className="w-5 h-5" />
         Tap to Check In
       </button>
     )
     if (checkInState === 'denied') return (
-      <button disabled className={cn(base, 'bg-gray-200 text-gray-400 cursor-not-allowed')}>
+      <button disabled className={cn(base, 'bg-muted text-muted-foreground cursor-not-allowed')}>
         <MapPinOff className="w-5 h-5" />
         Check In
       </button>
     )
     if (checkInState === 'fetching') return (
-      <button disabled className={cn(base, 'bg-gray-200 text-gray-500 cursor-not-allowed')}>
+      <button disabled className={cn(base, 'bg-muted text-muted-foreground cursor-not-allowed')}>
         <Loader2 className="w-5 h-5 animate-spin" />
         Getting your location...
       </button>
     )
     if (checkInState === 'too_far') return (
-      <button disabled className={cn(base, 'bg-gray-200 text-gray-400 cursor-not-allowed')}>
+      <button disabled className={cn(base, 'bg-muted text-muted-foreground cursor-not-allowed')}>
         <MapPinOff className="w-5 h-5" />
         Check In
       </button>
@@ -337,21 +337,21 @@ export default function RegisteredEventDetailPage() {
 
   const CheckInSubtext = () => {
     if (checkInState === 'denied') return (
-      <p className="text-xs text-gray-500 text-center mt-2 leading-relaxed">
+      <p className="text-xs text-muted-foreground text-center mt-2 leading-relaxed">
         Enable location access in your browser settings to check in
       </p>
     )
     if (checkInState === 'fetching') return (
-      <p className="text-xs text-gray-500 text-center mt-2">Verifying your location...</p>
+      <p className="text-xs text-muted-foreground text-center mt-2">Verifying your location...</p>
     )
     if (checkInState === 'too_far') {
       // GPS/unavailable errors should skip the countdown and show actionable text
       const isGpsError = locationError.toLowerCase().includes('gps') || locationError.toLowerCase().includes("couldn't get")
       return (
-        <p className="text-xs text-gray-500 text-center mt-2 leading-relaxed">
+        <p className="text-xs text-muted-foreground text-center mt-2 leading-relaxed">
           {locationError || 'You need to be at the event location to check in'}
           {!isGpsError && retryCountdown > 0
-            ? <span className="text-gray-400"> · Retry in {retryCountdown}s</span>
+            ? <span className="text-muted-foreground"> · Retry in {retryCountdown}s</span>
             : <button onClick={handleCheckIn} className="ml-1 text-blue-500 font-semibold hover:underline">Try again</button>
           }
         </p>
@@ -363,16 +363,16 @@ export default function RegisteredEventDetailPage() {
   // ── render ────────────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-white pb-36 md:pb-12 relative overflow-x-hidden">
+    <div className="min-h-screen bg-background pb-36 md:pb-12 relative overflow-x-hidden">
 
       {/* ── SUCCESS OVERLAY (full-screen, auto-dismisses after 2s) ── */}
       {checkInState === 'success' && (
-        <div className="fixed inset-0 z-[200] bg-white flex flex-col items-center justify-center p-8 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[200] bg-card flex flex-col items-center justify-center p-8 animate-in fade-in duration-200">
           <div className="w-28 h-28 rounded-full bg-emerald-500 flex items-center justify-center mb-8 shadow-2xl animate-bounce">
             <CheckCircle2 className="w-14 h-14 text-white" strokeWidth={2.5} />
           </div>
-          <h1 className="text-3xl font-black text-gray-900 mb-3">You're checked in ✓</h1>
-          <p className="text-lg font-bold text-gray-500 text-center mb-2">{event.title}</p>
+          <h1 className="text-3xl font-black text-foreground mb-3">You're checked in ✓</h1>
+          <p className="text-lg font-bold text-muted-foreground text-center mb-2">{event.title}</p>
           <p className="text-3xl mt-4">Enjoy your time 🙌</p>
         </div>
       )}
@@ -385,7 +385,7 @@ export default function RegisteredEventDetailPage() {
 
           {/* HERO */}
           <div className="relative">
-            <div className="relative h-72 md:h-110 md:rounded-[40px] md:overflow-hidden md:shadow-2xl md:border border-gray-100">
+            <div className="relative h-72 md:h-110 md:rounded-[40px] md:overflow-hidden md:shadow-2xl md:border border-border">
               <img
                 src={event.cover_image_url || '/placeholder.svg'}
                 alt={event.title}
@@ -393,19 +393,19 @@ export default function RegisteredEventDetailPage() {
               />
               <div className="absolute top-4 left-4 right-4 flex justify-between items-center z-20">
                 <Link href="/home">
-                  <button className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-white/90 backdrop-blur-xl flex items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition-all">
-                    <ArrowLeft className="w-5 h-5 text-gray-900" />
+                  <button className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-card/90 backdrop-blur-xl flex items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition-all">
+                    <ArrowLeft className="w-5 h-5 text-foreground" />
                   </button>
                 </Link>
                 <div className="flex gap-2">
-                  <button onClick={handleShare} className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-white/90 backdrop-blur-xl flex items-center justify-center shadow-xl hover:scale-105 transition-all">
-                    <Share2 className="w-5 h-5 text-gray-900" />
+                  <button onClick={handleShare} className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-card/90 backdrop-blur-xl flex items-center justify-center shadow-xl hover:scale-105 transition-all">
+                    <Share2 className="w-5 h-5 text-foreground" />
                   </button>
                   <button
                     onClick={() => setIsSaved(!isSaved)}
-                    className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-white/90 backdrop-blur-xl flex items-center justify-center shadow-xl hover:scale-105 transition-all"
+                    className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-card/90 backdrop-blur-xl flex items-center justify-center shadow-xl hover:scale-105 transition-all"
                   >
-                    <Heart className={`w-5 h-5 transition-colors ${isSaved ? 'fill-red-500 text-red-500' : 'text-gray-900'}`} />
+                    <Heart className={`w-5 h-5 transition-colors ${isSaved ? 'fill-red-500 text-red-500' : 'text-foreground'}`} />
                   </button>
                 </div>
               </div>
@@ -430,19 +430,19 @@ export default function RegisteredEventDetailPage() {
           </div>
 
           {/* HEADER INFO */}
-          <div className="px-5 md:px-0 pt-8 pb-6 border-b border-gray-100 md:border-0">
+          <div className="px-5 md:px-0 pt-8 pb-6 border-b border-border md:border-0">
             <div className="flex flex-col gap-1 mb-2">
               <div className="flex items-center gap-2">
-                <span className="px-3 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-bold rounded-full uppercase tracking-widest border border-emerald-100">
+                <span className="px-3 py-1 bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 text-[10px] font-bold rounded-full uppercase tracking-widest border border-emerald-100">
                   {event.category}
                 </span>
                 {event.is_urgent && (
-                  <span className="px-3 py-1 bg-red-50 text-red-600 text-[10px] font-bold rounded-full uppercase tracking-widest border border-red-100 flex items-center gap-1">
+                  <span className="px-3 py-1 bg-red-50 dark:bg-red-500/15 text-red-600 text-[10px] font-bold rounded-full uppercase tracking-widest border border-red-100 flex items-center gap-1">
                     <AlertCircle className="w-3 h-3" /> Urgent
                   </span>
                 )}
               </div>
-              <h1 className="text-2xl md:text-4xl font-black text-gray-900 leading-tight mt-2">{event.title}</h1>
+              <h1 className="text-2xl md:text-4xl font-black text-foreground leading-tight mt-2">{event.title}</h1>
             </div>
 
             <div className="flex items-center justify-between mt-4">
@@ -453,12 +453,12 @@ export default function RegisteredEventDetailPage() {
                   </div>
                   <div className="flex flex-col">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-sm md:text-base font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+                      <span className="text-sm md:text-base font-bold text-foreground group-hover:text-blue-600 transition-colors">
                         {event.organization_profiles?.name || 'Organization'}
                       </span>
                       <ShieldCheck className="w-4 h-4 text-blue-500 fill-blue-50" />
                     </div>
-                    <span className="text-[10px] text-gray-500 font-medium uppercase tracking-tight">Verified Host</span>
+                    <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-tight">Verified Host</span>
                   </div>
                 </div>
               </Link>
@@ -467,62 +467,62 @@ export default function RegisteredEventDetailPage() {
 
           {/* LOGISTICS GRID */}
           <div className="px-5 md:px-0 py-6">
-            <div className="bg-[#F5F5F7] rounded-[32px] p-6 md:p-10 border border-gray-100">
+            <div className="bg-muted rounded-[32px] p-6 md:p-10 border border-border">
               <div className="flex items-center justify-between mb-8">
-                <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.25em]">Mission Logistics</h3>
+                <h3 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.25em]">Mission Logistics</h3>
                 <Sparkles className="w-5 h-5 text-amber-500 opacity-50" />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 mb-10">
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-sm border border-gray-100 shrink-0">
+                  <div className="w-12 h-12 rounded-2xl bg-card flex items-center justify-center shadow-sm border border-border shrink-0">
                     <Clock className="w-6 h-6 text-teal-600" />
                   </div>
                   <div>
-                    <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Timeline</p>
-                    <p className="text-base font-bold text-gray-900">{formatDate(event.event_date)}</p>
-                    <p className="text-sm text-gray-500 font-medium">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase mb-1">Timeline</p>
+                    <p className="text-base font-bold text-foreground">{formatDate(event.event_date)}</p>
+                    <p className="text-sm text-muted-foreground font-medium">
                       {formatTime(event.start_time)} — {formatTime(event.end_time)}
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-sm border border-gray-100 shrink-0">
+                  <div className="w-12 h-12 rounded-2xl bg-card flex items-center justify-center shadow-sm border border-border shrink-0">
                     <MapPin className="w-6 h-6 text-rose-500" />
                   </div>
                   <div>
-                    <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Venue</p>
-                    <p className="text-base font-bold text-gray-900 truncate max-w-[180px]">{event.location}</p>
-                    <p className="text-sm text-gray-500 font-medium">Nashik, Maharashtra</p>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase mb-1">Venue</p>
+                    <p className="text-base font-bold text-foreground truncate max-w-[180px]">{event.location}</p>
+                    <p className="text-sm text-muted-foreground font-medium">Nashik, Maharashtra</p>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-sm border border-gray-100 shrink-0">
+                  <div className="w-12 h-12 rounded-2xl bg-card flex items-center justify-center shadow-sm border border-border shrink-0">
                     <User className="w-6 h-6 text-purple-500" />
                   </div>
                   <div>
-                    <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">On-Site Host</p>
-                    <p className="text-base font-bold text-gray-900">{event.point_of_contact || 'Event Coordinator'}</p>
-                    <p className="text-sm text-gray-500 font-medium italic">Look for this person</p>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase mb-1">On-Site Host</p>
+                    <p className="text-base font-bold text-foreground">{event.point_of_contact || 'Event Coordinator'}</p>
+                    <p className="text-sm text-muted-foreground font-medium italic">Look for this person</p>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-sm border border-gray-100 shrink-0">
+                  <div className="w-12 h-12 rounded-2xl bg-card flex items-center justify-center shadow-sm border border-border shrink-0">
                     <Footprints className="w-6 h-6 text-amber-500" />
                   </div>
                   <div>
-                    <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Dress Code</p>
-                    <p className="text-base font-bold text-gray-900">{event.dress_code || 'Comfortable / Casual'}</p>
-                    <p className="text-sm text-gray-500 font-medium">Prepare accordingly</p>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase mb-1">Dress Code</p>
+                    <p className="text-base font-bold text-foreground">{event.dress_code || 'Comfortable / Casual'}</p>
+                    <p className="text-sm text-muted-foreground font-medium">Prepare accordingly</p>
                   </div>
                 </div>
               </div>
 
               {/* MAP */}
-              <div className="rounded-[24px] overflow-hidden h-44 relative group border border-gray-200 shadow-inner bg-gray-100">
+              <div className="rounded-[24px] overflow-hidden h-44 relative group border border-border shadow-inner bg-muted">
                 <a
                   href={
                     event.latitude && event.longitude
@@ -546,7 +546,7 @@ export default function RegisteredEventDetailPage() {
                     className="absolute inset-0 w-full h-full pointer-events-none opacity-80 group-hover:opacity-100 transition-opacity"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
-                  <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-md px-5 py-2.5 rounded-2xl text-xs font-black text-gray-900 shadow-2xl flex items-center gap-2 hover:bg-white transition-all transform group-hover:translate-y-[-2px]">
+                  <div className="absolute bottom-4 left-4 bg-card/95 backdrop-blur-md px-5 py-2.5 rounded-2xl text-xs font-black text-foreground shadow-2xl flex items-center gap-2 hover:bg-card transition-all transform group-hover:translate-y-[-2px]">
                     <Navigation className="w-4 h-4 text-blue-600" />
                     Launch Directions
                   </div>
@@ -587,11 +587,11 @@ export default function RegisteredEventDetailPage() {
 
           {/* DESCRIPTION */}
           <div className="px-5 md:px-0 pb-10">
-            <h3 className="text-lg font-black text-gray-900 mb-4 flex items-center gap-3">
+            <h3 className="text-lg font-black text-foreground mb-4 flex items-center gap-3">
               <Info className="w-6 h-6 text-blue-500" />
               The Story & Mission
             </h3>
-            <p className="text-base text-gray-600 leading-[1.9] font-medium">
+            <p className="text-base text-muted-foreground leading-[1.9] font-medium">
               {showFullDescription ? event.description : shortDescription}
             </p>
             {event.description?.length > 150 && (
@@ -606,7 +606,7 @@ export default function RegisteredEventDetailPage() {
 
           {/* BROADCASTS */}
           <div className="px-5 md:px-0 pb-12">
-            <div className="bg-gradient-to-br from-[#fffbeb] to-[#fef3c7] rounded-[32px] p-8 border border-amber-200 shadow-sm">
+            <div className="bg-gradient-to-br from-[#fffbeb] dark:from-[#fffbeb]/10 to-[#fef3c7] dark:to-[#fef3c7]/10 rounded-[32px] p-8 border border-amber-200 shadow-sm">
               <div className="flex items-center gap-4 mb-8">
                 <div className="w-12 h-12 rounded-[20px] bg-amber-400 flex items-center justify-center shadow-lg border-2 border-white/50">
                   <Megaphone className="w-6 h-6 text-amber-900" />
@@ -625,12 +625,12 @@ export default function RegisteredEventDetailPage() {
                       key={b.id}
                       className={cn(
                         'p-5 rounded-2xl border transition-all',
-                        b.is_important ? 'bg-white border-amber-300 shadow-md' : 'bg-amber-50/60 border-amber-200/50'
+                        b.is_important ? 'bg-card border-amber-300 shadow-md' : 'bg-amber-50 dark:bg-amber-500/15/60 border-amber-200/50'
                       )}
                     >
                       <div className="flex items-start gap-3">
                         {b.is_important && <Bell className="w-4 h-4 text-amber-600 fill-amber-500 mt-1 shrink-0" />}
-                        <p className="text-sm md:text-base text-gray-900 leading-relaxed font-bold flex-1">{b.message}</p>
+                        <p className="text-sm md:text-base text-foreground leading-relaxed font-bold flex-1">{b.message}</p>
                       </div>
                       <div className="flex items-center gap-2 mt-4 ml-7 text-xs font-bold text-amber-600/60 uppercase tracking-tighter">
                         <Clock className="w-3 h-3" />
@@ -641,7 +641,7 @@ export default function RegisteredEventDetailPage() {
                     </div>
                   ))
                 ) : (
-                  <div className="text-center py-10 bg-white/40 rounded-2xl border border-dashed border-amber-300/50">
+                  <div className="text-center py-10 bg-card/40 rounded-2xl border border-dashed border-amber-300/50">
                     <Megaphone className="w-10 h-10 text-amber-200 mx-auto mb-3" />
                     <p className="text-sm font-bold text-amber-800/60">No new updates yet.</p>
                   </div>
@@ -654,10 +654,10 @@ export default function RegisteredEventDetailPage() {
 
         {/* ── DESKTOP SIDEBAR ── */}
         <div className="hidden md:block md:w-96">
-          <div className="sticky top-10 bg-white rounded-[40px] shadow-2xl border border-gray-100 overflow-hidden">
+          <div className="sticky top-10 bg-card rounded-[40px] shadow-2xl border border-border overflow-hidden">
 
             {/* Status header */}
-            <div className="p-10 bg-gradient-to-br from-emerald-50 to-teal-50 border-b border-emerald-100 text-center">
+            <div className="p-10 bg-gradient-to-br from-emerald-50 dark:from-emerald-50/10 to-teal-50 dark:to-teal-50/10 border-b border-emerald-100 text-center">
               <div className={cn(
                 'w-16 h-16 rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-xl border-4 border-white/30',
                 isCheckedIn ? 'bg-emerald-500' : 'bg-emerald-500'
@@ -676,7 +676,7 @@ export default function RegisteredEventDetailPage() {
               <Button
                 onClick={handleAddToCalendar}
                 variant="outline"
-                className="w-full h-14 border-gray-200 rounded-2xl font-black text-gray-900 hover:bg-gray-50 flex items-center justify-center gap-3"
+                className="w-full h-14 border-border rounded-2xl font-black text-foreground hover:bg-muted flex items-center justify-center gap-3"
               >
                 <CalendarIcon className="w-5 h-5 text-emerald-600" />
                 Add to Calendar
@@ -685,11 +685,11 @@ export default function RegisteredEventDetailPage() {
               {/* ── CHECK-IN STATES (desktop sidebar) ── */}
               {isCheckedIn ? (
                 <div className="flex flex-col items-center gap-3 py-2">
-                  <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold text-sm px-5 py-2.5 rounded-full w-full justify-center">
+                  <div className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-200 text-emerald-700 font-bold text-sm px-5 py-2.5 rounded-full w-full justify-center">
                     <CheckCircle2 className="w-4 h-4" />
                     You're checked in ✓
                   </div>
-                  <p className="text-[11px] text-gray-400 text-center leading-relaxed">
+                  <p className="text-[11px] text-muted-foreground text-center leading-relaxed">
                     Your certificate and moment will be available once the organizer marks the event complete.
                   </p>
                 </div>
@@ -699,7 +699,7 @@ export default function RegisteredEventDetailPage() {
                     <CheckInButton fullWidth />
                     <CheckInSubtext />
                   </div>
-                  <p className="text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest pt-2">
+                  <p className="text-center text-[10px] font-bold text-muted-foreground uppercase tracking-widest pt-2">
                     Tap to check in with your location
                   </p>
                 </>
@@ -710,7 +710,7 @@ export default function RegisteredEventDetailPage() {
                 <button
                   onClick={handleCertDownload}
                   disabled={downloadingCert}
-                  className="w-full h-14 flex items-center justify-center gap-3 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 font-black rounded-2xl transition-all disabled:opacity-60"
+                  className="w-full h-14 flex items-center justify-center gap-3 bg-amber-50 dark:bg-amber-500/15 hover:bg-amber-100 dark:bg-amber-500/15 border border-amber-200 text-amber-800 font-black rounded-2xl transition-all disabled:opacity-60"
                 >
                   {downloadingCert ? <Loader2 className="w-5 h-5 animate-spin" /> : <Award className="w-5 h-5 text-amber-500" />}
                   Download Certificate
@@ -722,13 +722,13 @@ export default function RegisteredEventDetailPage() {
                 <button
                   onClick={handleCancelRsvp}
                   disabled={cancellingRsvp}
-                  className="w-full h-12 flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 font-bold text-sm rounded-2xl transition-all disabled:opacity-50"
+                  className="w-full h-12 flex items-center justify-center gap-2 bg-red-50 dark:bg-red-500/15 hover:bg-red-100 dark:bg-red-500/15 border border-red-200 text-red-600 font-bold text-sm rounded-2xl transition-all disabled:opacity-50"
                 >
                   {cancellingRsvp ? <Loader2 className="w-4 h-4 animate-spin" /> : <X className="w-4 h-4" />}
                   Cancel Registration
                 </button>
               ) : event?.status === 'published' ? (
-                <p className="text-center text-[11px] text-gray-400 font-medium pt-1">
+                <p className="text-center text-[11px] text-muted-foreground font-medium pt-1">
                   Cancellations are closed — event starts in less than 2 hours
                 </p>
               ) : null}
@@ -736,8 +736,8 @@ export default function RegisteredEventDetailPage() {
 
             {/* Support block */}
             <div className="px-10 pb-10">
-              <div className="p-6 bg-blue-50 rounded-[28px] border border-blue-100 flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shrink-0">
+              <div className="p-6 bg-blue-50 dark:bg-blue-500/15 rounded-[28px] border border-blue-100 flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-card flex items-center justify-center shrink-0">
                   <MessageSquare className="w-5 h-5 text-blue-500" />
                 </div>
                 <div>
@@ -758,7 +758,7 @@ export default function RegisteredEventDetailPage() {
           <button
             onClick={handleCertDownload}
             disabled={downloadingCert}
-            className="w-full flex items-center justify-center gap-3 py-4 bg-amber-50 border border-amber-200 rounded-2xl text-amber-800 font-black text-sm shadow-sm active:scale-95 transition-all disabled:opacity-60"
+            className="w-full flex items-center justify-center gap-3 py-4 bg-amber-50 dark:bg-amber-500/15 border border-amber-200 rounded-2xl text-amber-800 font-black text-sm shadow-sm active:scale-95 transition-all disabled:opacity-60"
           >
             {downloadingCert ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5 text-amber-500" />}
             Download My Certificate
@@ -772,14 +772,14 @@ export default function RegisteredEventDetailPage() {
           <button
             onClick={handleCancelRsvp}
             disabled={cancellingRsvp}
-            className="w-full flex items-center justify-center gap-2 py-3 bg-red-50 border border-red-200 rounded-2xl text-red-600 font-bold text-sm active:scale-95 transition-all disabled:opacity-50"
+            className="w-full flex items-center justify-center gap-2 py-3 bg-red-50 dark:bg-red-500/15 border border-red-200 rounded-2xl text-red-600 font-bold text-sm active:scale-95 transition-all disabled:opacity-50"
           >
             {cancellingRsvp ? <Loader2 className="w-4 h-4 animate-spin" /> : <X className="w-4 h-4" />}
             Cancel My Registration
           </button>
         </div>
       ) : event?.status === 'published' ? (
-        <p className="text-center text-[11px] text-gray-400 font-medium mb-3 md:hidden">
+        <p className="text-center text-[11px] text-muted-foreground font-medium mb-3 md:hidden">
           Cancellations closed — event starts in less than 2 hours
         </p>
       ) : null}
@@ -789,22 +789,22 @@ export default function RegisteredEventDetailPage() {
 
         {/* Already checked in */}
         {isCheckedIn ? (
-          <div className="bg-white border-t border-gray-100 shadow-[0_-8px_30px_rgba(0,0,0,0.08)] px-5 py-4">
-            <div className="flex items-center justify-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold text-sm px-5 py-2.5 rounded-full">
+          <div className="bg-card border-t border-border shadow-[0_-8px_30px_rgba(0,0,0,0.08)] px-5 py-4">
+            <div className="flex items-center justify-center gap-2 bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-200 text-emerald-700 font-bold text-sm px-5 py-2.5 rounded-full">
               <CheckCircle2 className="w-4 h-4" />
               You're checked in ✓
             </div>
-            <p className="text-[11px] text-gray-400 text-center mt-2 leading-relaxed">
+            <p className="text-[11px] text-muted-foreground text-center mt-2 leading-relaxed">
               Hang tight — your moment unlocks once the org wraps up.
             </p>
           </div>
         ) : (
           /* Active check-in states */
-          <div className="bg-white border-t border-gray-100 shadow-[0_-8px_30px_rgba(0,0,0,0.08)] px-5 pt-4 pb-5">
+          <div className="bg-card border-t border-border shadow-[0_-8px_30px_rgba(0,0,0,0.08)] px-5 pt-4 pb-5">
             <div className="flex items-center gap-3 mb-3">
               <div className="shrink-0">
-                <p className="text-[9px] text-gray-400 font-bold uppercase tracking-[0.2em] leading-none mb-1">Arrival</p>
-                <p className="text-base font-black text-gray-900 leading-none">{formatTime(event.start_time)}</p>
+                <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-[0.2em] leading-none mb-1">Arrival</p>
+                <p className="text-base font-black text-foreground leading-none">{formatTime(event.start_time)}</p>
               </div>
               <div className="flex-1">
                 <CheckInButton fullWidth />

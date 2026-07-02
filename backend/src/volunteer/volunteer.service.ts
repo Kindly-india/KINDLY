@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { UpdateVolunteerProfileDto } from './dto/update-volunteer-profile.dto';
 import { OnboardingDto } from './dto/onboarding.dto';
@@ -7,6 +7,47 @@ import { validateImageFile } from '../common/file-validation.util';
 @Injectable()
 export class VolunteerService {
   constructor(private readonly supabase: SupabaseService) {}
+
+  // Volunteers signed up via the OTP AuthCard never go through signupVolunteer(),
+  // so they have an auth user but no volunteer_profiles row and no
+  // user_metadata.user_type. This backfills both, idempotently, right after the
+  // user types their name — everything downstream (getUserProfile, onboarding
+  // PATCH, my-registrations) assumes that row already exists.
+  async ensureProfile(userId: string, fullName: string) {
+    const client = this.supabase.getClient();
+
+    const { data: existing } = await client
+      .from('volunteer_profiles')
+      .select('*')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (existing) {
+      return { profile: existing };
+    }
+
+    const { data: profile, error } = await client
+      .from('volunteer_profiles')
+      .insert({
+        user_id: userId,
+        full_name: fullName,
+        total_hours: 0,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      throw new BadRequestException('Failed to create volunteer profile');
+    }
+
+    // Keep user_metadata in sync so getUserProfile()'s userType branch resolves
+    // correctly on the very next call (verifyOtp's own response predates this row).
+    await client.auth.admin.updateUserById(userId, {
+      user_metadata: { user_type: 'volunteer', full_name: fullName },
+    });
+
+    return { profile };
+  }
 
   async getProfileForViewer(targetUserId: string, viewerId: string | null) {
     const client = this.supabase.getClient();

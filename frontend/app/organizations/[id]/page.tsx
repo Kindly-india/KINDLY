@@ -20,24 +20,24 @@ import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from "rechar
 function Achievements({ items }: { items: any[] }) {
   if (!items || items.length === 0) return null;
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
+    <div className="bg-card rounded-2xl shadow-sm border border-border p-6 mb-6">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+        <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
           <Trophy className="w-5 h-5 text-amber-500" /> Wall of Fame
         </h3>
       </div>
       <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
         {items.map((item, idx) => (
-          <div key={idx} className="min-w-[280px] md:min-w-[300px] bg-white border border-gray-100 rounded-xl overflow-hidden hover:shadow-md transition-all group cursor-pointer">
-            <div className="h-40 w-full bg-gray-100 relative overflow-hidden flex items-center justify-center">
+          <div key={idx} className="min-w-[280px] md:min-w-[300px] bg-card border border-border rounded-xl overflow-hidden hover:shadow-md transition-all group cursor-pointer">
+            <div className="h-40 w-full bg-muted relative overflow-hidden flex items-center justify-center">
               {item.image_url ? (
                 <img src={item.image_url} alt={item.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-              ) : <Trophy className="w-10 h-10 text-gray-300" />}
+              ) : <Trophy className="w-10 h-10 text-muted-foreground" />}
             </div>
             <div className="p-4">
-              <h4 className="font-bold text-gray-900 text-sm mb-1 line-clamp-1">{item.title}</h4>
+              <h4 className="font-bold text-foreground text-sm mb-1 line-clamp-1">{item.title}</h4>
               <p className="text-[10px] text-blue-600 font-semibold mb-2">{item.date}</p>
-              <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">{item.description}</p>
+              <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">{item.description}</p>
             </div>
           </div>
         ))}
@@ -49,19 +49,19 @@ function Achievements({ items }: { items: any[] }) {
 function OurTeam({ members }: { members: any[] }) {
   if (!members || members.length === 0) return null;
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
-      <h3 className="font-bold text-gray-900 mb-4 text-sm uppercase tracking-wide flex items-center gap-2">
+    <div className="bg-card rounded-2xl shadow-sm border border-border p-6 mb-6">
+      <h3 className="font-bold text-foreground mb-4 text-sm uppercase tracking-wide flex items-center gap-2">
         <Users2 className="w-4 h-4 text-blue-600" /> Key People
       </h3>
       <div className="grid gap-4">
         {members.map((member, i) => (
           <div key={i} className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center overflow-hidden shrink-0">
-              <span className="text-gray-500 text-xs font-bold uppercase">{member.name?.charAt(0)}</span>
+            <div className="w-10 h-10 rounded-full bg-muted border border-border flex items-center justify-center overflow-hidden shrink-0">
+              <span className="text-muted-foreground text-xs font-bold uppercase">{member.name?.charAt(0)}</span>
             </div>
             <div>
-              <p className="text-sm font-bold text-gray-900">{member.name}</p>
-              <p className="text-xs text-gray-500">{member.role}</p>
+              <p className="text-sm font-bold text-foreground">{member.name}</p>
+              <p className="text-xs text-muted-foreground">{member.role}</p>
             </div>
           </div>
         ))}
@@ -73,22 +73,22 @@ function OurTeam({ members }: { members: any[] }) {
 function Reviews({ reviews }: { reviews: any[] }) {
   if (!reviews || reviews.length === 0) return null;
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
-      <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+    <div className="bg-card rounded-2xl shadow-sm border border-border p-6 mb-6">
+      <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
         <Quote className="w-5 h-5 text-purple-500" /> What Volunteers Say
       </h3>
       <div className="grid gap-4">
         {reviews.slice(0, 3).map((review, idx) => (
-          <div key={idx} className="bg-purple-50/50 p-4 rounded-xl border border-purple-100 relative">
+          <div key={idx} className="bg-purple-50 dark:bg-purple-500/15/50 p-4 rounded-xl border border-purple-100 relative">
             <Quote className="w-8 h-8 text-purple-200 absolute top-2 right-2 rotate-180" />
-            <p className="text-gray-700 italic text-sm mb-3 relative z-10">"{review.comment}"</p>
+            <p className="text-foreground italic text-sm mb-3 relative z-10">"{review.comment}"</p>
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-white border border-purple-100 flex items-center justify-center font-bold text-xs text-purple-600">
+              <div className="w-8 h-8 rounded-full bg-card border border-purple-100 flex items-center justify-center font-bold text-xs text-purple-600">
                 {review.volunteer_name?.charAt(0)}
               </div>
               <div>
-                <p className="text-xs font-bold text-gray-900">{review.volunteer_name}</p>
-                <p className="text-[10px] text-gray-500">{review.event_title}</p>
+                <p className="text-xs font-bold text-foreground">{review.volunteer_name}</p>
+                <p className="text-[10px] text-muted-foreground">{review.event_title}</p>
               </div>
             </div>
           </div>
@@ -100,29 +100,29 @@ function Reviews({ reviews }: { reviews: any[] }) {
 
 function OrgDetails({ profile }: { profile: any }) {
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
-      <h3 className="font-bold text-gray-900 mb-4 text-sm uppercase tracking-wide">Organization Details</h3>
+    <div className="bg-card rounded-2xl shadow-sm border border-border p-6 mb-6">
+      <h3 className="font-bold text-foreground mb-4 text-sm uppercase tracking-wide">Organization Details</h3>
       <div className="space-y-4">
         <div className="flex items-start gap-3">
-          <div className="w-8 h-8 rounded bg-blue-50 flex items-center justify-center text-blue-600 border border-blue-100 shrink-0"><Building2 className="w-4 h-4" /></div>
-          <div><p className="text-xs font-bold text-gray-900">Type</p><p className="text-sm text-gray-600 capitalize">{profile.org_type || "Registered Organization"}</p></div>
+          <div className="w-8 h-8 rounded bg-blue-50 dark:bg-blue-500/15 flex items-center justify-center text-blue-600 border border-blue-100 shrink-0"><Building2 className="w-4 h-4" /></div>
+          <div><p className="text-xs font-bold text-foreground">Type</p><p className="text-sm text-muted-foreground capitalize">{profile.org_type || "Registered Organization"}</p></div>
         </div>
         {profile.registration_number && (
           <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-100 shrink-0"><Hash className="w-4 h-4" /></div>
-            <div><p className="text-xs font-bold text-gray-900">Registration No.</p><p className="text-sm text-gray-600">{profile.registration_number}</p></div>
+            <div className="w-8 h-8 rounded bg-emerald-50 dark:bg-emerald-500/15 flex items-center justify-center text-emerald-600 border border-emerald-100 shrink-0"><Hash className="w-4 h-4" /></div>
+            <div><p className="text-xs font-bold text-foreground">Registration No.</p><p className="text-sm text-muted-foreground">{profile.registration_number}</p></div>
           </div>
         )}
         {profile.years_active && (
           <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded bg-amber-50 flex items-center justify-center text-amber-600 border border-amber-100 shrink-0"><FileBadge className="w-4 h-4" /></div>
-            <div><p className="text-xs font-bold text-gray-900">Years Active</p><p className="text-sm text-gray-600">{profile.years_active} Years</p></div>
+            <div className="w-8 h-8 rounded bg-amber-50 dark:bg-amber-500/15 flex items-center justify-center text-amber-600 border border-amber-100 shrink-0"><FileBadge className="w-4 h-4" /></div>
+            <div><p className="text-xs font-bold text-foreground">Years Active</p><p className="text-sm text-muted-foreground">{profile.years_active} Years</p></div>
           </div>
         )}
         {profile.representative_name && (
           <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded bg-indigo-50 flex items-center justify-center text-indigo-600 border border-indigo-100 shrink-0"><Users2 className="w-4 h-4" /></div>
-            <div><p className="text-xs font-bold text-gray-900">Rep. Name</p><p className="text-sm text-gray-600">{profile.representative_name}</p>{profile.designation && <p className="text-xs text-gray-400">{profile.designation}</p>}</div>
+            <div className="w-8 h-8 rounded bg-indigo-50 dark:bg-indigo-500/15 flex items-center justify-center text-indigo-600 border border-indigo-100 shrink-0"><Users2 className="w-4 h-4" /></div>
+            <div><p className="text-xs font-bold text-foreground">Rep. Name</p><p className="text-sm text-muted-foreground">{profile.representative_name}</p>{profile.designation && <p className="text-xs text-muted-foreground">{profile.designation}</p>}</div>
           </div>
         )}
       </div>
@@ -176,7 +176,7 @@ function OrgGallery({ orgId, isOwnProfile }: { orgId: string; isOwnProfile: bool
           onClick={() => setLightboxUrl(null)}
         >
           <button
-            className="absolute top-4 right-4 p-2 text-white/70 hover:text-white bg-white/10 rounded-full transition-colors"
+            className="absolute top-4 right-4 p-2 text-white/70 hover:text-white bg-card/10 rounded-full transition-colors"
             onClick={() => setLightboxUrl(null)}
           >
             <X className="w-6 h-6" />
@@ -190,9 +190,9 @@ function OrgGallery({ orgId, isOwnProfile }: { orgId: string; isOwnProfile: bool
         </div>
       )}
 
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+      <div className="bg-card rounded-2xl shadow-sm border border-border p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+          <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
             <ImageIcon className="w-5 h-5 text-pink-500" /> Action Gallery
           </h3>
           {isOwnProfile && (
@@ -200,7 +200,7 @@ function OrgGallery({ orgId, isOwnProfile }: { orgId: string; isOwnProfile: bool
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploading}
-                className="text-xs flex items-center gap-1 bg-black text-white px-3 py-1.5 rounded-full hover:bg-gray-800 transition-colors"
+                className="text-xs flex items-center gap-1 bg-primary text-primary-foreground px-3 py-1.5 rounded-full hover:bg-primary transition-colors"
               >
                 {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
                 Add Photo
@@ -211,16 +211,16 @@ function OrgGallery({ orgId, isOwnProfile }: { orgId: string; isOwnProfile: bool
         </div>
 
         {photos.length === 0 ? (
-          <div className="text-center py-8 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-            <ImageIcon className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-            <p className="text-xs text-gray-500">Share moments from your events and drives.</p>
+          <div className="text-center py-8 bg-muted rounded-xl border border-dashed border-border">
+            <ImageIcon className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+            <p className="text-xs text-muted-foreground">Share moments from your events and drives.</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {photos.map((photo) => (
               <div
                 key={photo.id}
-                className="group relative aspect-square rounded-xl overflow-hidden bg-gray-100 cursor-pointer"
+                className="group relative aspect-square rounded-xl overflow-hidden bg-muted cursor-pointer"
                 onClick={() => setLightboxUrl(photo.image_url)}
               >
                 <img src={photo.image_url} alt="Gallery" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
@@ -353,38 +353,38 @@ export default function OrganizationProfile() {
     ? events
     : events.filter(ev => ev.status === 'completed');
 
-  if (loading) return <div className="min-h-screen bg-white flex items-center justify-center"><Loader2 className="w-8 h-8 text-gray-900 animate-spin" /></div>
-  if (!profile) return <div className="min-h-screen bg-white flex items-center justify-center text-gray-500">Organization not found</div>
+  if (loading) return <div className="min-h-screen bg-background flex items-center justify-center"><Loader2 className="w-8 h-8 text-foreground animate-spin" /></div>
+  if (!profile) return <div className="min-h-screen bg-background flex items-center justify-center text-muted-foreground">Organization not found</div>
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] pb-20 font-sans">
+    <div className="min-h-screen bg-muted pb-20 font-sans">
 
       {/* 1. TOP NAVIGATION */}
-      <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200">
+      <nav className="sticky top-0 z-50 bg-card/80 backdrop-blur-md border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <button onClick={() => router.back()} className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
+          <button onClick={() => router.back()} className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
             <ChevronLeft className="w-5 h-5" /> Back
           </button>
           <div className="flex items-center gap-3">
-            <button onClick={handleShare} className="p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-all">
+            <button onClick={handleShare} className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-all">
               {copied ? <Check className="w-5 h-5 text-green-600" /> : <Share2 className="w-5 h-5" />}
             </button>
             {isOwnProfile ? (
               <>
-                <Link href="/settings/profile" className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-full hover:bg-gray-800 transition-colors flex items-center gap-2">
+                <Link href="/settings/profile" className="px-4 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-full hover:bg-primary transition-colors flex items-center gap-2">
                   <Edit2 className="w-4 h-4" /> Edit Page
                 </Link>
                 {/* ✅ Added Logout Button */}
                 <button 
                   onClick={handleLogout} 
-                  className="p-2 text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                  className="p-2 text-red-600 hover:bg-red-50 dark:bg-red-500/15 rounded-full transition-colors"
                   title="Logout"
                 >
                   <LogOut className="w-5 h-5" />
                 </button>
               </>
             ) : !isViewerOrg && (
-              <button onClick={handleFollow} className={cn("px-6 py-2 rounded-full text-sm font-bold transition-all flex items-center gap-2", isFollowing ? "bg-white text-red-600 border border-red-200" : "bg-black text-white")}>
+              <button onClick={handleFollow} className={cn("px-6 py-2 rounded-full text-sm font-bold transition-all flex items-center gap-2", isFollowing ? "bg-card text-red-600 border border-red-200" : "bg-primary text-primary-foreground")}>
                 {isFollowing ? <><UserMinus className="w-4 h-4" /> Unfollow</> : <><UserPlus className="w-4 h-4" /> Follow</>}
               </button>
             )}
@@ -393,11 +393,11 @@ export default function OrganizationProfile() {
       </nav>
 
       {/* 2. COVER IMAGE */}
-      <div className="h-48 md:h-64 bg-gray-200 w-full relative overflow-hidden">
+      <div className="h-48 md:h-64 bg-muted w-full relative overflow-hidden">
         {!coverError && profile.cover_url ? (
           <img src={profile.cover_url} alt="Cover" className="w-full h-full object-cover" onError={() => setCoverError(true)} />
         ) : (
-          <div className="w-full h-full bg-gradient-to-r from-slate-800 to-slate-900 flex items-center justify-center"><Building2 className="w-12 h-12 text-white/10" /></div>
+          <div className="w-full h-full bg-gradient-to-r from-muted to-muted flex items-center justify-center"><Building2 className="w-12 h-12 text-white/10" /></div>
         )}
       </div>
 
@@ -406,38 +406,38 @@ export default function OrganizationProfile() {
 
           {/* LEFT SIDEBAR (Profile Card + Details) */}
           <div className="lg:col-span-4 space-y-6">
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 relative">
-              <div className="w-32 h-32 rounded-full border-4 border-white shadow-md overflow-hidden bg-gray-100 -mt-20 mb-4">
-                {profile.logo_url ? <img src={profile.logo_url} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-3xl font-bold text-gray-400">{profile.name?.charAt(0)}</div>}
+            <div className="bg-card rounded-2xl shadow-sm border border-border p-6 relative">
+              <div className="w-32 h-32 rounded-full border-4 border-white shadow-md overflow-hidden bg-muted -mt-20 mb-4">
+                {profile.logo_url ? <img src={profile.logo_url} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-3xl font-bold text-muted-foreground">{profile.name?.charAt(0)}</div>}
               </div>
               <div className="mb-6">
-                <h1 className="text-2xl font-bold text-gray-900 leading-tight mb-1 flex items-center gap-2">{profile.name} <CheckCircle2 className="w-5 h-5 text-blue-500 fill-blue-50" /></h1>
-                <p className="text-gray-600 font-medium">{profile.tagline || "Making a difference."}</p>
-                {profile.area_locality && <div className="flex items-center gap-1 text-sm text-gray-500 mt-2"><MapPin className="w-4 h-4" /> {profile.area_locality}</div>}
+                <h1 className="text-2xl font-bold text-foreground leading-tight mb-1 flex items-center gap-2">{profile.name} <CheckCircle2 className="w-5 h-5 text-blue-500 fill-blue-50" /></h1>
+                <p className="text-muted-foreground font-medium">{profile.tagline || "Making a difference."}</p>
+                {profile.area_locality && <div className="flex items-center gap-1 text-sm text-muted-foreground mt-2"><MapPin className="w-4 h-4" /> {profile.area_locality}</div>}
               </div>
-              <div className="grid grid-cols-3 gap-2 border-t border-b border-gray-100 py-4 mb-6">
-                <div className="text-center"><span className="block font-bold text-gray-900 text-lg">{profile.followers_count || 0}</span><span className="text-xs text-gray-500 uppercase">Followers</span></div>
-                <div className="text-center border-l border-gray-100"><span className="block font-bold text-gray-900 text-lg">{events.length}</span><span className="text-xs text-gray-500 uppercase">Events</span></div>
+              <div className="grid grid-cols-3 gap-2 border-t border-b border-border py-4 mb-6">
+                <div className="text-center"><span className="block font-bold text-foreground text-lg">{profile.followers_count || 0}</span><span className="text-xs text-muted-foreground uppercase">Followers</span></div>
+                <div className="text-center border-l border-border"><span className="block font-bold text-foreground text-lg">{events.length}</span><span className="text-xs text-muted-foreground uppercase">Events</span></div>
 
-                <div className="text-center border-l border-gray-100">
-                  <span className="block font-bold text-gray-900 text-lg">{averageRating}</span>
-                  <span className="text-xs text-gray-500 uppercase">Rating</span>
+                <div className="text-center border-l border-border">
+                  <span className="block font-bold text-foreground text-lg">{averageRating}</span>
+                  <span className="text-xs text-muted-foreground uppercase">Rating</span>
                 </div>
 
               </div>
               <div className="flex gap-3 pt-2 justify-center lg:justify-start">
-                {profile.linkedin && <a href={profile.linkedin} target="_blank" className="p-2 bg-gray-50 rounded-full hover:bg-blue-600 hover:text-white transition-colors"><Linkedin className="w-5 h-5" /></a>}
-                {profile.instagram && <a href={profile.instagram} target="_blank" className="p-2 bg-gray-50 rounded-full hover:bg-pink-600 hover:text-white transition-colors"><Instagram className="w-5 h-5" /></a>}
-                {profile.website && <a href={profile.website} target="_blank" className="p-2 bg-gray-50 rounded-full hover:bg-gray-200 hover:text-black transition-colors"><Globe className="w-5 h-5" /></a>}
+                {profile.linkedin && <a href={profile.linkedin} target="_blank" className="p-2 bg-muted rounded-full hover:bg-blue-600 hover:text-white transition-colors"><Linkedin className="w-5 h-5" /></a>}
+                {profile.instagram && <a href={profile.instagram} target="_blank" className="p-2 bg-muted rounded-full hover:bg-pink-600 hover:text-white transition-colors"><Instagram className="w-5 h-5" /></a>}
+                {profile.website && <a href={profile.website} target="_blank" className="p-2 bg-muted rounded-full hover:bg-muted hover:text-foreground transition-colors"><Globe className="w-5 h-5" /></a>}
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-              <h3 className="font-bold text-gray-900 mb-4 text-sm uppercase tracking-wide">Contact Details</h3>
+            <div className="bg-card rounded-2xl shadow-sm border border-border p-6">
+              <h3 className="font-bold text-foreground mb-4 text-sm uppercase tracking-wide">Contact Details</h3>
               <div className="space-y-3">
-                {profile.email && <div className="flex items-center gap-3 text-sm text-gray-600"><Mail className="w-4 h-4 text-gray-400" /><span className="truncate">{profile.email}</span></div>}
-                {profile.phone && <div className="flex items-center gap-3 text-sm text-gray-600"><Phone className="w-4 h-4 text-gray-400" /><span>{profile.phone}</span></div>}
-                {profile.website && <div className="flex items-start gap-3 text-sm text-gray-600"><Globe className="w-4 h-4 text-gray-400 mt-0.5" /><a href={profile.website} target="_blank" className="hover:underline truncate">{profile.website}</a></div>}
+                {profile.email && <div className="flex items-center gap-3 text-sm text-muted-foreground"><Mail className="w-4 h-4 text-muted-foreground" /><span className="truncate">{profile.email}</span></div>}
+                {profile.phone && <div className="flex items-center gap-3 text-sm text-muted-foreground"><Phone className="w-4 h-4 text-muted-foreground" /><span>{profile.phone}</span></div>}
+                {profile.website && <div className="flex items-start gap-3 text-sm text-muted-foreground"><Globe className="w-4 h-4 text-muted-foreground mt-0.5" /><a href={profile.website} target="_blank" className="hover:underline truncate">{profile.website}</a></div>}
               </div>
             </div>
 
@@ -449,24 +449,24 @@ export default function OrganizationProfile() {
           <div className="lg:col-span-8 space-y-6">
             <OrgGallery orgId={profile.id} isOwnProfile={isOwnProfile} />
 
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Our Mission</h3>
-              <p className="text-gray-600 leading-relaxed text-sm md:text-base">{profile.mission_statement || "No mission statement added yet."}</p>
-              {profile.intent_description && <div className="mt-4 pt-4 border-t border-gray-100"><h4 className="text-sm font-bold text-gray-900 mb-2">About Us</h4><p className="text-gray-600 text-sm">{profile.intent_description}</p></div>}
+            <div className="bg-card rounded-2xl shadow-sm border border-border p-6">
+              <h3 className="text-lg font-bold text-foreground mb-4">Our Mission</h3>
+              <p className="text-muted-foreground leading-relaxed text-sm md:text-base">{profile.mission_statement || "No mission statement added yet."}</p>
+              {profile.intent_description && <div className="mt-4 pt-4 border-t border-border"><h4 className="text-sm font-bold text-foreground mb-2">About Us</h4><p className="text-muted-foreground text-sm">{profile.intent_description}</p></div>}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
+              <div className="bg-gradient-to-br from-muted to-muted rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-4 opacity-10"><Trophy className="w-24 h-24" /></div>
-                <h3 className="text-sm font-medium text-slate-300 uppercase tracking-wide mb-1">Total Impact</h3>
+                <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-1">Total Impact</h3>
                 <div className="text-4xl font-bold mb-4">{profile.total_hours_generated || 0} Hrs</div>
                 <div className="flex gap-4">
-                  <div><span className="text-xs text-slate-400 block">Events</span><span className="font-semibold text-emerald-400">{profile.events_hosted || events.length} Hosted</span></div>
-                  <div><span className="text-xs text-slate-400 block">Volunteers</span><span className="font-semibold text-amber-400">{profile.volunteers_engaged || 0} Engaged</span></div>
+                  <div><span className="text-xs text-muted-foreground block">Events</span><span className="font-semibold text-emerald-400">{profile.events_hosted || events.length} Hosted</span></div>
+                  <div><span className="text-xs text-muted-foreground block">Volunteers</span><span className="font-semibold text-amber-400">{profile.volunteers_engaged || 0} Engaged</span></div>
                 </div>
               </div>
-              <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
-                <h3 className="text-sm font-bold text-gray-900 mb-4">Events Frequency</h3>
+              <div className="bg-card rounded-2xl border border-border p-6 shadow-sm">
+                <h3 className="text-sm font-bold text-foreground mb-4">Events Frequency</h3>
                 <div className="h-32">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={activityData}><XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} /><Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '8px', fontSize: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} /><Bar dataKey="events" radius={[4, 4, 0, 0]} barSize={20}><Cell fill='#3b82f6' /></Bar></BarChart>
@@ -479,9 +479,9 @@ export default function OrganizationProfile() {
             <Reviews reviews={reviews} />
 
             {/* EVENTS SECTION */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+            <div className="bg-card rounded-2xl shadow-sm border border-border p-6">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-bold text-gray-900">
+                <h3 className="text-lg font-bold text-foreground">
                   {isOwnProfile ? 'Events' : 'Past Events'}
                 </h3>
                 {isOwnProfile && <Link href="/org-events/create" className="text-sm text-blue-600 hover:underline font-medium">Create New +</Link>}
@@ -489,8 +489,8 @@ export default function OrganizationProfile() {
 
               {displayedEvents.length === 0 ? (
                 <div className="text-center py-10">
-                  <CalendarDays className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-                  <p className="text-gray-500 text-sm">No past events yet.</p>
+                  <CalendarDays className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+                  <p className="text-muted-foreground text-sm">No past events yet.</p>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -504,20 +504,20 @@ export default function OrganizationProfile() {
 
                     return (
                       <Link key={idx} href={linkHref} className="block group">
-                        <div className="flex gap-4 p-4 border border-gray-100 rounded-xl hover:border-blue-200 hover:shadow-md transition-all bg-white relative">
-                          <div className="w-14 shrink-0 flex flex-col items-center justify-center bg-gray-50 rounded-lg border border-gray-200 h-14">
+                        <div className="flex gap-4 p-4 border border-border rounded-xl hover:border-blue-200 hover:shadow-md transition-all bg-card relative">
+                          <div className="w-14 shrink-0 flex flex-col items-center justify-center bg-muted rounded-lg border border-border h-14">
                             <span className="text-xs font-bold text-red-500 uppercase">
                               {new Date(event.event_date).toLocaleString('default', { month: 'short' })}
                             </span>
-                            <span className="text-xl font-bold text-gray-900">
+                            <span className="text-xl font-bold text-foreground">
                               {new Date(event.event_date).getDate()}
                             </span>
                           </div>
                           <div className="flex-1 min-w-0 pr-20">
-                            <h4 className="font-bold text-gray-900 truncate group-hover:text-blue-600 transition-colors">
+                            <h4 className="font-bold text-foreground truncate group-hover:text-blue-600 transition-colors">
                               {event.title}
                             </h4>
-                            <div className="flex items-center gap-4 text-xs text-gray-500 mt-1">
+                            <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
                               <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {event.location}</span>
                               <span className="flex items-center gap-1">
                                 <Users className="w-3 h-3" />
@@ -529,7 +529,7 @@ export default function OrganizationProfile() {
                           </div>
                           <div className={cn(
                             "absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-medium capitalize",
-                            isCompleted ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"
+                            isCompleted ? "bg-green-100 dark:bg-green-500/15 text-green-700" : "bg-muted text-muted-foreground"
                           )}>
                             {event.status || "Draft"}
                           </div>

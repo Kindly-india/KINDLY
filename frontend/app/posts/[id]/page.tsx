@@ -18,10 +18,10 @@ function timeAgo(iso: string) {
 
 function Avatar({ src, name, size = 9 }: { src: string | null; name: string; size?: number }) {
   return (
-    <div className={`w-${size} h-${size} rounded-full bg-gray-100 overflow-hidden shrink-0`}>
+    <div className={`w-${size} h-${size} rounded-full bg-muted overflow-hidden shrink-0`}>
       {src
         ? <img src={src} alt={name} className="w-full h-full object-cover" />
-        : <div className="w-full h-full flex items-center justify-center text-gray-500 font-semibold text-sm">
+        : <div className="w-full h-full flex items-center justify-center text-muted-foreground font-semibold text-sm">
             {name?.charAt(0)?.toUpperCase()}
           </div>
       }
@@ -47,7 +47,7 @@ function PhotoCarousel({ urls }: { urls: string[] }) {
       {idx > 0 && (
         <button
           onClick={() => setIdx((i) => i - 1)}
-          className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/40 rounded-full flex items-center justify-center text-white"
+          className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-primary/40 rounded-full flex items-center justify-center text-primary-foreground"
         >
           <ChevronLeft className="w-4 h-4" />
         </button>
@@ -55,7 +55,7 @@ function PhotoCarousel({ urls }: { urls: string[] }) {
       {idx < urls.length - 1 && (
         <button
           onClick={() => setIdx((i) => i + 1)}
-          className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/40 rounded-full flex items-center justify-center text-white"
+          className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-primary/40 rounded-full flex items-center justify-center text-primary-foreground"
         >
           <ChevronRight className="w-4 h-4" />
         </button>
@@ -66,7 +66,7 @@ function PhotoCarousel({ urls }: { urls: string[] }) {
           <button
             key={i}
             onClick={() => setIdx(i)}
-            className={cn("w-1.5 h-1.5 rounded-full transition-all", i === idx ? "bg-white" : "bg-white/50")}
+            className={cn("w-1.5 h-1.5 rounded-full transition-all", i === idx ? "bg-card" : "bg-card/50")}
           />
         ))}
       </div>
@@ -202,16 +202,16 @@ export default function PostDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
       </div>
     )
   }
 
   if (error || !post) {
     return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-3">
-        <p className="text-gray-500 text-sm">Post not found.</p>
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-3">
+        <p className="text-muted-foreground text-sm">Post not found.</p>
         <button onClick={() => router.back()} className="text-sm text-blue-600 font-semibold">Go back</button>
       </div>
     )
@@ -220,16 +220,16 @@ export default function PostDetailPage() {
   const isOwnPost = currentUserId === post.volunteer.user_id
 
   return (
-    <div className="min-h-screen bg-white pb-36 max-w-lg mx-auto">
+    <div className="min-h-screen bg-background pb-36 max-w-lg mx-auto">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-[#f5f5f7]">
+      <div className="sticky top-0 z-10 bg-card/95 backdrop-blur border-b border-border">
         <div className="h-14 flex items-center px-3 gap-2">
-          <button onClick={() => router.back()} className="p-2 rounded-full hover:bg-gray-100">
-            <ArrowLeft className="w-5 h-5 text-[#1d1d1f]" />
+          <button onClick={() => router.back()} className="p-2 rounded-full hover:bg-muted">
+            <ArrowLeft className="w-5 h-5 text-foreground" />
           </button>
-          <span className="text-[17px] font-semibold text-[#1d1d1f] flex-1">Post</span>
+          <span className="text-[17px] font-semibold text-foreground flex-1">Post</span>
           {isOwnPost && (
-            <button onClick={handleDelete} disabled={deleting} className="p-2 rounded-full hover:bg-red-50 text-red-500 disabled:opacity-50">
+            <button onClick={handleDelete} disabled={deleting} className="p-2 rounded-full hover:bg-red-50 dark:bg-red-500/15 text-red-500 disabled:opacity-50">
               {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
             </button>
           )}
@@ -243,12 +243,12 @@ export default function PostDetailPage() {
         </Link>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1">
-            <Link href={`/volunteers/${post.volunteer.user_id}`} className="text-[14px] font-semibold text-[#1d1d1f] hover:underline truncate">
+            <Link href={`/volunteers/${post.volunteer.user_id}`} className="text-[14px] font-semibold text-foreground hover:underline truncate">
               {post.volunteer.full_name}
             </Link>
             {post.volunteer.is_verified && <VerifiedBadge />}
           </div>
-          <p className="text-[12px] text-[#86868b] truncate">
+          <p className="text-[12px] text-muted-foreground truncate">
             at {post.event.title} · {timeAgo(post.created_at)}
           </p>
         </div>
@@ -260,19 +260,19 @@ export default function PostDetailPage() {
       {/* Actions */}
       <div className="flex items-center gap-5 px-4 pt-3 pb-2">
         <button onClick={handleLike} disabled={liking} className="flex items-center gap-1.5 active:scale-90 transition-transform disabled:opacity-60">
-          <Heart className={cn("w-6 h-6 transition-colors", post.viewer_has_liked ? "fill-red-500 text-red-500" : "text-[#1d1d1f]")} />
-          {post.like_count > 0 && <span className="text-[13px] font-semibold text-[#1d1d1f]">{post.like_count}</span>}
+          <Heart className={cn("w-6 h-6 transition-colors", post.viewer_has_liked ? "fill-red-500 text-red-500" : "text-foreground")} />
+          {post.like_count > 0 && <span className="text-[13px] font-semibold text-foreground">{post.like_count}</span>}
         </button>
         <div className="flex items-center gap-1.5">
-          <MessageCircle className="w-6 h-6 text-[#1d1d1f]" />
-          {post.comment_count > 0 && <span className="text-[13px] font-semibold text-[#1d1d1f]">{post.comment_count}</span>}
+          <MessageCircle className="w-6 h-6 text-foreground" />
+          {post.comment_count > 0 && <span className="text-[13px] font-semibold text-foreground">{post.comment_count}</span>}
         </div>
       </div>
 
       {/* Caption */}
       {post.caption && (
         <div className="px-4 pb-3">
-          <p className="text-[14px] text-[#1d1d1f] leading-snug">
+          <p className="text-[14px] text-foreground leading-snug">
             <span className="font-semibold mr-1">{post.volunteer.full_name}</span>
             {post.caption}
           </p>
@@ -280,9 +280,9 @@ export default function PostDetailPage() {
       )}
 
       {/* Comments */}
-      <div className="border-t border-[#f5f5f7]">
+      <div className="border-t border-border">
         {post.comments.length === 0 ? (
-          <p className="text-center text-[13px] text-[#86868b] py-6">No comments yet. Be the first!</p>
+          <p className="text-center text-[13px] text-muted-foreground py-6">No comments yet. Be the first!</p>
         ) : (
           <ul className="divide-y divide-[#f5f5f7]">
             {post.comments.map((c) => {
@@ -302,18 +302,18 @@ export default function PostDetailPage() {
                     <Avatar src={c.volunteer.avatar_url} name={c.volunteer.full_name} size={8} />
                   </Link>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[14px] text-[#1d1d1f] leading-snug">
+                    <p className="text-[14px] text-foreground leading-snug">
                       <span className="font-semibold mr-1">{c.volunteer.full_name}</span>
                       {c.content}
                     </p>
-                    <p className="text-[11px] text-[#86868b] mt-0.5">{timeAgo(c.created_at)}</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">{timeAgo(c.created_at)}</p>
                   </div>
 
                   {/* Desktop: hover trash icon */}
                   {canDelete && (
                     <button
                       onClick={() => handleDeleteComment(c.id)}
-                      className="hidden sm:flex opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-full hover:bg-red-50 text-red-400 hover:text-red-600 shrink-0 self-center"
+                      className="hidden sm:flex opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-full hover:bg-red-50 dark:bg-red-500/15 text-red-400 hover:text-red-600 shrink-0 self-center"
                       aria-label="Delete comment"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -322,12 +322,12 @@ export default function PostDetailPage() {
 
                   {/* Mobile: long-press confirmation overlay */}
                   {longPressedCommentId === c.id && (
-                    <div className="sm:hidden absolute inset-0 bg-white/95 flex items-center justify-between px-4 z-10 rounded-lg">
-                      <p className="text-[13px] text-[#1d1d1f] font-medium">Delete this comment?</p>
+                    <div className="sm:hidden absolute inset-0 bg-card/95 flex items-center justify-between px-4 z-10 rounded-lg">
+                      <p className="text-[13px] text-foreground font-medium">Delete this comment?</p>
                       <div className="flex gap-2 shrink-0">
                         <button
                           onClick={() => setLongPressedCommentId(null)}
-                          className="px-3 py-1.5 text-[12px] font-semibold text-gray-600 bg-gray-100 rounded-lg"
+                          className="px-3 py-1.5 text-[12px] font-semibold text-muted-foreground bg-muted rounded-lg"
                         >
                           Cancel
                         </button>
@@ -349,10 +349,10 @@ export default function PostDetailPage() {
       </div>
 
       {/* Comment input — fixed at bottom, above mobile nav */}
-      <div className="fixed bottom-0 left-0 right-0 z-[60] bg-white border-t border-gray-100 px-4 pt-3 max-w-lg mx-auto" style={{ paddingBottom: 'calc(12px + env(safe-area-inset-bottom))' }}>
+      <div className="fixed bottom-0 left-0 right-0 z-[60] bg-card border-t border-border px-4 pt-3 max-w-lg mx-auto" style={{ paddingBottom: 'calc(12px + env(safe-area-inset-bottom))' }}>
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-full bg-gray-100 shrink-0 flex items-center justify-center">
-            <User className="w-3.5 h-3.5 text-gray-400" />
+          <div className="w-7 h-7 rounded-full bg-muted shrink-0 flex items-center justify-center">
+            <User className="w-3.5 h-3.5 text-muted-foreground" />
           </div>
           <textarea
             value={commentText}
@@ -365,7 +365,7 @@ export default function PostDetailPage() {
             placeholder="Add a comment..."
             maxLength={500}
             rows={1}
-            className="flex-1 bg-gray-50 rounded-full px-4 py-2 text-sm text-[#1d1d1f] placeholder:text-gray-400 outline-none resize-none overflow-hidden leading-5"
+            className="flex-1 bg-muted rounded-full px-4 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none resize-none overflow-hidden leading-5"
             style={{ maxHeight: '72px' }}
           />
           <button
@@ -380,7 +380,7 @@ export default function PostDetailPage() {
 
       {/* Error toast */}
       {toastMsg && (
-        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white text-[13px] px-4 py-2 rounded-full shadow-lg pointer-events-none whitespace-nowrap">
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-primary text-primary-foreground text-[13px] px-4 py-2 rounded-full shadow-lg pointer-events-none whitespace-nowrap">
           {toastMsg}
         </div>
       )}

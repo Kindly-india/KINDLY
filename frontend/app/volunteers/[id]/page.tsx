@@ -12,9 +12,11 @@ import {
   Camera, Images,
 } from "lucide-react"
 import { api } from "@/lib/api"
-import { cn } from "@/lib/utils"
+import { cn, formatLabel } from "@/lib/utils"
 import { VerifiedBadge } from "@/components/verified-badge"
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from "recharts"
+import { Card } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 
 // --- SUB-COMPONENTS ---
 
@@ -23,22 +25,22 @@ function Testimonials({ journey }: { journey: any[] }) {
   if (reviews.length === 0) return null;
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
-      <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+    <div className="bg-card rounded-2xl shadow-sm border border-border p-6 mb-6">
+      <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
         <Quote className="w-5 h-5 text-purple-500" /> What Organizations Say
       </h3>
       <div className="grid gap-4">
         {reviews.slice(0, 3).map((review, idx) => (
-          <div key={idx} className="bg-purple-50/50 p-4 rounded-xl border border-purple-100 relative">
+          <div key={idx} className="bg-purple-50 dark:bg-purple-500/15/50 p-4 rounded-xl border border-purple-100 relative">
             <Quote className="w-8 h-8 text-purple-200 absolute top-2 right-2 rotate-180" />
-            <p className="text-gray-700 italic text-sm mb-3 relative z-10">"{review.endorsements.comment}"</p>
+            <p className="text-foreground italic text-sm mb-3 relative z-10">"{review.endorsements.comment}"</p>
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-white border border-purple-100 flex items-center justify-center overflow-hidden">
-                {review.organization_logo ? <img src={review.organization_logo} className="w-full h-full object-cover" /> : <Building2 className="w-4 h-4 text-gray-400" />}
+              <div className="w-8 h-8 rounded-full bg-card border border-purple-100 flex items-center justify-center overflow-hidden">
+                {review.organization_logo ? <img src={review.organization_logo} className="w-full h-full object-cover" /> : <Building2 className="w-4 h-4 text-muted-foreground" />}
               </div>
               <div>
-                <p className="text-xs font-bold text-gray-900">{review.organization_name}</p>
-                <p className="text-[10px] text-gray-500">{review.event_title}</p>
+                <p className="text-xs font-bold text-foreground">{review.organization_name}</p>
+                <p className="text-[10px] text-muted-foreground">{review.event_title}</p>
               </div>
             </div>
           </div>
@@ -98,7 +100,7 @@ function ActionGallery({ userId, isOwnProfile }: { userId: string, isOwnProfile:
           onClick={() => setLightboxUrl(null)}
         >
           <button
-            className="absolute top-4 right-4 p-2 text-white/70 hover:text-white bg-white/10 rounded-full transition-colors"
+            className="absolute top-4 right-4 p-2 text-white/70 hover:text-white bg-card/10 rounded-full transition-colors"
             onClick={() => setLightboxUrl(null)}
           >
             <X className="w-6 h-6" />
@@ -112,16 +114,16 @@ function ActionGallery({ userId, isOwnProfile }: { userId: string, isOwnProfile:
         </div>
       )}
 
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
+      <div className="bg-card rounded-2xl shadow-sm border border-border p-6 mb-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+          <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
             <ImageIcon className="w-5 h-5 text-pink-500" /> Action Gallery
           </h3>
           {isOwnProfile && (
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
-              className="text-xs flex items-center gap-1 bg-black text-white px-3 py-1.5 rounded-full hover:bg-gray-800 transition-colors"
+              className="text-xs flex items-center gap-1 bg-primary text-primary-foreground px-3 py-1.5 rounded-full hover:bg-primary transition-colors"
             >
               {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
               Add Photo
@@ -131,16 +133,16 @@ function ActionGallery({ userId, isOwnProfile }: { userId: string, isOwnProfile:
         </div>
 
         {photos.length === 0 ? (
-          <div className="text-center py-8 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-            <ImageIcon className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-            <p className="text-xs text-gray-500">Share moments from your volunteering drives.</p>
+          <div className="text-center py-8 bg-muted rounded-xl border border-dashed border-border">
+            <ImageIcon className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+            <p className="text-xs text-muted-foreground">Share moments from your volunteering drives.</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {photos.map((photo) => (
               <div
                 key={photo.id}
-                className="group relative aspect-square rounded-xl overflow-hidden bg-gray-100 cursor-pointer"
+                className="group relative aspect-square rounded-xl overflow-hidden bg-muted cursor-pointer"
                 onClick={() => setLightboxUrl(photo.image_url)}
               >
                 <img src={photo.image_url} alt="Gallery" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
@@ -181,9 +183,9 @@ function PostsGrid({ userId, isOwnProfile }: { userId: string; isOwnProfile: boo
 
   if (loading) {
     return (
-      <div className="grid grid-cols-3 gap-0.5 rounded-2xl overflow-hidden bg-gray-100 animate-pulse">
+      <div className="grid grid-cols-3 gap-0.5 rounded-2xl overflow-hidden bg-muted animate-pulse">
         {[...Array(6)].map((_, i) => (
-          <div key={i} className="aspect-square bg-gray-200" />
+          <div key={i} className="aspect-square bg-muted" />
         ))}
       </div>
     )
@@ -191,18 +193,18 @@ function PostsGrid({ userId, isOwnProfile }: { userId: string; isOwnProfile: boo
 
   if (data?.is_private) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-center bg-white rounded-2xl border border-gray-200">
-        <Lock className="w-7 h-7 text-gray-300 mb-2" />
-        <p className="text-sm text-gray-500">Posts are private</p>
+      <div className="flex flex-col items-center justify-center py-16 text-center bg-card rounded-2xl border border-border">
+        <Lock className="w-7 h-7 text-muted-foreground mb-2" />
+        <p className="text-sm text-muted-foreground">Posts are private</p>
       </div>
     )
   }
 
   if (!data?.posts.length) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-center bg-white rounded-2xl border border-gray-200">
-        <Camera className="w-8 h-8 text-gray-300 mb-2" />
-        <p className="text-sm text-gray-500 mb-1">No posts yet</p>
+      <div className="flex flex-col items-center justify-center py-16 text-center bg-card rounded-2xl border border-border">
+        <Camera className="w-8 h-8 text-muted-foreground mb-2" />
+        <p className="text-sm text-muted-foreground mb-1">No posts yet</p>
         {isOwnProfile && (
           <Link href="/posts/select-event" className="text-xs text-[#80242a] font-semibold">
             Share an experience →
@@ -217,7 +219,7 @@ function PostsGrid({ userId, isOwnProfile }: { userId: string; isOwnProfile: boo
       {isOwnProfile && (
         <Link
           href="/posts/select-event"
-          className="col-span-3 flex items-center justify-center gap-2 h-12 mb-0.5 border border-dashed border-gray-300 rounded-xl text-sm text-gray-400 font-medium bg-gray-50 hover:bg-gray-100 transition-colors"
+          className="col-span-3 flex items-center justify-center gap-2 h-12 mb-0.5 border border-dashed border-border rounded-xl text-sm text-muted-foreground font-medium bg-muted hover:bg-muted transition-colors"
         >
           <Plus className="w-4 h-4" />
           Share an experience
@@ -227,7 +229,7 @@ function PostsGrid({ userId, isOwnProfile }: { userId: string; isOwnProfile: boo
         <button
           key={post.id}
           onClick={() => router.push(`/posts/${post.id}`)}
-          className="aspect-square overflow-hidden bg-gray-100 relative group"
+          className="aspect-square overflow-hidden bg-muted relative group"
         >
           <img
             src={post.photo_urls[0]}
@@ -255,10 +257,10 @@ function UnfollowConfirmSheet({ name, onConfirm, onCancel }: {
   return (
     <div className="fixed inset-0 z-[60] flex items-end justify-center">
       <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onCancel} />
-      <div className="relative w-full max-w-sm bg-white rounded-t-3xl px-6 pt-6 pb-10 shadow-2xl">
-        <div className="w-10 h-1 rounded-full bg-gray-200 mx-auto mb-5" />
-        <p className="text-center text-[15px] font-semibold text-gray-900 mb-1">Unfollow {name}?</p>
-        <p className="text-center text-[13px] text-gray-500 mb-6">Their posts will no longer appear in your feed.</p>
+      <div className="relative w-full max-w-sm bg-card rounded-t-3xl px-6 pt-6 pb-10 shadow-2xl">
+        <div className="w-10 h-1 rounded-full bg-muted mx-auto mb-5" />
+        <p className="text-center text-[15px] font-semibold text-foreground mb-1">Unfollow {name}?</p>
+        <p className="text-center text-[13px] text-muted-foreground mb-6">Their posts will no longer appear in your feed.</p>
         <button
           onClick={onConfirm}
           className="w-full py-3 bg-red-500 text-white rounded-2xl text-[15px] font-semibold mb-2.5 hover:bg-red-600 active:scale-95 transition-all"
@@ -267,7 +269,7 @@ function UnfollowConfirmSheet({ name, onConfirm, onCancel }: {
         </button>
         <button
           onClick={onCancel}
-          className="w-full py-3 bg-gray-100 text-gray-700 rounded-2xl text-[15px] font-semibold hover:bg-gray-200 active:scale-95 transition-all"
+          className="w-full py-3 bg-muted text-foreground rounded-2xl text-[15px] font-semibold hover:bg-muted active:scale-95 transition-all"
         >
           Cancel
         </button>
@@ -318,10 +320,10 @@ function FollowUserButton({ user, onStatusChange }: {
         className={cn(
           "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all active:scale-95 disabled:opacity-50",
           status === 'accepted'
-            ? "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            ? "bg-muted text-foreground hover:bg-muted"
             : status === 'pending'
-              ? "bg-gray-100 text-gray-400 cursor-pointer"
-              : "bg-gray-900 text-white hover:bg-gray-700"
+              ? "bg-muted text-muted-foreground cursor-pointer"
+              : "bg-primary text-primary-foreground hover:bg-primary"
         )}
       >
         {status === 'accepted' ? 'Following' : status === 'pending' ? 'Requested' : 'Follow'}
@@ -363,43 +365,43 @@ function FollowListModal({ type, initialUsers, onClose, isOwnProfilePage, curren
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full sm:max-w-sm bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl max-h-[72vh] flex flex-col overflow-hidden">
+      <div className="relative w-full sm:max-w-sm bg-card rounded-t-3xl sm:rounded-2xl shadow-2xl max-h-[72vh] flex flex-col overflow-hidden">
         {/* Handle pill */}
-        <div className="w-10 h-1 rounded-full bg-gray-200 mx-auto mt-3 shrink-0 sm:hidden" />
+        <div className="w-10 h-1 rounded-full bg-muted mx-auto mt-3 shrink-0 sm:hidden" />
 
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
-          <h3 className="font-semibold text-[15px] text-gray-900">{title}</h3>
-          <button onClick={onClose} className="p-1.5 rounded-full hover:bg-gray-100 transition-colors">
-            <X className="w-4 h-4 text-gray-500" />
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
+          <h3 className="font-semibold text-[15px] text-foreground">{title}</h3>
+          <button onClick={onClose} className="p-1.5 rounded-full hover:bg-muted transition-colors">
+            <X className="w-4 h-4 text-muted-foreground" />
           </button>
         </div>
 
         {removeError && (
-          <p className="text-xs text-red-600 px-5 py-2 bg-red-50 border-b border-red-100">{removeError}</p>
+          <p className="text-xs text-red-600 px-5 py-2 bg-red-50 dark:bg-red-500/15 border-b border-red-100">{removeError}</p>
         )}
         <div className="overflow-y-auto flex-1">
           {users.length === 0 ? (
-            <div className="py-14 text-center text-gray-400 text-sm">No {title.toLowerCase()} yet.</div>
+            <div className="py-14 text-center text-muted-foreground text-sm">No {title.toLowerCase()} yet.</div>
           ) : (
             users.map((u) => (
-              <div key={u.user_id} className="flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50 transition-colors">
+              <div key={u.user_id} className="flex items-center gap-3 px-5 py-3.5 hover:bg-muted transition-colors">
                 <Link
                   href={u.entity_type === 'org' ? `/organizations/${u.profile_id}` : `/volunteers/${u.user_id}`}
                   onClick={onClose}
                   className="flex items-center gap-3 flex-1 min-w-0"
                 >
-                  <div className="w-10 h-10 rounded-full bg-gray-100 overflow-hidden shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-muted overflow-hidden shrink-0">
                     {u.avatar_url
                       ? <img src={u.avatar_url} className="w-full h-full object-cover" alt={u.full_name} />
-                      : <div className="w-full h-full flex items-center justify-center text-gray-400 font-bold text-sm">{u.full_name?.charAt(0)}</div>
+                      : <div className="w-full h-full flex items-center justify-center text-muted-foreground font-bold text-sm">{u.full_name?.charAt(0)}</div>
                     }
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-1">
-                      <p className="text-sm font-semibold text-gray-900 truncate">{u.full_name}</p>
+                      <p className="text-sm font-semibold text-foreground truncate">{u.full_name}</p>
                       {u.is_verified && <VerifiedBadge />}
                     </div>
-                    <p className="text-xs text-gray-500 truncate">{u.city || u.headline || 'Volunteer'}</p>
+                    <p className="text-xs text-muted-foreground truncate">{u.city || u.headline || 'Volunteer'}</p>
                   </div>
                 </Link>
 
@@ -408,7 +410,7 @@ function FollowListModal({ type, initialUsers, onClose, isOwnProfilePage, curren
                   isOwnProfilePage && type === 'followers' ? (
                     <button
                       onClick={() => handleRemove(u.user_id)}
-                      className="px-3.5 py-1.5 bg-gray-100 text-gray-700 text-xs font-semibold rounded-lg hover:bg-red-50 hover:text-red-600 active:scale-95 transition-all shrink-0"
+                      className="px-3.5 py-1.5 bg-muted text-foreground text-xs font-semibold rounded-lg hover:bg-red-50 dark:bg-red-500/15 hover:text-red-600 active:scale-95 transition-all shrink-0"
                     >
                       Remove
                     </button>
@@ -608,36 +610,36 @@ export default function VolunteerProfile() {
     return url.startsWith('http') ? url : `https://${url}`;
   }
 
-  if (loading) return <div className="min-h-screen bg-white flex items-center justify-center"><Loader2 className="w-8 h-8 text-gray-900 animate-spin" /></div>
-  if (!profile) return <div className="min-h-screen bg-white flex items-center justify-center text-gray-500">Profile not found</div>
+  if (loading) return <div className="min-h-screen bg-background flex items-center justify-center"><Loader2 className="w-8 h-8 text-foreground animate-spin" /></div>
+  if (!profile) return <div className="min-h-screen bg-background flex items-center justify-center text-muted-foreground">Profile not found</div>
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] pb-20 font-sans">
+    <div className="min-h-screen bg-muted pb-20 font-sans">
 
       {/* 1. TOP NAVIGATION */}
-      <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200">
+      <nav className="sticky top-0 z-50 bg-card/80 backdrop-blur-md border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <button onClick={() => router.back()} className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
+          <button onClick={() => router.back()} className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
             <ChevronLeft className="w-5 h-5" /> Back
           </button>
 
           <div className="flex items-center gap-3">
             <button
               onClick={handleShare}
-              className="p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-all relative"
+              className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-all relative"
             >
               {copied ? <Check className="w-5 h-5 text-green-600" /> : <Share2 className="w-5 h-5" />}
             </button>
 
             {isOwnProfile ? (
               <>
-                <Link href="/settings/profile" className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-full hover:bg-gray-800 transition-colors flex items-center gap-2">
+                <Link href="/settings/profile" className="px-4 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-full hover:bg-primary transition-colors flex items-center gap-2">
                   <Edit2 className="w-4 h-4" /> Edit Profile
                 </Link>
 
                 <button
                   onClick={handleLogout}
-                  className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-all ml-1"
+                  className="p-2 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:bg-red-500/15 rounded-full transition-all ml-1"
                   title="Logout"
                 >
                   <LogOut className="w-5 h-5" />
@@ -651,10 +653,10 @@ export default function VolunteerProfile() {
                   className={cn(
                     "px-6 py-2 rounded-full text-sm font-bold transition-all shadow-sm active:scale-95 flex items-center gap-2 disabled:opacity-60",
                     followStatus === 'accepted'
-                      ? "bg-white text-gray-700 border border-gray-300 hover:border-red-300 hover:text-red-600"
+                      ? "bg-card text-foreground border border-border hover:border-red-300 hover:text-red-600"
                       : followStatus === 'pending'
-                        ? "bg-gray-100 text-gray-500 border border-gray-200 cursor-pointer"
-                        : "bg-black text-white hover:bg-gray-800"
+                        ? "bg-muted text-muted-foreground border border-border cursor-pointer"
+                        : "bg-primary text-primary-foreground hover:bg-primary"
                   )}
                 >
                   {followLoading ? (
@@ -674,7 +676,7 @@ export default function VolunteerProfile() {
       </nav>
 
       {/* 2. COVER IMAGE */}
-      <div className="h-48 md:h-64 bg-gray-200 w-full relative overflow-hidden group">
+      <div className="h-48 md:h-64 bg-muted w-full relative overflow-hidden group">
         {!coverError && profile?.cover_url ? (
           <img
             src={profile.cover_url}
@@ -683,7 +685,7 @@ export default function VolunteerProfile() {
             onError={() => setCoverError(true)}
           />
         ) : (
-          <div className="w-full h-full bg-gradient-to-r from-slate-800 to-slate-900 flex items-center justify-center">
+          <div className="w-full h-full bg-gradient-to-r from-muted to-muted flex items-center justify-center">
             <Sparkles className="w-12 h-12 text-white/10" />
           </div>
         )}
@@ -695,23 +697,23 @@ export default function VolunteerProfile() {
           {/* 3. LEFT SIDEBAR */}
           <div className="lg:col-span-4 space-y-6">
             {/* Profile Card */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 relative">
-              <div className="w-32 h-32 rounded-full border-4 border-white shadow-md overflow-hidden bg-gray-100 -mt-20 mb-4">
+            <Card className="p-6 relative">
+              <div className="w-32 h-32 rounded-full border-4 border-white shadow-md overflow-hidden bg-muted -mt-20 mb-4">
                 {profile?.avatar_url ? (
                   <img src={profile.avatar_url} alt={profile.full_name} className="w-full h-full object-cover" />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-3xl font-bold text-gray-400">{profile?.full_name?.charAt(0)}</div>
+                  <div className="w-full h-full flex items-center justify-center text-3xl font-bold text-muted-foreground">{profile?.full_name?.charAt(0)}</div>
                 )}
               </div>
 
               <div className="mb-6">
                 <div className="flex items-center gap-2 mb-1">
-                  <h1 className="text-2xl font-bold text-gray-900">{profile?.full_name}</h1>
+                  <h1 className="text-2xl font-bold text-foreground">{profile?.full_name}</h1>
                   {profile?.is_verified && <VerifiedBadge size="lg" />}
                 </div>
-                <p className="text-gray-600 font-medium">{profile?.headline || "Volunteer"}</p>
+                <p className="text-muted-foreground font-medium">{profile?.headline || "Volunteer"}</p>
                 {profile?.city && (
-                  <div className="flex items-center gap-1 text-sm text-gray-500 mt-2">
+                  <div className="flex items-center gap-1 text-sm text-muted-foreground mt-2">
                     <MapPin className="w-4 h-4" /> {profile.city}
                   </div>
                 )}
@@ -721,102 +723,102 @@ export default function VolunteerProfile() {
                       {profile.mutual_followers.preview.map((u: any, i: number) => (
                         <div
                           key={u.user_id}
-                          className="w-6 h-6 rounded-full border-2 border-white bg-gray-200 overflow-hidden"
+                          className="w-6 h-6 rounded-full border-2 border-white bg-muted overflow-hidden"
                           style={{ zIndex: profile.mutual_followers.preview.length - i }}
                         >
                           {u.avatar_url
                             ? <img src={u.avatar_url} className="w-full h-full object-cover" alt={u.full_name} />
-                            : <div className="w-full h-full flex items-center justify-center text-[7px] font-bold text-gray-500 bg-gray-100">{u.full_name?.charAt(0)}</div>
+                            : <div className="w-full h-full flex items-center justify-center text-[7px] font-bold text-muted-foreground bg-muted">{u.full_name?.charAt(0)}</div>
                           }
                         </div>
                       ))}
                     </div>
-                    <p className="text-xs text-gray-500 leading-tight">
+                    <p className="text-xs text-muted-foreground leading-tight">
                       {profile.mutual_followers.count === 1 ? (
-                        <>Followed by <span className="font-semibold text-gray-700">{profile.mutual_followers.preview[0]?.full_name?.split(' ')[0]}</span></>
+                        <>Followed by <span className="font-semibold text-foreground">{profile.mutual_followers.preview[0]?.full_name?.split(' ')[0]}</span></>
                       ) : profile.mutual_followers.count === 2 ? (
-                        <>Followed by <span className="font-semibold text-gray-700">{profile.mutual_followers.preview[0]?.full_name?.split(' ')[0]}</span> and <span className="font-semibold text-gray-700">{profile.mutual_followers.preview[1]?.full_name?.split(' ')[0]}</span></>
+                        <>Followed by <span className="font-semibold text-foreground">{profile.mutual_followers.preview[0]?.full_name?.split(' ')[0]}</span> and <span className="font-semibold text-foreground">{profile.mutual_followers.preview[1]?.full_name?.split(' ')[0]}</span></>
                       ) : (
-                        <>Followed by <span className="font-semibold text-gray-700">{profile.mutual_followers.preview[0]?.full_name?.split(' ')[0]}</span>, <span className="font-semibold text-gray-700">{profile.mutual_followers.preview[1]?.full_name?.split(' ')[0]}</span> and <span className="font-semibold text-gray-700">{profile.mutual_followers.count - 2} others</span></>
+                        <>Followed by <span className="font-semibold text-foreground">{profile.mutual_followers.preview[0]?.full_name?.split(' ')[0]}</span>, <span className="font-semibold text-foreground">{profile.mutual_followers.preview[1]?.full_name?.split(' ')[0]}</span> and <span className="font-semibold text-foreground">{profile.mutual_followers.count - 2} others</span></>
                       )}
                     </p>
                   </div>
                 )}
               </div>
 
-              <div className="grid grid-cols-3 gap-2 border-t border-b border-gray-100 py-4 mb-6">
+              <div className="grid grid-cols-3 gap-2 border-t border-b border-border py-4 mb-6">
                 <button
                   onClick={() => handleOpenFollowList('followers')}
                   className="text-center hover:opacity-70 transition-opacity disabled:opacity-100 disabled:cursor-default"
                   disabled={profile?.is_private && !isOwnProfile && followStatus !== 'accepted'}
                 >
-                  <span className="block font-bold text-gray-900 text-lg">{profile?.followers_count || 0}</span>
-                  <span className="text-xs text-gray-500 uppercase tracking-wide">Followers</span>
+                  <span className="block font-bold text-foreground text-lg">{profile?.followers_count || 0}</span>
+                  <span className="text-xs text-muted-foreground uppercase tracking-wide">Followers</span>
                 </button>
                 <button
                   onClick={() => handleOpenFollowList('following')}
-                  className="text-center border-l border-gray-100 hover:opacity-70 transition-opacity disabled:opacity-100 disabled:cursor-default"
+                  className="text-center border-l border-border hover:opacity-70 transition-opacity disabled:opacity-100 disabled:cursor-default"
                   disabled={profile?.is_private && !isOwnProfile && followStatus !== 'accepted'}
                 >
-                  <span className="block font-bold text-gray-900 text-lg">{profile?.following_count || 0}</span>
-                  <span className="text-xs text-gray-500 uppercase tracking-wide">Following</span>
+                  <span className="block font-bold text-foreground text-lg">{profile?.following_count || 0}</span>
+                  <span className="text-xs text-muted-foreground uppercase tracking-wide">Following</span>
                 </button>
-                <div className="text-center border-l border-gray-100">
-                  <span className="block font-bold text-gray-900 text-lg">{profile?.total_hours || 0}</span>
-                  <span className="text-xs text-gray-500 uppercase tracking-wide">Hours</span>
+                <div className="text-center border-l border-border">
+                  <span className="block font-bold text-foreground text-lg">{profile?.total_hours || 0}</span>
+                  <span className="text-xs text-muted-foreground uppercase tracking-wide">Hours</span>
                 </div>
               </div>
 
               <div className="flex gap-3 pt-2 justify-center lg:justify-start">
-                {profile?.linkedin && <a href={getExternalLink(profile.linkedin)} target="_blank" className="p-2 bg-gray-50 rounded-full hover:bg-blue-600 hover:text-white transition-colors"><Linkedin className="w-5 h-5" /></a>}
-                {profile?.instagram && <a href={getExternalLink(profile.instagram)} target="_blank" className="p-2 bg-gray-50 rounded-full hover:bg-pink-600 hover:text-white transition-colors"><Instagram className="w-5 h-5" /></a>}
-                {profile?.website && <a href={getExternalLink(profile.website)} target="_blank" className="p-2 bg-gray-50 rounded-full hover:bg-gray-200 hover:text-black transition-colors"><Globe className="w-5 h-5" /></a>}
+                {profile?.linkedin && <a href={getExternalLink(profile.linkedin)} target="_blank" className="p-2 bg-muted rounded-full hover:bg-blue-600 hover:text-white transition-colors"><Linkedin className="w-5 h-5" /></a>}
+                {profile?.instagram && <a href={getExternalLink(profile.instagram)} target="_blank" className="p-2 bg-muted rounded-full hover:bg-pink-600 hover:text-white transition-colors"><Instagram className="w-5 h-5" /></a>}
+                {profile?.website && <a href={getExternalLink(profile.website)} target="_blank" className="p-2 bg-muted rounded-full hover:bg-muted hover:text-foreground transition-colors"><Globe className="w-5 h-5" /></a>}
               </div>
-            </div>
+            </Card>
 
             {/* CONTACT DETAILS */}
             {(isOwnProfile || profile?.view_type === 'private' || profile?.view_type === 'resume') && (
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-                <h3 className="font-bold text-gray-900 mb-4 text-sm uppercase tracking-wide">Contact Details</h3>
+              <Card className="p-6">
+                <h3 className="font-bold text-foreground mb-4 text-sm uppercase tracking-wide">Contact Details</h3>
                 <div className="space-y-3">
                   {/* ✅ UPDATED: Safe optional chaining here */}
                   {profile?.email ? (
-                    <div className="flex items-center gap-3 text-sm text-gray-600">
-                      <Mail className="w-4 h-4 text-gray-400" />
+                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                      <Mail className="w-4 h-4 text-muted-foreground" />
                       <span>{profile.email}</span>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-2 text-xs text-amber-600 bg-amber-50 p-2 rounded">
+                    <div className="flex items-center gap-2 text-xs text-amber-600 bg-amber-50 dark:bg-amber-500/15 p-2 rounded">
                       <span>Email not added.</span>
                       {isOwnProfile && <Link href="/settings/profile" className="underline font-semibold">Add now</Link>}
                     </div>
                   )}
                   {profile?.phone && (
-                    <div className="flex items-center gap-3 text-sm text-gray-600">
-                      <Phone className="w-4 h-4 text-gray-400" />
+                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                      <Phone className="w-4 h-4 text-muted-foreground" />
                       <span>{profile.phone}</span>
                     </div>
                   )}
                   {profile?.address && (
-                    <div className="flex items-start gap-3 text-sm text-gray-600">
-                      <Home className="w-4 h-4 text-gray-400 mt-0.5" />
+                    <div className="flex items-start gap-3 text-sm text-muted-foreground">
+                      <Home className="w-4 h-4 text-muted-foreground mt-0.5" />
                       <span>{profile.address}</span>
                     </div>
                   )}
                 </div>
-              </div>
+              </Card>
             )}
 
             {/* Skills */}
             {profile?.skills && profile.skills.length > 0 && (
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-                <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2"><Sparkles className="w-4 h-4 text-amber-500" /> Skills</h3>
+              <Card className="p-6">
+                <h3 className="font-bold text-foreground mb-4 flex items-center gap-2"><Sparkles className="w-4 h-4 text-amber-500" /> Skills</h3>
                 <div className="flex flex-wrap gap-2">
                   {profile.skills.map((skill: string, i: number) => (
-                    <span key={i} className="px-3 py-1 bg-gray-100 text-gray-700 text-xs font-semibold rounded-md border border-gray-200">{skill}</span>
+                    <Badge key={i} variant="secondary">{formatLabel(skill)}</Badge>
                   ))}
                 </div>
-              </div>
+              </Card>
             )}
 
           </div>
@@ -825,12 +827,12 @@ export default function VolunteerProfile() {
           <div className="lg:col-span-8 space-y-6 lg:pt-20">
             {profile?.is_private && !isOwnProfile && followStatus !== 'accepted' ? (
               /* Privacy Lock */
-              <div className="flex flex-col items-center justify-center py-24 text-center bg-white rounded-2xl shadow-sm border border-gray-200">
-                <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-                  <Lock className="w-7 h-7 text-gray-400" />
+              <div className="flex flex-col items-center justify-center py-24 text-center bg-card rounded-2xl shadow-sm border border-border">
+                <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                  <Lock className="w-7 h-7 text-muted-foreground" />
                 </div>
-                <p className="text-[15px] font-semibold text-gray-900 mb-1">This account is private</p>
-                <p className="text-[13px] text-gray-500 max-w-xs">
+                <p className="text-[15px] font-semibold text-foreground mb-1">This account is private</p>
+                <p className="text-[13px] text-muted-foreground max-w-xs">
                   {followStatus === 'pending'
                     ? 'Follow request sent. Waiting for approval.'
                     : 'Follow them to see their activity.'
@@ -840,16 +842,16 @@ export default function VolunteerProfile() {
             ) : (
               <>
                 {/* Tab bar */}
-                <div className="flex border-b border-gray-200 bg-white rounded-t-2xl overflow-hidden">
+                <div className="flex gap-1 p-1 bg-black/5 dark:bg-white/5 rounded-full">
                   {(['posts', 'about'] as const).map((tab) => (
                     <button
                       key={tab}
                       onClick={() => setActiveProfileTab(tab)}
                       className={cn(
-                        "flex-1 py-3 text-[13px] font-semibold capitalize transition-colors",
+                        "flex-1 h-9 rounded-full text-[13px] font-semibold capitalize transition-all",
                         activeProfileTab === tab
-                          ? "border-b-2 border-gray-900 text-gray-900"
-                          : "text-gray-400 hover:text-gray-600"
+                          ? "bg-primary text-primary-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
                       )}
                     >
                       {tab}
@@ -861,28 +863,28 @@ export default function VolunteerProfile() {
                   <PostsGrid userId={profile?.user_id} isOwnProfile={isOwnProfile} />
                 ) : (
                 <>
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                <div className="bg-card rounded-2xl shadow-sm border border-border p-6">
                   <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-bold text-gray-900">About</h3>
-                    {profile?.created_at && <span className="text-xs text-gray-500 flex items-center gap-1"><Calendar className="w-3 h-3" /> Member since {new Date(profile.created_at).getFullYear()}</span>}
+                    <h3 className="text-lg font-bold text-foreground">About</h3>
+                    {profile?.created_at && <span className="text-xs text-muted-foreground flex items-center gap-1"><Calendar className="w-3 h-3" /> Member since {new Date(profile.created_at).getFullYear()}</span>}
                   </div>
-                  <p className="text-gray-600 leading-relaxed text-sm md:text-base">{profile?.bio || "No bio added yet."}</p>
+                  <p className="text-muted-foreground leading-relaxed text-sm md:text-base">{profile?.bio || "No bio added yet."}</p>
                 </div>
 
                 {/* Impact & Graph */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
+                  <div className="bg-gradient-to-br from-muted to-muted rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
                     <div className="absolute top-0 right-0 p-4 opacity-10"><Trophy className="w-24 h-24" /></div>
-                    <h3 className="text-sm font-medium text-slate-300 uppercase tracking-wide mb-1">Impact Score</h3>
+                    <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-1">Impact Score</h3>
                     <div className="text-4xl font-bold mb-4">{profile?.impact_score || 0}</div>
                     <div className="flex gap-4">
-                      <div><span className="text-xs text-slate-400 block">Reliability</span><span className="font-semibold text-emerald-400">{profile?.reliability_score || 100}%</span></div>
-                      <div><span className="text-xs text-slate-400 block">Rank</span><span className="font-semibold text-amber-400">{profile?.total_hours > 50 ? 'Gold' : profile?.total_hours > 10 ? 'Silver' : 'Bronze'}</span></div>
+                      <div><span className="text-xs text-muted-foreground block">Reliability</span><span className="font-semibold text-emerald-400">{profile?.reliability_score || 100}%</span></div>
+                      <div><span className="text-xs text-muted-foreground block">Rank</span><span className="font-semibold text-amber-400">{profile?.total_hours > 50 ? 'Gold' : profile?.total_hours > 10 ? 'Silver' : 'Bronze'}</span></div>
                     </div>
                   </div>
 
-                  <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
-                    <h3 className="text-sm font-bold text-gray-900 mb-4">Monthly Activity (Hours)</h3>
+                  <div className="bg-card rounded-2xl border border-border p-6 shadow-sm">
+                    <h3 className="text-sm font-bold text-foreground mb-4">Monthly Activity (Hours)</h3>
                     <div className="h-32">
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={activityData}>
@@ -905,16 +907,16 @@ export default function VolunteerProfile() {
 
                 {/* Certificates */}
                 {profile?.badges && profile.badges.length > 0 && (
-                  <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-                    <h3 className="text-lg font-bold text-gray-900 mb-4">Certificates & Badges</h3>
+                  <div className="bg-card rounded-2xl shadow-sm border border-border p-6">
+                    <h3 className="text-lg font-bold text-foreground mb-4">Certificates & Badges</h3>
                     <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
                       {profile.badges.map((badge: string, idx: number) => (
-                        <div key={idx} className="min-w-[140px] p-4 rounded-xl border border-amber-100 bg-amber-50/50 flex flex-col items-center justify-center text-center">
-                          <div className="w-12 h-12 bg-white rounded-full shadow-sm flex items-center justify-center mb-3">
+                        <div key={idx} className="min-w-[140px] p-4 rounded-xl border border-amber-100 bg-amber-50 dark:bg-amber-500/15/50 flex flex-col items-center justify-center text-center">
+                          <div className="w-12 h-12 bg-card rounded-full shadow-sm flex items-center justify-center mb-3">
                             <Trophy className="w-6 h-6 text-amber-500" />
                           </div>
-                          <h4 className="font-bold text-gray-900 text-sm">{badge}</h4>
-                          <p className="text-xs text-gray-500 mt-1">Earned via Activity</p>
+                          <h4 className="font-bold text-foreground text-sm">{badge}</h4>
+                          <p className="text-xs text-muted-foreground mt-1">Earned via Activity</p>
                         </div>
                       ))}
                     </div>
@@ -922,35 +924,35 @@ export default function VolunteerProfile() {
                 )}
 
                 {/* Journey */}
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-                  <h3 className="text-lg font-bold text-gray-900 mb-6">Volunteering History</h3>
+                <div className="bg-card rounded-2xl shadow-sm border border-border p-6">
+                  <h3 className="text-lg font-bold text-foreground mb-6">Volunteering History</h3>
                   {journey.length === 0 ? (
-                    <div className="text-center py-10"><Calendar className="w-10 h-10 text-gray-300 mx-auto mb-3" /><p className="text-gray-500 text-sm">No history yet.</p></div>
+                    <div className="text-center py-10"><Calendar className="w-10 h-10 text-muted-foreground mx-auto mb-3" /><p className="text-muted-foreground text-sm">No history yet.</p></div>
                   ) : (
                     <div className="space-y-8 relative pl-2">
-                      <div className="absolute top-2 left-[27px] h-full w-0.5 bg-gray-200 -z-10" />
+                      <div className="absolute top-2 left-[27px] h-full w-0.5 bg-muted -z-10" />
                       {journey.map((item, idx) => (
                         <div key={idx} className="flex gap-4 relative group">
                           <div className="w-14 shrink-0 flex flex-col items-center">
-                            <div className="w-3 h-3 rounded-full bg-white border-2 border-blue-500 z-10 shadow-[0_0_0_4px_white] mb-2" />
-                            <span className="text-xs font-semibold text-gray-400">{formatDate(item.event_date).split(',')[0]}</span>
+                            <div className="w-3 h-3 rounded-full bg-card border-2 border-blue-500 z-10 shadow-[0_0_0_4px_white] mb-2" />
+                            <span className="text-xs font-semibold text-muted-foreground">{formatDate(item.event_date).split(',')[0]}</span>
                           </div>
-                          <div className="flex-1 bg-white border border-gray-100 rounded-xl p-4 hover:border-blue-200 hover:shadow-md transition-all">
+                          <div className="flex-1 bg-card border border-border rounded-xl p-4 hover:border-blue-200 hover:shadow-md transition-all">
                             <div className="flex justify-between items-start mb-2">
                               <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-lg bg-gray-50 border border-gray-200 flex items-center justify-center shrink-0">
-                                  {item.organization_logo ? <img src={item.organization_logo} className="w-full h-full object-cover rounded-lg" /> : <Building2 className="w-5 h-5 text-gray-400" />}
+                                <div className="w-10 h-10 rounded-lg bg-muted border border-border flex items-center justify-center shrink-0">
+                                  {item.organization_logo ? <img src={item.organization_logo} className="w-full h-full object-cover rounded-lg" /> : <Building2 className="w-5 h-5 text-muted-foreground" />}
                                 </div>
                                 <div>
-                                  <h4 className="font-bold text-gray-900 text-sm md:text-base">{item.event_title}</h4>
-                                  <p className="text-xs text-gray-500">{item.organization_name}</p>
+                                  <h4 className="font-bold text-foreground text-sm md:text-base">{item.event_title}</h4>
+                                  <p className="text-xs text-muted-foreground">{item.organization_name}</p>
                                 </div>
                               </div>
-                              <span className={cn("px-2 py-1 border rounded text-xs font-medium whitespace-nowrap", item.hours_contributed > 0 ? "bg-green-50 text-green-700 border-green-100" : "bg-gray-50 text-gray-600 border-gray-200")}>{item.hours_contributed} hrs</span>
+                              <span className={cn("px-2 py-1 border rounded text-xs font-medium whitespace-nowrap", item.hours_contributed > 0 ? "bg-green-50 dark:bg-green-500/15 text-green-700 border-green-100" : "bg-muted text-muted-foreground border-border")}>{item.hours_contributed} hrs</span>
                             </div>
                             {item.endorsements?.comment && (
-                              <div className="mt-3 bg-blue-50/50 p-3 rounded-lg border border-blue-100">
-                                <p className="text-sm text-gray-700 italic">"{item.endorsements.comment}"</p>
+                              <div className="mt-3 bg-blue-50 dark:bg-blue-500/15/50 p-3 rounded-lg border border-blue-100">
+                                <p className="text-sm text-foreground italic">"{item.endorsements.comment}"</p>
                               </div>
                             )}
                           </div>
@@ -989,7 +991,7 @@ export default function VolunteerProfile() {
 
       {/* Error toast */}
       {errorToast && (
-        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[70] bg-gray-900 text-white text-sm px-4 py-2.5 rounded-full shadow-lg pointer-events-none">
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[70] bg-primary text-primary-foreground text-sm px-4 py-2.5 rounded-full shadow-lg pointer-events-none">
           {errorToast}
         </div>
       )}

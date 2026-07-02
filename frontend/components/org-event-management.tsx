@@ -126,14 +126,14 @@ export function OrgEventManagement() {
 
   // Navbar Helper
   const isActive = (path: string) =>
-    pathname === path ? "text-[#0066cc] font-medium" : "text-[#1d1d1f] hover:text-[#0066cc]"
+    pathname === path ? "text-[#0066cc] font-medium" : "text-foreground hover:text-[#0066cc]"
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600 mb-4"></div>
-          <p className="text-sm text-gray-600">Loading...</p>
+          <p className="text-sm text-muted-foreground">Loading...</p>
         </div>
       </div>
     )
@@ -151,24 +151,24 @@ export function OrgEventManagement() {
   else displayEvents = completedEvents
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 pb-24">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 dark:from-blue-50/10 via-white dark:via-background to-green-50 dark:to-green-50/10 pb-24">
 
-      <div className="fixed top-20 left-8 w-12 h-12 bg-white rounded-xl shadow-lg hidden md:flex items-center justify-center pointer-events-none">
+      <div className="fixed top-20 left-8 w-12 h-12 bg-card rounded-xl shadow-lg hidden md:flex items-center justify-center pointer-events-none">
         <Heart className="w-5 h-5 text-red-400" />
       </div>
-      <div className="fixed top-32 right-16 w-12 h-12 bg-white rounded-xl shadow-lg hidden md:flex items-center justify-center pointer-events-none">
+      <div className="fixed top-32 right-16 w-12 h-12 bg-card rounded-xl shadow-lg hidden md:flex items-center justify-center pointer-events-none">
         <Sparkles className="w-5 h-5 text-amber-500" />
       </div>
 
       <div className="max-w-6xl mx-auto px-4 md:px-8 py-5 md:py-8 relative">
-        <Link href="/org-home" className="inline-flex items-center gap-1.5 text-xs md:text-sm text-gray-600 hover:text-gray-900 transition-colors mb-3 md:mb-4">
+        <Link href="/org-home" className="inline-flex items-center gap-1.5 text-xs md:text-sm text-muted-foreground hover:text-foreground transition-colors mb-3 md:mb-4">
           <ChevronLeft className="w-3.5 h-3.5 md:w-4 md:h-4" />
           Back to Dashboard
         </Link>
 
         <div className="mb-4 md:mb-6">
-          <h1 className="text-xl md:text-3xl font-bold text-gray-900 mb-1 md:mb-2">My Events</h1>
-          <p className="text-[13px] md:text-base text-gray-600">Manage your volunteering events</p>
+          <h1 className="text-xl md:text-3xl font-bold text-foreground mb-1 md:mb-2">My Events</h1>
+          <p className="text-[13px] md:text-base text-muted-foreground">Manage your volunteering events</p>
         </div>
 
         {/* --- UPDATED TABS WITH PENDING SECTION --- */}
@@ -177,7 +177,7 @@ export function OrgEventManagement() {
             onClick={() => setActiveTab("pending")}
             className={`px-4 py-1.5 md:px-6 md:py-2.5 rounded-full font-medium text-[12px] md:text-sm transition-all whitespace-nowrap ${activeTab === "pending"
                 ? "bg-amber-500 text-white shadow-md"
-                : "bg-white text-gray-600 border border-gray-200 md:border-transparent hover:bg-gray-50"
+                : "bg-card text-muted-foreground border border-border md:border-transparent hover:bg-muted"
               }`}
           >
             Pending {pendingEvents.length > 0 && `(${pendingEvents.length})`}
@@ -186,7 +186,7 @@ export function OrgEventManagement() {
             onClick={() => setActiveTab("active")}
             className={`px-4 py-1.5 md:px-6 md:py-2.5 rounded-full font-medium text-[12px] md:text-sm transition-all whitespace-nowrap ${activeTab === "active"
                 ? "bg-orange-500 text-white shadow-md"
-                : "bg-white text-gray-600 border border-gray-200 md:border-transparent hover:bg-gray-50"
+                : "bg-card text-muted-foreground border border-border md:border-transparent hover:bg-muted"
               }`}
           >
             Active
@@ -195,7 +195,7 @@ export function OrgEventManagement() {
             onClick={() => setActiveTab("completed")}
             className={`px-4 py-1.5 md:px-6 md:py-2.5 rounded-full font-medium text-[12px] md:text-sm transition-all whitespace-nowrap ${activeTab === "completed"
                 ? "bg-orange-500 text-white shadow-md"
-                : "bg-white text-gray-600 border border-gray-200 md:border-transparent hover:bg-gray-50"
+                : "bg-card text-muted-foreground border border-border md:border-transparent hover:bg-muted"
               }`}
           >
             Completed
@@ -204,7 +204,7 @@ export function OrgEventManagement() {
             onClick={() => setActiveTab("cancelled")}
             className={`px-4 py-1.5 md:px-6 md:py-2.5 rounded-full font-medium text-[12px] md:text-sm transition-all whitespace-nowrap ${activeTab === "cancelled"
                 ? "bg-red-500 text-white shadow-md"
-                : "bg-white text-red-500 border border-red-100 md:border-transparent hover:bg-red-50"
+                : "bg-card text-red-500 border border-red-100 md:border-transparent hover:bg-red-50 dark:bg-red-500/15"
               }`}
           >
             Cancelled Drops {cancelledEvents.length > 0 && `(${cancelledEvents.length})`}
@@ -212,23 +212,23 @@ export function OrgEventManagement() {
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 text-sm">
+          <div className="bg-red-50 dark:bg-red-500/15 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 text-sm">
             {error}
           </div>
         )}
 
         {/* Event List */}
         {displayEvents.length === 0 ? (
-          <div className="text-center py-10 md:py-16 bg-white rounded-2xl shadow-sm border border-gray-100">
+          <div className="text-center py-10 md:py-16 bg-card rounded-2xl shadow-sm border border-border">
             {activeTab === "pending" ? (
               <Hourglass className="w-10 h-10 md:w-16 md:h-16 text-amber-300 mx-auto mb-3 md:mb-4" />
             ) : (
-              <Calendar className="w-10 h-10 md:w-16 md:h-16 text-gray-300 mx-auto mb-3 md:mb-4" />
+              <Calendar className="w-10 h-10 md:w-16 md:h-16 text-muted-foreground mx-auto mb-3 md:mb-4" />
             )}
-            <h3 className="text-[15px] md:text-lg font-semibold text-gray-900 mb-1.5 md:mb-2">
+            <h3 className="text-[15px] md:text-lg font-semibold text-foreground mb-1.5 md:mb-2">
               No {activeTab === "cancelled" ? "cancelled" : activeTab} events
             </h3>
-            <p className="text-[13px] md:text-sm text-gray-500 mb-5 md:mb-6">
+            <p className="text-[13px] md:text-sm text-muted-foreground mb-5 md:mb-6">
               {activeTab === "pending"
                 ? "When you create an event, it will appear here for review."
                 : activeTab === "active"
@@ -251,7 +251,7 @@ export function OrgEventManagement() {
             {displayEvents.map((event) => (
               <div
                 key={event.id}
-                className="bg-white rounded-2xl md:rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow"
+                className="bg-card rounded-2xl md:rounded-2xl shadow-sm border border-border overflow-hidden hover:shadow-md transition-shadow"
               >
                 <div className="flex flex-col md:flex-row">
                   
@@ -286,7 +286,7 @@ export function OrgEventManagement() {
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2 mb-1 md:mb-2">
-                          <h3 className="text-[15px] md:text-xl font-bold text-gray-900 truncate leading-tight mt-0.5 md:mt-0">
+                          <h3 className="text-[15px] md:text-xl font-bold text-foreground truncate leading-tight mt-0.5 md:mt-0">
                             {event.title}
                           </h3>
                           
@@ -294,12 +294,12 @@ export function OrgEventManagement() {
                           <span className={cn(
                             "px-2 py-0.5 md:px-3 md:py-1 text-[9px] md:text-xs font-bold rounded-full shrink-0 border uppercase tracking-wider",
                             event.status === 'pending'
-                              ? "bg-amber-50 text-amber-600 border-amber-100"
+                              ? "bg-amber-50 dark:bg-amber-500/15 text-amber-600 border-amber-100"
                               : event.status === 'cancelled'
-                              ? "bg-red-50 text-red-500 border-red-100"
+                              ? "bg-red-50 dark:bg-red-500/15 text-red-500 border-red-100"
                               : (event.status === 'completed' || isEventCompleted(event))
-                              ? "bg-gray-50 text-gray-600 border-gray-200"
-                              : "bg-emerald-50 text-emerald-600 border-emerald-100"
+                              ? "bg-muted text-muted-foreground border-border"
+                              : "bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 border-emerald-100"
                           )}>
                             {event.status === 'pending'
                               ? 'Pending Review'
@@ -311,13 +311,13 @@ export function OrgEventManagement() {
                           </span>
                         </div>
                         
-                        <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-4 text-[11px] md:text-sm text-gray-500">
+                        <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-4 text-[11px] md:text-sm text-muted-foreground">
                           <div className="flex items-center gap-1.5 truncate">
-                            <Calendar className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0 text-gray-400" />
+                            <Calendar className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0 text-muted-foreground" />
                             <span className="truncate">{formatDate(event.event_date)} • {formatTime(event.start_time)}</span>
                           </div>
                           <div className="flex items-center gap-1.5 truncate">
-                            <MapPin className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0 text-gray-400" />
+                            <MapPin className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0 text-muted-foreground" />
                             <span className="truncate">{event.location}</span>
                           </div>
                         </div>
@@ -326,14 +326,14 @@ export function OrgEventManagement() {
 
                     <div className="mb-3 md:mb-4 mt-3 md:mt-0">
                       <div className="flex items-center justify-between text-[11px] md:text-sm mb-1.5 md:mb-2">
-                        <span className="text-gray-500">
-                          <span className="font-medium text-gray-900">{event.registered_count}</span>/{event.total_slots} Registered
+                        <span className="text-muted-foreground">
+                          <span className="font-medium text-foreground">{event.registered_count}</span>/{event.total_slots} Registered
                         </span>
                         <span className="font-bold text-teal-600">
                           {getRegistrationPercentage(event)}%
                         </span>
                       </div>
-                      <div className="w-full h-1.5 md:h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="w-full h-1.5 md:h-2 bg-muted rounded-full overflow-hidden">
                         <div
                           className="h-full bg-gradient-to-r from-teal-500 to-emerald-500 transition-all rounded-full"
                           style={{ width: `${getRegistrationPercentage(event)}%` }}
@@ -347,7 +347,7 @@ export function OrgEventManagement() {
                         href={activeTab === "completed"
                           ? `/org-events/${event.id}/report`
                           : `/org-events/${event.id}`}
-                        className="px-3 py-1.5 md:px-4 md:py-2 bg-teal-50 text-teal-600 rounded-lg text-[11px] md:text-sm font-semibold hover:bg-teal-100 transition-colors inline-flex items-center gap-1.5 md:gap-2 border border-teal-100/50"
+                        className="px-3 py-1.5 md:px-4 md:py-2 bg-teal-50 dark:bg-teal-500/15 text-teal-600 rounded-lg text-[11px] md:text-sm font-semibold hover:bg-teal-100 dark:bg-teal-500/15 transition-colors inline-flex items-center gap-1.5 md:gap-2 border border-teal-100/50"
                       >
                         <Eye className="w-3.5 h-3.5 md:w-4 md:h-4" />
                         View
@@ -357,7 +357,7 @@ export function OrgEventManagement() {
                       {(activeTab === "pending" || event.status === 'pending') && (
                         <Link
                           href={`/edit-event/${event.id}`}
-                          className="px-3 py-1.5 md:px-4 md:py-2 bg-blue-50 text-blue-600 rounded-lg text-[11px] md:text-sm font-semibold hover:bg-blue-100 transition-colors inline-flex items-center gap-1.5 md:gap-2 border border-blue-100/50"
+                          className="px-3 py-1.5 md:px-4 md:py-2 bg-blue-50 dark:bg-blue-500/15 text-blue-600 rounded-lg text-[11px] md:text-sm font-semibold hover:bg-blue-100 dark:bg-blue-500/15 transition-colors inline-flex items-center gap-1.5 md:gap-2 border border-blue-100/50"
                         >
                           <Edit className="w-3.5 h-3.5 md:w-4 md:h-4" />
                           Edit
@@ -369,7 +369,7 @@ export function OrgEventManagement() {
                         <button
                           onClick={() => handleCancelEvent(event.id)}
                           disabled={deletingEventId === event.id}
-                          className="px-3 py-1.5 md:px-4 md:py-2 bg-red-50 text-red-600 rounded-lg text-[11px] md:text-sm font-semibold hover:bg-red-100 transition-colors inline-flex items-center gap-1.5 md:gap-2 disabled:opacity-50 border border-red-100/50 ml-auto md:ml-0"
+                          className="px-3 py-1.5 md:px-4 md:py-2 bg-red-50 dark:bg-red-500/15 text-red-600 rounded-lg text-[11px] md:text-sm font-semibold hover:bg-red-100 dark:bg-red-500/15 transition-colors inline-flex items-center gap-1.5 md:gap-2 disabled:opacity-50 border border-red-100/50 ml-auto md:ml-0"
                         >
                           <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
                           {deletingEventId === event.id ? "Wait..." : "Cancel"}

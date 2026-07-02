@@ -112,7 +112,7 @@ export function OrgTopNav() {
   const displayInitial = displayName ? displayName.charAt(0).toUpperCase() : "O"
 
   return (
-    <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-[#f5f5f7]">
+    <nav className="sticky top-0 z-50 bg-card/95 backdrop-blur-md border-b border-border">
       <div className="max-w-7xl mx-auto px-4 md:px-8 h-12 md:h-14 flex items-center justify-between relative">
 
         {/* Logo */}
@@ -122,17 +122,17 @@ export function OrgTopNav() {
             alt="Kindly"
             width={100}
             height={30}
-            className="h-5 md:h-6 w-auto"
+            className="h-5 md:h-6 w-auto dark:invert"
             priority
           />
         </Link>
 
         {/* Navigation Links (Desktop, absolutely centered) */}
         <div className="hidden md:flex items-center gap-8 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-          <Link href="/org-home" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-orange-600 transition-colors font-medium">Dashboard</Link>
-          <Link href="/org-events" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-orange-600 transition-colors font-medium">Events</Link>
-          <Link href="/social" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-orange-600 transition-colors font-medium">Social</Link>
-          <Link href="/org-analytics" className="text-[13px] md:text-[15px] text-[#1d1d1f] hover:text-orange-600 transition-colors font-medium flex items-center gap-1.5">Analytics</Link>
+          <Link href="/org-home" className="text-[13px] md:text-[15px] text-foreground hover:text-orange-600 transition-colors font-medium">Dashboard</Link>
+          <Link href="/org-events" className="text-[13px] md:text-[15px] text-foreground hover:text-orange-600 transition-colors font-medium">Events</Link>
+          <Link href="/social" className="text-[13px] md:text-[15px] text-foreground hover:text-orange-600 transition-colors font-medium">Social</Link>
+          <Link href="/org-analytics" className="text-[13px] md:text-[15px] text-foreground hover:text-orange-600 transition-colors font-medium flex items-center gap-1.5">Analytics</Link>
         </div>
 
         {/* Right: Bell + Profile avatar */}
@@ -142,10 +142,10 @@ export function OrgTopNav() {
           <div ref={bellRef} className="relative">
             <button
               onClick={handleBellClick}
-              className="relative p-2 rounded-full hover:bg-gray-100 active:scale-95 transition-all"
+              className="relative p-2 rounded-full hover:bg-muted active:scale-95 transition-all"
               aria-label="Notifications"
             >
-              <Bell className="w-5 h-5 text-[#1d1d1f]" />
+              <Bell className="w-5 h-5 text-foreground" />
               {unreadCount > 0 && (
                 <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 ring-2 ring-white" />
               )}
@@ -153,16 +153,16 @@ export function OrgTopNav() {
 
             {/* Dropdown */}
             {bellOpen && (
-              <div className="absolute top-full right-0 mt-2 w-[320px] bg-white rounded-2xl shadow-2xl border border-[#f0f0f0] overflow-hidden z-[100]">
+              <div className="absolute top-full right-0 mt-2 w-[320px] bg-card rounded-2xl shadow-2xl border border-border overflow-hidden z-[100]">
 
                 {/* Header */}
-                <div className="px-4 py-3 border-b border-[#f5f5f7] flex items-center justify-between">
-                  <h3 className="text-[14px] font-semibold text-[#1d1d1f]">Notifications</h3>
+                <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+                  <h3 className="text-[14px] font-semibold text-foreground">Notifications</h3>
                   <button
                     onClick={() => setBellOpen(false)}
-                    className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+                    className="p-1 rounded-full hover:bg-muted transition-colors"
                   >
-                    <X className="w-3.5 h-3.5 text-[#86868b]" />
+                    <X className="w-3.5 h-3.5 text-muted-foreground" />
                   </button>
                 </div>
 
@@ -170,26 +170,26 @@ export function OrgTopNav() {
                 <div className="max-h-[380px] overflow-y-auto">
                   {bellLoading ? (
                     <div className="flex items-center justify-center py-10">
-                      <Loader2 className="w-5 h-5 text-gray-300 animate-spin" />
+                      <Loader2 className="w-5 h-5 text-muted-foreground animate-spin" />
                     </div>
                   ) : notifications.length === 0 ? (
                     <div className="py-10 text-center px-4">
-                      <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3">
-                        <Bell className="w-5 h-5 text-gray-300" />
+                      <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
+                        <Bell className="w-5 h-5 text-muted-foreground" />
                       </div>
-                      <p className="text-[13px] font-medium text-[#1d1d1f]">All caught up</p>
-                      <p className="text-[12px] text-[#86868b] mt-0.5">No new notifications</p>
+                      <p className="text-[13px] font-medium text-foreground">All caught up</p>
+                      <p className="text-[12px] text-muted-foreground mt-0.5">No new notifications</p>
                     </div>
                   ) : (
                     notifications.map((n) => (
                       <div
                         key={n.id}
-                        className={`flex items-start gap-3 px-4 py-3 border-b border-[#f5f5f7] last:border-0 group transition-colors ${
-                          !n.read ? "bg-orange-50/50" : "bg-white hover:bg-gray-50/50"
+                        className={`flex items-start gap-3 px-4 py-3 border-b border-border last:border-0 group transition-colors ${
+                          !n.read ? "bg-orange-50 dark:bg-orange-500/15/50" : "bg-card hover:bg-muted/50"
                         }`}
                       >
                         {/* Actor avatar */}
-                        <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center shrink-0 overflow-hidden mt-0.5">
+                        <div className="w-8 h-8 rounded-full bg-orange-100 dark:bg-orange-500/15 flex items-center justify-center shrink-0 overflow-hidden mt-0.5">
                           {n.actor_avatar ? (
                             <img src={n.actor_avatar} alt="" className="w-full h-full object-cover" />
                           ) : n.actor_name ? (
@@ -203,13 +203,13 @@ export function OrgTopNav() {
 
                         {/* Content */}
                         <div className="flex-1 min-w-0">
-                          <p className={`text-[13px] leading-snug ${!n.read ? "font-medium text-[#1d1d1f]" : "text-[#3d3d3f]"}`}>
+                          <p className={`text-[13px] leading-snug ${!n.read ? "font-medium text-foreground" : "text-[#3d3d3f]"}`}>
                             {n.actor_name && (
                               <span className="font-semibold">{n.actor_name} </span>
                             )}
                             {n.message}
                           </p>
-                          <p className="text-[11px] text-[#86868b] mt-0.5">
+                          <p className="text-[11px] text-muted-foreground mt-0.5">
                             {timeAgo(n.created_at)}
                           </p>
                         </div>
@@ -222,10 +222,10 @@ export function OrgTopNav() {
                         {/* Delete button — appears on row hover */}
                         <button
                           onClick={(e) => handleDelete(e, n.id)}
-                          className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-gray-200 transition-all shrink-0 mt-0.5"
+                          className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-muted transition-all shrink-0 mt-0.5"
                           aria-label="Dismiss"
                         >
-                          <X className="w-3 h-3 text-[#86868b]" />
+                          <X className="w-3 h-3 text-muted-foreground" />
                         </button>
                       </div>
                     ))
@@ -237,11 +237,11 @@ export function OrgTopNav() {
 
           {/* Profile avatar (Desktop only) */}
           <Link href={profile?.id ? `/organizations/${profile.id}` : "#"} className="hidden md:block group">
-            <div className="w-9 h-9 md:w-10 md:h-10 rounded-full overflow-hidden border border-gray-200 group-hover:border-orange-400 group-active:scale-95 transition-all bg-gray-50 flex items-center justify-center shadow-sm">
+            <div className="w-9 h-9 md:w-10 md:h-10 rounded-full overflow-hidden border border-border group-hover:border-orange-400 group-active:scale-95 transition-all bg-muted flex items-center justify-center shadow-sm">
               {displayImage ? (
                 <img src={displayImage} alt="Profile" className="w-full h-full object-cover" />
               ) : (
-                <span className="font-bold text-gray-500 group-hover:text-gray-900 transition-colors text-sm">
+                <span className="font-bold text-muted-foreground group-hover:text-foreground transition-colors text-sm">
                   {displayInitial}
                 </span>
               )}

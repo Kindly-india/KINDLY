@@ -31,7 +31,7 @@ function AuthCallbackLogic() {
   }, [params, router])
 
   return (
-    <div className="fixed inset-0 bg-white flex items-center justify-center">
+    <div className="fixed inset-0 bg-card flex items-center justify-center">
       <div className="w-8 h-8 rounded-full border-2 border-[#80242a] border-t-transparent animate-spin" />
     </div>
   )
@@ -41,7 +41,7 @@ export default function AuthCallbackPage() {
   return (
     <Suspense
       fallback={
-        <div className="fixed inset-0 bg-white flex items-center justify-center">
+        <div className="fixed inset-0 bg-card flex items-center justify-center">
           <div className="w-8 h-8 rounded-full border-2 border-[#80242a] border-t-transparent animate-spin" />
         </div>
       }

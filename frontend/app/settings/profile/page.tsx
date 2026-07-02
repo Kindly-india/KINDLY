@@ -219,34 +219,34 @@ export default function EditProfile() {
     }
   }
 
-  if (loading) return <div className="min-h-screen bg-white flex items-center justify-center"><Loader2 className="w-8 h-8 text-black animate-spin" /></div>
+  if (loading) return <div className="min-h-screen bg-background flex items-center justify-center"><Loader2 className="w-8 h-8 text-foreground animate-spin" /></div>
 
   const currentAvatarUrl = userType === 'volunteer' ? formData.avatar_url : formData.logo_url
   const currentName = userType === 'volunteer' ? formData.full_name : formData.name
 
   return (
-    <div className="min-h-screen bg-[#f5f5f7] pb-20">
-      <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200">
+    <div className="min-h-screen bg-muted pb-20">
+      <div className="sticky top-0 z-50 bg-card/80 backdrop-blur-md border-b border-border">
         <div className="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
-          <button onClick={() => router.back()} className="text-gray-500 hover:text-gray-900 flex items-center gap-1">
+          <button onClick={() => router.back()} className="text-muted-foreground hover:text-foreground flex items-center gap-1">
             <ChevronLeft className="w-5 h-5" />
             <span className="text-sm font-medium">Cancel</span>
           </button>
-          <h1 className="text-base font-semibold text-gray-900">Edit Profile</h1>
-          <button onClick={handleSave} disabled={saving} className="bg-black text-white px-5 py-1.5 rounded-full text-sm font-medium hover:bg-gray-800 disabled:opacity-50 flex items-center gap-2 transition-colors">
+          <h1 className="text-base font-semibold text-foreground">Edit Profile</h1>
+          <button onClick={handleSave} disabled={saving} className="bg-primary text-primary-foreground px-5 py-1.5 rounded-full text-sm font-medium hover:bg-primary disabled:opacity-50 flex items-center gap-2 transition-colors">
             {saving && <Loader2 className="w-3 h-3 animate-spin" />} Save
           </button>
         </div>
       </div>
 
       <div className="max-w-3xl mx-auto px-4 pt-6">
-        <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-200 mb-6">
+        <div className="bg-card rounded-2xl overflow-hidden shadow-sm border border-border mb-6">
           
-          <div className="relative h-48 bg-linear-to-r from-blue-50 to-slate-100 group">
+          <div className="relative h-48 bg-linear-to-r from-blue-50 to-muted group">
             {formData.cover_url ? <img src={formData.cover_url} alt="Cover" className="w-full h-full object-cover" /> : <div className="absolute inset-0 opacity-[0.05] bg-[radial-gradient(#000_1px,transparent_1px)] bg-size-[16px_16px]" />}
             <div className="absolute inset-0 bg-black/10 group-hover:bg-black/30 transition-colors flex items-center justify-center cursor-pointer" onClick={() => coverInputRef.current?.click()}>
-              <div className="bg-white/90 backdrop-blur px-4 py-2 rounded-full flex items-center gap-2 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity transform translate-y-2 group-hover:translate-y-0">
-                <Camera className="w-4 h-4" /><span className="text-xs font-bold text-gray-700">Change Cover</span>
+              <div className="bg-card/90 backdrop-blur px-4 py-2 rounded-full flex items-center gap-2 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity transform translate-y-2 group-hover:translate-y-0">
+                <Camera className="w-4 h-4" /><span className="text-xs font-bold text-foreground">Change Cover</span>
               </div>
             </div>
             <input ref={coverInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleProfileImageUpload(e.target.files[0], 'cover')} />
@@ -254,8 +254,8 @@ export default function EditProfile() {
           <div className="px-6 pb-8">
             <div className="flex flex-col md:flex-row items-center md:items-end -mt-12 mb-6 gap-6 relative z-10">
               <div className="relative group cursor-pointer" onClick={() => avatarInputRef.current?.click()}>
-                <div className="w-28 h-28 rounded-full border-4 border-white bg-white shadow-md overflow-hidden relative">
-                  {currentAvatarUrl ? <img src={currentAvatarUrl} alt="Avatar" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-gray-100 flex items-center justify-center text-3xl font-bold text-gray-300">{currentName?.charAt(0) || '?'}</div>}
+                <div className="w-28 h-28 rounded-full border-4 border-white bg-card shadow-md overflow-hidden relative">
+                  {currentAvatarUrl ? <img src={currentAvatarUrl} alt="Avatar" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-muted flex items-center justify-center text-3xl font-bold text-muted-foreground">{currentName?.charAt(0) || '?'}</div>}
                   <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                     {uploadingAvatar ? <Loader2 className="w-6 h-6 text-white animate-spin" /> : <Camera className="w-6 h-6 text-white" />}
                   </div>
@@ -263,8 +263,8 @@ export default function EditProfile() {
                 <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleProfileImageUpload(e.target.files[0], 'avatar')} />
               </div>
               <div className="text-center md:text-left mb-2 md:mb-0 flex-1">
-                <h2 className="text-2xl font-bold text-gray-900">{currentName || 'Your Name'}</h2>
-                <p className="text-sm text-gray-500">{userType === 'volunteer' ? formData.headline : formData.tagline || 'Add a tagline'}</p>
+                <h2 className="text-2xl font-bold text-foreground">{currentName || 'Your Name'}</h2>
+                <p className="text-sm text-muted-foreground">{userType === 'volunteer' ? formData.headline : formData.tagline || 'Add a tagline'}</p>
               </div>
             </div>
 
@@ -278,8 +278,8 @@ export default function EditProfile() {
                    </div>
                    <TextAreaField label="Bio" value={formData.bio} onChange={(v: string) => setFormData({ ...formData, bio: v })} />
                    
-                   <div className="pt-4 border-t border-gray-100">
-                    <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2"><MapPin className="w-4 h-4 text-blue-600" /> Contact & Location</h3>
+                   <div className="pt-4 border-t border-border">
+                    <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2"><MapPin className="w-4 h-4 text-blue-600" /> Contact & Location</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
                         <InputField label="Email" icon={<Mail className="w-4 h-4" />} value={formData.email} onChange={(v: string) => setFormData({ ...formData, email: v })} />
                         <InputField label="Phone" icon={<Phone className="w-4 h-4" />} value={formData.phone} onChange={(v: string) => setFormData({ ...formData, phone: v })} />
@@ -290,33 +290,33 @@ export default function EditProfile() {
                     </div>
                    </div>
 
-                   <div className="pt-4 border-t border-gray-100">
-                    <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2"><Globe className="w-4 h-4 text-purple-600" /> Social Links</h3>
+                   <div className="pt-4 border-t border-border">
+                    <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2"><Globe className="w-4 h-4 text-purple-600" /> Social Links</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <InputField label="LinkedIn" icon={<Linkedin className="w-4 h-4" />} value={formData.linkedin} onChange={(v: string) => setFormData({ ...formData, linkedin: v })} />
                         <InputField label="Instagram" icon={<Instagram className="w-4 h-4" />} value={formData.instagram} onChange={(v: string) => setFormData({ ...formData, instagram: v })} />
                     </div>
                   </div>
 
-                   <div className="pt-4 border-t border-gray-100">
+                   <div className="pt-4 border-t border-border">
                     <TagInput label="Skills" items={formData.skills} newItem={newSkill} setNewItem={setNewSkill} onAdd={(e: any) => { e?.preventDefault(); handleAddItem('skills', newSkill, setNewSkill)}} onRemove={(item: string) => handleRemoveItem('skills', item)} />
                    </div>
 
-                   <div className="pt-4 border-t border-gray-100">
+                   <div className="pt-4 border-t border-border">
                      <div className="flex items-center justify-between">
                        <div>
-                         <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
-                           <Lock className="w-4 h-4 text-gray-500" /> Private Account
+                         <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                           <Lock className="w-4 h-4 text-muted-foreground" /> Private Account
                          </h3>
-                         <p className="text-xs text-gray-500 mt-0.5">Only approved followers can see your activity.</p>
+                         <p className="text-xs text-muted-foreground mt-0.5">Only approved followers can see your activity.</p>
                        </div>
                        <button
                          type="button"
                          onClick={() => setFormData((prev: any) => ({ ...prev, is_private: !prev.is_private }))}
-                         className={`relative w-11 h-6 rounded-full transition-colors duration-200 focus:outline-none ${formData.is_private ? 'bg-gray-900' : 'bg-gray-200'}`}
+                         className={`relative w-11 h-6 rounded-full transition-colors duration-200 focus:outline-none ${formData.is_private ? 'bg-primary' : 'bg-muted'}`}
                          aria-label="Toggle private account"
                        >
-                         <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${formData.is_private ? 'translate-x-5' : 'translate-x-0'}`} />
+                         <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-card shadow-sm transition-transform duration-200 ${formData.is_private ? 'translate-x-5' : 'translate-x-0'}`} />
                        </button>
                      </div>
                    </div>
@@ -333,8 +333,8 @@ export default function EditProfile() {
                   <TextAreaField label="Mission Statement" value={formData.mission_statement} onChange={(v: string) => setFormData({ ...formData, mission_statement: v })} />
                   <TextAreaField label="About Us (Description)" value={formData.intent_description} onChange={(v: string) => setFormData({ ...formData, intent_description: v })} />
 
-                  <div className="pt-4 border-t border-gray-100">
-                    <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2"><MapPin className="w-4 h-4 text-blue-600" /> Contact Details</h3>
+                  <div className="pt-4 border-t border-border">
+                    <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2"><MapPin className="w-4 h-4 text-blue-600" /> Contact Details</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
                       <InputField label="City" icon={<MapPin className="w-4 h-4" />} value={formData.area_locality} onChange={(v: string) => setFormData({ ...formData, area_locality: v })} />
                       <InputField label="Website" icon={<Globe className="w-4 h-4" />} value={formData.website} onChange={(v: string) => setFormData({ ...formData, website: v })} />
@@ -345,8 +345,8 @@ export default function EditProfile() {
                     </div>
                   </div>
 
-                  <div className="pt-4 border-t border-gray-100">
-                    <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2"><Globe className="w-4 h-4 text-purple-600" /> Social Links</h3>
+                  <div className="pt-4 border-t border-border">
+                    <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2"><Globe className="w-4 h-4 text-purple-600" /> Social Links</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <InputField label="LinkedIn" icon={<Linkedin className="w-4 h-4" />} value={formData.linkedin} onChange={(v: string) => setFormData({ ...formData, linkedin: v })} />
                         <InputField label="Instagram" icon={<Instagram className="w-4 h-4" />} value={formData.instagram} onChange={(v: string) => setFormData({ ...formData, instagram: v })} />
@@ -354,46 +354,46 @@ export default function EditProfile() {
                   </div>
 
                   {/* ✅ KEY PEOPLE */}
-                  <div className="pt-4 border-t border-gray-100">
-                    <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2"><Users2 className="w-4 h-4 text-indigo-600" /> Key People</h3>
+                  <div className="pt-4 border-t border-border">
+                    <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2"><Users2 className="w-4 h-4 text-indigo-600" /> Key People</h3>
                     
-                    <div className="flex flex-col md:flex-row gap-3 mb-3 bg-gray-50 p-3 rounded-xl border border-gray-200">
-                        <div onClick={() => teamFileInputRef.current?.click()} className="w-10 h-10 rounded-full bg-gray-200 border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-gray-300 overflow-hidden shrink-0 relative">
-                            {teamImage ? <img src={teamImage} className="w-full h-full object-cover" /> : <User className="w-5 h-5 text-gray-500" />}
-                            {isUploadingTeam && <div className="absolute inset-0 bg-black/50 flex items-center justify-center"><Loader2 className="w-4 h-4 text-white animate-spin"/></div>}
+                    <div className="flex flex-col md:flex-row gap-3 mb-3 bg-muted p-3 rounded-xl border border-border">
+                        <div onClick={() => teamFileInputRef.current?.click()} className="w-10 h-10 rounded-full bg-muted border border-border flex items-center justify-center cursor-pointer hover:bg-muted overflow-hidden shrink-0 relative">
+                            {teamImage ? <img src={teamImage} className="w-full h-full object-cover" /> : <User className="w-5 h-5 text-muted-foreground" />}
+                            {isUploadingTeam && <div className="absolute inset-0 bg-primary/50 flex items-center justify-center"><Loader2 className="w-4 h-4 text-primary-foreground animate-spin"/></div>}
                         </div>
                         <input ref={teamFileInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleNestedUpload(e.target.files[0], 'team')} />
 
-                        <input type="text" placeholder="Name" value={teamName} onChange={e => setTeamName(e.target.value)} className="flex-1 bg-white border border-gray-200 px-3 py-2 rounded-lg text-sm outline-none" />
-                        <input type="text" placeholder="Role" value={teamRole} onChange={e => setTeamRole(e.target.value)} className="flex-1 bg-white border border-gray-200 px-3 py-2 rounded-lg text-sm outline-none" />
-                        <button onClick={addTeamMember} disabled={isUploadingTeam} className="bg-black text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-gray-800 disabled:opacity-50">Add</button>
+                        <input type="text" placeholder="Name" value={teamName} onChange={e => setTeamName(e.target.value)} className="flex-1 bg-card border border-border px-3 py-2 rounded-lg text-sm outline-none" />
+                        <input type="text" placeholder="Role" value={teamRole} onChange={e => setTeamRole(e.target.value)} className="flex-1 bg-card border border-border px-3 py-2 rounded-lg text-sm outline-none" />
+                        <button onClick={addTeamMember} disabled={isUploadingTeam} className="bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-bold hover:bg-primary disabled:opacity-50">Add</button>
                     </div>
 
                     <div className="space-y-2">
                         {formData.team_members?.map((m: any, i: number) => (
-                            <div key={i} className="flex items-center justify-between p-3 bg-white border border-gray-100 rounded-lg">
+                            <div key={i} className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-full bg-gray-100 overflow-hidden">{m.img ? <img src={m.img} className="w-full h-full object-cover" /> : <User className="w-4 h-4 m-2 text-gray-400" />}</div>
-                                    <div><p className="text-sm font-bold text-gray-900">{m.name}</p><p className="text-xs text-gray-500">{m.role}</p></div>
+                                    <div className="w-8 h-8 rounded-full bg-muted overflow-hidden">{m.img ? <img src={m.img} className="w-full h-full object-cover" /> : <User className="w-4 h-4 m-2 text-muted-foreground" />}</div>
+                                    <div><p className="text-sm font-bold text-foreground">{m.name}</p><p className="text-xs text-muted-foreground">{m.role}</p></div>
                                 </div>
-                                <button onClick={(e) => removeTeamMember(e, i)} className="text-gray-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
+                                <button onClick={(e) => removeTeamMember(e, i)} className="text-muted-foreground hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
                             </div>
                         ))}
                     </div>
                   </div>
 
                   {/* ✅ ACHIEVEMENTS */}
-                  <div className="pt-4 border-t border-gray-100">
-                    <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2"><Trophy className="w-4 h-4 text-amber-500" /> Wall of Fame</h3>
+                  <div className="pt-4 border-t border-border">
+                    <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2"><Trophy className="w-4 h-4 text-amber-500" /> Wall of Fame</h3>
                     
-                    <div className="flex flex-col gap-3 mb-3 bg-gray-50 p-3 rounded-xl border border-gray-200">
+                    <div className="flex flex-col gap-3 mb-3 bg-muted p-3 rounded-xl border border-border">
                         <div className="grid grid-cols-2 gap-3">
-                            <input type="text" placeholder="Title (e.g. Best NGO)" value={achTitle} onChange={e => setAchTitle(e.target.value)} className="bg-white border border-gray-200 px-3 py-2 rounded-lg text-sm outline-none" />
-                            <input type="text" placeholder="Date (e.g. Jan 2024)" value={achDate} onChange={e => setAchDate(e.target.value)} className="bg-white border border-gray-200 px-3 py-2 rounded-lg text-sm outline-none" />
+                            <input type="text" placeholder="Title (e.g. Best NGO)" value={achTitle} onChange={e => setAchTitle(e.target.value)} className="bg-card border border-border px-3 py-2 rounded-lg text-sm outline-none" />
+                            <input type="text" placeholder="Date (e.g. Jan 2024)" value={achDate} onChange={e => setAchDate(e.target.value)} className="bg-card border border-border px-3 py-2 rounded-lg text-sm outline-none" />
                         </div>
                         
                         {/* Image Switcher Fix */}
-                        <div className="flex gap-4 text-xs font-medium text-gray-600">
+                        <div className="flex gap-4 text-xs font-medium text-muted-foreground">
                             <label className="flex items-center gap-2 cursor-pointer">
                               <input type="radio" checked={achImgSource === 'upload'} onChange={() => setAchImgSource('upload')} /> 
                               Upload Image
@@ -406,42 +406,42 @@ export default function EditProfile() {
 
                         {achImgSource === 'upload' ? (
                             <div className="flex items-center gap-3">
-                                <div onClick={() => achFileInputRef.current?.click()} className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 text-sm text-gray-500 w-full">
+                                <div onClick={() => achFileInputRef.current?.click()} className="flex items-center gap-2 px-3 py-2 bg-card border border-border rounded-lg cursor-pointer hover:bg-muted text-sm text-muted-foreground w-full">
                                     <Upload className="w-4 h-4" /> {achImageUrl ? "Image Ready" : "Upload Certificate / Photo"}
                                 </div>
                                 <input ref={achFileInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleNestedUpload(e.target.files[0], 'achievement')} />
                                 {isUploadingAch && <Loader2 className="w-4 h-4 animate-spin text-blue-600" />}
                             </div>
                         ) : (
-                            <input type="text" placeholder="Paste Image URL" value={achImageUrl} onChange={e => setAchImageUrl(e.target.value)} className="bg-white border border-gray-200 px-3 py-2 rounded-lg text-sm outline-none" />
+                            <input type="text" placeholder="Paste Image URL" value={achImageUrl} onChange={e => setAchImageUrl(e.target.value)} className="bg-card border border-border px-3 py-2 rounded-lg text-sm outline-none" />
                         )}
 
-                        <input type="text" placeholder="Article Link (Optional)" value={achLink} onChange={e => setAchLink(e.target.value)} className="bg-white border border-gray-200 px-3 py-2 rounded-lg text-sm outline-none" />
-                        <textarea placeholder="Description" value={achDesc} onChange={e => setAchDesc(e.target.value)} className="bg-white border border-gray-200 px-3 py-2 rounded-lg text-sm outline-none resize-none" rows={2} />
+                        <input type="text" placeholder="Article Link (Optional)" value={achLink} onChange={e => setAchLink(e.target.value)} className="bg-card border border-border px-3 py-2 rounded-lg text-sm outline-none" />
+                        <textarea placeholder="Description" value={achDesc} onChange={e => setAchDesc(e.target.value)} className="bg-card border border-border px-3 py-2 rounded-lg text-sm outline-none resize-none" rows={2} />
                         
-                        <button onClick={addAchievement} disabled={isUploadingAch} className="bg-black text-white w-full py-2 rounded-lg text-sm font-bold hover:bg-gray-800 disabled:opacity-50">Add Achievement</button>
+                        <button onClick={addAchievement} disabled={isUploadingAch} className="bg-primary text-primary-foreground w-full py-2 rounded-lg text-sm font-bold hover:bg-primary disabled:opacity-50">Add Achievement</button>
                     </div>
 
                     <div className="space-y-2">
                         {formData.achievements?.map((a: any, i: number) => (
-                            <div key={i} className="flex items-center justify-between p-3 bg-white border border-gray-100 rounded-lg shadow-xs">
+                            <div key={i} className="flex items-center justify-between p-3 bg-card border border-border rounded-lg shadow-xs">
                                 <div className="flex gap-3">
-                                    {a.image_url && <img src={a.image_url} className="w-12 h-12 object-cover rounded-md bg-gray-100" />}
+                                    {a.image_url && <img src={a.image_url} className="w-12 h-12 object-cover rounded-md bg-muted" />}
                                     <div>
-                                        <p className="text-sm font-bold text-gray-900">{a.title} <span className="text-gray-400 font-normal text-xs">• {a.date}</span></p>
-                                        <p className="text-xs text-gray-500 truncate max-w-[200px]">{a.description}</p>
+                                        <p className="text-sm font-bold text-foreground">{a.title} <span className="text-muted-foreground font-normal text-xs">• {a.date}</span></p>
+                                        <p className="text-xs text-muted-foreground truncate max-w-[200px]">{a.description}</p>
                                         {a.link && <a href={a.link} target="_blank" className="text-[10px] text-blue-600 hover:underline flex items-center gap-1 mt-1"><LinkIcon className="w-3 h-3"/> Read More</a>}
                                     </div>
                                 </div>
-                                <button onClick={(e) => removeAchievement(e, i)} className="text-gray-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
+                                <button onClick={(e) => removeAchievement(e, i)} className="text-muted-foreground hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
                             </div>
                         ))}
                     </div>
                   </div>
 
                   {/* Admin Details */}
-                  <div className="pt-4 border-t border-gray-100">
-                    <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2"><BadgeCheck className="w-4 h-4 text-emerald-600" /> Administrative Details</h3>
+                  <div className="pt-4 border-t border-border">
+                    <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2"><BadgeCheck className="w-4 h-4 text-emerald-600" /> Administrative Details</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
                       <InputField label="Registration No." icon={<Hash className="w-4 h-4" />} value={formData.registration_number} onChange={(v: string) => setFormData({ ...formData, registration_number: v })} />
                       <InputField label="Years Active" type="number" icon={<CalendarDays className="w-4 h-4" />} value={formData.years_active} onChange={(v: string) => setFormData({ ...formData, years_active: v })} />
@@ -467,10 +467,10 @@ export default function EditProfile() {
 function InputField({ label, value, onChange, icon, type = "text", placeholder }: any) {
   return (
     <div>
-      <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
+      <label className="flex items-center gap-1.5 text-xs font-semibold text-foreground uppercase tracking-wider mb-2">
         {icon} {label}
       </label>
-      <input type={type} value={value || ''} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-black/5 transition-all outline-none placeholder:text-gray-400" />
+      <input type={type} value={value || ''} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="w-full px-4 py-3 bg-muted border border-border rounded-xl text-sm focus:bg-card focus:ring-2 focus:ring-black/5 transition-all outline-none placeholder:text-muted-foreground" />
     </div>
   )
 }
@@ -478,10 +478,10 @@ function InputField({ label, value, onChange, icon, type = "text", placeholder }
 function TextAreaField({ label, value, onChange, placeholder }: any) {
   return (
     <div>
-      <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
+      <label className="flex items-center gap-1.5 text-xs font-semibold text-foreground uppercase tracking-wider mb-2">
         <FileText className="w-3 h-3" /> {label}
       </label>
-      <textarea rows={4} value={value || ''} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-black/5 transition-all outline-none resize-none placeholder:text-gray-400" />
+      <textarea rows={4} value={value || ''} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="w-full px-4 py-3 bg-muted border border-border rounded-xl text-sm focus:bg-card focus:ring-2 focus:ring-black/5 transition-all outline-none resize-none placeholder:text-muted-foreground" />
     </div>
   )
 }
@@ -489,14 +489,14 @@ function TextAreaField({ label, value, onChange, placeholder }: any) {
 function TagInput({ label, items, newItem, setNewItem, onAdd, onRemove, placeholder }: any) {
   return (
     <div>
-      <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">{label}</label>
+      <label className="block text-xs font-semibold text-foreground uppercase tracking-wider mb-2">{label}</label>
       <div className="flex gap-2 mb-3">
-        <input type="text" value={newItem} onChange={(e) => setNewItem(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && onAdd(e)} placeholder={placeholder} className="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:bg-white focus:ring-2 focus:ring-black/5" />
-        <button onClick={onAdd} className="bg-black text-white px-4 rounded-xl hover:bg-gray-800 transition-colors"><Plus className="w-5 h-5" /></button>
+        <input type="text" value={newItem} onChange={(e) => setNewItem(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && onAdd(e)} placeholder={placeholder} className="flex-1 px-4 py-2.5 bg-muted border border-border rounded-xl text-sm outline-none focus:bg-card focus:ring-2 focus:ring-black/5" />
+        <button onClick={onAdd} className="bg-primary text-primary-foreground px-4 rounded-xl hover:bg-primary transition-colors"><Plus className="w-5 h-5" /></button>
       </div>
       <div className="flex flex-wrap gap-2">
         {items?.map((item: string, idx: number) => (
-          <span key={idx} className="inline-flex items-center gap-1 px-3 py-1 bg-white text-gray-700 rounded-full text-xs font-medium border border-gray-200 shadow-sm">{item}<button onClick={(e) => { e.preventDefault(); onRemove(item); }} className="p-0.5 hover:bg-gray-100 rounded-full"><X className="w-3 h-3 text-gray-400 hover:text-red-500 transition-colors" /></button></span>
+          <span key={idx} className="inline-flex items-center gap-1 px-3 py-1 bg-card text-foreground rounded-full text-xs font-medium border border-border shadow-sm">{item}<button onClick={(e) => { e.preventDefault(); onRemove(item); }} className="p-0.5 hover:bg-muted rounded-full"><X className="w-3 h-3 text-muted-foreground hover:text-red-500 transition-colors" /></button></span>
         ))}
       </div>
     </div>

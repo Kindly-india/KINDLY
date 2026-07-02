@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
+import { createPortal } from "react-dom"
 import { motion, AnimatePresence } from "framer-motion"
 
 interface BrandSplashProps {
@@ -24,13 +25,26 @@ interface BrandSplashProps {
  *   1400ms – onDone fires → navigation
  */
 export function BrandSplash({ show, onDone, duration = 1400 }: BrandSplashProps) {
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   useEffect(() => {
     if (!show) return
     const t = setTimeout(onDone, duration)
     return () => clearTimeout(t)
   }, [show, onDone, duration])
 
-  return (
+  if (!mounted) return null
+
+  // Portalled to <body> — a caller anywhere in the tree (e.g. AuthCard, which
+  // sits inside a Card with backdrop-blur-xl) would otherwise have `fixed`
+  // trapped inside that ancestor: `filter`/`backdrop-filter` establish a new
+  // containing block per spec, so "fixed inset-0" resolves against the
+  // nearest filtered ancestor instead of the viewport.
+  return createPortal(
     <AnimatePresence>
       {show && (
         <div className="fixed inset-0 z-[100] pointer-events-none">
@@ -60,6 +74,7 @@ export function BrandSplash({ show, onDone, duration = 1400 }: BrandSplashProps)
           </motion.div>
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   )
 }

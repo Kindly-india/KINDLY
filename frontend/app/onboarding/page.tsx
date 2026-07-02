@@ -140,14 +140,14 @@ const FallbackIcon = () => (
 )
 
 const SoloIcon = ({ active }: { active: boolean }) => (
-  <motion.svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke={active ? "#80242a" : "#1d1d1f"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+  <motion.svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke={active ? "#80242a" : "var(--foreground)"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <motion.path initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1.5, ease: "easeOut" }} d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
     <motion.circle initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1.5, delay: 0.2, ease: "easeOut" }} cx="12" cy="7" r="4" />
   </motion.svg>
 )
 
 const FriendsIcon = ({ active }: { active: boolean }) => (
-  <motion.svg width="48" height="40" viewBox="0 0 24 24" fill="none" stroke={active ? "#80242a" : "#1d1d1f"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+  <motion.svg width="48" height="40" viewBox="0 0 24 24" fill="none" stroke={active ? "#80242a" : "var(--foreground)"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <motion.path initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1.5 }} d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
     <motion.circle initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1.5, delay: 0.1 }} cx="9" cy="7" r="4" />
     <motion.path initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1.5, delay: 0.2 }} d="M23 21v-2a4 4 0 0 0-3-3.87" />
@@ -166,7 +166,7 @@ function ImageWithFallback({ src, alt, selected }: { src: string, alt: string, s
   return (
     <div className="absolute inset-0 w-full h-full bg-[#1c1c1e]">
       {error ? (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-[#2c2c2e] to-[#1c1c1e]">
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-[#2c2c2e] dark:from-[#2c2c2e]/10 to-[#1c1c1e] dark:to-[#1c1c1e]/10">
           <FallbackIcon />
         </div>
       ) : (
@@ -316,7 +316,7 @@ function AnimatedMeshBackground() {
         transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
         className="absolute top-[40%] -right-[20%] w-[60vw] h-[60vw] rounded-full bg-[#f3d2d5]/[0.15] blur-[120px]"
       />
-      <div className="absolute inset-0 bg-[#FAFAFA]/40 backdrop-blur-[50px]" />
+      <div className="absolute inset-0 bg-muted/40 backdrop-blur-[50px]" />
     </div>
   )
 }
@@ -390,7 +390,7 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="relative min-h-[100dvh] w-full bg-[#FCFCFC] flex flex-col selection:bg-[#80242a]/20 font-sans">
+    <div className="relative min-h-[100dvh] w-full bg-muted flex flex-col selection:bg-[#80242a]/20 font-sans">
 
       <AnimatedMeshBackground />
 
@@ -454,18 +454,18 @@ export default function OnboardingPage() {
             // BUG FIX: Replaced left-1/2 -translate-x-1/2 with left-0 right-0 mx-auto
             className="fixed bottom-6 md:bottom-8 left-0 right-0 mx-auto z-40 w-[92%] max-w-md"
           >
-            <div className="bg-white/80 backdrop-blur-xl border border-white/60 shadow-[0_15px_35px_-5px_rgba(0,0,0,0.15)] rounded-[2rem] p-2 flex items-center justify-between">
+            <div className="bg-card/80 backdrop-blur-xl border border-white/60 shadow-[0_15px_35px_-5px_rgba(0,0,0,0.15)] rounded-[2rem] p-2 flex items-center justify-between">
               <div className="pl-4 md:pl-6 flex flex-col">
-                <span className="text-[10px] md:text-[11px] font-bold tracking-wider text-[#86868b] uppercase">Selected</span>
-                <span className={`text-[18px] md:text-[20px] font-bold leading-none transition-colors duration-300 ${selectedTags.length >= 3 ? "text-[#80242a]" : "text-[#1d1d1f]"}`}>
-                  {selectedTags.length} <span className="text-[13px] md:text-[14px] text-[#86868b] font-medium">/ 3 min</span>
+                <span className="text-[10px] md:text-[11px] font-bold tracking-wider text-muted-foreground uppercase">Selected</span>
+                <span className={`text-[18px] md:text-[20px] font-bold leading-none transition-colors duration-300 ${selectedTags.length >= 3 ? "text-[#80242a]" : "text-foreground"}`}>
+                  {selectedTags.length} <span className="text-[13px] md:text-[14px] text-muted-foreground font-medium">/ 3 min</span>
                 </span>
               </div>
               <motion.button
                 disabled={selectedTags.length < 3}
                 onClick={() => goTo(2)}
                 whileTap={{ scale: 0.95 }}
-                className="shrink-0 h-[48px] md:h-[56px] px-6 md:px-8 rounded-full text-[15px] md:text-[16px] font-bold transition-all duration-300 bg-[#80242a] text-white shadow-[0_8px_20px_rgba(128,36,42,0.3)] disabled:bg-gray-100 disabled:text-gray-400 disabled:shadow-none"
+                className="shrink-0 h-[48px] md:h-[56px] px-6 md:px-8 rounded-full text-[15px] md:text-[16px] font-bold transition-all duration-300 bg-[#80242a] text-white shadow-[0_8px_20px_rgba(128,36,42,0.3)] disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none"
               >
                 Continue
               </motion.button>
@@ -481,7 +481,7 @@ export default function OnboardingPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-[#FCFCFC]/90 backdrop-blur-xl flex flex-col items-center justify-center"
+            className="fixed inset-0 z-50 bg-muted/90 backdrop-blur-xl flex flex-col items-center justify-center"
           >
             <motion.div
               animate={{ rotate: 360 }}
@@ -495,7 +495,7 @@ export default function OnboardingPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.03, duration: 0.5, type: "spring" }}
-                  className="text-[22px] font-semibold text-[#1d1d1f] tracking-tight"
+                  className="text-[22px] font-semibold text-foreground tracking-tight"
                 >
                   {char === " " ? "\u00A0" : char}
                 </motion.span>
@@ -548,7 +548,7 @@ function Screen1({ selectedTags, onToggle }: { selectedTags: string[], onToggle:
         initial={{ opacity: 0, y: 30, scale: 0.9 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-        className="text-[40px] md:text-[56px] font-bold text-[#1d1d1f] tracking-tight text-center px-6 mb-20 leading-[1.1]"
+        className="text-[40px] md:text-[56px] font-bold text-foreground tracking-tight text-center px-6 mb-20 leading-[1.1]"
       >
         What gets you out <br /> on a Sunday?
       </motion.h1>
@@ -592,7 +592,7 @@ function Screen2({ selected, onSelect, onBack }: { selected: string | null, onSe
         onClick={onBack}
         whileHover={{ x: -6, backgroundColor: "#F0F0F0" }}
         whileTap={{ scale: 0.9 }}
-        className="absolute top-12 left-6 text-[#1d1d1f] p-4 bg-white rounded-full shadow-md border border-black/5"
+        className="absolute top-12 left-6 text-foreground p-4 bg-card rounded-full shadow-md border border-black/5"
       >
         <BackIcon />
       </motion.button>
@@ -601,7 +601,7 @@ function Screen2({ selected, onSelect, onBack }: { selected: string | null, onSe
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-        className="text-[40px] md:text-[56px] font-bold text-[#1d1d1f] tracking-tight text-center mt-12 mb-20 leading-[1.1]"
+        className="text-[40px] md:text-[56px] font-bold text-foreground tracking-tight text-center mt-12 mb-20 leading-[1.1]"
       >
         When are you <br /> usually free?
       </motion.h1>
@@ -619,19 +619,19 @@ function Screen2({ selected, onSelect, onBack }: { selected: string | null, onSe
               transition={{ delay: 0.2 + i * 0.1, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className={`w-full relative overflow-hidden rounded-[2rem] border-2 flex items-center justify-between p-8 transition-all duration-500 shadow-sm ${isActive ? 'bg-[#80242a] border-[#80242a] shadow-xl' : 'bg-white border-transparent hover:border-gray-200 hover:shadow-lg'}`}
+              className={`w-full relative overflow-hidden rounded-[2rem] border-2 flex items-center justify-between p-8 transition-all duration-500 shadow-sm ${isActive ? 'bg-[#80242a] border-[#80242a] shadow-xl' : 'bg-card border-transparent hover:border-border hover:shadow-lg'}`}
             >
               <div className="flex flex-col items-start z-10 text-left">
-                <span className={`text-[24px] font-bold tracking-tight mb-1 transition-colors ${isActive ? "text-white" : "text-[#1d1d1f]"}`}>
+                <span className={`text-[24px] font-bold tracking-tight mb-1 transition-colors ${isActive ? "text-white" : "text-foreground"}`}>
                   {opt.label}
                 </span>
-                <span className={`text-[15px] font-medium transition-colors ${isActive ? "text-white/80" : "text-[#86868b]"}`}>
+                <span className={`text-[15px] font-medium transition-colors ${isActive ? "text-white/80" : "text-muted-foreground"}`}>
                   {opt.sub}
                 </span>
               </div>
 
-              <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${isActive ? 'border-white bg-white/20 scale-110' : 'border-gray-300'}`}>
-                {isActive && <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="w-3 h-3 bg-white rounded-full" />}
+              <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${isActive ? 'border-white bg-card/20 scale-110' : 'border-border'}`}>
+                {isActive && <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="w-3 h-3 bg-card rounded-full" />}
               </div>
             </motion.button>
           )
@@ -653,7 +653,7 @@ function Screen3({ selected, submitting, onSelect, onBack }: { selected: string 
         disabled={submitting}
         whileHover={{ x: -6, backgroundColor: "#F0F0F0" }}
         whileTap={{ scale: 0.9 }}
-        className="absolute top-12 left-6 text-[#1d1d1f] p-4 bg-white rounded-full shadow-md border border-black/5 disabled:opacity-50"
+        className="absolute top-12 left-6 text-foreground p-4 bg-card rounded-full shadow-md border border-black/5 disabled:opacity-50"
       >
         <BackIcon />
       </motion.button>
@@ -662,7 +662,7 @@ function Screen3({ selected, submitting, onSelect, onBack }: { selected: string 
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-        className="text-[40px] md:text-[56px] font-bold text-[#1d1d1f] tracking-tight text-center mt-12 mb-20 leading-[1.1]"
+        className="text-[40px] md:text-[56px] font-bold text-foreground tracking-tight text-center mt-12 mb-20 leading-[1.1]"
       >
         One last thing — <br /> how do you show up?
       </motion.h1>
@@ -684,7 +684,7 @@ function Screen3({ selected, submitting, onSelect, onBack }: { selected: string 
               transition={{ delay: 0.2 + i * 0.1, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
               whileHover={!submitting ? { y: -8, boxShadow: "0 20px 40px rgba(0,0,0,0.08)" } : {}}
               whileTap={!submitting ? { scale: 0.96 } : {}}
-              className="flex flex-col items-center justify-center p-12 rounded-[2.5rem] bg-white border-[3px] relative overflow-hidden group transition-all duration-500 disabled:opacity-60"
+              className="flex flex-col items-center justify-center p-12 rounded-[2.5rem] bg-card border-[3px] relative overflow-hidden group transition-all duration-500 disabled:opacity-60"
               style={{
                 height: 320,
                 borderColor: isActive ? "#80242a" : "transparent",
@@ -704,10 +704,10 @@ function Screen3({ selected, submitting, onSelect, onBack }: { selected: string 
                 <opt.Icon active={isActive} />
               </div>
 
-              <span className={`text-[28px] font-bold tracking-tight mb-3 ${isActive ? "text-[#80242a]" : "text-[#1d1d1f]"}`}>
+              <span className={`text-[28px] font-bold tracking-tight mb-3 ${isActive ? "text-[#80242a]" : "text-foreground"}`}>
                 {opt.title}
               </span>
-              <span className="text-[16px] text-[#86868b] font-medium text-center max-w-[200px]">
+              <span className="text-[16px] text-muted-foreground font-medium text-center max-w-[200px]">
                 {opt.subtitle}
               </span>
             </motion.button>

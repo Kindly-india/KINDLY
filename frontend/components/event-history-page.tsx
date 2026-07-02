@@ -16,7 +16,9 @@ import {
 import { api } from "@/lib/api"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
-import { downloadFromUrl } from "@/lib/utils"
+import { downloadFromUrl, cn } from "@/lib/utils"
+import { Card } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 
 type FilterType = "all" | "attended" | "missed" | "cancelled" | "registered"
 
@@ -143,31 +145,31 @@ export function EventHistoryPage() {
     switch (status) {
       case "attended":
         return (
-          <span className="px-2 py-0.5 md:px-2.5 md:py-1 bg-[#e8f5e9] text-[#2e7d32] text-[9px] md:text-xs font-medium rounded-full">
+          <Badge className="px-2 py-0.5 md:px-2.5 md:py-1 border-0 bg-[#e8f5e9] dark:bg-emerald-500/15 text-[#2e7d32] dark:text-emerald-400 text-[9px] md:text-xs">
             Attended
-          </span>
+          </Badge>
         )
       case "missed":
         return (
-          <span className="px-2 py-0.5 md:px-2.5 md:py-1 bg-orange-50 text-orange-600 text-[9px] md:text-xs font-medium rounded-full">
+          <Badge className="px-2 py-0.5 md:px-2.5 md:py-1 border-0 bg-orange-50 dark:bg-orange-500/15 text-orange-600 text-[9px] md:text-xs">
             Missed
-          </span>
+          </Badge>
         )
       case "cancelled":
         return cancelledByHost ? (
-          <span className="px-2 py-0.5 md:px-2.5 md:py-1 bg-red-50 text-red-500 text-[9px] md:text-xs font-medium rounded-full">
+          <Badge className="px-2 py-0.5 md:px-2.5 md:py-1 border-0 bg-red-50 dark:bg-red-500/15 text-red-500 text-[9px] md:text-xs">
             Cancelled by Host
-          </span>
+          </Badge>
         ) : (
-          <span className="px-2 py-0.5 md:px-2.5 md:py-1 bg-[#f5f5f5] text-[#86868b] text-[9px] md:text-xs font-medium rounded-full">
+          <Badge className="px-2 py-0.5 md:px-2.5 md:py-1 border-0 bg-black/5 dark:bg-white/5 text-muted-foreground text-[9px] md:text-xs">
             Cancelled
-          </span>
+          </Badge>
         )
       case "registered":
         return (
-          <span className="px-2 py-0.5 md:px-2.5 md:py-1 bg-blue-50 text-blue-600 text-[9px] md:text-xs font-medium rounded-full">
+          <Badge className="px-2 py-0.5 md:px-2.5 md:py-1 border-0 bg-blue-50 dark:bg-blue-500/15 text-blue-600 text-[9px] md:text-xs">
             Registered
-          </span>
+          </Badge>
         )
       default:
         return null
@@ -213,90 +215,65 @@ export function EventHistoryPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#f5f5f7] flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-gray-400 animate-spin" />
+      <div className="min-h-screen bg-muted flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-muted-foreground animate-spin" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-[#f5f5f7] overflow-x-hidden">
+    <div className="min-h-screen bg-muted overflow-x-hidden">
       
       <main className="max-w-[600px] mx-auto px-4 md:px-6 py-4 md:py-8">
-        <h1 className="text-xl md:text-3xl font-bold text-[#1d1d1f] mb-4 md:mb-6">Event History</h1>
+        <h1 className="text-xl md:text-3xl font-bold text-foreground mb-4 md:mb-6">Event History</h1>
 
         <div className="relative mb-3 md:mb-4">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-[#86868b]" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-muted-foreground" />
           <input
             type="text"
             placeholder="Search past events..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full h-10 md:h-12 pl-9 md:pl-11 pr-4 bg-white rounded-xl text-[13px] md:text-[15px] text-[#1d1d1f] placeholder:text-[#86868b] border border-[#e5e5e7] focus:outline-none focus:ring-2 focus:ring-[#0066cc]/20 focus:border-[#0066cc] transition-all"
+            className="w-full h-10 md:h-12 pl-9 md:pl-11 pr-4 bg-card rounded-xl text-[13px] md:text-[15px] text-foreground placeholder:text-muted-foreground border border-border focus:outline-none focus:ring-2 focus:ring-[#0066cc]/20 focus:border-[#0066cc] transition-all"
           />
         </div>
 
         {/* ✅ UPDATED: Removed Certificate Filter Button */}
-        <div className="flex gap-2 mb-4 md:mb-6 overflow-x-auto pb-1 scrollbar-hide">
-          <button
-            onClick={() => setActiveFilter("all")}
-            className={`px-3 py-1.5 md:px-4 md:py-2 rounded-full text-[11px] md:text-sm font-medium whitespace-nowrap transition-all ${activeFilter === "all"
-              ? "bg-[#1d1d1f] text-white"
-              : "bg-white text-[#1d1d1f] border border-[#e5e5e7] hover:border-[#86868b]"
-              }`}
-          >
-            All
-          </button>
-          <button
-            onClick={() => setActiveFilter("registered")}
-            className={`px-3 py-1.5 md:px-4 md:py-2 rounded-full text-[11px] md:text-sm font-medium whitespace-nowrap transition-all ${activeFilter === "registered"
-              ? "bg-blue-50 text-blue-600 border border-blue-200"
-              : "bg-white text-blue-600 border border-blue-100 hover:border-blue-300"
-              }`}
-          >
-            Upcoming
-          </button>
-          <button
-            onClick={() => setActiveFilter("attended")}
-            className={`px-3 py-1.5 md:px-4 md:py-2 rounded-full text-[11px] md:text-sm font-medium whitespace-nowrap transition-all ${activeFilter === "attended"
-              ? "bg-[#e8f5e9] text-[#2e7d32] border border-[#2e7d32]"
-              : "bg-white text-[#2e7d32] border border-[#c8e6c9] hover:border-[#2e7d32]"
-              }`}
-          >
-            Attended
-          </button>
-          <button
-            onClick={() => setActiveFilter("missed")}
-            className={`px-3 py-1.5 md:px-4 md:py-2 rounded-full text-[11px] md:text-sm font-medium whitespace-nowrap transition-all ${activeFilter === "missed"
-              ? "bg-orange-50 text-orange-600 border border-orange-300"
-              : "bg-white text-orange-600 border border-orange-100 hover:border-orange-300"
-              }`}
-          >
-            Missed
-          </button>
-          <button
-            onClick={() => setActiveFilter("cancelled")}
-            className={`px-3 py-1.5 md:px-4 md:py-2 rounded-full text-[11px] md:text-sm font-medium whitespace-nowrap transition-all ${activeFilter === "cancelled"
-              ? "bg-[#f5f5f5] text-[#86868b] border border-[#86868b]"
-              : "bg-white text-[#86868b] border border-[#e5e5e7] hover:border-[#86868b]"
-              }`}
-          >
-            Cancelled
-          </button>
+        <div className="flex gap-2 mb-6 overflow-x-auto pb-1 scrollbar-hide">
+          {([
+            ["all", "All"],
+            ["registered", "Upcoming"],
+            ["attended", "Attended"],
+            ["missed", "Missed"],
+            ["cancelled", "Cancelled"],
+          ] as const).map(([value, label]) => (
+            <button
+              key={value}
+              onClick={() => setActiveFilter(value)}
+              className={cn(
+                "px-4 py-2 rounded-full text-[11px] md:text-sm font-medium whitespace-nowrap transition-all",
+                activeFilter === value
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-black/5 dark:bg-white/5 text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {label}
+            </button>
+          ))}
         </div>
 
         <div className="space-y-2 md:space-y-3">
           {filteredEvents.map((event) => (
-            <div
+            <Card
               key={event.id}
-              className="w-full bg-white rounded-xl p-3 md:p-4 shadow-sm border border-[#f5f5f7] flex items-center gap-3 md:gap-4 transition-all hover:shadow-md hover:border-[#e5e5e7]"
+              className="w-full p-3 md:p-4 flex-row items-center gap-3 md:gap-4 transition-all hover:shadow-md"
             >
               <button
                 onClick={() => { if (event.status === "attended") window.location.href = `/events/${event.id}/showcase` }}
                 disabled={event.status === "missed" || event.status === "registered" || event.status === "cancelled"}
                 className="flex items-center gap-3 md:gap-4 flex-1 min-w-0 text-left disabled:cursor-default"
               >
-                <div className="w-14 h-14 md:w-16 md:h-16 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
+                <div className="w-14 h-14 md:w-16 md:h-16 rounded-lg overflow-hidden flex-shrink-0 bg-muted">
                   <img
                     src={event.image || "/placeholder.svg"}
                     alt={event.title}
@@ -306,8 +283,8 @@ export function EventHistoryPage() {
                   />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-[13px] md:text-[15px] font-semibold text-[#1d1d1f] truncate">{event.title}</h3>
-                  <p className="text-[11px] md:text-[13px] text-[#86868b]">{event.date}</p>
+                  <h3 className="text-[13px] md:text-[15px] font-semibold text-foreground truncate">{event.title}</h3>
+                  <p className="text-[11px] md:text-[13px] text-muted-foreground">{event.date}</p>
                 </div>
               </button>
 
@@ -317,7 +294,7 @@ export function EventHistoryPage() {
                   <button
                     onClick={(e) => handleDownload(e, event.certId)}
                     disabled={downloadingCertId === event.certId}
-                    className="flex items-center gap-1 px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 text-[10px] md:text-xs font-semibold rounded-lg transition-colors disabled:opacity-50"
+                    className="flex items-center gap-1 px-2.5 py-1.5 bg-amber-50 dark:bg-amber-500/15 hover:bg-amber-100 dark:bg-amber-500/15 text-amber-700 text-[10px] md:text-xs font-semibold rounded-lg transition-colors disabled:opacity-50"
                   >
                     {downloadingCertId === event.certId
                       ? <Loader2 className="w-3 h-3 animate-spin" />
@@ -329,7 +306,7 @@ export function EventHistoryPage() {
                   isWithin24Hours(event.event_date, event.start_time) ? (
                     <span
                       title="Less than 24 hours to the event. Contact the organiser directly for emergency cancellations."
-                      className="flex items-center gap-1 px-2.5 py-1.5 bg-gray-100 text-gray-400 text-[10px] md:text-xs font-semibold rounded-lg cursor-not-allowed select-none"
+                      className="flex items-center gap-1 px-2.5 py-1.5 bg-muted text-muted-foreground text-[10px] md:text-xs font-semibold rounded-lg cursor-not-allowed select-none"
                     >
                       🔒 Locked
                     </span>
@@ -337,7 +314,7 @@ export function EventHistoryPage() {
                     <button
                       onClick={(e) => handleCancelRsvp(e, event.id)}
                       disabled={cancellingId === event.id}
-                      className="flex items-center gap-1 px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 text-[10px] md:text-xs font-semibold rounded-lg transition-colors disabled:opacity-50"
+                      className="flex items-center gap-1 px-2.5 py-1.5 bg-red-50 dark:bg-red-500/15 hover:bg-red-100 dark:bg-red-500/15 text-red-600 text-[10px] md:text-xs font-semibold rounded-lg transition-colors disabled:opacity-50"
                     >
                       {cancellingId === event.id
                         ? <Loader2 className="w-3 h-3 animate-spin" />
@@ -348,17 +325,17 @@ export function EventHistoryPage() {
                   )
                 ) : (
                   event.status === "attended" && (
-                    <ChevronRight className="w-4 h-4 md:w-5 md:h-5 text-[#86868b]" />
+                    <ChevronRight className="w-4 h-4 md:w-5 md:h-5 text-muted-foreground" />
                   )
                 )}
               </div>
-            </div>
+            </Card>
           ))}
         </div>
 
         {filteredEvents.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-[#86868b] text-sm">No events found</p>
+            <p className="text-muted-foreground text-sm">No events found</p>
           </div>
         )}
       </main>

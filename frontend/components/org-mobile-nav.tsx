@@ -28,30 +28,30 @@ export function OrgMobileNav() {
     const profileLink = profile?.id ? `/organizations/${profile.id}` : "/login"
 
     return (
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-lg border-t border-gray-200 pb-[env(safe-area-inset-bottom)]">
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card/90 backdrop-blur-lg border-t border-border pb-[env(safe-area-inset-bottom)]">
             <div className="flex items-center justify-around h-16 px-2">
                 <Link href="/org-home" className="flex flex-col items-center justify-center w-full h-full space-y-1 prevent-select">
-                    <LayoutDashboard className={cn("w-6 h-6 transition-colors", isActive("/org-home") ? "text-orange-600" : "text-gray-400")} />
-                    <span className={cn("text-[10px] font-medium", isActive("/org-home") ? "text-orange-600" : "text-gray-400")}>Dash</span>
+                    <LayoutDashboard className={cn("w-6 h-6 transition-colors", isActive("/org-home") ? "text-orange-600" : "text-muted-foreground")} />
+                    <span className={cn("text-[10px] font-medium", isActive("/org-home") ? "text-orange-600" : "text-muted-foreground")}>Dash</span>
                 </Link>
                 <Link href="/org-events" className="flex flex-col items-center justify-center w-full h-full space-y-1 prevent-select">
-                    <Calendar className={cn("w-6 h-6 transition-colors", isActive("/org-events") ? "text-orange-600" : "text-gray-400")} />
-                    <span className={cn("text-[10px] font-medium", isActive("/org-events") ? "text-orange-600" : "text-gray-400")}>Events</span>
+                    <Calendar className={cn("w-6 h-6 transition-colors", isActive("/org-events") ? "text-orange-600" : "text-muted-foreground")} />
+                    <span className={cn("text-[10px] font-medium", isActive("/org-events") ? "text-orange-600" : "text-muted-foreground")}>Events</span>
                 </Link>
                 
                 {/* Points to the shared social page! */}
                 <Link href="/social" className="flex flex-col items-center justify-center w-full h-full space-y-1 prevent-select">
-                    <Globe className={cn("w-6 h-6 transition-colors", isActive("/social") ? "text-orange-600" : "text-gray-400")} />
-                    <span className={cn("text-[10px] font-medium", isActive("/social") ? "text-orange-600" : "text-gray-400")}>Social</span>
+                    <Globe className={cn("w-6 h-6 transition-colors", isActive("/social") ? "text-orange-600" : "text-muted-foreground")} />
+                    <span className={cn("text-[10px] font-medium", isActive("/social") ? "text-orange-600" : "text-muted-foreground")}>Social</span>
                 </Link>
                 
                 <Link href="/org-analytics" className="flex flex-col items-center justify-center w-full h-full space-y-1 prevent-select">
-                    <BarChart3 className={cn("w-6 h-6 transition-colors", isActive("/org-analytics") ? "text-orange-600" : "text-gray-400")} />
-                    <span className={cn("text-[10px] font-medium", isActive("/org-analytics") ? "text-orange-600" : "text-gray-400")}>Analytics</span>
+                    <BarChart3 className={cn("w-6 h-6 transition-colors", isActive("/org-analytics") ? "text-orange-600" : "text-muted-foreground")} />
+                    <span className={cn("text-[10px] font-medium", isActive("/org-analytics") ? "text-orange-600" : "text-muted-foreground")}>Analytics</span>
                 </Link>
                 <Link href={profileLink} className="flex flex-col items-center justify-center w-full h-full space-y-1 prevent-select">
-                    <User className={cn("w-6 h-6 transition-colors", pathname.startsWith('/organizations/') ? "text-orange-600" : "text-gray-400")} />
-                    <span className={cn("text-[10px] font-medium", pathname.startsWith('/organizations/') ? "text-orange-600" : "text-gray-400")}>Profile</span>
+                    <User className={cn("w-6 h-6 transition-colors", pathname.startsWith('/organizations/') ? "text-orange-600" : "text-muted-foreground")} />
+                    <span className={cn("text-[10px] font-medium", pathname.startsWith('/organizations/') ? "text-orange-600" : "text-muted-foreground")}>Profile</span>
                 </Link>
             </div>
         </nav>

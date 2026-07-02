@@ -249,7 +249,7 @@ export function OrgEventDetail() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600 mb-4"></div>
-          <p className="text-sm text-gray-600">Loading event...</p>
+          <p className="text-sm text-muted-foreground">Loading event...</p>
         </div>
       </div>
     )
@@ -271,21 +271,21 @@ export function OrgEventDetail() {
   // --- CANCELLED VIEW ---
   if (event.status === 'cancelled') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-gray-50 flex flex-col items-center justify-center p-6">
-        <div className="max-w-md w-full bg-white rounded-3xl p-8 shadow-xl border border-red-100 text-center relative overflow-hidden">
+      <div className="min-h-screen bg-gradient-to-br from-red-50 dark:from-red-50/10 via-white dark:via-background to-muted flex flex-col items-center justify-center p-6">
+        <div className="max-w-md w-full bg-card rounded-3xl p-8 shadow-xl border border-red-100 text-center relative overflow-hidden">
           <div className="absolute -top-10 -right-10 opacity-5">
             <X className="w-40 h-40" />
           </div>
-          <div className="w-20 h-20 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+          <div className="w-20 h-20 bg-red-100 dark:bg-red-500/15 rounded-2xl flex items-center justify-center mx-auto mb-6">
             <X className="w-10 h-10 text-red-500" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Event Cancelled</h2>
-          <p className="text-gray-500 text-sm mb-8">
-            <span className="font-bold text-gray-900">"{event.title}"</span> was cancelled. All registered volunteers were notified by email.
+          <h2 className="text-2xl font-bold text-foreground mb-2">Event Cancelled</h2>
+          <p className="text-muted-foreground text-sm mb-8">
+            <span className="font-bold text-foreground">"{event.title}"</span> was cancelled. All registered volunteers were notified by email.
           </p>
           <Link
             href="/org-events"
-            className="w-full h-12 bg-white text-gray-600 border border-gray-200 rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition-all"
+            className="w-full h-12 bg-card text-muted-foreground border border-border rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-muted transition-all"
           >
             <ChevronLeft className="w-4 h-4" />
             Back to My Events
@@ -298,19 +298,19 @@ export function OrgEventDetail() {
   // --- PENDING APPROVAL VIEW ---
   if (event.status === 'pending') {
     return (
-        <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-orange-50 flex flex-col items-center justify-center p-6">
-            <div className="max-w-md w-full bg-white rounded-3xl p-8 shadow-xl border border-amber-100 text-center relative overflow-hidden">
+        <div className="min-h-screen bg-gradient-to-br from-amber-50 dark:from-amber-50/10 via-white dark:via-background to-orange-50 dark:to-orange-50/10 flex flex-col items-center justify-center p-6">
+            <div className="max-w-md w-full bg-card rounded-3xl p-8 shadow-xl border border-amber-100 text-center relative overflow-hidden">
                 <div className="absolute -top-10 -right-10 opacity-5">
                     <Hourglass className="w-40 h-40" />
                 </div>
                 
-                <div className="w-20 h-20 bg-amber-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <div className="w-20 h-20 bg-amber-100 dark:bg-amber-500/15 rounded-2xl flex items-center justify-center mx-auto mb-6">
                     <Hourglass className="w-10 h-10 text-amber-600 animate-pulse" />
                 </div>
 
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">Review in Progress</h2>
-                <p className="text-gray-500 text-sm mb-8">
-                    Your event <span className="font-bold text-gray-900">"{event.title}"</span> is currently being reviewed by our team. Once approved, it will be published to the volunteer discovery feed.
+                <h2 className="text-2xl font-bold text-foreground mb-2">Review in Progress</h2>
+                <p className="text-muted-foreground text-sm mb-8">
+                    Your event <span className="font-bold text-foreground">"{event.title}"</span> is currently being reviewed by our team. Once approved, it will be published to the volunteer discovery feed.
                 </p>
 
                 <div className="space-y-3">
@@ -323,14 +323,14 @@ export function OrgEventDetail() {
                     </Link>
                     <Link
                         href="/org-events"
-                        className="w-full h-12 bg-white text-gray-600 border border-gray-200 rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition-all"
+                        className="w-full h-12 bg-card text-muted-foreground border border-border rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-muted transition-all"
                     >
                         <ChevronLeft className="w-4 h-4" />
                         Back to Dashboard
                     </Link>
                 </div>
 
-                <div className="mt-8 pt-6 border-t border-gray-100 flex items-center justify-center gap-2 text-amber-600 text-xs font-semibold uppercase tracking-widest">
+                <div className="mt-8 pt-6 border-t border-border flex items-center justify-center gap-2 text-amber-600 text-xs font-semibold uppercase tracking-widest">
                     <Sparkles className="w-4 h-4" />
                     <span>Concierge Approval Enabled</span>
                 </div>
@@ -346,40 +346,40 @@ export function OrgEventDetail() {
   const checkedInCount = registrations.filter(reg => reg.status === 'checked_in').length
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 relative">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 dark:from-blue-50/10 via-white dark:via-background to-green-50 dark:to-green-50/10 relative">
 
 
       {/* Floating Icons */}
-      <div className="fixed top-20 left-8 w-12 h-12 bg-white rounded-xl shadow-lg hidden md:flex items-center justify-center pointer-events-none">
+      <div className="fixed top-20 left-8 w-12 h-12 bg-card rounded-xl shadow-lg hidden md:flex items-center justify-center pointer-events-none">
         <Heart className="w-5 h-5 text-red-400" />
       </div>
-      <div className="fixed top-32 right-16 w-12 h-12 bg-white rounded-xl shadow-lg hidden md:flex items-center justify-center pointer-events-none">
+      <div className="fixed top-32 right-16 w-12 h-12 bg-card rounded-xl shadow-lg hidden md:flex items-center justify-center pointer-events-none">
         <Sparkles className="w-5 h-5 text-amber-500" />
       </div>
 
-      <div className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-100">
+      <div className="sticky top-0 z-50 bg-card/95 backdrop-blur-md border-b border-border">
         <div className="max-w-5xl mx-auto px-4 md:px-8 py-3 md:py-4">
-          <Link href="/org-events" className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors mb-3">
+          <Link href="/org-events" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3">
             <ChevronLeft className="w-4 h-4" />
             Back to Events
           </Link>
-          <h1 className="text-xl md:text-2xl font-bold text-gray-900">{event.title}</h1>
+          <h1 className="text-xl md:text-2xl font-bold text-foreground">{event.title}</h1>
         </div>
       </div>
 
-      <div className="px-4 md:px-8 py-4 bg-gradient-to-b from-teal-50/50 to-transparent">
+      <div className="px-4 md:px-8 py-4 bg-gradient-to-b from-teal-50/50 dark:from-teal-50/10 to-transparent">
         <div className="max-w-5xl mx-auto flex flex-wrap gap-2 md:gap-3">
-          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white rounded-full shadow-sm border border-gray-100 text-xs md:text-sm">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-card rounded-full shadow-sm border border-border text-xs md:text-sm">
             <Users className="w-3.5 h-3.5 text-teal-500" />
-            <span className="font-medium text-gray-700">{registrations.length} Registered</span>
+            <span className="font-medium text-foreground">{registrations.length} Registered</span>
           </div>
-          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white rounded-full shadow-sm border border-gray-100 text-xs md:text-sm">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-card rounded-full shadow-sm border border-border text-xs md:text-sm">
             <Check className="w-3.5 h-3.5 text-emerald-500" />
-            <span className="font-medium text-gray-700">{checkedInCount} Checked In</span>
+            <span className="font-medium text-foreground">{checkedInCount} Checked In</span>
           </div>
-          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white rounded-full shadow-sm border border-gray-100 text-xs md:text-sm">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-card rounded-full shadow-sm border border-border text-xs md:text-sm">
             <Clock className="w-3.5 h-3.5 text-amber-500" />
-            <span className="font-medium text-gray-700">
+            <span className="font-medium text-foreground">
               {event.total_slots == null ? 'Unlimited slots' : `${event.total_slots - registrations.length} Slots Left`}
             </span>
           </div>
@@ -388,10 +388,10 @@ export function OrgEventDetail() {
 
       <div className="px-4 md:px-8 py-3">
         <div className="max-w-5xl mx-auto">
-          <div className="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit">
+          <div className="flex gap-1 bg-muted rounded-xl p-1 w-fit">
             <button
               onClick={() => setMissionTab("roster")}
-              className={`flex items-center gap-1.5 px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-all ${missionTab === "roster" ? "bg-white text-teal-600 shadow-sm" : "text-gray-600 hover:text-gray-900"
+              className={`flex items-center gap-1.5 px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-all ${missionTab === "roster" ? "bg-card text-teal-600 shadow-sm" : "text-muted-foreground hover:text-foreground"
                 }`}
             >
               <Users className="w-4 h-4" />
@@ -399,7 +399,7 @@ export function OrgEventDetail() {
             </button>
             <button
               onClick={() => setMissionTab("broadcast")}
-              className={`flex items-center gap-1.5 px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-all ${missionTab === "broadcast" ? "bg-white text-teal-600 shadow-sm" : "text-gray-600 hover:text-gray-900"
+              className={`flex items-center gap-1.5 px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-all ${missionTab === "broadcast" ? "bg-card text-teal-600 shadow-sm" : "text-muted-foreground hover:text-foreground"
                 }`}
             >
               <MessageSquare className="w-4 h-4" />
@@ -407,7 +407,7 @@ export function OrgEventDetail() {
             </button>
             <button
               onClick={() => setMissionTab("settings")}
-              className={`flex items-center gap-1.5 px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-all ${missionTab === "settings" ? "bg-white text-teal-600 shadow-sm" : "text-gray-600 hover:text-gray-900"
+              className={`flex items-center gap-1.5 px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-all ${missionTab === "settings" ? "bg-card text-teal-600 shadow-sm" : "text-muted-foreground hover:text-foreground"
                 }`}
             >
               <Calendar className="w-4 h-4" />
@@ -423,40 +423,40 @@ export function OrgEventDetail() {
             <div className="py-4 space-y-4">
               <div className="flex items-center justify-between gap-4">
                 <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <input
                     type="text"
                     placeholder="Search volunteers..."
                     value={volunteerSearch}
                     onChange={(e) => setVolunteerSearch(e.target.value)}
-                    className="w-full h-11 pl-10 pr-4 bg-white rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                    className="w-full h-11 pl-10 pr-4 bg-card rounded-xl border border-border text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                   />
                 </div>
 
               </div>
 
               {!eventStarted && (
-                <div className="bg-amber-50 text-amber-800 text-xs px-4 py-2 rounded-lg border border-amber-200 text-center">
+                <div className="bg-amber-50 dark:bg-amber-500/15 text-amber-800 text-xs px-4 py-2 rounded-lg border border-amber-200 text-center">
                   Check-in will be enabled once the event starts ({formatTime(event.start_time)}).
                 </div>
               )}
 
               {registrations.length === 0 ? (
-                <div className="text-center py-12 bg-white rounded-xl">
-                  <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                  <p className="text-gray-500 text-sm">No volunteers registered yet</p>
-                  <p className="text-gray-400 text-xs mt-1">Volunteers will appear here once they register</p>
+                <div className="text-center py-12 bg-card rounded-xl">
+                  <Users className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+                  <p className="text-muted-foreground text-sm">No volunteers registered yet</p>
+                  <p className="text-muted-foreground text-xs mt-1">Volunteers will appear here once they register</p>
                 </div>
               ) : filteredRoster.length === 0 ? (
-                <div className="text-center py-12 bg-white rounded-xl">
-                  <Search className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                  <p className="text-gray-500 text-sm">No volunteers found</p>
-                  <p className="text-gray-400 text-xs mt-1">Try a different search term</p>
+                <div className="text-center py-12 bg-card rounded-xl">
+                  <Search className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+                  <p className="text-muted-foreground text-sm">No volunteers found</p>
+                  <p className="text-muted-foreground text-xs mt-1">Try a different search term</p>
                 </div>
               ) : (
                 <div className="space-y-2">
                   {filteredRoster.map((registration) => (
-                    <div key={registration.id} className="flex items-center justify-between p-3 md:p-4 bg-white rounded-xl shadow-sm border border-gray-100">
+                    <div key={registration.id} className="flex items-center justify-between p-3 md:p-4 bg-card rounded-xl shadow-sm border border-border">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-teal-400 to-emerald-400 flex items-center justify-center text-white font-semibold">
                           {registration.volunteer_profiles.full_name.charAt(0).toUpperCase()}
@@ -465,18 +465,18 @@ export function OrgEventDetail() {
                         <div>
                           <Link
                             href={`/volunteers/${registration.volunteer_profiles.id}`}
-                            className="font-medium text-gray-900 text-sm md:text-base hover:text-teal-600 hover:underline cursor-pointer transition-colors"
+                            className="font-medium text-foreground text-sm md:text-base hover:text-teal-600 hover:underline cursor-pointer transition-colors"
                           >
                             {registration.volunteer_profiles.full_name}
                           </Link>
 
-                          <p className="text-xs text-gray-500">{registration.volunteer_profiles.city}</p>
+                          <p className="text-xs text-muted-foreground">{registration.volunteer_profiles.city}</p>
 
                           <div className="flex items-center gap-1.5 mt-1">
-                            <a href={`tel:${registration.volunteer_profiles.phone}`} className="w-6 h-6 md:w-7 md:h-7 rounded-full bg-teal-50 flex items-center justify-center hover:bg-teal-100 transition-colors">
+                            <a href={`tel:${registration.volunteer_profiles.phone}`} className="w-6 h-6 md:w-7 md:h-7 rounded-full bg-teal-50 dark:bg-teal-500/15 flex items-center justify-center hover:bg-teal-100 dark:bg-teal-500/15 transition-colors">
                               <Phone className="w-3 h-3 md:w-3.5 md:h-3.5 text-teal-600" />
                             </a>
-                            <a href={`sms:${registration.volunteer_profiles.phone}`} className="w-6 h-6 md:w-7 md:h-7 rounded-full bg-blue-50 flex items-center justify-center hover:bg-blue-100 transition-colors">
+                            <a href={`sms:${registration.volunteer_profiles.phone}`} className="w-6 h-6 md:w-7 md:h-7 rounded-full bg-blue-50 dark:bg-blue-500/15 flex items-center justify-center hover:bg-blue-100 dark:bg-blue-500/15 transition-colors">
                               <MessageSquare className="w-3 h-3 md:w-3.5 md:h-3.5 text-blue-600" />
                             </a>
                           </div>
@@ -485,7 +485,7 @@ export function OrgEventDetail() {
                       <button
                         onClick={() => handleCheckIn(registration.id, registration.status)}
                         disabled={checkInLoading === registration.id || (!eventStarted && registration.status !== 'checked_in')}
-                        className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed ${registration.status === 'checked_in' ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                        className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed ${registration.status === 'checked_in' ? "bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700" : "bg-muted text-muted-foreground hover:bg-muted"
                           }`}
                       >
                         {checkInLoading === registration.id ? "Loading..." : registration.status === 'checked_in' ? "Checked In" : "Check In"}
@@ -499,14 +499,14 @@ export function OrgEventDetail() {
 
           {missionTab === "broadcast" && (
             <div className="py-4 space-y-4">
-              <div className="bg-white rounded-xl p-4 md:p-5 shadow-sm border border-gray-100">
-                <label className="block text-sm font-medium text-gray-700 mb-2">New Message</label>
+              <div className="bg-card rounded-xl p-4 md:p-5 shadow-sm border border-border">
+                <label className="block text-sm font-medium text-foreground mb-2">New Message</label>
                 <textarea
                   placeholder="Send a message to all registered volunteers..."
                   value={broadcastMessage}
                   onChange={(e) => setBroadcastMessage(e.target.value)}
                   rows={4}
-                  className="w-full bg-gray-50 rounded-lg px-3 py-2 text-sm border border-gray-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
+                  className="w-full bg-muted rounded-lg px-3 py-2 text-sm border border-border focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
                 />
 
                 <button
@@ -519,29 +519,29 @@ export function OrgEventDetail() {
                 </button>
 
                 {registrations.length === 0 && (
-                  <p className="text-xs text-gray-500 mt-2 text-center">No volunteers registered yet</p>
+                  <p className="text-xs text-muted-foreground mt-2 text-center">No volunteers registered yet</p>
                 )}
               </div>
 
               <div>
-                <p className="text-xs font-medium text-gray-500 mb-3 px-1">Previous Messages</p>
+                <p className="text-xs font-medium text-muted-foreground mb-3 px-1">Previous Messages</p>
                 {broadcasts.length === 0 ? (
-                  <div className="text-center py-8 bg-white rounded-xl">
-                    <MessageSquare className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-                    <p className="text-gray-400 text-sm">No messages sent yet</p>
+                  <div className="text-center py-8 bg-card rounded-xl">
+                    <MessageSquare className="w-10 h-10 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-muted-foreground text-sm">No messages sent yet</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
                     {broadcasts.map((msg) => (
-                      <div key={msg.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col gap-1 relative overflow-hidden">
+                      <div key={msg.id} className="bg-card p-4 rounded-xl border border-border shadow-sm flex flex-col gap-1 relative overflow-hidden">
                         <div className="absolute left-0 top-0 bottom-0 w-1 bg-teal-500"></div>
 
                         <div className="flex justify-between items-start gap-4">
-                          <p className="text-sm text-gray-800 leading-relaxed flex-1">{msg.message}</p>
+                          <p className="text-sm text-foreground leading-relaxed flex-1">{msg.message}</p>
                           <button
                             onClick={() => handleDeleteBroadcast(msg.id)}
                             disabled={deletingId === msg.id}
-                            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors shrink-0"
+                            className="p-1.5 text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:bg-red-500/15 rounded-lg transition-colors shrink-0"
                           >
                             {deletingId === msg.id ? (
                               <Loader2 className="w-4 h-4 animate-spin text-red-500" />
@@ -551,7 +551,7 @@ export function OrgEventDetail() {
                           </button>
                         </div>
 
-                        <div className="flex items-center gap-2 text-xs text-gray-400 mt-1">
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
                           <Clock className="w-3 h-3" />
                           <span>{new Date(msg.created_at).toLocaleString([], { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' })}</span>
                         </div>
@@ -566,44 +566,44 @@ export function OrgEventDetail() {
           {/* Settings Tab */}
           {missionTab === "settings" && (
             <div className="py-4 space-y-4">
-              <div className="bg-white rounded-xl p-4 md:p-5 shadow-sm border border-gray-100">
-                <h3 className="font-semibold text-gray-900 text-sm md:text-base mb-4">Event Details</h3>
+              <div className="bg-card rounded-xl p-4 md:p-5 shadow-sm border border-border">
+                <h3 className="font-semibold text-foreground text-sm md:text-base mb-4">Event Details</h3>
                 <div className="space-y-3 text-sm">
                   <div className="flex items-start gap-3">
-                    <Calendar className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                    <Calendar className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
                     <div>
-                      <p className="text-gray-500 text-xs mb-0.5">Date & Time</p>
-                      <p className="text-gray-900 font-medium">
+                      <p className="text-muted-foreground text-xs mb-0.5">Date & Time</p>
+                      <p className="text-foreground font-medium">
                         {formatDate(event.event_date)} • {formatTime(event.start_time)} - {formatTime(event.end_time)}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
-                    <MapPin className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                    <MapPin className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
                     <div>
-                      <p className="text-gray-500 text-xs mb-0.5">Location</p>
-                      <p className="text-gray-900 font-medium">{event.location}</p>
+                      <p className="text-muted-foreground text-xs mb-0.5">Location</p>
+                      <p className="text-foreground font-medium">{event.location}</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
-                    <Users className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                    <Users className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
                     <div>
-                      <p className="text-gray-500 text-xs mb-0.5">Capacity</p>
-                      <p className="text-gray-900 font-medium">
+                      <p className="text-muted-foreground text-xs mb-0.5">Capacity</p>
+                      <p className="text-foreground font-medium">
                         {event.total_slots == null ? 'Unlimited' : `${event.total_slots} volunteer slots`}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
-                    <Calendar className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                    <Calendar className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
                     <div>
-                      <p className="text-gray-500 text-xs mb-0.5">Status</p>
-                      <p className="text-gray-900 font-medium capitalize">{event.status}</p>
+                      <p className="text-muted-foreground text-xs mb-0.5">Status</p>
+                      <p className="text-foreground font-medium capitalize">{event.status}</p>
                     </div>
                   </div>
                 </div>
 
-                <div className="mt-4 rounded-xl overflow-hidden h-40 relative group border border-gray-100 bg-gray-50">
+                <div className="mt-4 rounded-xl overflow-hidden h-40 relative group border border-border bg-muted">
                   <a
                     href={`http://googleusercontent.com/maps.google.com/maps?q=${encodeURIComponent(event.location)}`}
                     target="_blank"
@@ -618,7 +618,7 @@ export function OrgEventDetail() {
                       className="absolute inset-0 w-full h-full pointer-events-none opacity-90 group-hover:opacity-100 transition-opacity"
                     ></iframe>
                     <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent pointer-events-none group-hover:bg-transparent transition-colors" />
-                    <div className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-lg text-xs font-medium text-gray-700 shadow-sm flex items-center gap-1.5 hover:bg-white transition-colors">
+                    <div className="absolute bottom-2 left-2 bg-card/90 backdrop-blur-sm px-3 py-1.5 rounded-lg text-xs font-medium text-foreground shadow-sm flex items-center gap-1.5 hover:bg-card transition-colors">
                       <Navigation className="w-3 h-3 text-blue-600" />
                       Open in Maps
                     </div>
@@ -627,27 +627,27 @@ export function OrgEventDetail() {
               </div>
 
               {event.status === 'completed' && (
-                <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-5 border border-amber-100">
+                <div className="bg-gradient-to-br from-amber-50 dark:from-amber-50/10 to-orange-50 dark:to-orange-50/10 rounded-xl p-5 border border-amber-100">
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-500/15 flex items-center justify-center">
                       <FileText className="w-5 h-5 text-amber-600" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-gray-900">Certificate Management</h3>
-                      <p className="text-xs text-gray-600">Issue certificates to {registrations.filter(r => r.status === 'checked_in').length} checked-in volunteers.</p>
+                      <h3 className="font-semibold text-foreground">Certificate Management</h3>
+                      <p className="text-xs text-muted-foreground">Issue certificates to {registrations.filter(r => r.status === 'checked_in').length} checked-in volunteers.</p>
                     </div>
                   </div>
 
                   <div className="space-y-4">
-                    <div className="bg-white p-4 rounded-lg border border-amber-200">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">1. Organization Stamp/Signature</label>
+                    <div className="bg-card p-4 rounded-lg border border-amber-200">
+                      <label className="block text-sm font-medium text-foreground mb-2">1. Organization Stamp/Signature</label>
                       <div className="flex items-center gap-3">
-                        <label className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg text-sm font-medium transition-colors">
-                          <Upload className="w-4 h-4 text-gray-500" />
+                        <label className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-muted hover:bg-muted border border-border rounded-lg text-sm font-medium transition-colors">
+                          <Upload className="w-4 h-4 text-muted-foreground" />
                           {uploadingSig ? "Uploading..." : "Upload Image"}
                           <input type="file" accept="image/*" className="hidden" onChange={handleSignatureUpload} />
                         </label>
-                        <p className="text-xs text-gray-400">Required before issuing. (PNG/JPG)</p>
+                        <p className="text-xs text-muted-foreground">Required before issuing. (PNG/JPG)</p>
                       </div>
                     </div>
 
@@ -656,7 +656,7 @@ export function OrgEventDetail() {
                       disabled={event.certificates_issued || issuing}
                       className={`w-full h-11 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition-all
                                 ${event.certificates_issued
-                          ? "bg-emerald-100 text-emerald-700 cursor-default"
+                          ? "bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 cursor-default"
                           : "bg-amber-500 hover:bg-amber-600 text-white shadow-lg shadow-amber-500/20"
                         }
                             `}
@@ -679,14 +679,14 @@ export function OrgEventDetail() {
 
               {event.status !== 'cancelled' && event.status !== 'completed' && (
                 <div className="flex flex-col gap-3">
-                  <button onClick={handleCompleteEvent} disabled={completeLoading || !eventStarted} className={`w-full h-12 rounded-xl font-medium transition-colors flex items-center justify-center gap-2 shadow-md ${!eventStarted ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20'}`}><CheckCircle2 className="w-5 h-5" />{completeLoading ? "Completing..." : "Mark as Completed"}</button>
-                  <div className="flex flex-col sm:flex-row gap-3"><Link href={`/edit-event/${eventId}`} className="flex-1 h-11 bg-blue-50 text-blue-600 rounded-xl text-sm font-medium hover:bg-blue-100 transition-colors flex items-center justify-center">Edit Event</Link><button onClick={handleCancelEvent} disabled={cancelLoading} className="flex-1 h-11 bg-red-50 text-red-600 rounded-xl text-sm font-medium hover:bg-red-100 transition-colors disabled:opacity-50">{cancelLoading ? 'Cancelling...' : 'Cancel Event'}</button></div>
+                  <button onClick={handleCompleteEvent} disabled={completeLoading || !eventStarted} className={`w-full h-12 rounded-xl font-medium transition-colors flex items-center justify-center gap-2 shadow-md ${!eventStarted ? 'bg-muted text-muted-foreground cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20'}`}><CheckCircle2 className="w-5 h-5" />{completeLoading ? "Completing..." : "Mark as Completed"}</button>
+                  <div className="flex flex-col sm:flex-row gap-3"><Link href={`/edit-event/${eventId}`} className="flex-1 h-11 bg-blue-50 dark:bg-blue-500/15 text-blue-600 rounded-xl text-sm font-medium hover:bg-blue-100 dark:bg-blue-500/15 transition-colors flex items-center justify-center">Edit Event</Link><button onClick={handleCancelEvent} disabled={cancelLoading} className="flex-1 h-11 bg-red-50 dark:bg-red-500/15 text-red-600 rounded-xl text-sm font-medium hover:bg-red-100 dark:bg-red-500/15 transition-colors disabled:opacity-50">{cancelLoading ? 'Cancelling...' : 'Cancel Event'}</button></div>
                 </div>
               )}
 
               {(event.status === 'cancelled' || event.status === 'completed') && (
-                <div className="text-center py-4 bg-gray-50 rounded-xl">
-                  <p className="text-gray-500 text-sm">This event has been {event.status}</p>
+                <div className="text-center py-4 bg-muted rounded-xl">
+                  <p className="text-muted-foreground text-sm">This event has been {event.status}</p>
                   {event.status === 'completed' && <Link href={`/org-events/${eventId}/report`} className="inline-block mt-2 text-emerald-600 font-medium hover:underline text-sm">View Report</Link>}
                 </div>
               )}

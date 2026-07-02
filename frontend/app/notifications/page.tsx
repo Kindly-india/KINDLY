@@ -51,10 +51,10 @@ const isPostNotif = (type: string) => type === 'post_liked' || type === 'post_co
 function Avatar({ src, name, size = 10 }: { src: string | null; name: string; size?: number }) {
   const sizeClass = `w-${size} h-${size}`
   return (
-    <div className={`${sizeClass} rounded-full bg-gray-100 overflow-hidden shrink-0`}>
+    <div className={`${sizeClass} rounded-full bg-muted overflow-hidden shrink-0`}>
       {src
         ? <img src={src} alt={name} className="w-full h-full object-cover" />
-        : <div className="w-full h-full flex items-center justify-center text-gray-500 font-semibold text-sm">
+        : <div className="w-full h-full flex items-center justify-center text-muted-foreground font-semibold text-sm">
             {name?.charAt(0)?.toUpperCase()}
           </div>
       }
@@ -73,8 +73,8 @@ function NotificationIcon({ type }: { type: string }) {
     )
   }
   return (
-    <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
-      <Bell className="w-4 h-4 text-gray-500" />
+    <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center shrink-0">
+      <Bell className="w-4 h-4 text-muted-foreground" />
     </div>
   )
 }
@@ -97,22 +97,22 @@ function LikesListModal({ postId, onClose }: { postId: string; onClose: () => vo
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
 
       {/* Sheet */}
-      <div className="relative w-full max-w-lg bg-white rounded-t-2xl pb-safe max-h-[70vh] flex flex-col">
+      <div className="relative w-full max-w-lg bg-card rounded-t-2xl pb-safe max-h-[70vh] flex flex-col">
         {/* Handle + header */}
-        <div className="flex items-center justify-between px-4 pt-3 pb-3 border-b border-[#f5f5f7]">
-          <span className="text-[15px] font-semibold text-[#1d1d1f]">Liked by</span>
-          <button onClick={onClose} className="p-1 rounded-full hover:bg-gray-100">
-            <X className="w-4 h-4 text-gray-500" />
+        <div className="flex items-center justify-between px-4 pt-3 pb-3 border-b border-border">
+          <span className="text-[15px] font-semibold text-foreground">Liked by</span>
+          <button onClick={onClose} className="p-1 rounded-full hover:bg-muted">
+            <X className="w-4 h-4 text-muted-foreground" />
           </button>
         </div>
 
         <div className="overflow-y-auto flex-1">
           {loading ? (
             <div className="flex items-center justify-center py-10">
-              <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+              <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
             </div>
           ) : likers.length === 0 ? (
-            <p className="text-center text-[13px] text-[#86868b] py-10">No likes yet.</p>
+            <p className="text-center text-[13px] text-muted-foreground py-10">No likes yet.</p>
           ) : (
             <ul>
               {likers.map((liker) => (
@@ -120,11 +120,11 @@ function LikesListModal({ postId, onClose }: { postId: string; onClose: () => vo
                   <Link
                     href={`/volunteers/${liker.user_id}`}
                     onClick={onClose}
-                    className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors"
+                    className="flex items-center gap-3 px-4 py-3 hover:bg-muted transition-colors"
                   >
                     <Avatar src={liker.avatar_url} name={liker.full_name} size={10} />
                     <div className="flex items-center gap-1 min-w-0">
-                      <span className="text-[14px] font-semibold text-[#1d1d1f] truncate">{liker.full_name}</span>
+                      <span className="text-[14px] font-semibold text-foreground truncate">{liker.full_name}</span>
                       {liker.is_verified && <VerifiedBadge />}
                     </div>
                   </Link>
@@ -187,29 +187,29 @@ function RequestsInbox({
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-[#f5f5f7]">
+      <div className="sticky top-0 z-10 bg-card/95 backdrop-blur border-b border-border">
         <div className="max-w-lg mx-auto px-4 h-14 flex items-center gap-3">
           <button
             onClick={onBack}
-            className="p-2 -ml-2 rounded-full hover:bg-gray-100 active:scale-95 transition-all"
+            className="p-2 -ml-2 rounded-full hover:bg-muted active:scale-95 transition-all"
             aria-label="Back"
           >
-            <ArrowLeft className="w-5 h-5 text-[#1d1d1f]" />
+            <ArrowLeft className="w-5 h-5 text-foreground" />
           </button>
-          <h1 className="text-[17px] font-semibold text-[#1d1d1f]">Follow Requests</h1>
+          <h1 className="text-[17px] font-semibold text-foreground">Follow Requests</h1>
         </div>
       </div>
 
       <div className="max-w-lg mx-auto">
         {items.length === 0 ? (
           <div className="flex flex-col items-center justify-center pt-24 px-8 text-center">
-            <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-              <Users className="w-7 h-7 text-gray-400" />
+            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+              <Users className="w-7 h-7 text-muted-foreground" />
             </div>
-            <p className="text-[15px] font-semibold text-[#1d1d1f] mb-1">No pending requests</p>
-            <p className="text-[13px] text-[#86868b]">New follow requests will appear here.</p>
+            <p className="text-[15px] font-semibold text-foreground mb-1">No pending requests</p>
+            <p className="text-[13px] text-muted-foreground">New follow requests will appear here.</p>
           </div>
         ) : (
           <ul>
@@ -218,13 +218,13 @@ function RequestsInbox({
               return (
                 <li
                   key={req.requester_id}
-                  className="flex items-center gap-3 px-4 py-3.5 border-b border-[#f5f5f7]"
+                  className="flex items-center gap-3 px-4 py-3.5 border-b border-border"
                 >
                   <Avatar src={req.avatar_url} name={req.full_name} size={10} />
 
                   <div className="flex-1 min-w-0">
-                    <p className="text-[14px] font-semibold text-[#1d1d1f] truncate">{req.full_name}</p>
-                    <p className="text-[12px] text-[#86868b] truncate">
+                    <p className="text-[14px] font-semibold text-foreground truncate">{req.full_name}</p>
+                    <p className="text-[12px] text-muted-foreground truncate">
                       {req.city || req.headline || 'Volunteer'} · {timeAgo(req.requested_at)}
                     </p>
                   </div>
@@ -234,7 +234,7 @@ function RequestsInbox({
                       <Check className="w-3.5 h-3.5" /> Confirmed
                     </span>
                   ) : state === 'rejected' ? (
-                    <span className="text-xs text-gray-400 font-medium shrink-0">Deleted</span>
+                    <span className="text-xs text-muted-foreground font-medium shrink-0">Deleted</span>
                   ) : (
                     <div className="flex items-center gap-2 shrink-0">
                       <button
@@ -247,7 +247,7 @@ function RequestsInbox({
                       <button
                         onClick={() => handleReject(req.requester_id)}
                         disabled={state === 'loading'}
-                        className="px-3 py-1.5 bg-gray-100 text-gray-700 text-xs font-semibold rounded-lg hover:bg-gray-200 active:scale-95 transition-all disabled:opacity-50"
+                        className="px-3 py-1.5 bg-muted text-foreground text-xs font-semibold rounded-lg hover:bg-muted active:scale-95 transition-all disabled:opacity-50"
                       >
                         Delete
                       </button>
@@ -309,18 +309,18 @@ export default function NotificationsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-[#f5f5f7]">
+      <div className="sticky top-0 z-10 bg-card/95 backdrop-blur border-b border-border">
         <div className="max-w-lg mx-auto px-4 h-14 flex items-center gap-3">
           <button
             onClick={() => router.back()}
-            className="p-2 -ml-2 rounded-full hover:bg-gray-100 active:scale-95 transition-all"
+            className="p-2 -ml-2 rounded-full hover:bg-muted active:scale-95 transition-all"
             aria-label="Back"
           >
-            <ArrowLeft className="w-5 h-5 text-[#1d1d1f]" />
+            <ArrowLeft className="w-5 h-5 text-foreground" />
           </button>
-          <h1 className="text-[17px] font-semibold text-[#1d1d1f]">Notifications</h1>
+          <h1 className="text-[17px] font-semibold text-foreground">Notifications</h1>
         </div>
       </div>
 
@@ -328,14 +328,14 @@ export default function NotificationsPage() {
         {/* ── Follow Requests row — always at top ── */}
         <button
           onClick={() => setShowRequestsInbox(true)}
-          className="w-full flex items-center gap-3 px-4 py-3.5 border-b border-[#f5f5f7] hover:bg-gray-50 active:bg-gray-100 transition-colors text-left"
+          className="w-full flex items-center gap-3 px-4 py-3.5 border-b border-border hover:bg-muted active:bg-muted transition-colors text-left"
         >
-          <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-500/15 flex items-center justify-center shrink-0">
             <UserCheck className="w-4 h-4 text-blue-600" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[14px] font-semibold text-[#1d1d1f]">Follow Requests</p>
-            <p className="text-[12px] text-[#86868b]">
+            <p className="text-[14px] font-semibold text-foreground">Follow Requests</p>
+            <p className="text-[12px] text-muted-foreground">
               {loading ? '...' : pendingCount > 0 ? `${pendingCount} pending` : 'No pending requests'}
             </p>
           </div>
@@ -344,7 +344,7 @@ export default function NotificationsPage() {
               {pendingCount > 99 ? '99+' : pendingCount}
             </span>
           )}
-          <ChevronRight className="w-4 h-4 text-gray-400 shrink-0" />
+          <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
         </button>
 
         {/* ── General notifications feed ── */}
@@ -352,29 +352,29 @@ export default function NotificationsPage() {
           <div className="flex flex-col gap-3 px-4 pt-4">
             {[...Array(5)].map((_, i) => (
               <div key={i} className="flex items-center gap-3 animate-pulse">
-                <div className="w-10 h-10 rounded-full bg-gray-100 shrink-0" />
+                <div className="w-10 h-10 rounded-full bg-muted shrink-0" />
                 <div className="flex-1 space-y-2">
-                  <div className="h-3 bg-gray-100 rounded w-3/4" />
-                  <div className="h-3 bg-gray-100 rounded w-1/3" />
+                  <div className="h-3 bg-muted rounded w-3/4" />
+                  <div className="h-3 bg-muted rounded w-1/3" />
                 </div>
               </div>
             ))}
           </div>
         ) : loadError ? (
           <div className="flex flex-col items-center justify-center pt-20 px-8 text-center">
-            <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mb-4">
+            <div className="w-16 h-16 rounded-full bg-red-50 dark:bg-red-500/15 flex items-center justify-center mb-4">
               <Bell className="w-7 h-7 text-red-400" />
             </div>
-            <p className="text-[15px] font-semibold text-[#1d1d1f] mb-1">Couldn't load notifications</p>
-            <p className="text-[13px] text-[#86868b]">Check your connection and try again.</p>
+            <p className="text-[15px] font-semibold text-foreground mb-1">Couldn't load notifications</p>
+            <p className="text-[13px] text-muted-foreground">Check your connection and try again.</p>
           </div>
         ) : notifications.length === 0 ? (
           <div className="flex flex-col items-center justify-center pt-20 px-8 text-center">
-            <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-              <Bell className="w-7 h-7 text-gray-400" />
+            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+              <Bell className="w-7 h-7 text-muted-foreground" />
             </div>
-            <p className="text-[15px] font-semibold text-[#1d1d1f] mb-1">You're all caught up</p>
-            <p className="text-[13px] text-[#86868b]">New activity will appear here.</p>
+            <p className="text-[15px] font-semibold text-foreground mb-1">You're all caught up</p>
+            <p className="text-[13px] text-muted-foreground">New activity will appear here.</p>
           </div>
         ) : (
           <ul>
@@ -384,12 +384,12 @@ export default function NotificationsPage() {
                 return (
                   <li
                     key={n.id}
-                    className={`flex items-center gap-3 px-4 py-3.5 border-b border-[#f5f5f7] ${!n.read ? "bg-[#80242a]/[0.03]" : ""}`}
+                    className={`flex items-center gap-3 px-4 py-3.5 border-b border-border ${!n.read ? "bg-[#80242a]/[0.03]" : ""}`}
                   >
                     {/* Actor avatar with type badge */}
                     <div className="relative shrink-0">
                       <Avatar src={n.actor_avatar} name={n.actor_name ?? '?'} size={10} />
-                      <div className={`absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full border-2 border-white flex items-center justify-center ${n.type === 'post_liked' ? 'bg-red-500' : 'bg-[#1d1d1f]'}`}>
+                      <div className={`absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full border-2 border-white flex items-center justify-center ${n.type === 'post_liked' ? 'bg-red-500' : 'bg-primary'}`}>
                         {n.type === 'post_liked'
                           ? <Heart className="w-2.5 h-2.5 text-white fill-white" />
                           : <MessageCircle className="w-2.5 h-2.5 text-white" />
@@ -402,8 +402,8 @@ export default function NotificationsPage() {
                       onClick={() => n.entity_id && router.push(`/posts/${n.entity_id}`)}
                       className="flex-1 min-w-0 text-left"
                     >
-                      <p className="text-[14px] text-[#1d1d1f] leading-snug">{n.message}</p>
-                      <p className="text-[12px] text-[#86868b] mt-0.5">{timeAgo(n.created_at)}</p>
+                      <p className="text-[14px] text-foreground leading-snug">{n.message}</p>
+                      <p className="text-[12px] text-muted-foreground mt-0.5">{timeAgo(n.created_at)}</p>
                     </button>
 
                     {/* Post thumbnail — taps to post detail */}
@@ -415,7 +415,7 @@ export default function NotificationsPage() {
                         <img
                           src={n.post_thumbnail}
                           alt=""
-                          className="w-12 h-12 rounded-lg object-cover border border-[#f0f0f0]"
+                          className="w-12 h-12 rounded-lg object-cover border border-border"
                         />
                       </button>
                     )}
@@ -424,7 +424,7 @@ export default function NotificationsPage() {
                     {n.type === 'post_liked' && n.entity_id && (
                       <button
                         onClick={() => setLikesModalPostId(n.entity_id)}
-                        className="shrink-0 text-[11px] text-[#86868b] hover:text-[#1d1d1f] transition-colors"
+                        className="shrink-0 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
                       >
                         <ChevronRight className="w-4 h-4" />
                       </button>
@@ -441,15 +441,15 @@ export default function NotificationsPage() {
               return (
                 <li
                   key={n.id}
-                  className={`flex items-start gap-3 px-4 py-3.5 border-b border-[#f5f5f7] transition-colors ${!n.read ? "bg-[#80242a]/[0.03]" : ""}`}
+                  className={`flex items-start gap-3 px-4 py-3.5 border-b border-border transition-colors ${!n.read ? "bg-[#80242a]/[0.03]" : ""}`}
                 >
                   <NotificationIcon type={n.type} />
                   <div className="flex-1 min-w-0 pt-0.5">
-                    <p className="text-[14px] text-[#1d1d1f] leading-snug">
+                    <p className="text-[14px] text-foreground leading-snug">
                       <span className="font-semibold">{n.actor_name ?? "Someone"}</span>{" "}
                       {n.message}
                     </p>
-                    <p className="text-[12px] text-[#86868b] mt-0.5">{timeAgo(n.created_at)}</p>
+                    <p className="text-[12px] text-muted-foreground mt-0.5">{timeAgo(n.created_at)}</p>
                   </div>
                   {!n.read && (
                     <div className="w-2 h-2 rounded-full bg-[#80242a] shrink-0 mt-1.5" />

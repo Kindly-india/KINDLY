@@ -5,6 +5,11 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+/** "art_culture" -> "Art Culture" — clean display label for raw category/tag slugs. */
+export function formatLabel(raw: string): string {
+  return raw.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+}
+
 /**
  * Fetches a URL as a blob and triggers a browser download dialog.
  * Works on iOS Safari (unlike window.open which just opens a new tab).

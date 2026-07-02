@@ -148,14 +148,14 @@ useEffect(() => {
   const displayName = profile?.full_name || profile?.name || "User"
   const displayInitial = displayName ? displayName.charAt(0).toUpperCase() : "U"
 
-  if (loading) return <div className="h-screen flex items-center justify-center bg-gray-50"><Loader2 className="w-8 h-8 animate-spin text-emerald-600" /></div>
+  if (loading) return <div className="h-screen flex items-center justify-center bg-muted"><Loader2 className="w-8 h-8 animate-spin text-emerald-600" /></div>
 
   const level = Math.floor(stats.impactScore / 100) + 1;
   const nextLevel = level * 100;
   const progress = (stats.impactScore % 100);
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] pb-20 font-sans">
+    <div className="min-h-screen bg-muted pb-20 font-sans">
 
 
       {/* 1. HERO HEADER */}
@@ -178,9 +178,9 @@ useEffect(() => {
             <div className="mt-8 max-w-md">
                <div className="flex justify-between text-sm mb-2 font-medium">
                   <span className="text-emerald-400">Level {level} Changemaker</span>
-                  <span className="text-gray-400">{stats.impactScore} / {nextLevel} XP</span>
+                  <span className="text-muted-foreground">{stats.impactScore} / {nextLevel} XP</span>
                </div>
-               <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+               <div className="h-2 bg-muted rounded-full overflow-hidden">
                   <div className="h-full bg-gradient-to-r from-emerald-500 to-teal-400" style={{width: `${progress}%`}} />
                </div>
             </div>
@@ -192,27 +192,27 @@ useEffect(() => {
         
         {/* KEY STATS ROW */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between h-32">
+          <div className="bg-card p-6 rounded-2xl shadow-sm border border-border flex flex-col justify-between h-32">
              <div className="flex items-center gap-2 text-emerald-600 font-semibold text-sm uppercase tracking-wide"><CheckCircle2 className="w-4 h-4" /> Verified Hours</div>
              <div>
-                <span className="text-4xl font-bold text-gray-900">{stats.verifiedHours}</span>
-                <span className="text-sm text-gray-400 ml-1">hrs</span>
+                <span className="text-4xl font-bold text-foreground">{stats.verifiedHours}</span>
+                <span className="text-sm text-muted-foreground ml-1">hrs</span>
              </div>
           </div>
           
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between h-32">
+          <div className="bg-card p-6 rounded-2xl shadow-sm border border-border flex flex-col justify-between h-32">
              <div className="flex items-center gap-2 text-orange-500 font-semibold text-sm uppercase tracking-wide"><Clock className="w-4 h-4" /> Committed</div>
              <div>
-                <span className="text-4xl font-bold text-gray-900">{stats.pendingHours}</span>
-                <span className="text-sm text-gray-400 ml-1">hrs pending</span>
+                <span className="text-4xl font-bold text-foreground">{stats.pendingHours}</span>
+                <span className="text-sm text-muted-foreground ml-1">hrs pending</span>
              </div>
           </div>
 
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between h-32">
+          <div className="bg-card p-6 rounded-2xl shadow-sm border border-border flex flex-col justify-between h-32">
              <div className="flex items-center gap-2 text-blue-600 font-semibold text-sm uppercase tracking-wide"><Heart className="w-4 h-4" /> Lives Touched</div>
              <div>
-                <span className="text-4xl font-bold text-gray-900">{stats.totalEvents}</span>
-                <span className="text-sm text-gray-400 ml-1">events</span>
+                <span className="text-4xl font-bold text-foreground">{stats.totalEvents}</span>
+                <span className="text-sm text-muted-foreground ml-1">events</span>
              </div>
           </div>
 
@@ -228,18 +228,18 @@ useEffect(() => {
            {/* LEFT COL: SKILLS */}
            <div className="space-y-6">
               {/* SKILLS */}
-              <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
-                 <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2"><Award className="w-5 h-5 text-purple-500" /> Skills Acquired</h3>
+              <div className="bg-card p-6 rounded-3xl border border-border shadow-sm">
+                 <h3 className="font-bold text-foreground mb-4 flex items-center gap-2"><Award className="w-5 h-5 text-purple-500" /> Skills Acquired</h3>
                  {stats.skills.length > 0 ? (
                    <div className="flex flex-wrap gap-2">
                      {stats.skills.map((skill, i) => (
-                       <span key={i} className="px-3 py-1 bg-purple-50 text-purple-700 rounded-lg text-xs font-semibold border border-purple-100">
+                       <span key={i} className="px-3 py-1 bg-purple-50 dark:bg-purple-500/15 text-purple-700 rounded-lg text-xs font-semibold border border-purple-100">
                          {skill}
                        </span>
                      ))}
                    </div>
                  ) : (
-                   <p className="text-sm text-gray-400 italic">Complete events to unlock skills.</p>
+                   <p className="text-sm text-muted-foreground italic">Complete events to unlock skills.</p>
                  )}
               </div>
 
@@ -249,8 +249,8 @@ useEffect(() => {
            <div className="md:col-span-2 space-y-6">
               
               {/* ACTIVITY CHART */}
-              <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
-                 <h3 className="font-bold text-gray-900 mb-6">Activity (Last 6 Months)</h3>
+              <div className="bg-card p-6 rounded-3xl border border-border shadow-sm">
+                 <h3 className="font-bold text-foreground mb-6">Activity (Last 6 Months)</h3>
                  <div className="h-64">
                    <ResponsiveContainer width="100%" height="100%">
                      <BarChart data={stats.monthlyActivity}>
@@ -263,8 +263,8 @@ useEffect(() => {
               </div>
 
               {/* CAUSES BREAKDOWN */}
-              <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
-                 <h3 className="font-bold text-gray-900 mb-4">Top Causes</h3>
+              <div className="bg-card p-6 rounded-3xl border border-border shadow-sm">
+                 <h3 className="font-bold text-foreground mb-4">Top Causes</h3>
                  <div className="h-48 flex items-center justify-center">
                    <ResponsiveContainer width="100%" height="100%">
                      <PieChart>

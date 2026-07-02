@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { cn } from "@/lib/utils"
+import { cn, formatLabel } from "@/lib/utils"
 import Link from "next/link"
 import {
   Clock,
@@ -23,6 +23,42 @@ import {
 import { api } from "@/lib/api"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
+import { Card } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+
+// lucide-react's Instagram/Linkedin icons are deprecated (slated for removal),
+// and lucide ships no WhatsApp glyph at all — hand-rolled outline SVGs here
+// keep the same 24x24/stroke-2/currentColor style as the rest of the app's icons.
+function InstagramIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <rect x="3" y="3" width="18" height="18" rx="5" />
+      <circle cx="12" cy="12" r="4" />
+      <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}
+
+function LinkedinIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <rect x="3" y="3" width="18" height="18" rx="3" />
+      <line x1="8" y1="10" x2="8" y2="16" />
+      <circle cx="8" cy="6.5" r="0.75" fill="currentColor" stroke="none" />
+      <path d="M12 16v-3.5a2.5 2.5 0 0 1 5 0V16" />
+      <line x1="12" y1="10" x2="12" y2="16" />
+    </svg>
+  )
+}
+
+function WhatsappIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M3 21l1.5-4.5A8 8 0 1 1 8.5 19.5L3 21Z" />
+      <path d="M8.5 9.5c0 3 2.5 5.5 5.5 5.5.5 0 1-.5 1-1v-1l-2-1-1 1a5 5 0 0 1-2.5-2.5l1-1-1-2h-1c-.5 0-1 .5-1 1Z" />
+    </svg>
+  )
+}
 
 // --- STATIC STORIES (Unchanged) ---
 const stories = [
@@ -257,95 +293,102 @@ export function VolunteerHomePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-[#0066cc] animate-spin" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-background dark:bg-black relative">
+      {/* Ambient dark-mode glow — ownly rendered in dark mode so it never
+          affects light mode layout/paint. */}
+      <div className="hidden dark:block absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[420px] bg-emerald-500/5 rounded-full blur-3xl pointer-events-none -z-0" />
 
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-[#fef5f0] via-[#fff8f5] to-[#f5fcf8] py-8 md:py-16 overflow-hidden">
+      <section className="relative bg-gradient-to-br from-[#fef5f0] dark:from-black via-[#fff8f5] dark:via-black to-[#f5fcf8] dark:to-black py-8 md:py-16 overflow-hidden">
         {/* Decorative Icons */}
-        <div className="absolute top-4 left-4 md:top-8 md:left-20 w-8 h-8 md:w-12 md:h-12 bg-white rounded-xl shadow-lg flex items-center justify-center">
+        <div className="absolute top-4 left-4 md:top-8 md:left-20 w-8 h-8 md:w-12 md:h-12 bg-card rounded-xl shadow-lg flex items-center justify-center">
           <Heart className="w-4 h-4 md:w-5 md:h-5 text-[#ff6b6b]" />
         </div>
-        <div className="absolute top-10 right-6 md:top-16 md:right-32 w-8 h-8 md:w-12 md:h-12 bg-white rounded-xl shadow-lg flex items-center justify-center">
+        <div className="absolute top-10 right-6 md:top-16 md:right-32 w-8 h-8 md:w-12 md:h-12 bg-card rounded-xl shadow-lg flex items-center justify-center">
           <Sparkles className="w-4 h-4 md:w-5 md:h-5 text-[#f59e0b]" />
         </div>
-        <div className="absolute bottom-14 left-6 md:bottom-20 md:left-32 w-8 h-8 md:w-12 md:h-12 bg-white rounded-xl shadow-lg flex items-center justify-center">
+        <div className="absolute bottom-14 left-6 md:bottom-20 md:left-32 w-8 h-8 md:w-12 md:h-12 bg-card rounded-xl shadow-lg flex items-center justify-center">
           <Users className="w-4 h-4 md:w-5 md:h-5 text-[#0066cc]" />
         </div>
-        <div className="absolute bottom-8 right-4 md:bottom-12 md:right-20 w-8 h-8 md:w-12 md:h-12 bg-white rounded-xl shadow-lg flex items-center justify-center">
+        <div className="absolute bottom-8 right-4 md:bottom-12 md:right-20 w-8 h-8 md:w-12 md:h-12 bg-card rounded-xl shadow-lg flex items-center justify-center">
           <Leaf className="w-4 h-4 md:w-5 md:h-5 text-[#10b981]" />
         </div>
 
         <div className="max-w-7xl mx-auto px-4 md:px-8 text-center relative">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white rounded-full shadow-sm mb-4 md:mb-6 max-w-full">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-card rounded-full shadow-sm mb-4 md:mb-6 max-w-full">
             <span className="w-1.5 h-1.5 md:w-2 md:h-2 bg-emerald-500 rounded-full animate-pulse shrink-0" />
-            <span className="text-[11px] md:text-[13px] text-[#1d1d1f] font-medium truncate">
+            <span className="text-[11px] md:text-[13px] text-foreground font-medium truncate">
               {stats.supportedCauses.length > 0
-                ? `Supporting ${stats.supportedCauses.slice(0, 2).join(', ')}${stats.supportedCauses.length > 2 ? '...' : ''}`
+                ? `Supporting ${stats.supportedCauses.slice(0, 2).map(formatLabel).join(', ')}${stats.supportedCauses.length > 2 ? '...' : ''}`
                 : "Start your journey today!"}
             </span>
           </div>
-          <h1 className="text-[24px] md:text-[56px] font-bold text-[#1d1d1f] tracking-tight leading-tight">
+          <h1 className="text-[24px] md:text-[56px] font-bold text-foreground dark:text-white tracking-tight leading-tight">
             Welcome back,{" "}
             <span className="bg-gradient-to-r from-[#ff6b6b] via-[#f59e0b] to-[#10b981] bg-clip-text text-transparent">
               {profile?.full_name?.split(' ')[0] || "Volunteer"}
             </span>
             .
           </h1>
-          <p className="text-[14px] md:text-[19px] text-[#86868b] mt-2 md:mt-3">
-            Ready to spread some kindness today in <span className="text-[#1d1d1f] font-semibold">{profile?.city || "your city"}</span>?
+          <p className="text-[14px] md:text-[19px] text-muted-foreground dark:text-neutral-400 mt-2 md:mt-3">
+            Ready to spread some kindness today in <span className="text-foreground dark:text-white font-semibold">{profile?.city || "your city"}</span>?
           </p>
 
           <div className="flex justify-center gap-2 md:gap-4 mt-6 md:mt-8">
-            <div className="bg-white rounded-xl px-3 md:px-6 py-3 md:py-4 shadow-sm border border-[#f5f5f7]">
+            <div className="bg-card rounded-xl px-3 md:px-6 py-3 md:py-4 shadow-sm border border-border dark:bg-neutral-900/50 dark:backdrop-blur-md dark:border-neutral-800/60 dark:rounded-2xl dark:shadow-none">
               <p className="text-[18px] md:text-[28px] font-bold text-[#ff6b6b]">
                 {stats.eventsThisWeek}
               </p>
-              <p className="text-[10px] md:text-[12px] text-[#86868b]">Events This Week</p>
+              <p className="text-[10px] md:text-[12px] text-muted-foreground dark:text-neutral-400">Events This Week</p>
             </div>
-            <div className="bg-white rounded-xl px-3 md:px-6 py-3 md:py-4 shadow-sm border border-[#f5f5f7]">
+            <div className="bg-card rounded-xl px-3 md:px-6 py-3 md:py-4 shadow-sm border border-border dark:bg-neutral-900/50 dark:backdrop-blur-md dark:border-neutral-800/60 dark:rounded-2xl dark:shadow-none">
               <div className="flex items-center justify-center gap-1">
                 <p className="text-[18px] md:text-[28px] font-bold text-[#f59e0b]">
                   {stats.impactScore}
                 </p>
                 <Zap className="w-4 h-4 md:w-5 md:h-5 text-[#f59e0b] fill-current" />
               </div>
-              <p className="text-[10px] md:text-[12px] text-[#86868b]">Impact Score</p>
+              <p className="text-[10px] md:text-[12px] text-muted-foreground dark:text-neutral-400">Impact Score</p>
             </div>
-            <div className="bg-white rounded-xl px-3 md:px-6 py-3 md:py-4 shadow-sm border border-[#f5f5f7]">
+            <div className="bg-card rounded-xl px-3 md:px-6 py-3 md:py-4 shadow-sm border border-border dark:bg-neutral-900/50 dark:backdrop-blur-md dark:border-neutral-800/60 dark:rounded-2xl dark:shadow-none">
               <p className="text-[18px] md:text-[28px] font-bold text-[#10b981]">
                 {stats.hoursContributed}
               </p>
-              <p className="text-[10px] md:text-[12px] text-[#86868b]">Hours Contributed</p>
+              <p className="text-[10px] md:text-[12px] text-muted-foreground dark:text-neutral-400">Hours Contributed</p>
             </div>
           </div>
         </div>
       </section>
 
 {/* Main Event Feed */}
-      <section className="bg-[#f5f5f7] py-6 md:py-12">
+      <section className="bg-muted dark:bg-black py-6 md:py-12 relative">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="mb-4 md:mb-8 flex justify-between items-end">
             <div>
-              <h2 className="text-[20px] md:text-[36px] font-bold text-[#1d1d1f] tracking-tight">Registered Events</h2>
-              <p className="text-[12px] md:text-[15px] text-[#86868b] mt-0.5">Find your next way to make a difference</p>
+              <h2 className="text-[20px] md:text-[36px] font-bold text-foreground dark:text-white tracking-tight">Registered Events</h2>
+              <p className="text-[12px] md:text-[15px] text-muted-foreground dark:text-neutral-400 mt-0.5">Find your next way to make a difference</p>
             </div>
           </div>
 
           {myEvents.length === 0 ? (
-            <div className="text-center py-12 bg-white rounded-2xl">
-              <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500">You don't have any active registrations.</p>
-              <Link href="/events" className="mt-4 inline-block px-6 py-2 bg-[#0066cc] text-white rounded-full font-medium text-sm">
-                Browse Events
-              </Link>
-            </div>
+            <Card className="text-center py-12 dark:bg-neutral-900/50 dark:backdrop-blur-md dark:border-neutral-800/60 dark:rounded-2xl dark:shadow-none">
+              <Calendar className="w-12 h-12 text-muted-foreground dark:text-neutral-500 mx-auto mb-3" />
+              <p className="text-muted-foreground dark:text-neutral-400">You don't have any active registrations.</p>
+              <Button
+                asChild
+                variant="nav-pill"
+                className="mt-4 self-center h-9 px-4 text-sm dark:bg-white dark:text-black dark:hover:bg-neutral-200 dark:rounded-xl"
+              >
+                <Link href="/events">Browse Events</Link>
+              </Button>
+            </Card>
           ) : (
             <div
               ref={eventsRef}
@@ -357,10 +400,10 @@ export function VolunteerHomePage() {
                   key={event.id}
                   href={`/events/${event.id}/registered`}
                   /* Added flex flex-col and self-stretch to fix Safari/iOS rendering bugs */
-                  className="shrink-0 w-64 md:w-auto snap-start group bg-white rounded-xl md:rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col self-stretch"
+                  className="shrink-0 w-64 md:w-auto snap-start group bg-card rounded-xl md:rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col self-stretch"
                 >
                   {/* Swapped aspect-4/3 to bulletproof 16:9 aspect ratio container */}
-                  <div className="relative aspect-video aspect-[16/9] w-full overflow-hidden bg-gray-100 shrink-0">
+                  <div className="relative aspect-video aspect-[16/9] w-full overflow-hidden bg-muted shrink-0">
                     {event.cover_image_url ? (
                       <img
                         src={event.cover_image_url}
@@ -368,7 +411,7 @@ export function VolunteerHomePage() {
                         className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                     ) : (
-                      <div className="absolute inset-0 w-full h-full flex items-center justify-center text-gray-300">
+                      <div className="absolute inset-0 w-full h-full flex items-center justify-center text-muted-foreground">
                         <Sparkles className="w-10 h-10" />
                       </div>
                     )}
@@ -380,21 +423,21 @@ export function VolunteerHomePage() {
                   
                   {/* Added flex-1 and flex-col so the content area expands to fill empty space */}
                   <div className="p-3 md:p-4 flex flex-col flex-1">
-                    <h3 className="text-[13px] md:text-[15px] font-semibold text-[#1d1d1f] mb-1.5 line-clamp-1">{event.title}</h3>
+                    <h3 className="text-[13px] md:text-[15px] font-semibold text-foreground dark:text-white mb-1.5 line-clamp-1">{event.title}</h3>
                     <div className="space-y-0.5">
-                      <div className="flex items-center gap-1.5 text-[#86868b]">
+                      <div className="flex items-center gap-1.5 text-muted-foreground dark:text-neutral-400">
                         <Clock className="w-3 h-3" />
                         <span className="text-[10px] md:text-[12px]">{formatDate(event.event_date)} • {formatTime(event.start_time)}</span>
                       </div>
-                      <div className="flex items-center gap-1.5 text-[#86868b]">
+                      <div className="flex items-center gap-1.5 text-muted-foreground dark:text-neutral-400">
                         <MapPin className="w-3 h-3" />
                         <span className="text-[10px] md:text-[12px] line-clamp-1">{event.location}</span>
                       </div>
                     </div>
                     
                     {/* Added mt-auto and slightly more top padding to align badges at the absolute bottom */}
-                    <div className="flex items-center justify-between mt-auto pt-3 border-t border-[#f5f5f7]">
-                      <div className={cn("text-[10px] md:text-[11px] font-medium px-2 py-1 rounded-full", "bg-blue-100 text-blue-700")}>
+                    <div className="flex items-center justify-between mt-auto pt-3 border-t border-border">
+                      <div className={cn("text-[10px] md:text-[11px] font-medium px-2 py-1 rounded-full", "bg-blue-100 dark:bg-blue-500/15 text-blue-700")}>
                         Registered
                       </div>
                     </div>
@@ -407,29 +450,33 @@ export function VolunteerHomePage() {
       </section>
 
       {/* Impact Section */}
-      <section className="bg-gradient-to-br from-[#f0fdf4] via-[#ecfdf5] to-[#d1fae5] py-8 md:py-16">
+      <section className="bg-gradient-to-br from-[#f0fdf4] dark:from-black via-[#ecfdf5] dark:via-black to-[#d1fae5] dark:to-black py-8 md:py-16 relative">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
-          <h2 className="text-[24px] md:text-[40px] font-bold text-[#1d1d1f] tracking-tight mb-6 md:mb-10">Your Impact.</h2>
+          <h2 className="text-[24px] md:text-[40px] font-bold text-foreground dark:text-white tracking-tight mb-6 md:mb-10">Your Impact.</h2>
 
           <div className="flex flex-col md:flex-row items-center gap-6 md:gap-12">
             <div className="relative w-36 h-36 md:w-56 md:h-56 shrink-0">
               <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="42" fill="none" stroke="#d1fae5" strokeWidth="10" />
-                <circle cx="50" cy="50" r="42" fill="none" stroke="#10b981" strokeWidth="10" strokeLinecap="round" strokeDasharray={`${(Math.min(stats.hoursContributed, 20) / 20) * 264} 264`} />
+                <circle cx="50" cy="50" r="42" fill="none" stroke="#d1fae5" strokeWidth="10" className="dark:stroke-neutral-800" />
+                <circle
+                  cx="50" cy="50" r="42" fill="none" stroke="#10b981" strokeWidth="10" strokeLinecap="round"
+                  strokeDasharray={`${(Math.min(stats.hoursContributed, 20) / 20) * 264} 264`}
+                  className="dark:stroke-emerald-500/80 dark:stroke-[6]"
+                />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
                 <span className="text-[36px] md:text-[56px] font-bold text-[#10b981]">{stats.hoursContributed}</span>
-                <span className="text-[12px] md:text-[15px] text-[#86868b]">hours</span>
+                <span className="text-[12px] md:text-[15px] text-muted-foreground dark:text-neutral-400">hours</span>
               </div>
             </div>
             <div className="text-center md:text-left">
-              <h3 className="text-[18px] md:text-[28px] font-bold text-[#1d1d1f]">{stats.hoursContributed} Volunteer Hours</h3>
-              <p className="text-[13px] md:text-[15px] text-[#86868b] mt-0.5">Total Contribution</p>
-              <p className="text-[13px] md:text-[15px] text-[#1d1d1f] mt-3 max-w-md">You're making a real difference in {profile?.city || "Nashik"}. Keep up the amazing work!</p>
+              <h3 className="text-[18px] md:text-[28px] font-bold text-foreground dark:text-white">{stats.hoursContributed} Volunteer Hours</h3>
+              <p className="text-[13px] md:text-[15px] text-muted-foreground dark:text-neutral-400 mt-0.5">Total Contribution</p>
+              <p className="text-[13px] md:text-[15px] text-foreground dark:text-neutral-300 mt-3 max-w-md">You're making a real difference in {profile?.city || "Nashik"}. Keep up the amazing work!</p>
 
               <Link
                 href="/volunteer-impact"
-                className="mt-6 inline-flex items-center gap-2 px-6 py-2.5 bg-[#10b981] text-white rounded-full font-semibold text-sm hover:bg-[#059669] transition-all shadow-sm shadow-emerald-200 hover:shadow-emerald-300 hover:-translate-y-0.5"
+                className="mt-6 inline-flex items-center gap-2 px-6 py-2.5 bg-[#10b981] text-white rounded-full font-semibold text-sm hover:bg-[#059669] transition-all shadow-sm shadow-emerald-200 hover:shadow-emerald-300 hover:-translate-y-0.5 dark:bg-white/10 dark:hover:bg-white/15 dark:text-white dark:border dark:border-white/10 dark:rounded-xl dark:shadow-none dark:hover:shadow-none"
               >
                 View Full Impact Report <ChevronRight className="w-4 h-4" />
               </Link>
@@ -437,36 +484,36 @@ export function VolunteerHomePage() {
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mt-8 md:mt-12">
-            <div className="bg-white rounded-xl p-3 md:p-4 shadow-sm">
-              <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-[#ff6b6b]/10 flex items-center justify-center mb-2">
+            <div className="bg-card rounded-xl p-3 md:p-4 shadow-sm dark:bg-neutral-900/50 dark:backdrop-blur-md dark:border dark:border-neutral-800/60 dark:rounded-2xl dark:shadow-none">
+              <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-[#ff6b6b]/10 flex items-center justify-center mb-2 dark:bg-neutral-800/50 dark:rounded-full">
                 <TrendingUp className="w-4 h-4 md:w-5 md:h-5 text-[#ff6b6b]" />
               </div>
-              <p className="text-[20px] md:text-[28px] font-bold text-[#1d1d1f]">{stats.completedEvents}</p>
-              <p className="text-[10px] md:text-[12px] text-[#86868b]">Events Completed</p>
+              <p className="text-[20px] md:text-[28px] font-bold text-foreground dark:text-white">{stats.completedEvents}</p>
+              <p className="text-[10px] md:text-[12px] text-muted-foreground dark:text-neutral-400">Events Completed</p>
             </div>
 
-            <div className="bg-white rounded-xl p-3 md:p-4 shadow-sm">
-              <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-[#0066cc]/10 flex items-center justify-center mb-2">
+            <div className="bg-card rounded-xl p-3 md:p-4 shadow-sm dark:bg-neutral-900/50 dark:backdrop-blur-md dark:border dark:border-neutral-800/60 dark:rounded-2xl dark:shadow-none">
+              <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-[#0066cc]/10 flex items-center justify-center mb-2 dark:bg-neutral-800/50 dark:rounded-full">
                 <Calendar className="w-4 h-4 md:w-5 md:h-5 text-[#0066cc]" />
               </div>
-              <p className="text-[20px] md:text-[28px] font-bold text-[#1d1d1f]">{stats.upcomingEvents}</p>
-              <p className="text-[10px] md:text-[12px] text-[#86868b]">Upcoming Events</p>
+              <p className="text-[20px] md:text-[28px] font-bold text-foreground dark:text-white">{stats.upcomingEvents}</p>
+              <p className="text-[10px] md:text-[12px] text-muted-foreground dark:text-neutral-400">Upcoming Events</p>
             </div>
 
-            <div className="bg-white rounded-xl p-3 md:p-4 shadow-sm">
-              <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-[#f59e0b]/10 flex items-center justify-center mb-2">
+            <div className="bg-card rounded-xl p-3 md:p-4 shadow-sm dark:bg-neutral-900/50 dark:backdrop-blur-md dark:border dark:border-neutral-800/60 dark:rounded-2xl dark:shadow-none">
+              <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-[#f59e0b]/10 flex items-center justify-center mb-2 dark:bg-neutral-800/50 dark:rounded-full">
                 <Award className="w-4 h-4 md:w-5 md:h-5 text-[#f59e0b]" />
               </div>
-              <p className="text-[20px] md:text-[28px] font-bold text-[#1d1d1f]">{stats.hoursContributed}</p>
-              <p className="text-[10px] md:text-[12px] text-[#86868b]">Total Hours</p>
+              <p className="text-[20px] md:text-[28px] font-bold text-foreground dark:text-white">{stats.hoursContributed}</p>
+              <p className="text-[10px] md:text-[12px] text-muted-foreground dark:text-neutral-400">Total Hours</p>
             </div>
 
-            <div className="bg-white rounded-xl p-3 md:p-4 shadow-sm">
-              <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-[#a855f7]/10 flex items-center justify-center mb-2">
+            <div className="bg-card rounded-xl p-3 md:p-4 shadow-sm dark:bg-neutral-900/50 dark:backdrop-blur-md dark:border dark:border-neutral-800/60 dark:rounded-2xl dark:shadow-none">
+              <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-[#a855f7]/10 flex items-center justify-center mb-2 dark:bg-neutral-800/50 dark:rounded-full">
                 <Target className="w-4 h-4 md:w-5 md:h-5 text-[#a855f7]" />
               </div>
-              <p className="text-[20px] md:text-[28px] font-bold text-[#1d1d1f]">{stats.attendance}%</p>
-              <p className="text-[10px] md:text-[12px] text-[#86868b]">Attendance</p>
+              <p className="text-[20px] md:text-[28px] font-bold text-foreground dark:text-white">{stats.attendance}%</p>
+              <p className="text-[10px] md:text-[12px] text-muted-foreground dark:text-neutral-400">Attendance</p>
             </div>
 
           </div>
@@ -474,25 +521,25 @@ export function VolunteerHomePage() {
       </section>
 
       {/* Stories Section */}
-      <section className="bg-gradient-to-br from-[#fef7f0] via-[#fef5f0] to-[#fdf2f8] py-8 md:py-16 overflow-hidden">
+      <section className="bg-gradient-to-br from-[#fef7f0] dark:from-black via-[#fef5f0] dark:via-black to-[#fdf2f8] dark:to-black py-8 md:py-16 overflow-hidden relative">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="flex items-center justify-between mb-8">
-            <h2 className="text-[20px] md:text-[36px] font-bold text-[#1d1d1f]">Archives.</h2>
+            <h2 className="text-[20px] md:text-[36px] font-bold text-foreground dark:text-white">Archives.</h2>
             <div className="flex gap-2">
-              <button onClick={() => scrollStories('left')} className="w-10 h-10 rounded-full bg-white border flex items-center justify-center hover:bg-gray-50"><ChevronLeft className="w-5 h-5" /></button>
-              <button onClick={() => scrollStories('right')} className="w-10 h-10 rounded-full bg-white border flex items-center justify-center hover:bg-gray-50"><ChevronRight className="w-5 h-5" /></button>
+              <button onClick={() => scrollStories('left')} className="w-10 h-10 rounded-full bg-card border flex items-center justify-center hover:bg-muted dark:bg-neutral-900/50 dark:border-neutral-800/60 dark:hover:bg-neutral-800/60 dark:text-white"><ChevronLeft className="w-5 h-5" /></button>
+              <button onClick={() => scrollStories('right')} className="w-10 h-10 rounded-full bg-card border flex items-center justify-center hover:bg-muted dark:bg-neutral-900/50 dark:border-neutral-800/60 dark:hover:bg-neutral-800/60 dark:text-white"><ChevronRight className="w-5 h-5" /></button>
             </div>
           </div>
 
           <div ref={storiesRef} className="flex gap-6 overflow-x-auto pb-8 scrollbar-hide scroll-smooth snap-x">
             {stories.map(story => (
-              <div key={story.id} className="min-w-[320px] md:min-w-100 snap-center bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
+              <div key={story.id} className="min-w-[320px] md:min-w-100 snap-center bg-card rounded-2xl shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
                 <div className="h-64 md:h-80 shrink-0">
                   <img src={story.image} alt="" className="w-full h-full object-cover" />
                 </div>
                 <div className="p-6">
-                  <Quote className="w-6 h-6 text-gray-300 mb-4" />
-                  <p className="text-gray-700 italic">"{story.quote}"</p>
+                  <Quote className="w-6 h-6 text-muted-foreground mb-4" />
+                  <p className="text-foreground italic">"{story.quote}"</p>
                 </div>
               </div>
             ))}
@@ -501,7 +548,7 @@ export function VolunteerHomePage() {
       </section>
 
       {/* CTA Section */}
-      <section className="bg-[#1d1d1f] py-10 md:py-20">
+      <section className="bg-[#1d1d1f] dark:bg-black py-10 md:py-20">
         <div className="max-w-2xl mx-auto px-4 md:px-8 text-center">
           <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl bg-gradient-to-br from-[#f59e0b] to-[#d97706] flex items-center justify-center mx-auto mb-4 md:mb-5">
             <Heart className="w-6 h-6 md:w-7 md:h-7 text-white fill-white" />
@@ -509,88 +556,88 @@ export function VolunteerHomePage() {
           <h2 className="text-[20px] md:text-[36px] font-bold text-white tracking-tight">
             Ready to make a difference?
           </h2>
-          <p className="text-[13px] md:text-[15px] text-[#86868b] mt-2">
+          <p className="text-[13px] md:text-[15px] text-muted-foreground dark:text-neutral-400 mt-2">
             Join thousands of volunteers creating positive change.
           </p>
         </div>
       </section>
 
       {/* Footer / Contact Section */}
-      <footer className="bg-[#1d1d1f] border-t border-[#424245] py-8 md:py-12">
+      <footer className="bg-[#1d1d1f] dark:bg-black border-t border-white/10 py-8 md:py-12">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-10">
             <div>
-              <h4 className="text-[10px] md:text-[11px] font-semibold text-[#86868b] uppercase tracking-wider mb-3">
+              <h4 className="text-[10px] md:text-[11px] font-semibold text-muted-foreground dark:text-neutral-500 uppercase tracking-wider mb-3">
                 Platform
               </h4>
               <ul className="space-y-2">
                 <li>
-                  <a href="/how-it-works" className="text-[12px] md:text-[13px] text-[#f5f5f7] hover:text-white transition-colors">
+                  <a href="/how-it-works" className="text-[12px] md:text-[13px] text-muted-foreground dark:text-neutral-400 hover:text-white transition-colors">
                     How it Works
                   </a>
                 </li>
                 <li>
-                  <a href="/for-volunteers" className="text-[12px] md:text-[13px] text-[#f5f5f7] hover:text-white transition-colors">
+                  <a href="/for-volunteers" className="text-[12px] md:text-[13px] text-muted-foreground dark:text-neutral-400 hover:text-white transition-colors">
                     For Volunteers
                   </a>
                 </li>
                 <li>
-                  <a href="/for-organisations" className="text-[12px] md:text-[13px] text-[#f5f5f7] hover:text-white transition-colors">
+                  <a href="/for-organisations" className="text-[12px] md:text-[13px] text-muted-foreground dark:text-neutral-400 hover:text-white transition-colors">
                     For Organisations
                   </a>
                 </li>
               </ul>
             </div>
             <div>
-              <h4 className="text-[10px] md:text-[11px] font-semibold text-[#86868b] uppercase tracking-wider mb-3">
+              <h4 className="text-[10px] md:text-[11px] font-semibold text-muted-foreground dark:text-neutral-500 uppercase tracking-wider mb-3">
                 Company
               </h4>
               <ul className="space-y-2">
                 <li>
-                  <a href="/company/about" className="text-[12px] md:text-[13px] text-[#f5f5f7] hover:text-white transition-colors">
+                  <a href="/company/about" className="text-[12px] md:text-[13px] text-muted-foreground dark:text-neutral-400 hover:text-white transition-colors">
                     About
                   </a>
                 </li>
                 <li>
-                  <a href="/company/careers" className="text-[12px] md:text-[13px] text-[#f5f5f7] hover:text-white transition-colors">
+                  <a href="/company/careers" className="text-[12px] md:text-[13px] text-muted-foreground dark:text-neutral-400 hover:text-white transition-colors">
                     Careers
                   </a>
                 </li>
                 <li>
-                  <a href="/company/press" className="text-[12px] md:text-[13px] text-[#f5f5f7] hover:text-white transition-colors">
+                  <a href="/company/press" className="text-[12px] md:text-[13px] text-muted-foreground dark:text-neutral-400 hover:text-white transition-colors">
                     Press
                   </a>
                 </li>
               </ul>
             </div>
             <div>
-              <h4 className="text-[10px] md:text-[11px] font-semibold text-[#86868b] uppercase tracking-wider mb-3">
+              <h4 className="text-[10px] md:text-[11px] font-semibold text-muted-foreground dark:text-neutral-500 uppercase tracking-wider mb-3">
                 Resources
               </h4>
               <ul className="space-y-2">
                 <li>
-                  <a href="/resources/blog" className="text-[12px] md:text-[13px] text-[#f5f5f7] hover:text-white transition-colors">
+                  <a href="/resources/blog" className="text-[12px] md:text-[13px] text-muted-foreground dark:text-neutral-400 hover:text-white transition-colors">
                     Blog
                   </a>
                 </li>
                 <li>
-                  <a href="/resources/help-center" className="text-[12px] md:text-[13px] text-[#f5f5f7] hover:text-white transition-colors">
+                  <a href="/resources/help-center" className="text-[12px] md:text-[13px] text-muted-foreground dark:text-neutral-400 hover:text-white transition-colors">
                     Help Center
                   </a>
                 </li>
                 <li>
-                  <a href="/resources/community" className="text-[12px] md:text-[13px] text-[#f5f5f7] hover:text-white transition-colors">
+                  <a href="/resources/community" className="text-[12px] md:text-[13px] text-muted-foreground dark:text-neutral-400 hover:text-white transition-colors">
                     Community
                   </a>
                 </li>
               </ul>
             </div>
             <div>
-              <h4 className="text-[10px] md:text-[11px] font-semibold text-[#86868b] uppercase tracking-wider mb-3">
+              <h4 className="text-[10px] md:text-[11px] font-semibold text-muted-foreground dark:text-neutral-500 uppercase tracking-wider mb-3">
                 Contact
               </h4>
               <ul className="space-y-2">
-                <li className="flex items-center gap-1.5 text-[12px] md:text-[13px] text-[#f5f5f7]">
+                <li className="flex items-center gap-1.5 text-[12px] md:text-[13px] text-muted-foreground dark:text-neutral-400">
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path
                       strokeLinecap="round"
@@ -601,7 +648,7 @@ export function VolunteerHomePage() {
                   </svg>
                   manasdhivare@gmail.com
                 </li>
-                <li className="flex items-center gap-1.5 text-[12px] md:text-[13px] text-[#f5f5f7]">
+                <li className="flex items-center gap-1.5 text-[12px] md:text-[13px] text-muted-foreground dark:text-neutral-400">
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path
                       strokeLinecap="round"
@@ -612,15 +659,42 @@ export function VolunteerHomePage() {
                   </svg>
                   +91 7517018954
                 </li>
-                <li className="flex items-center gap-1.5 text-[12px] md:text-[13px] text-[#f5f5f7]">
+                <li className="flex items-center gap-1.5 text-[12px] md:text-[13px] text-muted-foreground dark:text-neutral-400">
                   <MapPin className="w-3.5 h-3.5" />
                   Nashik, India
                 </li>
               </ul>
             </div>
           </div>
-          <div className="border-t border-[#424245] mt-8 pt-6 text-center">
-            <p className="text-[10px] md:text-[12px] text-[#86868b]">© 2025 Kindly. Made with love in Nashik.</p>
+          <div className="border-t border-border dark:border-neutral-800/60 mt-8 pt-6 flex items-center justify-center gap-3">
+            <a
+              href="https://www.instagram.com/kindly.india"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Instagram"
+              className="w-10 h-10 rounded-xl border border-border dark:border-neutral-800/60 flex items-center justify-center text-muted-foreground dark:text-neutral-400 hover:text-foreground dark:hover:text-white hover:border-foreground/20 dark:hover:border-white/20 transition-colors"
+            >
+              <InstagramIcon className="w-4 h-4" />
+            </a>
+            {/* TODO: no LinkedIn URL exists anywhere in the codebase yet — swap in the real company page link */}
+            <a
+              href="#"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="LinkedIn"
+              className="w-10 h-10 rounded-xl border border-border dark:border-neutral-800/60 flex items-center justify-center text-muted-foreground dark:text-neutral-400 hover:text-foreground dark:hover:text-white hover:border-foreground/20 dark:hover:border-white/20 transition-colors"
+            >
+              <LinkedinIcon className="w-4 h-4" />
+            </a>
+            <a
+              href="https://chat.whatsapp.com/JLTD1iP3m8p63Mnz7SjISt"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="WhatsApp"
+              className="w-10 h-10 rounded-xl border border-border dark:border-neutral-800/60 flex items-center justify-center text-muted-foreground dark:text-neutral-400 hover:text-foreground dark:hover:text-white hover:border-foreground/20 dark:hover:border-white/20 transition-colors"
+            >
+              <WhatsappIcon className="w-4 h-4" />
+            </a>
           </div>
         </div>
       </footer>

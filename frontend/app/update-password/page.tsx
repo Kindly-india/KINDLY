@@ -70,19 +70,19 @@ export default function UpdatePasswordPage() {
     }
 
     return (
-        <div className="min-h-screen bg-white md:bg-gradient-to-b md:from-[#fef7f0] md:via-white md:to-[#f0fdf4] flex flex-col overflow-x-hidden relative">
+        <div className="min-h-screen bg-background md:bg-gradient-to-b md:from-[#fef7f0] dark:from-[#fef7f0]/10 md:via-white dark:via-background md:to-[#f0fdf4] dark:to-[#f0fdf4]/10 flex flex-col overflow-x-hidden relative">
             
             <header className="pt-6 md:pt-12 pb-3 md:pb-6 px-4 md:px-8 flex items-center justify-between relative z-20">
                 <button
                     onClick={() => router.push('/login')}
-                    className="flex items-center gap-1 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors p-2 -ml-2"
+                    className="flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors p-2 -ml-2"
                 >
                     <ChevronLeft className="w-5 h-5" />
                     <span className="hidden md:inline">Back to Login</span>
                 </button>
 
                 <div className="absolute left-1/2 -translate-x-1/2">
-                    <img src="/logo.png" alt="Kindly Logo" className="h-5 md:h-6 object-contain" />
+                    <img src="/logo.png" alt="Kindly Logo" className="h-5 md:h-6 object-contain dark:invert" />
                 </div>
                 
                 <div className="w-20"></div>
@@ -91,34 +91,34 @@ export default function UpdatePasswordPage() {
             <main className="flex-1 flex items-start md:items-center justify-center px-4 md:px-6 pt-6 md:pt-0 pb-12 md:pb-20 relative">
                 
                 <div className="w-full max-w-[480px] relative">
-                    <div className="hidden md:block absolute -top-10 -left-10 w-20 h-20 bg-gradient-to-br from-[#ffecd2]/40 to-[#fcb69f]/40 rounded-full blur-2xl" />
-                    <div className="hidden md:block absolute -bottom-10 -right-10 w-24 h-24 bg-gradient-to-br from-[#a8edea]/40 to-[#fed6e3]/40 rounded-full blur-2xl" />
+                    <div className="hidden md:block absolute -top-10 -left-10 w-20 h-20 bg-gradient-to-br from-[#ffecd2]/40 dark:from-[#ffecd2]/10 to-[#fcb69f]/40 dark:to-[#fcb69f]/10 rounded-full blur-2xl" />
+                    <div className="hidden md:block absolute -bottom-10 -right-10 w-24 h-24 bg-gradient-to-br from-[#a8edea]/40 dark:from-[#a8edea]/10 to-[#fed6e3]/40 dark:to-[#fed6e3]/10 rounded-full blur-2xl" />
 
-                    <div className="relative bg-white md:bg-white/80 md:backdrop-blur-sm rounded-none md:rounded-3xl p-2 md:p-10 md:shadow-[0_2px_40px_-12px_rgba(0,0,0,0.1)] overflow-hidden">
+                    <div className="relative bg-card md:bg-card/80 md:backdrop-blur-sm rounded-none md:rounded-3xl p-2 md:p-10 md:shadow-[0_2px_40px_-12px_rgba(0,0,0,0.1)] overflow-hidden">
                         
                         {!hasToken ? (
                             <div className="text-center py-8">
-                                <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <div className="w-16 h-16 bg-red-50 dark:bg-red-500/15 rounded-full flex items-center justify-center mx-auto mb-4">
                                     <AlertCircle className="w-8 h-8 text-red-500" />
                                 </div>
-                                <h1 className="text-2xl font-bold text-gray-900 mb-2">Invalid Link</h1>
-                                <p className="text-sm text-gray-500 mb-8">
+                                <h1 className="text-2xl font-bold text-foreground mb-2">Invalid Link</h1>
+                                <p className="text-sm text-muted-foreground mb-8">
                                     This password reset link is invalid or has expired. Please request a new one.
                                 </p>
                                 <Button
                                     onClick={() => router.push('/login')}
-                                    className="w-full h-12 bg-gray-900 text-white rounded-xl font-bold"
+                                    className="w-full h-12 bg-primary text-primary-foreground rounded-xl font-bold"
                                 >
                                     Return to Login
                                 </Button>
                             </div>
                         ) : status === "success" ? (
                             <div className="text-center py-8 animate-in zoom-in-95 duration-300">
-                                <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <div className="w-16 h-16 bg-emerald-50 dark:bg-emerald-500/15 rounded-full flex items-center justify-center mx-auto mb-4">
                                     <CheckCircle2 className="w-8 h-8 text-emerald-600" />
                                 </div>
-                                <h1 className="text-2xl font-bold text-gray-900 mb-2">Password Updated!</h1>
-                                <p className="text-sm text-gray-500 mb-8">
+                                <h1 className="text-2xl font-bold text-foreground mb-2">Password Updated!</h1>
+                                <p className="text-sm text-muted-foreground mb-8">
                                     {message}
                                 </p>
                                 <Button
@@ -130,40 +130,40 @@ export default function UpdatePasswordPage() {
                             </div>
                         ) : (
                             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                <h1 className="text-[28px] md:text-[40px] font-bold text-[#1d1d1f] tracking-tight text-center leading-tight">
+                                <h1 className="text-[28px] md:text-[40px] font-bold text-foreground tracking-tight text-center leading-tight">
                                     Secure Account
                                 </h1>
-                                <p className="text-[15px] md:text-[17px] text-[#86868b] text-center mt-2 mb-8 md:mb-10">
+                                <p className="text-[15px] md:text-[17px] text-muted-foreground text-center mt-2 mb-8 md:mb-10">
                                     Create a new, strong password below.
                                 </p>
 
                                 <form onSubmit={handleUpdatePassword} className="space-y-4 md:space-y-5">
                                     
                                     {status === "error" && (
-                                        <div className="flex items-start gap-3 p-4 bg-red-50 text-red-600 rounded-xl border border-red-100 text-sm font-medium">
+                                        <div className="flex items-start gap-3 p-4 bg-red-50 dark:bg-red-500/15 text-red-600 rounded-xl border border-red-100 text-sm font-medium">
                                             <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
                                             <p>{message}</p>
                                         </div>
                                     )}
 
                                     <div className="space-y-2">
-                                        <Label className="text-[11px] md:text-xs text-[#86868b] font-bold uppercase tracking-wider ml-1">
+                                        <Label className="text-[11px] md:text-xs text-muted-foreground font-bold uppercase tracking-wider ml-1">
                                             New Password
                                         </Label>
                                         <div className="relative">
-                                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                                             <Input
                                                 type={showPassword ? "text" : "password"}
                                                 placeholder="Enter new password"
                                                 value={password}
                                                 onChange={(e) => setPassword(e.target.value)}
                                                 required
-                                                className="h-12 md:h-14 pl-12 pr-12 bg-[#f5f5f7] border-0 rounded-xl text-[16px] md:text-[17px] text-[#1d1d1f] placeholder:text-[#86868b] focus-visible:ring-2 focus-visible:ring-[#ff6b6b]"
+                                                className="h-12 md:h-14 pl-12 pr-12 bg-muted border-0 rounded-xl text-[16px] md:text-[17px] text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-[#ff6b6b]"
                                             />
                                             <button
                                                 type="button"
                                                 onClick={() => setShowPassword(!showPassword)}
-                                                className="absolute right-2 top-1/2 -translate-y-1/2 text-[#86868b] hover:text-[#1d1d1f] p-2"
+                                                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-2"
                                             >
                                                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                             </button>
@@ -171,23 +171,23 @@ export default function UpdatePasswordPage() {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label className="text-[11px] md:text-xs text-[#86868b] font-bold uppercase tracking-wider ml-1">
+                                        <Label className="text-[11px] md:text-xs text-muted-foreground font-bold uppercase tracking-wider ml-1">
                                             Confirm Password
                                         </Label>
                                         <div className="relative">
-                                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                                             <Input
                                                 type={showConfirmPassword ? "text" : "password"}
                                                 placeholder="Confirm new password"
                                                 value={confirmPassword}
                                                 onChange={(e) => setConfirmPassword(e.target.value)}
                                                 required
-                                                className="h-12 md:h-14 pl-12 pr-12 bg-[#f5f5f7] border-0 rounded-xl text-[16px] md:text-[17px] text-[#1d1d1f] placeholder:text-[#86868b] focus-visible:ring-2 focus-visible:ring-[#ff6b6b]"
+                                                className="h-12 md:h-14 pl-12 pr-12 bg-muted border-0 rounded-xl text-[16px] md:text-[17px] text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-[#ff6b6b]"
                                             />
                                             <button
                                                 type="button"
                                                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                                className="absolute right-2 top-1/2 -translate-y-1/2 text-[#86868b] hover:text-[#1d1d1f] p-2"
+                                                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-2"
                                             >
                                                 {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                             </button>

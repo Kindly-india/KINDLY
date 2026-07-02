@@ -13,12 +13,12 @@ interface FAQItem {
 }
 
 const categories: { id: Category; label: string; icon: React.ElementType; color: string; bg: string }[] = [
-  { id: "getting-started", label: "Getting Started", icon: Users, color: "text-blue-600", bg: "bg-blue-50" },
-  { id: "volunteers", label: "For Volunteers", icon: MessageCircle, color: "text-orange-600", bg: "bg-orange-50" },
-  { id: "organisations", label: "For Organisations", icon: ShieldCheck, color: "text-emerald-600", bg: "bg-emerald-50" },
-  { id: "certificates", label: "Certificates", icon: Award, color: "text-amber-600", bg: "bg-amber-50" },
-  { id: "account", label: "Account & Privacy", icon: Settings, color: "text-violet-600", bg: "bg-violet-50" },
-  { id: "technical", label: "Technical Issues", icon: Search, color: "text-rose-600", bg: "bg-rose-50" }
+  { id: "getting-started", label: "Getting Started", icon: Users, color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-500/15" },
+  { id: "volunteers", label: "For Volunteers", icon: MessageCircle, color: "text-orange-600", bg: "bg-orange-50 dark:bg-orange-500/15" },
+  { id: "organisations", label: "For Organisations", icon: ShieldCheck, color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-500/15" },
+  { id: "certificates", label: "Certificates", icon: Award, color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-500/15" },
+  { id: "account", label: "Account & Privacy", icon: Settings, color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-500/15" },
+  { id: "technical", label: "Technical Issues", icon: Search, color: "text-rose-600", bg: "bg-rose-50 dark:bg-rose-500/15" }
 ]
 
 const faqs: FAQItem[] = [
@@ -78,25 +78,25 @@ export default function HelpCenterPage() {
   })
 
   return (
-    <div className="bg-white min-h-screen">
+    <div className="bg-background min-h-screen">
       {/* Header + Search */}
-      <div className="bg-[#1d1d1f] pt-32 pb-16 px-6 text-center">
+      <div className="bg-[#1d1d1f] dark:bg-[#0a0a0c] pt-32 pb-16 px-6 text-center">
         <div className="max-w-xl mx-auto flex justify-start mb-6">
-          <button onClick={() => router.back()} className="inline-flex items-center gap-2 text-sm font-medium text-gray-400 hover:text-white transition-colors">
+          <button onClick={() => router.back()} className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-white transition-colors">
             <ArrowLeft className="w-4 h-4" />
             Back
           </button>
         </div>
         <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">How can we help?</h1>
-        <p className="text-[#86868b] mb-8 text-lg">Search our help articles or browse by category.</p>
+        <p className="text-muted-foreground mb-8 text-lg">Search our help articles or browse by category.</p>
         <div className="max-w-xl mx-auto relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5" />
           <input
             type="text"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             placeholder="Search articles — e.g. 'check in', 'certificate', 'cancel'"
-            className="w-full h-13 pl-12 pr-4 py-3.5 rounded-2xl bg-white/10 border border-white/20 text-white placeholder:text-gray-400 focus:outline-none focus:bg-white/15 focus:border-white/40 transition-all text-[15px]"
+            className="w-full h-13 pl-12 pr-4 py-3.5 rounded-2xl bg-white/10 border border-white/20 text-white placeholder:text-white/50 focus:outline-none focus:bg-white/15 focus:border-white/40 transition-all text-[15px]"
           />
         </div>
       </div>
@@ -109,8 +109,8 @@ export default function HelpCenterPage() {
               onClick={() => setActiveCategory("all")}
               className={`p-4 rounded-2xl border-2 text-center transition-all ${
                 activeCategory === "all"
-                  ? "border-[#1d1d1f] bg-[#1d1d1f] text-white"
-                  : "border-gray-100 bg-[#f5f5f7] text-gray-500 hover:border-gray-200"
+                  ? "border-border bg-primary text-primary-foreground"
+                  : "border-border bg-muted text-muted-foreground hover:border-border"
               }`}
             >
               <div className="text-xs font-bold">All Topics</div>
@@ -121,12 +121,12 @@ export default function HelpCenterPage() {
                 onClick={() => setActiveCategory(cat.id)}
                 className={`p-4 rounded-2xl border-2 text-center transition-all ${
                   activeCategory === cat.id
-                    ? `border-[#1d1d1f] ${cat.bg}`
-                    : "border-gray-100 bg-[#f5f5f7] text-gray-500 hover:border-gray-200"
+                    ? `border-border ${cat.bg}`
+                    : "border-border bg-muted text-muted-foreground hover:border-border"
                 }`}
               >
-                <cat.icon className={`w-5 h-5 mx-auto mb-1.5 ${activeCategory === cat.id ? cat.color : "text-gray-400"}`} />
-                <div className={`text-xs font-bold ${activeCategory === cat.id ? cat.color : "text-gray-500"}`}>
+                <cat.icon className={`w-5 h-5 mx-auto mb-1.5 ${activeCategory === cat.id ? cat.color : "text-muted-foreground"}`} />
+                <div className={`text-xs font-bold ${activeCategory === cat.id ? cat.color : "text-muted-foreground"}`}>
                   {cat.label}
                 </div>
               </button>
@@ -136,17 +136,17 @@ export default function HelpCenterPage() {
 
         {/* Results */}
         {searchQuery && (
-          <p className="text-sm text-gray-400 mb-6">{filteredFaqs.length} result{filteredFaqs.length !== 1 ? "s" : ""} for &quot;{searchQuery}&quot;</p>
+          <p className="text-sm text-muted-foreground mb-6">{filteredFaqs.length} result{filteredFaqs.length !== 1 ? "s" : ""} for &quot;{searchQuery}&quot;</p>
         )}
 
         {filteredFaqs.length === 0 ? (
           <div className="text-center py-16">
-            <Search className="w-10 h-10 mx-auto mb-4 text-gray-200" />
-            <h3 className="text-xl font-bold text-[#1d1d1f] mb-2">No results found</h3>
-            <p className="text-gray-500 mb-6">Try a different search term or browse all categories.</p>
+            <Search className="w-10 h-10 mx-auto mb-4 text-muted-foreground" />
+            <h3 className="text-xl font-bold text-foreground mb-2">No results found</h3>
+            <p className="text-muted-foreground mb-6">Try a different search term or browse all categories.</p>
             <button
               onClick={() => { setSearchQuery(""); setActiveCategory("all") }}
-              className="h-10 px-6 bg-[#1d1d1f] text-white text-sm font-bold rounded-full hover:bg-black transition-colors"
+              className="h-10 px-6 bg-primary text-primary-foreground text-sm font-bold rounded-full hover:bg-primary transition-colors"
             >
               View All Articles
             </button>
@@ -157,7 +157,7 @@ export default function HelpCenterPage() {
               const key = `${faq.category}-${i}`
               const cat = categories.find(c => c.id === faq.category)
               return (
-                <div key={key} className="border border-gray-100 rounded-2xl overflow-hidden hover:border-gray-200 transition-colors">
+                <div key={key} className="border border-border rounded-2xl overflow-hidden hover:border-border transition-colors">
                   <button
                     onClick={() => setOpenItem(openItem === key ? null : key)}
                     className="w-full flex items-start justify-between p-6 text-left gap-4"
@@ -169,13 +169,13 @@ export default function HelpCenterPage() {
                           {cat.label}
                         </span>
                       )}
-                      <span className="font-semibold text-[#1d1d1f] text-[15px]">{faq.q}</span>
+                      <span className="font-semibold text-foreground text-[15px]">{faq.q}</span>
                     </div>
-                    <ChevronDown className={`w-5 h-5 text-gray-400 shrink-0 mt-0.5 transition-transform ${openItem === key ? "rotate-180" : ""}`} />
+                    <ChevronDown className={`w-5 h-5 text-muted-foreground shrink-0 mt-0.5 transition-transform ${openItem === key ? "rotate-180" : ""}`} />
                   </button>
                   {openItem === key && (
                     <div className="px-6 pb-6">
-                      <p className="text-gray-500 leading-relaxed text-[15px]">{faq.a}</p>
+                      <p className="text-muted-foreground leading-relaxed text-[15px]">{faq.a}</p>
                     </div>
                   )}
                 </div>
@@ -185,12 +185,12 @@ export default function HelpCenterPage() {
         )}
 
         {/* Still need help */}
-        <div className="mt-20 bg-[#f5f5f7] rounded-3xl p-10 text-center">
-          <h2 className="text-2xl font-bold text-[#1d1d1f] mb-3">Still need help?</h2>
-          <p className="text-gray-500 mb-6 max-w-md mx-auto">Can't find what you're looking for? We respond to every message, usually within one business day.</p>
+        <div className="mt-20 bg-muted rounded-3xl p-10 text-center">
+          <h2 className="text-2xl font-bold text-foreground mb-3">Still need help?</h2>
+          <p className="text-muted-foreground mb-6 max-w-md mx-auto">Can't find what you're looking for? We respond to every message, usually within one business day.</p>
           <a
             href="mailto:manasdhivare@gmail.com"
-            className="inline-flex items-center gap-2 h-12 px-8 bg-[#1d1d1f] hover:bg-black text-white text-[15px] font-bold rounded-full transition-colors"
+            className="inline-flex items-center gap-2 h-12 px-8 bg-primary hover:bg-primary text-primary-foreground text-[15px] font-bold rounded-full transition-colors"
           >
             <Mail className="w-4 h-4" />
             Email Us

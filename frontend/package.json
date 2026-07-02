@@ -28,7 +28,7 @@
     "@radix-ui/react-toast": "^1.2.4",
     "@sentry/nextjs": "^10.49.0",
     "@supabase/auth-helpers-nextjs": "^0.15.0",
-    "@supabase/supabase-js": "^2.103.0",
+    "@supabase/supabase-js": "^2.110.0",
     "@vercel/analytics": "^1.6.1",
     "@yudiel/react-qr-scanner": "^2.5.0",
     "browser-image-compression": "^2.0.2",
