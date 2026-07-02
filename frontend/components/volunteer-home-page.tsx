@@ -301,10 +301,6 @@ export function VolunteerHomePage() {
 
   return (
     <div className="min-h-screen bg-background dark:bg-black relative">
-      {/* Ambient dark-mode glow — ownly rendered in dark mode so it never
-          affects light mode layout/paint. */}
-      <div className="hidden dark:block absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[420px] bg-emerald-500/5 rounded-full blur-3xl pointer-events-none -z-0" />
-
       {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-[#fef5f0] dark:from-black via-[#fff8f5] dark:via-black to-[#f5fcf8] dark:to-black py-8 md:py-16 overflow-hidden">
         {/* Decorative Icons */}

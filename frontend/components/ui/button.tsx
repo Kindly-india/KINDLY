@@ -9,20 +9,23 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        // Primary: clean, distinct solid control — white-on-black in dark mode.
+        default:
+          "bg-primary text-primary-foreground hover:bg-primary/90 dark:bg-white dark:text-black dark:hover:bg-neutral-200 hover:scale-[1.015] hover:-translate-y-0.5 transition-all duration-300 ease-out",
         destructive:
           "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-[color-mix(in_oklch,var(--destructive)_50%,transparent)] dark:bg-destructive/60",
+        // Secondary: frosted, thin-bordered glass.
         outline:
-          "border border-black/10 dark:border-white/10 bg-background hover:bg-black/5 dark:hover:bg-white/5",
+          "border border-black/10 dark:border-white/10 bg-background/80 backdrop-blur-md hover:bg-black/5 dark:hover:bg-white/5 hover:scale-[1.015] hover:-translate-y-0.5 transition-all duration-300 ease-out",
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost:
           "hover:bg-black/5 dark:hover:bg-white/5",
         link: "text-primary underline-offset-4 hover:underline",
         "nav-pill":
-          "rounded-full bg-primary text-primary-foreground hover:bg-primary/90 px-5",
+          "rounded-full bg-primary text-primary-foreground hover:bg-primary/90 px-5 dark:bg-white dark:text-black dark:hover:bg-neutral-200 hover:scale-[1.015] hover:-translate-y-0.5 transition-all duration-300 ease-out",
         "outline-pill":
-          "rounded-full border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 text-foreground hover:bg-black/10 dark:hover:bg-white/10 px-5",
+          "rounded-full border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 backdrop-blur-md text-foreground hover:bg-black/10 dark:hover:bg-white/10 px-5 hover:scale-[1.015] hover:-translate-y-0.5 transition-all duration-300 ease-out",
       },
       size: {
         default: "h-10 px-4 py-2 has-[>svg]:px-3",

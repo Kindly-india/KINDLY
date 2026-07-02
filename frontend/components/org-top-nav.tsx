@@ -112,7 +112,11 @@ export function OrgTopNav() {
   const displayInitial = displayName ? displayName.charAt(0).toUpperCase() : "O"
 
   return (
-    <nav className="sticky top-0 z-50 bg-card/95 backdrop-blur-md border-b border-border">
+    <>
+      {/* `sticky` silently fails to stick here because `overflow-x: hidden`
+          on <body> (globals.css) breaks position:sticky in Chromium — `fixed`
+          + a same-height spacer sidesteps that entirely (see top-nav.tsx). */}
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/70 dark:bg-black/60 backdrop-blur-md dark:backdrop-blur-xl border-b border-neutral-200/60 dark:border-white/10">
       <div className="max-w-7xl mx-auto px-4 md:px-8 h-12 md:h-14 flex items-center justify-between relative">
 
         {/* Logo */}
@@ -249,6 +253,8 @@ export function OrgTopNav() {
           </Link>
         </div>
       </div>
-    </nav>
+      </nav>
+      <div className="h-12 md:h-14" aria-hidden="true" />
+    </>
   )
 }

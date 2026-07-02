@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { createClient } from "@supabase/supabase-js"
+import { ScrollReveal } from "@/components/ui/scroll-reveal"
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -64,29 +65,29 @@ export function ImpactSection() {
 
   return (
     // Increased mobile vertical padding (py-12) so it doesn't look squashed
-    <section className="bg-gradient-to-b from-[#fff5f0] dark:from-[#fff5f0]/10 to-[#fff0e6] dark:to-[#fff0e6]/10 py-16 md:py-32">
+    <section className="bg-gradient-to-b from-[#fff5f0] dark:from-black to-[#fff0e6] dark:to-black py-16 md:py-32">
       <div className="max-w-7xl mx-auto px-6 md:px-8">
 
-        <div className="text-center mb-10 md:mb-20">
+        <ScrollReveal className="text-center mb-10 md:mb-20">
           {/* Subtitle: Bumped to 12px for mobile legibility */}
           <p className="text-[#e85d3b] text-[12px] md:text-sm font-medium mb-1 md:mb-2 uppercase tracking-wide">Our Impact</p>
-          
+
           {/* Header: Bumped to 28px on mobile to act as a proper title */}
-          <h2 className="text-[28px] md:text-[56px] font-semibold text-foreground tracking-tight leading-tight">
+          <h2 className="text-[28px] md:text-[56px] font-semibold text-foreground dark:text-white tracking-tight leading-tight">
             Together, we're
             <br />
             <span className="bg-gradient-to-r from-[#e85d3b] to-[#f59e0b] bg-clip-text text-transparent">
               making a difference.
             </span>
           </h2>
-        </div>
+        </ScrollReveal>
 
         {/* Grid: 2 columns on mobile. Added gap-y-10 so the rows have vertical space */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-10 md:gap-12">
+        <ScrollReveal delay={0.15} className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-10 md:gap-12">
           {stats.map((stat, index) => (
             <div key={index} className="text-center">
               {/* Stat Number: text-3xl (30px) so it's readable on small screens */}
-              <div className="text-3xl md:text-[56px] font-semibold text-foreground tracking-tight leading-none mb-1 md:mb-2 min-h-[1em]">
+              <div className="text-3xl md:text-[56px] font-semibold text-foreground dark:text-white tracking-tight leading-none mb-1 md:mb-2 min-h-[1em]">
                 {loading ? (
                   <span className="animate-pulse opacity-50 text-muted-foreground">0</span>
                 ) : (
@@ -94,12 +95,12 @@ export function ImpactSection() {
                 )}
               </div>
               {/* Stat Label: text-[12px] (sm) is the standard minimum for mobile body text */}
-              <p className="text-[12px] md:text-[15px] text-muted-foreground leading-tight px-2">
+              <p className="text-[12px] md:text-[15px] text-muted-foreground dark:text-neutral-400 leading-tight px-2">
                 {stat.label}
               </p>
             </div>
           ))}
-        </div>
+        </ScrollReveal>
       </div>
     </section>
   )

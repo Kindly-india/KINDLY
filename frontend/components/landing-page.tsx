@@ -11,7 +11,7 @@ import { ContactSection } from "@/components/contact-section"
 
 export function LandingPage() {
   return (
-    <main className="min-h-screen bg-background">
+    <main className="min-h-screen bg-background dark:bg-black">
       <Navigation />
       <HeroSection />
       <ImpactSection />

@@ -2,6 +2,7 @@
 
 import { Mail, Phone, MapPin, ChevronRight, Heart } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { ScrollReveal } from "@/components/ui/scroll-reveal"
 import { useRouter } from "next/navigation"
 
 export function ContactSection() {
@@ -23,11 +24,11 @@ export function ContactSection() {
   return (
     // Increased mobile padding (py-16) so it doesn't feel like an afterthought
     // This band is intentionally always-dark (brand footer), independent of the site theme.
-    <section id="contact" className="bg-[#1d1d1f] dark:bg-[#0a0a0c] py-16 md:py-16">
+    <section id="contact" className="bg-[#1d1d1f] dark:bg-black py-16 md:py-16">
       <div className="max-w-5xl mx-auto px-6 md:px-6">
 
         {/* Top CTA */}
-        <div className="text-center pb-12 md:pb-12 border-b border-white/10">
+        <ScrollReveal className="text-center pb-12 md:pb-12 border-b border-white/10">
           <div className="flex justify-center mb-6 md:mb-6">
             <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-gradient-to-br from-[#ff6b6b] to-[#f59e0b] flex items-center justify-center shadow-lg shadow-black/20">
               <Heart className="w-7 h-7 md:w-8 md:h-8 text-white" />
@@ -49,7 +50,7 @@ export function ContactSection() {
             Get started
             <ChevronRight className="w-4 h-4 md:w-4 md:h-4 ml-1" />
           </Button>
-        </div>
+        </ScrollReveal>
 
         {/* Footer Links - 2x2 grid is good, but bumped text sizes */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-y-10 gap-x-6 py-12 md:py-12 border-b border-white/10">

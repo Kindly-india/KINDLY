@@ -79,7 +79,7 @@ export function TopNav() {
     <>
       <nav
         className={cn(
-          "fixed top-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-b border-border transition-transform duration-300 ease-in-out",
+          "fixed top-0 left-0 right-0 z-50 bg-white/70 dark:bg-black/60 backdrop-blur-md dark:backdrop-blur-xl border-b border-neutral-200/60 dark:border-white/10 transition-transform duration-300 ease-in-out",
           hidden ? "-translate-y-full" : "translate-y-0"
         )}
       >
