@@ -65,8 +65,15 @@ export function ImpactSection() {
 
   return (
     // Increased mobile vertical padding (py-12) so it doesn't look squashed
-    <section className="bg-gradient-to-b from-[#fff5f0] dark:from-black to-[#fff0e6] dark:to-black py-16 md:py-32">
-      <div className="max-w-7xl mx-auto px-6 md:px-8">
+    <section className="bg-gradient-to-b from-[#fff5f0] dark:from-black to-[#fff0e6] dark:to-black py-16 md:py-32 relative overflow-hidden">
+      {/* Ambient side glow — this section's own dominant color (the orange
+          "Our Impact" accent), on the right to alternate with Hero's left. */}
+      <div
+        aria-hidden="true"
+        className="absolute top-1/2 right-0 translate-x-1/2 -translate-y-1/2 w-[480px] h-[480px] bg-[#e85d3b]/[0.04] dark:bg-[#e85d3b]/[0.08] rounded-full blur-3xl pointer-events-none"
+      />
+
+      <div className="max-w-7xl mx-auto px-6 md:px-8 relative">
 
         <ScrollReveal className="text-center mb-10 md:mb-20">
           {/* Subtitle: Bumped to 12px for mobile legibility */}

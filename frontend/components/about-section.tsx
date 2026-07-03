@@ -6,8 +6,15 @@ import { ScrollReveal } from "@/components/ui/scroll-reveal"
 export function AboutSection() {
   return (
     // Boosted vertical padding for mobile (py-16)
-    <section id="about" className="bg-card dark:bg-black py-20 md:py-32">
-      <div className="max-w-5xl mx-auto px-6 md:px-8">
+    <section id="about" className="bg-card dark:bg-black py-20 md:py-32 relative overflow-hidden">
+      {/* Ambient side glow — this section's own dominant color (the blue
+          "About" kicker accent), on the left to alternate with Impact's right. */}
+      <div
+        aria-hidden="true"
+        className="absolute top-1/2 left-0 -translate-x-1/2 -translate-y-1/2 w-[480px] h-[480px] bg-[#0066cc]/[0.06] dark:bg-[#0066cc]/[0.12] rounded-full blur-3xl pointer-events-none"
+      />
+
+      <div className="max-w-5xl mx-auto px-6 md:px-8 relative">
 
         {/* Header */}
         <ScrollReveal className="text-center mb-10 md:mb-20">

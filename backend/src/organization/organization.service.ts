@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { EmailService } from '../email/email.service';
 import { UpdateOrganizationProfileDto } from './dto/update-organization-profile.dto';
 import { AddReviewDto } from './dto/add-review.dto';
 import { validateImageFile } from '../common/file-validation.util';
@@ -60,7 +61,36 @@ export class OrganizationService {
   constructor(
     private readonly supabase: SupabaseService,
     private readonly notifications: NotificationsService,
+    private readonly email: EmailService,
   ) {}
+
+  // Called by a Postgres trigger (see backend/migrations) the moment an
+  // admin flips organization_profiles.approval_status to 'approved' —
+  // there's no in-app "approve" button yet, so this is the only hook that
+  // tells the organization they can now log in.
+  async notifyApproved(orgId: string) {
+    const client = this.supabase.getClient();
+    const { data: org } = await client
+      .from('organization_profiles')
+      .select('user_id, name, email')
+      .eq('id', orgId)
+      .maybeSingle();
+
+    if (!org) return { message: 'Organization not found — nothing to notify' };
+
+    await Promise.all([
+      this.email.sendOrgApprovedEmail(org.email, org.name).catch(() => {}),
+      this.notifications.createNotification(
+        org.user_id,
+        org.user_id,
+        'org_approved',
+        "Your organization has been approved! You can now log in with your email.",
+        orgId,
+      ),
+    ]);
+
+    return { message: 'Approval notification sent' };
+  }
 
   async getPublicProfile(orgId: string, viewerId?: string) {
     const client = this.supabase.getClient();

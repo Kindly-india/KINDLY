@@ -170,6 +170,15 @@ export function AuthCard() {
     if (!identifier) return
     setIsSubmitting(true)
     try {
+      // Organizations are password-less and gated by admin approval — an
+      // email that belongs to a still-pending application must not be able
+      // to self-provision a brand-new account through the ordinary OTP flow.
+      const { status } = await api.checkOrgApplicationStatus(identifier)
+      if (status === "pending") {
+        toast.error("Your organization application is still under review. We'll email you once it's approved.")
+        return
+      }
+
       const { error } = await supabaseAuthClient.auth.signInWithOtp({
         email: identifier,
         options: { shouldCreateUser: true },

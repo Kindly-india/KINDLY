@@ -184,9 +184,9 @@ function PostsGrid({ userId, isOwnProfile }: { userId: string; isOwnProfile: boo
 
   if (loading) {
     return (
-      <div className="grid grid-cols-3 gap-0.5 rounded-2xl overflow-hidden bg-muted animate-pulse">
+      <div className="grid grid-cols-3 gap-2 md:gap-3 animate-pulse">
         {[...Array(6)].map((_, i) => (
-          <div key={i} className="aspect-square bg-muted" />
+          <div key={i} className="aspect-square bg-muted rounded-xl md:rounded-2xl" />
         ))}
       </div>
     )
@@ -216,11 +216,11 @@ function PostsGrid({ userId, isOwnProfile }: { userId: string; isOwnProfile: boo
   }
 
   return (
-    <ScrollReveal className="grid grid-cols-3 gap-0.5">
+    <ScrollReveal className="grid grid-cols-3 gap-2 md:gap-3">
       {isOwnProfile && (
         <Link
           href="/posts/select-event"
-          className="col-span-3 flex items-center justify-center gap-2 h-12 mb-0.5 border border-dashed border-black/10 dark:border-white/10 rounded-xl text-sm text-muted-foreground font-medium bg-black/[0.02] dark:bg-white/[0.03] hover:bg-black/5 dark:hover:bg-white/5 active:scale-[0.98] transition-all"
+          className="col-span-3 flex items-center justify-center gap-2 h-12 mb-1 border border-dashed border-black/10 dark:border-white/10 rounded-xl text-sm text-muted-foreground font-medium bg-black/[0.02] dark:bg-white/[0.03] hover:bg-black/5 dark:hover:bg-white/5 active:scale-[0.98] transition-all"
         >
           <Plus className="w-4 h-4" />
           Share an experience
@@ -230,16 +230,16 @@ function PostsGrid({ userId, isOwnProfile }: { userId: string; isOwnProfile: boo
         <button
           key={post.id}
           onClick={() => router.push(`/posts/${post.id}`)}
-          className="aspect-square overflow-hidden bg-muted relative group"
+          className="aspect-square overflow-hidden bg-muted relative group rounded-xl md:rounded-2xl shadow-md shadow-neutral-200/40 dark:shadow-black/40 hover:shadow-lg hover:scale-[1.03] hover:-translate-y-0.5 transition-all duration-300 ease-out"
         >
           <img
             src={post.photo_urls[0]}
             alt=""
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
           />
           {post.photo_urls.length > 1 && (
-            <div className="absolute top-1.5 right-1.5 bg-black/40 rounded-sm p-0.5">
-              <Images className="w-2.5 h-2.5 text-white" />
+            <div className="absolute top-2 right-2 bg-black/50 backdrop-blur-sm rounded-full p-1">
+              <Images className="w-3 h-3 text-white" />
             </div>
           )}
         </button>
@@ -616,7 +616,7 @@ export default function VolunteerProfile() {
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-black pb-20 font-sans relative overflow-x-hidden">
-      {/* Ambient top glow */}
+      {/* Ambient top glow — centered, not off to either side */}
       <div className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-[760px] h-[420px] bg-gradient-to-b from-indigo-200/20 dark:from-indigo-500/[0.14] to-transparent blur-3xl z-0" />
 
       {/* 1. TOP NAVIGATION */}
@@ -693,6 +693,10 @@ export default function VolunteerProfile() {
             <Sparkles className="w-12 h-12 text-white/15 relative" />
           </div>
         )}
+        {/* Gradient scrim — centered wash, not a side blob. Sits on top of
+            whichever of the two cases above renders (a real photo is fully
+            opaque and would otherwise hide any gradient behind it entirely). */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent pointer-events-none" />
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-20 relative z-10">
@@ -782,33 +786,37 @@ export default function VolunteerProfile() {
 
             {/* CONTACT DETAILS */}
             {(isOwnProfile || profile?.view_type === 'private' || profile?.view_type === 'resume') && (
-              <Card className="p-6">
-                <h3 className="font-bold text-foreground mb-4 text-sm uppercase tracking-wide">Contact Details</h3>
-                <div className="space-y-3">
-                  {/* ✅ UPDATED: Safe optional chaining here */}
-                  {profile?.email ? (
-                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                      <Mail className="w-4 h-4 text-muted-foreground" />
-                      <span>{profile.email}</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2 text-xs text-amber-600 bg-amber-50 dark:bg-amber-500/15 p-2 rounded">
-                      <span>Email not added.</span>
-                      {isOwnProfile && <Link href="/settings/profile" className="underline font-semibold">Add now</Link>}
-                    </div>
-                  )}
-                  {profile?.phone && (
-                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                      <Phone className="w-4 h-4 text-muted-foreground" />
-                      <span>{profile.phone}</span>
-                    </div>
-                  )}
-                  {profile?.address && (
-                    <div className="flex items-start gap-3 text-sm text-muted-foreground">
-                      <Home className="w-4 h-4 text-muted-foreground mt-0.5" />
-                      <span>{profile.address}</span>
-                    </div>
-                  )}
+              <Card className="p-6 relative overflow-hidden">
+                {/* Centered gradient wash — not a side blob */}
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/[0.06] dark:from-blue-500/[0.12] to-transparent pointer-events-none" />
+                <div className="relative">
+                  <h3 className="font-bold text-foreground mb-4 text-sm uppercase tracking-wide">Contact Details</h3>
+                  <div className="space-y-3">
+                    {/* ✅ UPDATED: Safe optional chaining here */}
+                    {profile?.email ? (
+                      <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                        <Mail className="w-4 h-4 text-muted-foreground" />
+                        <span>{profile.email}</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 text-xs text-amber-600 bg-amber-50 dark:bg-amber-500/15 p-2 rounded">
+                        <span>Email not added.</span>
+                        {isOwnProfile && <Link href="/settings/profile" className="underline font-semibold">Add now</Link>}
+                      </div>
+                    )}
+                    {profile?.phone && (
+                      <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                        <Phone className="w-4 h-4 text-muted-foreground" />
+                        <span>{profile.phone}</span>
+                      </div>
+                    )}
+                    {profile?.address && (
+                      <div className="flex items-start gap-3 text-sm text-muted-foreground">
+                        <Home className="w-4 h-4 text-muted-foreground mt-0.5" />
+                        <span>{profile.address}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </Card>
             )}

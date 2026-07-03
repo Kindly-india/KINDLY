@@ -272,14 +272,19 @@ export function VolunteerHomePage() {
     <div className="min-h-screen bg-background dark:bg-black relative">
       {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-[#fef5f0] dark:from-black via-[#fff8f5] dark:via-black to-[#f5fcf8] dark:to-black py-8 md:py-16 overflow-hidden">
-        {/* Ambient glow behind the greeting. Uses its own top-to-transparent
+        {/* Ambient glow behind the greeting — white instead of indigo, to
+            match the landing page hero. Uses its own top-to-transparent
             fade (not just a blurred blob) so it dies out to nothing well
             before the section's bottom edge — that's what makes the
             transition into the (fully opaque, un-tinted) Events section
-            below look seamless instead of hitting a visible clip line. */}
+            below look seamless instead of hitting a visible clip line.
+            The content below is wrapped in its own `relative` div, which is
+            load-bearing: without it, this absolute+no-z-index glow paints
+            ABOVE the plain static heading/text per CSS stacking rules and
+            washes them out (bit us on the landing page hero). */}
         <div
           aria-hidden="true"
-          className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[380px] max-w-[200vw] bg-gradient-to-b from-indigo-200/20 dark:from-indigo-400/15 to-transparent blur-3xl pointer-events-none"
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[380px] max-w-[200vw] bg-gradient-to-b from-white/70 dark:from-white/15 to-transparent blur-3xl pointer-events-none"
         />
 
         {/* Decorative Icons */}
@@ -349,8 +354,15 @@ export function VolunteerHomePage() {
       </section>
 
 {/* Main Event Feed */}
-      <section className="bg-muted dark:bg-black py-6 md:py-12 relative">
-        <div className="max-w-7xl mx-auto px-4 md:px-8">
+      <section className="bg-muted dark:bg-black py-6 md:py-12 relative overflow-hidden">
+        {/* Ambient side glow — this section's own dominant color (the blue
+            used on the "Registered" badge below), on the right to alternate
+            with Hero's own glow before it. */}
+        <div
+          aria-hidden="true"
+          className="absolute top-1/2 right-0 translate-x-1/2 -translate-y-1/2 w-[480px] h-[480px] bg-[#0066cc]/[0.05] dark:bg-[#0066cc]/[0.1] rounded-full blur-3xl pointer-events-none"
+        />
+        <div className="max-w-7xl mx-auto px-4 md:px-8 relative">
           <ScrollReveal>
             <div className="mb-4 md:mb-8 flex justify-between items-end">
               <div>
@@ -438,8 +450,15 @@ export function VolunteerHomePage() {
 
       {/* Impact Section — Bento Grid: one hero highlight (ring + totals + CTA)
           spanning 2x2, four supporting stat cells filling the rest. */}
-      <section className="bg-gradient-to-br from-[#f0fdf4] dark:from-black via-[#ecfdf5] dark:via-black to-[#d1fae5] dark:to-black py-8 md:py-16 relative">
-        <div className="max-w-7xl mx-auto px-4 md:px-8">
+      <section className="bg-gradient-to-br from-[#f0fdf4] dark:from-black via-[#ecfdf5] dark:via-black to-[#d1fae5] dark:to-black py-8 md:py-16 relative overflow-hidden">
+        {/* Ambient side glow — this section's own dominant color (the
+            emerald used throughout the ring/CTA below), on the left to
+            alternate with the Event Feed's right. */}
+        <div
+          aria-hidden="true"
+          className="absolute top-1/2 left-0 -translate-x-1/2 -translate-y-1/2 w-[480px] h-[480px] bg-[#10b981]/[0.06] dark:bg-[#10b981]/[0.12] rounded-full blur-3xl pointer-events-none"
+        />
+        <div className="max-w-7xl mx-auto px-4 md:px-8 relative">
           <ScrollReveal>
             <h2 className="text-[24px] md:text-[40px] font-bold text-foreground dark:text-white tracking-tight mb-6 md:mb-10">Your Impact.</h2>
           </ScrollReveal>
@@ -523,7 +542,14 @@ export function VolunteerHomePage() {
 
       {/* Stories Section */}
       <section className="bg-gradient-to-br from-[#fef7f0] dark:from-black via-[#fef5f0] dark:via-black to-[#fdf2f8] dark:to-black py-8 md:py-16 overflow-hidden relative">
-        <div className="max-w-7xl mx-auto px-4 md:px-8">
+        {/* Ambient side glow — this section's own dominant color (the pink
+            its base gradient fades into), on the right to alternate with
+            the Impact section's left. */}
+        <div
+          aria-hidden="true"
+          className="absolute top-1/2 right-0 translate-x-1/2 -translate-y-1/2 w-[480px] h-[480px] bg-[#ec4899]/[0.05] dark:bg-[#ec4899]/[0.1] rounded-full blur-3xl pointer-events-none"
+        />
+        <div className="max-w-7xl mx-auto px-4 md:px-8 relative">
           <ScrollReveal>
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-[20px] md:text-[36px] font-bold text-foreground dark:text-white">Archives.</h2>

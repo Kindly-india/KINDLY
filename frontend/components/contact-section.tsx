@@ -31,7 +31,7 @@ export function ContactSection() {
           a single glow spans both without needing to be stitched together. */}
       <div
         aria-hidden="true"
-        className="absolute top-0 right-0 w-[600px] h-[420px] bg-indigo-500/20 rounded-full blur-3xl pointer-events-none"
+        className="absolute top-0 right-0 w-[600px] h-[420px] bg-indigo-500/15 rounded-full blur-3xl pointer-events-none"
       />
 
       <div className="max-w-5xl mx-auto px-6 md:px-6 relative">

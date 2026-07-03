@@ -63,7 +63,6 @@ export interface OrganizationSignupData {
   orgType: string;
   name: string;
   email: string;
-  password: string;
   phone: string;
   registrationType?: string;
   registrationNumber?: string;
@@ -206,6 +205,21 @@ export const api = {
       throw new Error(error.message || 'Signup failed');
     }
 
+    return response.json();
+  },
+
+  // Pre-flight check the universal sign-in box runs before sending an OTP —
+  // organizations are password-less and gated by admin approval, so this
+  // blocks a still-pending org's email from silently self-provisioning a
+  // brand-new (unapproved) account through the ordinary OTP flow.
+  checkOrgApplicationStatus: async (email: string): Promise<{ status: 'pending' | 'ok' }> => {
+    const response = await fetch(`${API_URL}/auth/check-org-status`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+
+    if (!response.ok) return { status: 'ok' };
     return response.json();
   },
 
