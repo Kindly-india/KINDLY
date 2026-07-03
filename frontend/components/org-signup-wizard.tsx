@@ -16,8 +16,6 @@ import {
   Sparkles,
   Star,
   Shield,
-  Eye,
-  EyeOff,
   Loader2,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -77,8 +75,6 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
   const [currentView, setCurrentView] = useState<ViewState>("category")
   const [selectedOrg, setSelectedOrg] = useState<OrgType>(null)
   const [registrationType, setRegistrationType] = useState<string>("ngo")
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [uploadedFiles, setUploadedFiles] = useState<{
     registrationCertificate?: string;
     panCard?: string;
@@ -92,27 +88,12 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
 
     const formData = new FormData(e.currentTarget);
 
-    // Validate required uploads based on org type
-    if (selectedOrg === 'registered' && !uploadedFiles.registrationCertificate) {
-      alert('Please upload Registration Certificate');
-      return;
-    }
-    if (selectedOrg === 'supported' && !uploadedFiles.proofDocument) {
-      alert('Please upload Proof of Organization');
-      return;
-    }
-    if (selectedOrg === 'informal' && !uploadedFiles.proofDocument) {
-      alert('Please upload Verification Proof');
-      return;
-    }
-
     setIsSubmitting(true);
     try {
       const data: any = {
         orgType: selectedOrg,
         name: formData.get('name') as string,
         email: formData.get('email') as string,
-        password: formData.get('password') as string,
         phone: formData.get('phone') as string,
       };
 
@@ -448,53 +429,6 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
                     />
                   </div>
 
-                  <div className="space-y-1 md:space-y-2">
-                    <Label className="text-[10px] md:text-xs text-muted-foreground font-normal">Password</Label>
-                    <div className="relative">
-                      <Input
-                        name="password"
-                        type={showPassword ? "text" : "password"}
-                        placeholder="Create a password"
-
-                        className="h-10 md:h-14 bg-muted border-0 rounded-lg md:rounded-xl text-[13px] md:text-[17px] text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-[#3b82f6] pr-10"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                      >
-                        {showPassword ? (
-                          <EyeOff className="w-4 h-4 md:w-5 md:h-5" />
-                        ) : (
-                          <Eye className="w-4 h-4 md:w-5 md:h-5" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1 md:space-y-2">
-                    <Label className="text-[10px] md:text-xs text-muted-foreground font-normal">Confirm Password</Label>
-                    <div className="relative">
-                      <Input
-                        name="confirmPassword"
-                        type={showConfirmPassword ? "text" : "password"}
-                        placeholder="Confirm your password"
-
-                        className="h-10 md:h-14 bg-muted border-0 rounded-lg md:rounded-xl text-[13px] md:text-[17px] text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-[#3b82f6] pr-10"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                      >
-                        {showConfirmPassword ? (
-                          <EyeOff className="w-4 h-4 md:w-5 md:h-5" />
-                        ) : (
-                          <Eye className="w-4 h-4 md:w-5 md:h-5" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
 
                   <div className="space-y-1.5 md:space-y-3">
                     <Label className="text-[10px] md:text-xs text-muted-foreground font-normal">Registration Type</Label>
@@ -518,7 +452,7 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
                   </div>
 
                   <div className="space-y-1 md:space-y-2">
-                    <Label className="text-[10px] md:text-xs text-muted-foreground font-normal">Registration Number</Label>
+                    <Label className="text-[10px] md:text-xs text-muted-foreground font-normal">Registration Number <span className="text-muted-foreground">(Optional)</span></Label>
                     <Input
                       name="registrationNumber"
                       placeholder="MH/2024/12345"
@@ -529,7 +463,7 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                     <div className="space-y-1 md:space-y-2">
-                      <Label className="text-[10px] md:text-xs text-muted-foreground font-normal">Representative Name</Label>
+                      <Label className="text-[10px] md:text-xs text-muted-foreground font-normal">Representative Name <span className="text-muted-foreground">(Optional)</span></Label>
                       <Input
                         name="representativeName"
                         placeholder="John Doe"
@@ -538,7 +472,7 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
                       />
                     </div>
                     <div className="space-y-1 md:space-y-2">
-                      <Label className="text-[10px] md:text-xs text-muted-foreground font-normal">Designation</Label>
+                      <Label className="text-[10px] md:text-xs text-muted-foreground font-normal">Designation <span className="text-muted-foreground">(Optional)</span></Label>
                       <Input
                         name="designation"
                         placeholder="Director"
@@ -566,7 +500,7 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
                   </div>
 
                   <div className="space-y-1 md:space-y-2">
-                    <Label className="text-[10px] md:text-xs text-muted-foreground font-normal">Website or Social Link</Label>
+                    <Label className="text-[10px] md:text-xs text-muted-foreground font-normal">Website or Social Link <span className="text-muted-foreground">(Optional)</span></Label>
                     <Input
                       name="website"
                       placeholder="https://yourorganisation.org"
@@ -576,7 +510,7 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
 
                   <div className="space-y-1 md:space-y-2">
                     <Label className="text-[10px] md:text-xs text-muted-foreground font-normal">
-                      Upload Registration Certificate <span className="text-[#ef4444]">*</span>
+                      Upload Registration Certificate <span className="text-muted-foreground">(Optional)</span>
                     </Label>
                     <div className="border-2 border-dashed border-border rounded-lg md:rounded-xl p-4 md:p-6 text-center bg-gradient-to-br from-[#eff6ff]/50 dark:from-[#eff6ff]/10 to-[#dbeafe]/50 dark:to-[#dbeafe]/10 hover:border-[#3b82f6] transition-colors cursor-pointer">
                       <input
@@ -657,7 +591,7 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
                   </div>
 
                   <div className="space-y-1 md:space-y-2">
-                    <Label className="text-[10px] md:text-xs text-muted-foreground font-normal">Parent Institution</Label>
+                    <Label className="text-[10px] md:text-xs text-muted-foreground font-normal">Parent Institution <span className="text-muted-foreground">(Optional)</span></Label>
                     <Input
                       name="parentInstitution"
                       placeholder="ABC Engineering College"
@@ -667,7 +601,7 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
                   </div>
 
                   <div className="space-y-1 md:space-y-2">
-                    <Label className="text-[10px] md:text-xs text-muted-foreground font-normal">Coordinator Name</Label>
+                    <Label className="text-[10px] md:text-xs text-muted-foreground font-normal">Coordinator Name <span className="text-muted-foreground">(Optional)</span></Label>
                     <Input
                       name="coordinatorName"
 
@@ -687,53 +621,6 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
                     />
                   </div>
 
-                  <div className="space-y-1 md:space-y-2">
-                    <Label className="text-[10px] md:text-xs text-muted-foreground font-normal">Password</Label>
-                    <div className="relative">
-                      <Input
-                        name="password"
-
-                        type={showPassword ? "text" : "password"}
-                        placeholder="Create a password"
-                        className="h-10 md:h-14 bg-muted border-0 rounded-lg md:rounded-xl text-[13px] md:text-[17px] text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-[#8b5cf6] pr-10"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                      >
-                        {showPassword ? (
-                          <EyeOff className="w-4 h-4 md:w-5 md:h-5" />
-                        ) : (
-                          <Eye className="w-4 h-4 md:w-5 md:h-5" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1 md:space-y-2">
-                    <Label className="text-[10px] md:text-xs text-muted-foreground font-normal">Confirm Password</Label>
-                    <div className="relative">
-                      <Input
-                        name="confirmPassword"
-
-                        type={showConfirmPassword ? "text" : "password"}
-                        placeholder="Confirm your password"
-                        className="h-10 md:h-14 bg-muted border-0 rounded-lg md:rounded-xl text-[13px] md:text-[17px] text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-[#8b5cf6] pr-10"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                      >
-                        {showConfirmPassword ? (
-                          <EyeOff className="w-4 h-4 md:w-5 md:h-5" />
-                        ) : (
-                          <Eye className="w-4 h-4 md:w-5 md:h-5" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
 
                   <div className="space-y-1 md:space-y-2">
                     <Label className="text-[10px] md:text-xs text-muted-foreground font-normal">
@@ -755,7 +642,7 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
 
                   <div className="space-y-1 md:space-y-2">
                     <Label className="text-[10px] md:text-xs text-muted-foreground font-normal">
-                      Upload Proof of Organisation <span className="text-[#ef4444]">*</span>
+                      Upload Proof of Organisation <span className="text-muted-foreground">(Optional)</span>
                     </Label>
                     <div className="border-2 border-dashed border-border rounded-lg md:rounded-xl p-4 md:p-6 text-center bg-gradient-to-br from-[#f5f3ff]/50 dark:from-[#f5f3ff]/10 to-[#ede9fe]/50 dark:to-[#ede9fe]/10 hover:border-[#8b5cf6] transition-colors cursor-pointer">
                       <input
@@ -802,7 +689,7 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
                   </div>
 
                   <div className="space-y-1 md:space-y-2">
-                    <Label className="text-[10px] md:text-xs text-muted-foreground font-normal">Area / Locality</Label>
+                    <Label className="text-[10px] md:text-xs text-muted-foreground font-normal">Area / Locality <span className="text-muted-foreground">(Optional)</span></Label>
                     <Input
                       name="areaLocality"
 
@@ -813,7 +700,7 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
 
                   <div className="space-y-1 md:space-y-2">
                     <Label className="text-[10px] md:text-xs text-muted-foreground font-normal">
-                      Coordinator / Representative Name
+                      Coordinator / Representative Name <span className="text-muted-foreground">(Optional)</span>
                     </Label>
                     <Input
                       name="representativeName"
@@ -851,56 +738,8 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
                   </div>
 
                   <div className="space-y-1 md:space-y-2">
-                    <Label className="text-[10px] md:text-xs text-muted-foreground font-normal">Password</Label>
-                    <div className="relative">
-                      <Input
-                        name="password"
-
-                        type={showPassword ? "text" : "password"}
-                        placeholder="Create a password"
-                        className="h-10 md:h-14 bg-muted border-0 rounded-lg md:rounded-xl text-[13px] md:text-[17px] text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-[#f59e0b] pr-10"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                      >
-                        {showPassword ? (
-                          <EyeOff className="w-4 h-4 md:w-5 md:h-5" />
-                        ) : (
-                          <Eye className="w-4 h-4 md:w-5 md:h-5" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1 md:space-y-2">
-                    <Label className="text-[10px] md:text-xs text-muted-foreground font-normal">Confirm Password</Label>
-                    <div className="relative">
-                      <Input
-                        name="confirmPassword"
-
-                        type={showConfirmPassword ? "text" : "password"}
-                        placeholder="Confirm your password"
-                        className="h-10 md:h-14 bg-muted border-0 rounded-lg md:rounded-xl text-[13px] md:text-[17px] text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-[#f59e0b] pr-10"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                      >
-                        {showConfirmPassword ? (
-                          <EyeOff className="w-4 h-4 md:w-5 md:h-5" />
-                        ) : (
-                          <Eye className="w-4 h-4 md:w-5 md:h-5" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1 md:space-y-2">
                     <Label className="text-[10px] md:text-xs text-muted-foreground font-normal">
-                      Upload Verification Proof <span className="text-[#ef4444]">*</span>
+                      Upload Verification Proof <span className="text-muted-foreground">(Optional)</span>
                     </Label>
                     <div className="border-2 border-dashed border-border rounded-lg md:rounded-xl p-4 md:p-6 text-center bg-gradient-to-br from-[#f5f3ff]/50 dark:from-[#f5f3ff]/10 to-[#ede9fe]/50 dark:to-[#ede9fe]/10 hover:border-[#8b5cf6] transition-colors cursor-pointer">
                       <input
@@ -974,58 +813,9 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
                   </div>
 
                   <div className="space-y-1 md:space-y-2">
-                    <Label className="text-[10px] md:text-xs text-muted-foreground font-normal">Password</Label>
-                    <div className="relative">
-                      <Input
-                        name="password"
-
-                        type={showPassword ? "text" : "password"}
-                        placeholder="Create a password"
-                        className="h-10 md:h-14 bg-muted border-0 rounded-lg md:rounded-xl text-[13px] md:text-[17px] text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-[#10b981] pr-10"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                      >
-                        {showPassword ? (
-                          <EyeOff className="w-4 h-4 md:w-5 md:h-5" />
-                        ) : (
-                          <Eye className="w-4 h-4 md:w-5 md:h-5" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1 md:space-y-2">
-                    <Label className="text-[10px] md:text-xs text-muted-foreground font-normal">Confirm Password</Label>
-                    <div className="relative">
-                      <Input
-                        name="confirmPassword"
-
-                        type={showConfirmPassword ? "text" : "password"}
-                        placeholder="Confirm your password"
-                        className="h-10 md:h-14 bg-muted border-0 rounded-lg md:rounded-xl text-[13px] md:text-[17px] text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-[#10b981] pr-10"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                      >
-                        {showConfirmPassword ? (
-                          <EyeOff className="w-4 h-4 md:w-5 md:h-5" />
-                        ) : (
-                          <Eye className="w-4 h-4 md:w-5 md:h-5" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1 md:space-y-2">
                     <Label className="text-[10px] md:text-xs text-muted-foreground font-normal">
-                      Why do you want to join? <span className="text-[#ef4444]">*</span>
+                      Why do you want to join? <span className="text-muted-foreground">(Optional)</span>
                     </Label>
-                    {/* ✅ UPDATED: Added name="intentDescription" so the form can actually send it */}
                     <Textarea
                       name="intentDescription"
                       placeholder="Tell us about your intent - what type of events you want to create, your passion for volunteering, etc."

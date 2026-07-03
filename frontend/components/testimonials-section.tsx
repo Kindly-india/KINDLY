@@ -5,8 +5,15 @@ import { ScrollReveal } from "@/components/ui/scroll-reveal"
 
 export function TestimonialsSection() {
   return (
-    <section className="bg-gradient-to-b from-[#fffbeb] dark:from-black to-[#fef3c7] dark:to-black py-20 md:py-32 overflow-hidden">
-      <div className="max-w-5xl mx-auto px-6 md:px-8">
+    <section className="bg-gradient-to-b from-[#fffbeb] dark:from-black to-[#fef3c7] dark:to-black py-20 md:py-32 overflow-hidden relative">
+      {/* Ambient side glow — this section's own dominant color (the amber
+          testimonial accent), on the right to alternate with Events's left. */}
+      <div
+        aria-hidden="true"
+        className="absolute top-1/2 right-0 translate-x-1/2 -translate-y-1/2 w-[480px] h-[480px] bg-[#d97706]/[0.07] dark:bg-[#d97706]/[0.12] rounded-full blur-3xl pointer-events-none"
+      />
+
+      <div className="max-w-5xl mx-auto px-6 md:px-8 relative">
         <ScrollReveal className="text-center mb-10 md:mb-20">
           <p className="text-[#d97706] text-[12px] md:text-sm font-medium mb-1 md:mb-2 uppercase tracking-wide">
             KINDLY

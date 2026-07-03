@@ -58,8 +58,15 @@ export function EventsSection() {
 
   return (
     // Boosted mobile padding for better breathing room
-    <section id="events" className="bg-gradient-to-b from-purple-50 dark:from-black to-purple-100 dark:to-black py-20 md:py-32 overflow-hidden">
-      <div className="max-w-7xl mx-auto px-6 md:px-8">
+    <section id="events" className="bg-gradient-to-b from-purple-50 dark:from-black to-purple-100 dark:to-black py-20 md:py-32 overflow-hidden relative">
+      {/* Ambient side glow — this section's own dominant color (the purple
+          "Events" accent), on the left to alternate with How It Works's right. */}
+      <div
+        aria-hidden="true"
+        className="absolute top-1/2 left-0 -translate-x-1/2 -translate-y-1/2 w-[480px] h-[480px] bg-purple-600/[0.07] dark:bg-purple-500/[0.12] rounded-full blur-3xl pointer-events-none"
+      />
+
+      <div className="max-w-7xl mx-auto px-6 md:px-8 relative">
 
         {/* Header - Centered on mobile for better balance */}
         <ScrollReveal className="flex flex-col md:flex-row md:items-end md:justify-between mb-10 md:mb-16 gap-4">

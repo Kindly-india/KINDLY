@@ -15,12 +15,22 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { OrganizationService } from './organization.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { OptionalAuthGuard } from '../auth/guards/optional-auth.guard';
+import { CronSecretGuard } from '../auth/guards/cron-secret.guard';
 import { UpdateOrganizationProfileDto } from './dto/update-organization-profile.dto';
 import { AddReviewDto } from './dto/add-review.dto';
 
 @Controller('organizations')
 export class OrganizationController {
   constructor(private readonly organizationService: OrganizationService) { }
+
+  // Called by a Supabase DB webhook (see backend/migrations) when
+  // approval_status flips to 'approved' — same shared-secret pattern as the
+  // existing cron routes, since the caller is Postgres, not a logged-in user.
+  @UseGuards(CronSecretGuard)
+  @Post('webhooks/approved')
+  async onApproved(@Body('orgId') orgId: string) {
+    return this.organizationService.notifyApproved(orgId);
+  }
 
   // Uses OptionalAuthGuard (Supabase-validated) so req.user is always correct
   // for Supabase tokens — consistent with the volunteer profile endpoint.

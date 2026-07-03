@@ -159,6 +159,14 @@ export class EmailService {
     );
   }
 
+  async sendOrgApprovedEmail(to: string, name: string): Promise<void> {
+    await this.send(
+      to,
+      "You're approved — welcome to KINDLY",
+      this.orgApprovedHtml(name),
+    );
+  }
+
   // ─── HTML templates ───────────────────────────────────────────────────────
 
   private base(title: string, body: string): string {
@@ -248,6 +256,23 @@ export class EmailService {
        <p style="margin:0;font-size:14px;color:#86868b;">
          Questions? Reply to this email or reach us at <a href="mailto:manasdhivare@gmail.com" style="color:#80242a;">manasdhivare@gmail.com</a>.
        </p>`,
+    );
+  }
+
+  private orgApprovedHtml(name: string): string {
+    return this.base(
+      "You're approved — KINDLY",
+      `<div style="display:inline-block;background:#f0fdf4;border-radius:100px;padding:6px 16px;margin-bottom:20px;">
+         <span style="font-size:13px;font-weight:600;color:#16a34a;">✓ Application approved</span>
+       </div>
+       <h1 style="margin:0 0 8px;font-size:26px;font-weight:700;color:#1d1d1f;letter-spacing:-0.5px;">You're in, ${name}.</h1>
+       <p style="margin:0 0 24px;font-size:16px;color:#86868b;line-height:1.6;">
+         Your organisation has been approved. No password to set, no email link to click — just head back to KINDLY, enter the same email you applied with, and we'll send you a one-time code to sign in.
+       </p>
+       <a href="${process.env.FRONTEND_URL || 'https://www.kindly.co.in'}/"
+          style="display:inline-block;background:#80242a;color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;padding:13px 28px;border-radius:100px;">
+         Log in to KINDLY
+       </a>`,
     );
   }
 

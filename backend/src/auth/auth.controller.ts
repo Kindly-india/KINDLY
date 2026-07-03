@@ -22,6 +22,14 @@ export class AuthController {
     return this.authService.signupOrganization(dto);
   }
 
+  // Pre-flight check the universal sign-in box calls before sending an OTP —
+  // blocks login for organizations still awaiting approval.
+  @Throttle({ default: { limit: 20, ttl: 3_600_000 } })
+  @Post('check-org-status')
+  async checkOrgStatus(@Body('email') email: string) {
+    return this.authService.checkOrgStatus(email);
+  }
+
   @Post('welcome-email')
   @UseGuards(JwtAuthGuard)
   async sendWelcomeEmail(@Request() req: any) {

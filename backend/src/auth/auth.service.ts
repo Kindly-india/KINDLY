@@ -81,21 +81,23 @@ export class AuthService {
   async signupOrganization(dto: OrganizationSignupDto) {
     const supabase = this.supabaseService.getClient();
 
-    // 1. Sign up the user
-    const { data: authData, error: authError } = await supabase.auth.signUp({
+    // 1. Create the auth user via the admin API — no password. Organizations
+    // are password-less: they apply here, an admin approves the application
+    // (approval_status flips to 'approved'), and from then on they log in
+    // through the same email+OTP flow volunteers use. email_confirm: true
+    // means the account is usable the moment it's approved, with no separate
+    // "click this link to verify your email" step ever required.
+    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
       email: dto.email,
-      password: dto.password,
-      options: {
-        data: {
-          user_type: 'organization',
-          org_type: dto.orgType,
-        },
-        emailRedirectTo: `${process.env.FRONTEND_URL ?? process.env.SITE_URL ?? 'http://localhost:3000'}/auth/callback?next=/login`,
+      email_confirm: true,
+      user_metadata: {
+        user_type: 'organization',
+        org_type: dto.orgType,
       },
     });
 
     if (authError) {
-      if (authError.message.includes('already registered')) {
+      if (authError.message.includes('already registered') || authError.message.includes('already been registered')) {
         throw new ConflictException('Email already registered');
       }
       throw new BadRequestException(authError.message);
@@ -137,13 +139,34 @@ export class AuthService {
     }
 
     return {
-      message: 'Organization application submitted. Please check your email to verify your account.',
+      message: "Application submitted. We'll review it and email you once it's approved — no password or email verification needed, just log in with your email once you hear from us.",
       user: {
         id: authData.user.id,
         email: authData.user.email,
         profile,
       },
     };
+  }
+
+  // Gate for the universal email+OTP sign-in: signInWithOtp will happily
+  // auto-create a brand-new account for any email typed in. Without this
+  // check, an organization that applied but isn't approved yet could type
+  // their email into the same box and get treated as a fresh volunteer
+  // signup. This looks the email up against pending applications first so
+  // the frontend can block the OTP send and show a "still under review"
+  // message instead.
+  async checkOrgStatus(email: string): Promise<{ status: 'pending' | 'ok' }> {
+    const supabase = this.supabaseService.getClient();
+    const { data } = await supabase
+      .from('organization_profiles')
+      .select('approval_status')
+      .eq('email', email)
+      .maybeSingle();
+
+    if (data?.approval_status === 'pending') {
+      return { status: 'pending' };
+    }
+    return { status: 'ok' };
   }
 
   async dispatchWelcomeEmail(userId: string): Promise<void> {
