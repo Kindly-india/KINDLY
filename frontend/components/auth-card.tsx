@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import type { SVGProps } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import * as Sentry from "@sentry/nextjs"
 import { Building2, Fingerprint, Loader2, ShieldCheck } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -50,11 +51,22 @@ function applyRoleSession(role: "volunteer" | "org") {
 // /passkeys endpoint registerPasskey() writes to. Used to check whether the
 // signed-in user already has one saved, so returning users aren't asked to
 // save a passkey on every single login.
+//
+// Supabase methods report failures via `{ data, error }` rather than always
+// throwing — logging `error` here (instead of only relying on try/catch) is
+// the only way to see *why* this silently defaulted to "no passkey" if the
+// beta /passkeys endpoint ever misbehaves, since a swallowed error and a
+// genuinely-empty list both look identical to the caller otherwise.
 async function hasRegisteredPasskey(): Promise<boolean> {
   try {
-    const { data } = await supabase.auth.passkey.list()
+    const { data, error } = await supabase.auth.passkey.list()
+    if (error) {
+      Sentry.captureException(error, { tags: { flow: "passkey-list" } })
+      return false
+    }
     return Array.isArray(data) && data.length > 0
-  } catch {
+  } catch (error) {
+    Sentry.captureException(error, { tags: { flow: "passkey-list" } })
     return false
   }
 }
@@ -234,6 +246,8 @@ export function AuthCard() {
     setIsSubmitting(true)
     try {
       await api.ensureVolunteerProfile(name)
+      // First-time signup: straight to onboarding, no passkey offer here —
+      // that's reserved for returning logins (see goHomeOrOfferPasskey).
       goWithSplash("/onboarding")
     } catch (error: any) {
       toast.error(error.message || "Couldn't save your name. Please try again.")
