@@ -25,6 +25,7 @@ import {
   ChevronDown,
   Menu
 } from "lucide-react"
+import { toast } from "sonner"
 import { api } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
@@ -65,7 +66,11 @@ export default function AdminApprovalPage() {
       if (pendingEvents.length > 0) {
         handleSelectEvent(pendingEvents[0])
       }
-    } catch (err) {
+    } catch (err: any) {
+      if (err?.status === 401 || err?.status === 403) {
+        router.push('/')
+        return
+      }
       console.error("Failed to fetch pending events", err)
     } finally {
       setLoading(false)
@@ -137,15 +142,15 @@ export default function AdminApprovalPage() {
         isUrgent: selectedEvent.is_urgent
       })
       
-      alert("Event Polished & Published!")
+      toast.success("Event Polished & Published!")
       const remaining = events.filter(e => e.id !== selectedEvent.id)
       setEvents(remaining)
       if (remaining.length > 0) handleSelectEvent(remaining[0])
       else setSelectedEvent(null)
-      
+
     } catch (err) {
       console.error(err)
-      alert("Approval failed. Check console.")
+      toast.error("Approval failed. Check console.")
     } finally {
       setApproving(false)
     }
