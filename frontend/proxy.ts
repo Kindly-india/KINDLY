@@ -17,6 +17,15 @@ const ORG_ONLY = [
   '/edit-event',
 ]
 
+// Admin routes just require *some* signed-in session at this layer — the
+// real is_admin check can't be done cheaply at the edge (it's a DB column,
+// not a JWT claim), so it's enforced by the backend's AdminGuard and by a
+// client-side redirect on 401/403 in the admin page itself. This just keeps
+// fully anonymous visitors from loading the page shell at all.
+const ADMIN_ONLY = [
+  '/admin',
+]
+
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   const role = request.cookies.get('kindly_role')?.value // 'volunteer' | 'org' | undefined
@@ -27,9 +36,12 @@ export function proxy(request: NextRequest) {
   const isOrgOnly = ORG_ONLY.some(
     (p) => pathname === p || pathname.startsWith(p + '/')
   )
+  const isAdminOnly = ADMIN_ONLY.some(
+    (p) => pathname === p || pathname.startsWith(p + '/')
+  )
 
   // Not a protected route — pass through
-  if (!isVolunteerOnly && !isOrgOnly) {
+  if (!isVolunteerOnly && !isOrgOnly && !isAdminOnly) {
     return NextResponse.next()
   }
 

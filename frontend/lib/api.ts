@@ -266,14 +266,19 @@ export const api = {
       if (error) throw error;
       return { userType: 'volunteer', profile: data };
     } else if (userType === 'organization') {
-      const { data, error } = await supabase
-        .from('organization_profiles')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
+      // Routed through the backend (service-role client) instead of a direct
+      // Supabase query — organization_profiles doesn't have a working RLS
+      // SELECT policy for the owner, so the anon-key client came back empty.
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return null;
 
-      if (error) throw error;
-      return { userType: 'organization', profile: data };
+      const response = await fetch(`${API_URL}/organizations/${user.id}/profile`, {
+        headers: { 'Authorization': `Bearer ${session.access_token}` },
+      });
+      if (!response.ok) throw new Error('Failed to load organization profile');
+
+      const result = await response.json();
+      return { userType: 'organization', profile: result.profile };
     }
 
     return null;
@@ -1410,7 +1415,9 @@ export const api = {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || 'Failed to fetch pending events');
+      const err = new Error(errorData.message || 'Failed to fetch pending events') as Error & { status?: number };
+      err.status = response.status;
+      throw err;
     }
     return response.json();
   },

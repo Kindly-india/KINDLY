@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
-import { supabase, supabaseAuthClient } from "@/lib/supabase"
+import { supabase, supabaseAuthClient, destinationForUserType, applyRoleSession } from "@/lib/supabase"
 import { api } from "@/lib/api"
 import { BrandSplash } from "@/components/brand-splash"
 
@@ -28,22 +28,6 @@ function GoogleIcon(props: SVGProps<SVGSVGElement>) {
       <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.44-3.44C17.95 1.19 15.24 0 12 0A12 12 0 0 0 1.26 6.62l4 3.1C6.22 6.86 8.87 4.75 12 4.75Z" />
     </svg>
   )
-}
-
-// proxy.ts gates /home and /org-home on this cookie — without it the request
-// never reaches the page and bounces back through /login (which redirects to
-// "/"), landing the user back on the marketing page instead of their home feed.
-// user_metadata.user_type is the same field api.getUserProfile() reads, so an
-// already-registered organization signing in here still lands on /org-home
-// instead of being defaulted into the volunteer experience.
-function destinationForUserType(userType?: string): { role: "volunteer" | "org"; home: string } {
-  return userType === "organization"
-    ? { role: "org", home: "/org-home" }
-    : { role: "volunteer", home: "/home" }
-}
-
-function applyRoleSession(role: "volunteer" | "org") {
-  document.cookie = `kindly_role=${role}; path=/; max-age=604800; SameSite=Lax`
 }
 
 // supabase.auth.passkey.list() — the public wrapper around the same beta
@@ -139,6 +123,7 @@ export function AuthCard() {
   const [code, setCode] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isPasskeyBusy, setIsPasskeyBusy] = useState(false)
+  const [isGoogleBusy, setIsGoogleBusy] = useState(false)
   const [passkeySupported, setPasskeySupported] = useState(false)
   const [homeDestination, setHomeDestination] = useState("/home")
   const [showSplash, setShowSplash] = useState(false)
@@ -260,9 +245,21 @@ export function AuthCard() {
     goWithSplash(homeDestination)
   }
 
-  const handleGoogle = () => {
-    // TODO(auth-provider): await supabase.auth.signInWithOAuth({ provider: "google" })
-    toast.info("Google sign-in is coming soon.")
+  const handleGoogle = async () => {
+    if (isGoogleBusy) return
+    setIsGoogleBusy(true)
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: `${window.location.origin}/auth/callback` },
+      })
+      // On success the browser is already navigating to Google — this only
+      // runs if the request to start the OAuth flow itself failed.
+      if (error) throw error
+    } catch (error: any) {
+      toast.error(error.message || "Couldn't start Google sign-in.")
+      setIsGoogleBusy(false)
+    }
   }
 
   const handlePasskeySignIn = async () => {
@@ -419,7 +416,7 @@ export function AuthCard() {
 
           <Button
             type="submit"
-            disabled={isSubmitting || isPasskeyBusy || !identifier}
+            disabled={isSubmitting || isPasskeyBusy || isGoogleBusy || !identifier}
             className={`w-full ${FIELD_H} bg-primary text-primary-foreground font-semibold rounded-xl active:scale-[0.98] transition-all disabled:opacity-70`}
           >
             {isSubmitting ? (
@@ -439,18 +436,19 @@ export function AuthCard() {
         </div>
 
         <div className="space-y-2">
-          {/* <button
+          <button
             type="button"
             onClick={handleGoogle}
-            disabled={isSubmitting || isPasskeyBusy}
+            disabled={isSubmitting || isPasskeyBusy || isGoogleBusy}
             className={`w-full ${FIELD_H} flex items-center justify-center gap-2 bg-muted hover:bg-border/60 text-foreground font-medium text-[13px] rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-muted`}
           >
-            <GoogleIcon /> Sign in with Google
-          </button> */}
+            {isGoogleBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <GoogleIcon />}
+            Sign in with Google
+          </button>
           <button
             type="button"
             onClick={handlePasskeySignIn}
-            disabled={!passkeySupported || isSubmitting || isPasskeyBusy}
+            disabled={!passkeySupported || isSubmitting || isPasskeyBusy || isGoogleBusy}
             title={passkeySupported ? undefined : "Passkeys aren't supported on this browser"}
             className={`w-full ${FIELD_H} flex items-center justify-center gap-2 bg-muted hover:bg-border/60 text-foreground font-medium text-[13px] rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-muted`}
           >

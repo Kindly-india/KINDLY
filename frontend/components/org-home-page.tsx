@@ -325,7 +325,7 @@ export function OrgHomePage() {
                     className="shrink-0 w-64 md:w-auto snap-start group bg-card rounded-xl md:rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col self-stretch"
                   >
                     {/* Fixed 16:9 Image Container */}
-                    <div className="relative aspect-video aspect-[16/9] w-full overflow-hidden bg-muted shrink-0">
+                    <div className="relative aspect-video w-full overflow-hidden bg-muted shrink-0">
                       {event.cover_image_url ? (
                         <img 
                           src={event.cover_image_url} 
