@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import type { SVGProps } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import * as Sentry from "@sentry/nextjs"
 import { Building2, Fingerprint, Loader2, ShieldCheck } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -30,15 +31,34 @@ function GoogleIcon(props: SVGProps<SVGSVGElement>) {
   )
 }
 
-// supabase.auth.passkey.list() — the public wrapper around the same beta
-// /passkeys endpoint registerPasskey() writes to. Used to check whether the
-// signed-in user already has one saved, so returning users aren't asked to
-// save a passkey on every single login.
+// Used to check whether the signed-in user already has a passkey saved, so
+// returning users aren't asked to save one on every single login.
+//
+// `user_metadata.passkey_registered` is OUR OWN durable flag — stamped by
+// handleRegisterPasskey right after a successful (non-beta) registration —
+// and is checked first. supabase.auth.passkey.list() (the beta /passkeys
+// endpoint) is only a fallback for users who saved a passkey before this
+// flag existed: it's proven unreliable as the sole source of truth (it can
+// report an empty list for accounts that do have one registered), so it
+// must never be the thing that *suppresses* the offer on its own.
 async function hasRegisteredPasskey(): Promise<boolean> {
+  const { data: userData } = await supabase.auth.getUser()
+  if (userData?.user?.user_metadata?.passkey_registered === true) return true
+
   try {
-    const { data } = await supabase.auth.passkey.list()
-    return Array.isArray(data) && data.length > 0
-  } catch {
+    const { data, error } = await supabase.auth.passkey.list()
+    if (error) {
+      Sentry.captureException(error, { tags: { flow: "passkey-list" } })
+      return false
+    }
+    const hasOne = Array.isArray(data) && data.length > 0
+    // Backfill our own flag so future checks skip the beta endpoint entirely.
+    if (hasOne) {
+      await supabase.auth.updateUser({ data: { passkey_registered: true } }).catch(() => {})
+    }
+    return hasOne
+  } catch (error) {
+    Sentry.captureException(error, { tags: { flow: "passkey-list" } })
     return false
   }
 }
@@ -219,6 +239,8 @@ export function AuthCard() {
     setIsSubmitting(true)
     try {
       await api.ensureVolunteerProfile(name)
+      // First-time signup: straight to onboarding, no passkey offer here —
+      // that's reserved for returning logins (see goHomeOrOfferPasskey).
       goWithSplash("/onboarding")
     } catch (error: any) {
       toast.error(error.message || "Couldn't save your name. Please try again.")
@@ -232,6 +254,9 @@ export function AuthCard() {
     try {
       const { error } = await supabase.auth.registerPasskey()
       if (error) throw error
+      // Our own durable record of success — see hasRegisteredPasskey for why
+      // this, not the beta passkey.list() read-back, is the source of truth.
+      await supabase.auth.updateUser({ data: { passkey_registered: true } }).catch(() => {})
       toast.success("Passkey saved — you can use it to sign in next time.")
     } catch (error: any) {
       toast.error(error.message || "Couldn't save a passkey on this device.")
