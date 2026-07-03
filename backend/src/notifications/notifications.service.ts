@@ -27,17 +27,21 @@ export class NotificationsService {
     }
   }
 
-  async getNotifications(userId: string) {
+  async getNotifications(userId: string, before?: string) {
     const client = this.supabase.getClient();
-    const { data, error } = await client
+    let query = client
       .from('notifications')
       .select('*')
       .eq('recipient_id', userId)
       .order('created_at', { ascending: false })
       .limit(30);
 
+    if (before) query = query.lt('created_at', before);
+
+    const { data, error } = await query;
+
     if (error) throw error;
-    if (!data?.length) return { notifications: [] };
+    if (!data?.length) return { notifications: [], hasMore: false };
 
     const actorIds = [...new Set(data.filter(n => n.actor_id).map(n => n.actor_id))];
     const postEntityIds = [...new Set(
@@ -67,7 +71,7 @@ export class NotificationsService {
       post_thumbnail: n.entity_id ? (thumbnailMap[n.entity_id] ?? null) : null,
     }));
 
-    return { notifications };
+    return { notifications, hasMore: data.length === 30 };
   }
 
   async getUnreadCount(userId: string) {

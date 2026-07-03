@@ -1485,13 +1485,16 @@ export const api = {
   },
 
 // --- NOTIFICATIONS ---
-  async getNotifications() {
+  async getNotifications(before?: string) {
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return { notifications: [] };
-    const response = await fetch(`${API_URL}/notifications`, {
+    if (!session) return { notifications: [], hasMore: false };
+    const url = before
+      ? `${API_URL}/notifications?before=${encodeURIComponent(before)}`
+      : `${API_URL}/notifications`;
+    const response = await fetch(url, {
       headers: { Authorization: `Bearer ${session.access_token}` },
     });
-    if (!response.ok) return { notifications: [] };
+    if (!response.ok) return { notifications: [], hasMore: false };
     return response.json();
   },
 
