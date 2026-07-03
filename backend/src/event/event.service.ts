@@ -428,7 +428,8 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
         logo_url,
         org_type,
         email,
-        phone
+        phone,
+        is_verified
       )
     `)
       .eq('id', eventId)

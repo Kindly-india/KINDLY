@@ -18,7 +18,6 @@ import {
   Calendar,
   AlertCircle,
   Coffee, // Added for The Connect
-  ShieldCheck, // Added for Verification
   Sparkles, // Added for Premium Feel
   Info,
   Loader2,
@@ -28,6 +27,8 @@ import { Button } from "@/components/ui/button"
 import { api } from "@/lib/api"
 import { cn } from "@/lib/utils"
 import { PhoneVerificationModal } from "@/components/phone-verification-modal"
+import { VerifiedBadge } from "@/components/verified-badge"
+import { ScrollReveal } from "@/components/ui/scroll-reveal"
 
 /**
  * EventDetailsPage Component
@@ -183,10 +184,10 @@ export default function EventDetailsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted">
+      <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-black">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mb-4"></div>
-          <p className="text-sm font-medium text-muted-foreground tracking-wide">CURATING DETAILS...</p>
+          <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-[#ff6b6b] mb-4"></div>
+          <p className="text-sm font-semibold text-muted-foreground tracking-wide">CURATING DETAILS...</p>
         </div>
       </div>
     )
@@ -194,7 +195,7 @@ export default function EventDetailsPage() {
 
   if (error || !event) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-6">
+      <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-black p-6">
         <div className="text-center max-w-sm">
           <div className="w-16 h-16 bg-red-50 dark:bg-red-500/15 rounded-full flex items-center justify-center mx-auto mb-4">
             <AlertCircle className="w-8 h-8 text-red-500" />
@@ -202,7 +203,7 @@ export default function EventDetailsPage() {
           <p className="text-lg font-bold text-foreground mb-2">{error || 'Event not found'}</p>
           <p className="text-sm text-muted-foreground mb-6">The event might have been cancelled or the link is invalid.</p>
           <Link href="/events">
-            <Button className="w-full bg-primary text-primary-foreground rounded-xl">
+            <Button className="w-full bg-[#ff6b6b] hover:bg-[#ee5a5a] text-white dark:bg-[#ff6b6b] dark:hover:bg-[#ee5a5a] dark:text-white rounded-xl">
               Explore Other Events
             </Button>
           </Link>
@@ -227,20 +228,24 @@ export default function EventDetailsPage() {
     : event.description
 
   return (
-    <div className="min-h-screen bg-background pb-24 md:pb-12">
+    <div className="min-h-screen bg-neutral-50 dark:bg-black pb-24 md:pb-12">
 
       {/* LAYOUT STRUCTURE:
           - Left Column (md:flex-1): Visuals, Logistics, Description, The Connect.
-          - Right Sidebar (md:w-85): Fixed Booking Widget.
+          - Right Sidebar (md:w-96): Fixed Booking Widget.
       */}
-      <div className="md:flex md:max-w-6xl md:mx-auto md:gap-10 md:py-10 md:px-8">
+      <div className="relative md:flex md:max-w-6xl md:mx-auto md:gap-10 md:py-10 md:px-8">
+        {/* Ambient glow — sits behind the header/logistics/sidebar content below the hero */}
+        <div className="pointer-events-none absolute top-40 md:top-16 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-gradient-to-b from-[#ff6b6b]/[0.12] dark:from-[#ff6b6b]/[0.1] to-transparent blur-3xl" />
 
         {/* --- LEFT CONTENT COLUMN --- */}
-        <div className="md:flex-1">
+        <div className="relative md:flex-1">
 
-          {/* HERO IMAGE SECTION */}
+          {/* HERO — image with title, badges and organizer overlaid directly on
+              the photo (glass chip + gradient scrim), matching the storytelling
+              hero treatment used on the showcase/social pages. */}
           <div className="relative">
-            <div className="relative h-72 md:h-110 md:rounded-[32px] md:overflow-hidden md:shadow-2xl md:border border-border">
+            <div className="relative h-[62vh] md:h-[34rem] md:rounded-[32px] md:overflow-hidden md:shadow-2xl md:border border-border overflow-hidden">
               {event.cover_image_url ? (
                 <img
                   src={event.cover_image_url}
@@ -253,82 +258,78 @@ export default function EventDetailsPage() {
                 </div>
               )}
 
+              {/* Gradient scrim — always on, for legible white text at all viewports */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-black/10" />
+
               {/* OVERLAY NAVIGATION */}
               <div className="absolute top-4 left-4 right-4 flex justify-between items-center z-20">
                 <Link href="/events">
-                  <button className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-card/90 backdrop-blur-xl flex items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition-all">
-                    <ArrowLeft className="w-5 h-5 text-foreground" />
+                  <button className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/15 flex items-center justify-center shadow-xl hover:bg-white/20 hover:scale-105 active:scale-95 transition-all">
+                    <ArrowLeft className="w-5 h-5 text-white" />
                   </button>
                 </Link>
 
                 <div className="flex gap-2">
                   <button
                     onClick={handleShare}
-                    className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-card/90 backdrop-blur-xl flex items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition-all"
+                    className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/15 flex items-center justify-center shadow-xl hover:bg-white/20 hover:scale-105 active:scale-95 transition-all"
                   >
                     {copied
-                      ? <Check className="w-5 h-5 text-green-600" />
-                      : <Share2 className="w-5 h-5 text-foreground" />}
+                      ? <Check className="w-5 h-5 text-emerald-400" />
+                      : <Share2 className="w-5 h-5 text-white" />}
                   </button>
                   <button
                     onClick={() => setIsSaved(!isSaved)}
-                    className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-card/90 backdrop-blur-xl flex items-center justify-center shadow-xl hover:scale-105 transition-all"
+                    className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/15 flex items-center justify-center shadow-xl hover:bg-white/20 hover:scale-105 transition-all"
                   >
                     <Heart
-                      className={`w-5 h-5 transition-colors ${isSaved ? "fill-red-500 text-red-500" : "text-foreground"}`}
+                      className={`w-5 h-5 transition-colors ${isSaved ? "fill-red-500 text-red-500" : "text-white"}`}
                     />
                   </button>
                 </div>
               </div>
 
-              {/* Image Overlay Gradient for mobile title legibility */}
-              <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/20 to-transparent md:hidden" />
-            </div>
-          </div>
-
-          {/* MAIN HEADER INFO */}
-          <div className="px-5 md:px-0 pt-6 pb-6 border-b border-border md:border-0">
-            <div className="flex flex-col gap-1 mb-2">
-              <div className="flex items-center gap-2">
-                <span className="px-3 py-1 bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 text-[10px] font-bold rounded-full uppercase tracking-widest border border-emerald-100">
-                  {event.category}
-                </span>
-                {event.is_urgent && (
-                  <span className="px-3 py-1 bg-red-50 dark:bg-red-500/15 text-red-600 text-[10px] font-bold rounded-full uppercase tracking-widest border border-red-100 flex items-center gap-1">
-                    <AlertCircle className="w-3 h-3" />
-                    Urgent
+              {/* TITLE + META — overlaid at the bottom of the photo */}
+              <ScrollReveal className="absolute bottom-0 left-0 w-full p-6 md:p-10 z-10">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="px-3 py-1.5 bg-emerald-500/15 border border-emerald-400/30 backdrop-blur-md text-emerald-300 text-[10px] font-bold rounded-full uppercase tracking-widest">
+                    {event.category}
                   </span>
-                )}
-              </div>
-              <h1 className="text-2xl md:text-4xl font-black text-foreground leading-tight mt-2">
-                {event.title}
-              </h1>
-            </div>
+                  {event.is_urgent && (
+                    <span className="px-3 py-1.5 bg-red-500/15 border border-red-400/30 backdrop-blur-md text-red-300 text-[10px] font-bold rounded-full uppercase tracking-widest flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" />
+                      Urgent
+                    </span>
+                  )}
+                </div>
+                <h1 className="text-3xl md:text-5xl font-black text-white leading-[1.05] tracking-tight mb-4">
+                  {event.title}
+                </h1>
 
-            {/* ORGANIZER PROFILE */}
-            <div className="flex items-center justify-between mt-4">
-              <Link href={`/organizations/${event.organization_id}`}>
-                <div className="flex items-center gap-3 group">
-                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl overflow-hidden bg-gradient-to-br from-orange-400 to-rose-500 flex items-center justify-center text-white font-bold text-lg shadow-md group-hover:scale-105 transition-transform">
-                    {event.organization_profiles?.name?.charAt(0) || 'O'}
-                  </div>
-                  <div className="flex flex-col">
+                <Link href={`/organizations/${event.organization_id}`}>
+                  <div className="inline-flex items-center gap-3 px-3 py-2 bg-white/10 backdrop-blur-xl border border-white/15 rounded-2xl group hover:bg-white/20 transition-colors">
+                    <div className="w-9 h-9 rounded-xl overflow-hidden bg-gradient-to-br from-orange-400 to-rose-500 flex items-center justify-center text-white font-bold text-sm shrink-0 group-hover:scale-105 transition-transform">
+                      {event.organization_profiles?.logo_url ? (
+                        <img src={event.organization_profiles.logo_url} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        event.organization_profiles?.name?.charAt(0) || 'O'
+                      )}
+                    </div>
                     <div className="flex items-center gap-1.5">
-                      <span className="text-sm md:text-base font-bold text-foreground group-hover:text-blue-600 transition-colors">
+                      <span className="text-sm font-bold text-white group-hover:text-[#ff6b6b] transition-colors">
                         {event.organization_profiles?.name || 'Organization'}
                       </span>
-                      <ShieldCheck className="w-4 h-4 text-blue-500 fill-blue-50" />
+                      {event.organization_profiles?.is_verified && <VerifiedBadge size="md" />}
                     </div>
-                    <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-tight">Verified Organization</span>
                   </div>
-                </div>
-              </Link>
+                </Link>
+              </ScrollReveal>
             </div>
           </div>
 
           {/* LOGISTICS & INFO GRID */}
-          <div className="px-5 md:px-0 py-6">
-            <div className="bg-muted rounded-[24px] p-6 md:p-8">
+          <ScrollReveal delay={0.05} className="px-5 md:px-0 py-6">
+            <div className="bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl rounded-[24px] p-6 md:p-8 border border-black/5 dark:border-white/5 shadow-xl shadow-neutral-200/30 dark:shadow-2xl dark:shadow-black/50">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Know Before You Go</h3>
                 <Sparkles className="w-4 h-4 text-amber-500 opacity-50" />
@@ -345,7 +346,7 @@ export default function EventDetailsPage() {
                     <p className="text-sm font-bold text-foreground">
                       {formatDate(event.event_date)}
                     </p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs font-semibold text-muted-foreground">
                       {formatTime(event.start_time)} — {formatTime(event.end_time)}
                     </p>
                   </div>
@@ -359,7 +360,7 @@ export default function EventDetailsPage() {
                   <div>
                     <p className="text-[10px] font-bold text-muted-foreground uppercase mb-0.5">Location</p>
                     <p className="text-sm font-bold text-foreground truncate max-w-[180px]">{event.location}</p>
-                    <p className="text-xs text-muted-foreground">Tap map for directions</p>
+                    <p className="text-xs font-semibold text-muted-foreground">Tap map for directions</p>
                   </div>
                 </div>
 
@@ -422,12 +423,12 @@ export default function EventDetailsPage() {
                 </a>
               </div>
             </div>
-          </div>
+          </ScrollReveal>
 
           {/* --- THE AFTER: KINDLY EXCLUSIVE --- */}
           {event.connect_plan && (
-            <div className="px-5 md:px-0 pb-10 mt-4">
-              <div className="bg-[#064e3b] rounded-[40px] p-8 md:p-12 shadow-2xl relative overflow-hidden border border-emerald-800">
+            <ScrollReveal delay={0.1} className="px-5 md:px-0 pb-10 mt-4">
+              <div className="bg-[#064e3b] rounded-[40px] p-8 md:p-12 shadow-2xl relative overflow-hidden border border-emerald-800 hover:scale-[1.01] transition-transform duration-300 ease-out">
                 <div className="absolute -top-8 -right-8 opacity-10">
                   <Coffee className="w-44 h-44 text-emerald-400" />
                 </div>
@@ -442,7 +443,7 @@ export default function EventDetailsPage() {
                   </div>
                 </div>
 
-                <p className="text-emerald-200 text-sm italic mb-4 font-medium pr-4">
+                <p className="text-emerald-200 text-sm italic mb-4 font-semibold pr-4">
                   Because the community is built after the work is done. Join your fellow volunteers to chill, network, and hang out.
                 </p>
 
@@ -457,47 +458,47 @@ export default function EventDetailsPage() {
                   Curated Experience
                 </div>
               </div>
-            </div>
+            </ScrollReveal>
           )}
 
           {/* DESCRIPTION SECTION */}
           {event.description && (
-            <div className="px-5 md:px-0 pb-8 border-b border-border md:border-0">
+            <ScrollReveal delay={0.15} className="px-5 md:px-0 pb-8 border-b border-border md:border-0">
               <h3 className="text-lg font-black text-foreground mb-3 flex items-center gap-2">
                 <Info className="w-5 h-5 text-blue-500" />
                 The Cause
               </h3>
-              <p className="text-base text-muted-foreground leading-[1.8] font-medium">
+              <p className="text-base text-muted-foreground leading-[1.8] font-semibold">
                 {showFullDescription ? event.description : shortDescription}
               </p>
               {event.description.length > 150 && (
                 <button
                   onClick={() => setShowFullDescription(!showFullDescription)}
-                  className="text-sm font-bold text-blue-600 hover:text-blue-700 mt-3 underline underline-offset-4"
+                  className="text-sm font-bold text-[#ff6b6b] hover:text-[#ee5a5a] mt-3 underline underline-offset-4"
                 >
                   {showFullDescription ? "Show Less" : "Read Full Story"}
                 </button>
               )}
-            </div>
+            </ScrollReveal>
           )}
 
           {/* THINGS TO BRING SECTION */}
           {event.things_to_bring && (
-            <div className="px-5 md:px-0 pb-8 pt-6">
+            <ScrollReveal delay={0.2} className="px-5 md:px-0 pb-8 pt-6">
               <h3 className="text-sm font-bold text-foreground uppercase tracking-widest mb-3">Logistics Check</h3>
-              <div className="p-5 bg-muted rounded-2xl border border-border">
-                <p className="text-sm text-muted-foreground font-medium leading-relaxed">
+              <div className="p-5 bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl rounded-2xl border border-black/5 dark:border-white/5">
+                <p className="text-sm text-muted-foreground font-semibold leading-relaxed">
                   <span className="text-foreground font-bold block mb-1">Items to bring:</span>
                   {event.things_to_bring}
                 </p>
               </div>
-            </div>
+            </ScrollReveal>
           )}
         </div>
 
         {/* --- RIGHT SIDEBAR: DESKTOP BOOKING CARD --- */}
-        <div className="hidden md:block md:w-96">
-          <div className="sticky top-10 bg-card rounded-[32px] shadow-2xl border border-border overflow-hidden">
+        <ScrollReveal delay={0.1} className="hidden md:block md:w-96">
+          <div className="sticky top-10 bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl rounded-[32px] shadow-2xl shadow-neutral-200/30 dark:shadow-2xl dark:shadow-black/50 border border-black/5 dark:border-white/5 overflow-hidden">
 
             <div className="p-8 border-b border-border">
               <div className="flex items-center justify-between mb-6">
@@ -536,15 +537,15 @@ export default function EventDetailsPage() {
             </div>
 
             {/* ACTION CENTER */}
-            <div className="p-8 bg-muted/50">
+            <div className="p-8 bg-black/[0.02] dark:bg-white/[0.02]">
               <Button
                 onClick={openConfirmModal}
                 disabled={isRegistering || !canRegister}
                 className={cn(
-                  "w-full h-14 font-black rounded-2xl text-lg shadow-2xl transition-all active:scale-95 disabled:opacity-50",
+                  "w-full h-14 font-black rounded-2xl text-lg shadow-2xl transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 duration-300 ease-out",
                   isRegistered
-                    ? "bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/20"
-                    : "bg-primary hover:bg-primary/90 text-primary-foreground shadow-foreground/30"
+                    ? "bg-emerald-500 hover:bg-emerald-600 text-white dark:bg-emerald-500 dark:hover:bg-emerald-600 dark:text-white shadow-emerald-500/20"
+                    : "bg-[#ff6b6b] hover:bg-[#ee5a5a] text-white dark:bg-[#ff6b6b] dark:hover:bg-[#ee5a5a] dark:text-white shadow-[#ff6b6b]/30"
                 )}
               >
                 {isRegistering ? <Loader2 className="w-5 h-5 animate-spin" />
@@ -555,7 +556,7 @@ export default function EventDetailsPage() {
               </Button>
 
               <div className="flex flex-col gap-2 mt-6">
-                <div className="flex items-center gap-2 text-xs text-muted-foreground justify-center">
+                <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground justify-center">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
                   <span>Free Access</span>
                   <span className="w-1 h-1 bg-muted rounded-full mx-1"></span>
@@ -564,8 +565,8 @@ export default function EventDetailsPage() {
                 </div>
 
                 {!isRegistrationOpen && (
-                  <div className="p-3 bg-red-50 dark:bg-red-500/15 rounded-xl border border-red-100 mt-2">
-                    <p className="text-center text-[10px] font-bold text-red-600 uppercase tracking-tighter">
+                  <div className="p-3 bg-red-50 dark:bg-red-500/15 rounded-xl border border-red-100 dark:border-red-500/20 mt-2">
+                    <p className="text-center text-[10px] font-bold text-red-600 dark:text-red-400 uppercase tracking-tighter">
                       Registration ended on {new Date(event.registration_deadline).toLocaleDateString()}
                     </p>
                   </div>
@@ -574,19 +575,19 @@ export default function EventDetailsPage() {
             </div>
 
             {/* CALENDAR ADDER */}
-            <div className="px-8 pb-8 bg-muted/50">
-              <button className="w-full flex items-center gap-4 p-4 bg-card rounded-2xl border border-border hover:border-blue-200 hover:bg-blue-50 dark:bg-blue-500/15/30 transition-all group">
-                <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-500/15 flex items-center justify-center group-hover:bg-blue-100 dark:bg-blue-500/15 transition-colors">
+            <div className="px-8 pb-8 bg-black/[0.02] dark:bg-white/[0.02]">
+              <button className="w-full flex items-center gap-4 p-4 bg-card rounded-2xl border border-border hover:border-blue-200 dark:hover:border-blue-500/30 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-all group">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-500/15 flex items-center justify-center group-hover:bg-blue-100 dark:group-hover:bg-blue-500/25 transition-colors">
                   <Calendar className="w-5 h-5 text-blue-600" />
                 </div>
                 <div className="text-left">
                   <p className="text-xs font-bold text-foreground uppercase tracking-tight">Sync to Calendar</p>
-                  <p className="text-[10px] text-muted-foreground">Get notified 1h before start</p>
+                  <p className="text-[10px] font-semibold text-muted-foreground">Get notified 1h before start</p>
                 </div>
               </button>
             </div>
           </div>
-        </div>
+        </ScrollReveal>
       </div>
 
       {/* --- RSVP CONFIRMATION MODAL --- */}
@@ -599,7 +600,7 @@ export default function EventDetailsPage() {
           />
 
           {/* Sheet / Card */}
-          <div className="relative w-full md:max-w-md bg-card md:rounded-3xl rounded-t-3xl px-6 pt-6 pb-10 md:pb-8 shadow-2xl z-10">
+          <div className="relative w-full md:max-w-md bg-white/95 dark:bg-neutral-900/95 backdrop-blur-xl md:rounded-3xl rounded-t-3xl px-6 pt-6 pb-10 md:pb-8 shadow-2xl shadow-black/20 dark:shadow-black/60 border-t border-black/5 dark:border-white/10 z-10">
             {/* Handle bar (mobile) */}
             <div className="w-10 h-1 bg-muted rounded-full mx-auto mb-5 md:hidden" />
 
@@ -648,9 +649,9 @@ export default function EventDetailsPage() {
                   onChange={(e) => setAgreedToTerms(e.target.checked)}
                   className="peer sr-only"
                 />
-                <div className="w-5 h-5 rounded-md border-2 border-border peer-checked:border-primary peer-checked:bg-primary transition-all flex items-center justify-center">
+                <div className="w-5 h-5 rounded-md border-2 border-border peer-checked:border-[#ff6b6b] peer-checked:bg-[#ff6b6b] transition-all flex items-center justify-center">
                   {agreedToTerms && (
-                    <svg className="w-3 h-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
                   )}
@@ -679,7 +680,7 @@ export default function EventDetailsPage() {
               <Button
                 onClick={executeRegistration}
                 disabled={!agreedToTerms || isRegistering}
-                className="flex-1 h-12 bg-primary hover:bg-primary text-primary-foreground font-black rounded-2xl text-sm shadow-lg disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                className="flex-1 h-12 bg-[#ff6b6b] hover:bg-[#ee5a5a] text-white dark:bg-[#ff6b6b] dark:hover:bg-[#ee5a5a] dark:text-white font-black rounded-2xl text-sm shadow-lg hover:scale-[1.02] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all duration-300 ease-out"
               >
                 {isRegistering ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm Registration'}
               </Button>
@@ -700,14 +701,16 @@ export default function EventDetailsPage() {
             <p className="text-lg font-black text-foreground leading-none">
               {formatDate(event.event_date).split(',')[0]}
             </p>
-            <p className="text-xs text-muted-foreground font-medium">{formatTime(event.start_time)}</p>
+            <p className="text-xs text-muted-foreground font-semibold">{formatTime(event.start_time)}</p>
           </div>
           <Button
             onClick={openConfirmModal}
             disabled={isRegistering || !canRegister}
             className={cn(
-              "h-14 px-8 font-black rounded-2xl text-sm shadow-xl transition-all active:scale-95 disabled:opacity-50",
-              isRegistered ? "bg-emerald-500 text-white" : "bg-primary text-primary-foreground"
+              "h-14 px-8 font-black rounded-2xl text-sm shadow-xl transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 duration-300 ease-out",
+              isRegistered
+                ? "bg-emerald-500 text-white dark:bg-emerald-500 dark:text-white"
+                : "bg-[#ff6b6b] text-white dark:bg-[#ff6b6b] dark:text-white"
             )}
           >
             {isRegistering ? <Loader2 className="w-4 h-4 animate-spin" />
