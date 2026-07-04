@@ -3,6 +3,7 @@ import { SupabaseService } from '../supabase/supabase.service';
 import { UpdateVolunteerProfileDto } from './dto/update-volunteer-profile.dto';
 import { OnboardingDto } from './dto/onboarding.dto';
 import { validateImageFile } from '../common/file-validation.util';
+import { removeFromStorage } from '../common/storage.util';
 
 @Injectable()
 export class VolunteerService {
@@ -380,6 +381,14 @@ export class VolunteerService {
   async deleteFromGallery(userId: string, photoId: string) {
     const client = this.supabase.getClient();
 
+    // Grab the image URL before deleting the row so we can clean up the file.
+    const { data: photo } = await client
+      .from('volunteer_gallery')
+      .select('image_url')
+      .eq('id', photoId)
+      .eq('user_id', userId)
+      .maybeSingle();
+
     // The RLS policy we created ensures users can only delete their OWN photos
     // but adding .eq('user_id', userId) is a good double-check
     const { error } = await client
@@ -389,6 +398,8 @@ export class VolunteerService {
       .eq('user_id', userId);
 
     if (error) throw error;
+
+    await removeFromStorage(client, 'gallery_images', [photo?.image_url]);
     return { success: true };
   }
 

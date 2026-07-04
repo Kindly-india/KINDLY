@@ -66,16 +66,20 @@ export class OrganizationSignupDto {
   @MaxLength(3000)
   intentDescription?: string;
 
-  // File URLs — system-generated, always full URLs from Supabase storage
+  // KYC document storage PATHS (not URLs) — the bucket is private, so we store
+  // the object path and hand out signed URLs to admins on demand.
   @IsOptional()
-  @IsUrl()
+  @IsString()
+  @MaxLength(300)
   registrationCertificateUrl?: string;
 
   @IsOptional()
-  @IsUrl()
+  @IsString()
+  @MaxLength(300)
   panCardUrl?: string;
 
   @IsOptional()
-  @IsUrl()
+  @IsString()
+  @MaxLength(300)
   proofDocumentUrl?: string;
 }

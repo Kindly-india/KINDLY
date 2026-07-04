@@ -54,6 +54,6 @@ export default withSentryConfig(nextConfig, {
   silent: true,
   widenClientFileUpload: true,
   sourcemaps: { disable: true },
-  disableLogger: true,
-  automaticVercelMonitors: false,
+  // disableLogger / automaticVercelMonitors were removed — they're deprecated
+  // and are no-ops under Turbopack (they only ever applied to webpack builds).
 });

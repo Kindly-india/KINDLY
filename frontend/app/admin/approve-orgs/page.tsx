@@ -94,7 +94,7 @@ export default function AdminApproveOrgsPage() {
   }, [])
 
   const handleDecision = async (org: PendingOrg, status: "approved" | "rejected") => {
-    if (status === "rejected" && !confirm(`Reject "${org.name}"? They'll stay unable to log in.`)) return
+    if (status === "rejected" && !confirm(`Reject and permanently delete "${org.name}"'s application? This frees their email to re-apply.`)) return
     try {
       setActingId(org.id)
       await api.setOrgApproval(org.id, status)
@@ -102,7 +102,7 @@ export default function AdminApproveOrgsPage() {
       toast.success(
         status === "approved"
           ? `${org.name} approved — they've been emailed.`
-          : `${org.name} rejected.`,
+          : `${org.name} rejected and removed.`,
       )
     } catch (err: any) {
       toast.error(err.message || "Action failed. Please try again.")

@@ -1,10 +1,11 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { EmailService } from '../email/email.service';
 import { UpdateOrganizationProfileDto } from './dto/update-organization-profile.dto';
 import { AddReviewDto } from './dto/add-review.dto';
 import { validateImageFile } from '../common/file-validation.util';
+import { removeFromStorage, storagePathFromStored } from '../common/storage.util';
 
 export interface OrgProfilePublic {
   id: string;
@@ -66,9 +67,24 @@ export class OrganizationService {
 
   // ─── Admin approval ─────────────────────────────────────────────────────────
 
+  private static readonly ORG_DOCS_BUCKET = 'organization-documents';
+
+  // KYC docs live in a PRIVATE bucket now, so a stored value is only usable via a
+  // short-lived signed URL. Handles both the new format (a bare object path) and
+  // legacy rows that stored a full public URL — extracts the path from either.
+  private async signOrgDoc(client: any, stored: string | null): Promise<string | null> {
+    if (!stored) return null;
+    const path = storagePathFromStored(stored, OrganizationService.ORG_DOCS_BUCKET);
+    const { data } = await client.storage
+      .from(OrganizationService.ORG_DOCS_BUCKET)
+      .createSignedUrl(path, 60 * 60); // 1 hour, for the admin review session
+    return data?.signedUrl ?? null;
+  }
+
   // All organizations awaiting review, oldest first, with the fields an admin
-  // needs to decide (including KYC document URLs). Admin-only via AdminGuard;
-  // uses the service-role client so RLS isn't in the way.
+  // needs to decide. KYC document links are returned as fresh signed URLs
+  // (the bucket is private). Admin-only via AdminGuard; uses the service-role
+  // client so RLS isn't in the way.
   async getPendingOrganizations() {
     const client = this.supabase.getClient();
     const { data, error } = await client
@@ -83,7 +99,17 @@ export class OrganizationService {
       .order('created_at', { ascending: true });
 
     if (error) throw error;
-    return { organizations: data ?? [] };
+
+    const organizations = await Promise.all(
+      (data ?? []).map(async (org: any) => ({
+        ...org,
+        registration_certificate_url: await this.signOrgDoc(client, org.registration_certificate_url),
+        pan_card_url: await this.signOrgDoc(client, org.pan_card_url),
+        proof_document_url: await this.signOrgDoc(client, org.proof_document_url),
+      })),
+    );
+
+    return { organizations };
   }
 
   // Approve or reject an organization from the admin panel. On approval it emails
@@ -92,29 +118,62 @@ export class OrganizationService {
   // authenticated admin, so no webhook auth is needed).
   async setApprovalStatus(orgId: string, status: 'approved' | 'rejected') {
     const client = this.supabase.getClient();
-    const { data: org, error } = await client
+
+    const { data: org, error: fetchError } = await client
       .from('organization_profiles')
-      .update({ approval_status: status, updated_at: new Date().toISOString() })
+      .select('id, user_id, name, email, registration_certificate_url, pan_card_url, proof_document_url')
       .eq('id', orgId)
-      .select('id, user_id, name, email, approval_status')
       .single();
 
-    if (error || !org) throw new NotFoundException('Organization not found');
+    if (fetchError || !org) throw new NotFoundException('Organization not found');
 
-    if (status === 'approved') {
-      await Promise.all([
-        this.email.sendOrgApprovedEmail(org.email, org.name).catch(() => {}),
-        this.notifications.createNotification(
-          org.user_id,
-          org.user_id,
-          'org_approved',
-          "Your organization has been approved! You can now log in with your email.",
-          org.id,
-        ),
+    if (status === 'rejected') {
+      // A rejected application is deleted outright. Reject only ever targets a
+      // still-pending org (the admin panel lists only pending), which can't log
+      // in yet and therefore has NO dependent data — no events, gallery,
+      // reviews, endorsements. So we can safely remove everything tied to it:
+      //   1. KYC documents from storage
+      //   2. the organization_profiles row (must go before the auth user, since
+      //      it FK-references auth.users)
+      //   3. the auth user — frees the unique email for a fresh application and
+      //      leaves no ghost account or PII behind.
+      await removeFromStorage(client, OrganizationService.ORG_DOCS_BUCKET, [
+        org.registration_certificate_url,
+        org.pan_card_url,
+        org.proof_document_url,
       ]);
+
+      const { error: deleteError } = await client
+        .from('organization_profiles')
+        .delete()
+        .eq('id', orgId);
+      if (deleteError) throw new BadRequestException(deleteError.message);
+
+      await client.auth.admin.deleteUser(org.user_id).catch(() => {});
+
+      return { message: 'Organization rejected and removed', organization: { id: org.id, approval_status: 'rejected' } };
     }
 
-    return { message: `Organization ${status}`, organization: org };
+    // Approved
+    const { error: updateError } = await client
+      .from('organization_profiles')
+      .update({ approval_status: 'approved', updated_at: new Date().toISOString() })
+      .eq('id', orgId);
+
+    if (updateError) throw new BadRequestException(updateError.message);
+
+    await Promise.all([
+      this.email.sendOrgApprovedEmail(org.email, org.name).catch(() => {}),
+      this.notifications.createNotification(
+        org.user_id,
+        org.user_id,
+        'org_approved',
+        "Your organization has been approved! You can now log in with your email.",
+        org.id,
+      ),
+    ]);
+
+    return { message: 'Organization approved', organization: { id: org.id, approval_status: 'approved' } };
   }
 
   async getPublicProfile(orgId: string, viewerId?: string) {
@@ -479,6 +538,14 @@ export class OrganizationService {
   async deleteFromOrgGallery(userId: string, photoId: string) {
     const client = this.supabase.getClient();
 
+    // Grab the image URL before deleting the row so we can clean up the file.
+    const { data: photo } = await client
+      .from('org_gallery')
+      .select('image_url')
+      .eq('id', photoId)
+      .eq('user_id', userId)
+      .maybeSingle();
+
     const { error } = await client
       .from('org_gallery')
       .delete()
@@ -486,6 +553,8 @@ export class OrganizationService {
       .eq('user_id', userId);
 
     if (error) throw error;
+
+    await removeFromStorage(client, 'gallery_images', [photo?.image_url]);
     return { success: true };
   }
 }
