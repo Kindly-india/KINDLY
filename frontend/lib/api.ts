@@ -1442,6 +1442,46 @@ export const api = {
     return response.json();
   },
 
+  // Organizations awaiting approval (admin only).
+  getPendingOrgs: async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const response = await fetch(`${API_URL}/organizations/admin/pending`, {
+      headers: { 'Authorization': `Bearer ${session.access_token}` },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const err = new Error(errorData.message || 'Failed to fetch pending organizations') as Error & { status?: number };
+      err.status = response.status;
+      throw err;
+    }
+    return response.json();
+  },
+
+  // Approve or reject an organization (admin only). On approval the backend
+  // emails the org + notifies them inline.
+  setOrgApproval: async (orgId: string, status: 'approved' | 'rejected') => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const response = await fetch(`${API_URL}/organizations/admin/${orgId}/approval`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ status }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || 'Failed to update organization');
+    }
+    return response.json();
+  },
+
   // Location search for event creation/editing — proxied through the backend
   // (Ola Maps) instead of calling a geocoder directly from the browser.
   searchLocations: async (query: string, lat: number, lng: number): Promise<{ suggestions: { label: string; lat: number; lng: number }[] }> => {

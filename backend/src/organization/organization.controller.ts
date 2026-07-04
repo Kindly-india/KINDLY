@@ -15,21 +15,30 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { OrganizationService } from './organization.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { OptionalAuthGuard } from '../auth/guards/optional-auth.guard';
-import { CronSecretGuard } from '../auth/guards/cron-secret.guard';
+import { AdminGuard } from '../auth/guards/admin.guard';
 import { UpdateOrganizationProfileDto } from './dto/update-organization-profile.dto';
 import { AddReviewDto } from './dto/add-review.dto';
+import { SetApprovalDto } from './dto/set-approval.dto';
 
 @Controller('organizations')
 export class OrganizationController {
   constructor(private readonly organizationService: OrganizationService) { }
 
-  // Called by a Supabase DB webhook (see backend/migrations) when
-  // approval_status flips to 'approved' — same shared-secret pattern as the
-  // existing cron routes, since the caller is Postgres, not a logged-in user.
-  @UseGuards(CronSecretGuard)
-  @Post('webhooks/approved')
-  async onApproved(@Body('orgId') orgId: string) {
-    return this.organizationService.notifyApproved(orgId);
+  // ─── Admin approval (admin-only) ────────────────────────────────────────────
+  // Registered before the ':id/...' routes so 'admin' isn't captured as an :id.
+
+  @UseGuards(AdminGuard)
+  @Get('admin/pending')
+  async getPendingOrgs() {
+    return this.organizationService.getPendingOrganizations();
+  }
+
+  // Approve/reject an org. On approval this emails the org + notifies inline —
+  // replaces the old DB trigger -> webhook -> shared-secret flow entirely.
+  @UseGuards(AdminGuard)
+  @Patch('admin/:id/approval')
+  async setOrgApproval(@Param('id') id: string, @Body() dto: SetApprovalDto) {
+    return this.organizationService.setApprovalStatus(id, dto.status);
   }
 
   // Uses OptionalAuthGuard (Supabase-validated) so req.user is always correct

@@ -560,22 +560,23 @@ export class SocialService {
     result_image?: string | null;
   }) {
     const client = this.supabase.getClient();
-    // Remove existing entry for same result to re-insert as most recent
-    await client
-      .from('search_history')
-      .delete()
-      .eq('user_id', userId)
-      .eq('result_id', item.result_id);
-
+    // Idempotent: one row per (user_id, result_id). Re-searching the same
+    // person updates that row (and bumps created_at so it sorts as most
+    // recent) instead of inserting a duplicate. Relies on the unique
+    // constraint added in migrations/search_history_dedupe.sql.
     const { data, error } = await client
       .from('search_history')
-      .insert({
-        user_id: userId,
-        result_id: item.result_id,
-        result_type: item.result_type,
-        result_name: item.result_name,
-        result_image: item.result_image ?? null,
-      })
+      .upsert(
+        {
+          user_id: userId,
+          result_id: item.result_id,
+          result_type: item.result_type,
+          result_name: item.result_name,
+          result_image: item.result_image ?? null,
+          created_at: new Date().toISOString(),
+        },
+        { onConflict: 'user_id,result_id' },
+      )
       .select()
       .single();
     if (error) throw new BadRequestException(error.message);

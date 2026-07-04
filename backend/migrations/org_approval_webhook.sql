@@ -10,9 +10,10 @@
 -- BEFORE RUNNING: replace the two placeholders below —
 --   1. <YOUR_BACKEND_URL>  e.g. https://api.kindly.co.in (must be reachable
 --      from Supabase's servers — not localhost)
---   2. <YOUR_CRON_SECRET>  the same value as the backend's CRON_SECRET env var
---      (this is the existing secret already used by the /events/auto-complete
---      cron route — see backend/src/auth/guards/cron-secret.guard.ts)
+--   2. <YOUR_WEBHOOK_SECRET>  the same value as the backend's WEBHOOK_SECRET
+--      env var on Render (see backend/src/auth/guards/webhook-secret.guard.ts).
+--      Use a fresh random value — do NOT reuse the old CRON_SECRET, which was
+--      previously committed here in plaintext and must be considered leaked.
 
 -- 1. Enable pg_net (Supabase's HTTP-from-Postgres extension), if not already on.
 create extension if not exists pg_net with schema extensions;
@@ -26,10 +27,10 @@ as $$
 begin
   if NEW.approval_status = 'approved' and (OLD.approval_status is distinct from 'approved') then
     perform net.http_post(
-      url := 'https://kindly-2ggv.onrender.com/organizations/webhooks/approved',
+      url := '<YOUR_BACKEND_URL>/organizations/webhooks/approved',
       headers := jsonb_build_object(
         'Content-Type', 'application/json',
-        'x-admin-secret', '43386149bc3c9e755f20acdc82ef2f73eb5820d1aa6e2f6b83248ade62e0c5c5'
+        'x-admin-secret', '<YOUR_WEBHOOK_SECRET>'
       ),
       body := jsonb_build_object('orgId', NEW.id)
     );

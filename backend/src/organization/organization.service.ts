@@ -64,32 +64,57 @@ export class OrganizationService {
     private readonly email: EmailService,
   ) {}
 
-  // Called by a Postgres trigger (see backend/migrations) the moment an
-  // admin flips organization_profiles.approval_status to 'approved' —
-  // there's no in-app "approve" button yet, so this is the only hook that
-  // tells the organization they can now log in.
-  async notifyApproved(orgId: string) {
+  // ─── Admin approval ─────────────────────────────────────────────────────────
+
+  // All organizations awaiting review, oldest first, with the fields an admin
+  // needs to decide (including KYC document URLs). Admin-only via AdminGuard;
+  // uses the service-role client so RLS isn't in the way.
+  async getPendingOrganizations() {
     const client = this.supabase.getClient();
-    const { data: org } = await client
+    const { data, error } = await client
       .from('organization_profiles')
-      .select('user_id, name, email')
+      .select(
+        'id, user_id, org_type, name, email, phone, registration_type, registration_number, ' +
+        'representative_name, designation, website, parent_institution, coordinator_name, ' +
+        'area_locality, intent_description, registration_certificate_url, pan_card_url, ' +
+        'proof_document_url, created_at',
+      )
+      .eq('approval_status', 'pending')
+      .order('created_at', { ascending: true });
+
+    if (error) throw error;
+    return { organizations: data ?? [] };
+  }
+
+  // Approve or reject an organization from the admin panel. On approval it emails
+  // the org and drops an in-app notification inline — this replaces the old DB
+  // trigger + webhook + shared secret entirely (the caller here is an
+  // authenticated admin, so no webhook auth is needed).
+  async setApprovalStatus(orgId: string, status: 'approved' | 'rejected') {
+    const client = this.supabase.getClient();
+    const { data: org, error } = await client
+      .from('organization_profiles')
+      .update({ approval_status: status, updated_at: new Date().toISOString() })
       .eq('id', orgId)
-      .maybeSingle();
+      .select('id, user_id, name, email, approval_status')
+      .single();
 
-    if (!org) return { message: 'Organization not found — nothing to notify' };
+    if (error || !org) throw new NotFoundException('Organization not found');
 
-    await Promise.all([
-      this.email.sendOrgApprovedEmail(org.email, org.name).catch(() => {}),
-      this.notifications.createNotification(
-        org.user_id,
-        org.user_id,
-        'org_approved',
-        "Your organization has been approved! You can now log in with your email.",
-        orgId,
-      ),
-    ]);
+    if (status === 'approved') {
+      await Promise.all([
+        this.email.sendOrgApprovedEmail(org.email, org.name).catch(() => {}),
+        this.notifications.createNotification(
+          org.user_id,
+          org.user_id,
+          'org_approved',
+          "Your organization has been approved! You can now log in with your email.",
+          org.id,
+        ),
+      ]);
+    }
 
-    return { message: 'Approval notification sent' };
+    return { message: `Organization ${status}`, organization: org };
   }
 
   async getPublicProfile(orgId: string, viewerId?: string) {

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { 
   CheckCircle, 
   Clock, 
@@ -190,6 +191,12 @@ export default function AdminApprovalPage() {
           <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">
             {events.length} Awaiting Polish
           </p>
+          <Link
+            href="/admin/approve-orgs"
+            className="inline-block mt-3 text-[12px] font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+          >
+            Organization approvals →
+          </Link>
         </div>
 
         <div className="flex-1 overflow-y-auto divide-y divide-border pt-20 lg:pt-0">

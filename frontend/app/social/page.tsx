@@ -227,17 +227,24 @@ function CommunityTab() {
       return
     }
     setLoading(true)
+    let stale = false
     const timer = setTimeout(async () => {
       try {
         const data = await api.globalSearch(searchQuery)
+        // A newer keystroke may have fired while this request was in flight —
+        // ignore this response so a slow older query can't overwrite newer results.
+        if (stale) return
         setResults(data)
       } catch {
-        setResults([])
+        if (!stale) setResults([])
       } finally {
-        setLoading(false)
+        if (!stale) setLoading(false)
       }
     }, 300)
-    return () => clearTimeout(timer)
+    return () => {
+      stale = true
+      clearTimeout(timer)
+    }
   }, [searchQuery])
 
   const handleResultClick = (item: any) => {
