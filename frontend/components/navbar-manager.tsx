@@ -9,22 +9,38 @@ import { OrgTopNav } from "./org-top-nav"
 import { VolunteerMobileNav } from "./volunteer-mobile-nav"
 import { OrgMobileNav } from "./org-mobile-nav"
 
+// The kindly_role cookie is set at login (see applyRoleSession) and is readable
+// synchronously — use it as the initial role so the bottom nav is correct on the
+// very first paint. Without this, userType is null while getUserProfile() is in
+// flight, and the route-based fallback below would flash the ORG nav (Analytics
+// tab) to a volunteer viewing an /organizations/[id] page.
+function roleFromCookie(): 'volunteer' | 'org' | null {
+  if (typeof document === 'undefined') return null
+  const m = document.cookie.match(/(?:^|;\s*)kindly_role=(volunteer|org)/)
+  return m ? (m[1] as 'volunteer' | 'org') : null
+}
+
 export function NavbarManager() {
   const pathname = usePathname()
   const [userType, setUserType] = useState<'volunteer' | 'org' | null>(null)
 
-  // 1. Check who is logged in
+  // Seed from the cookie on mount (can't read document during SSR).
+  useEffect(() => {
+    setUserType(roleFromCookie())
+  }, [])
+
+  // 1. Confirm who is logged in (source of truth; corrects a stale cookie).
   useEffect(() => {
     const fetchRole = async () => {
       try {
         const res = await api.getUserProfile()
         if (res?.profile && 'org_type' in res.profile) {
           setUserType('org')
-        } else {
+        } else if (res?.profile) {
           setUserType('volunteer')
         }
       } catch (e) {
-        // Not logged in yet
+        // Not logged in yet — leave whatever the cookie said (or null)
       }
     }
     fetchRole()

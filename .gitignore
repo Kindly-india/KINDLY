@@ -16,6 +16,9 @@ yarn.lock
 .env.*
 !.env.example
 
+# Internal review notes (not for the repo)
+PROJECT_REVIEW.md
+
 # Logs
 logs/
 *.log

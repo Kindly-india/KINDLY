@@ -11,7 +11,6 @@ async function bootstrap() {
     'SUPABASE_URL',
     'SUPABASE_SERVICE_ROLE_KEY',
     'SENTRY_DSN',
-    'CRON_SECRET',
   ];
   for (const key of requiredEnvVars) {
     if (!process.env[key]) {

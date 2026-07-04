@@ -8,7 +8,6 @@ import { SelfCheckInDto } from './dto/self-check-in.dto';
 import { SubmitReviewDto } from './dto/submit-review.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AdminGuard } from '../auth/guards/admin.guard';
-import { CronSecretGuard } from '../auth/guards/cron-secret.guard';
 import { OptionalAuthGuard } from '../auth/guards/optional-auth.guard';
 import { UploadedFile, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -21,15 +20,9 @@ export class EventController {
     private certificateService: CertificateService,
   ) { }
 
-  // ==========================================
-  // CRON ROUTES (secret-header guard)
-  // ==========================================
-
-  @Post('auto-complete')
-  @UseGuards(CronSecretGuard)
-  async autoCompleteEvents() {
-    return this.eventService.autoCompleteEvents();
-  }
+  // Event auto-completion runs inside Postgres now (pg_cron) — see
+  // backend/migrations/auto_complete_events_cron.sql. The old
+  // POST /events/auto-complete route was removed with the external cron.
 
   // ==========================================
   // ADMIN "GHOST MODE" ROUTES

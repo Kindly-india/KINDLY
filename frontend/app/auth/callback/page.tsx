@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, useEffect, useRef, useState } from "react"
+import { Suspense, useCallback, useEffect, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { supabase, destinationForUserType, applyRoleSession } from "@/lib/supabase"
 import { api } from "@/lib/api"
@@ -15,15 +15,23 @@ function AuthCallbackLogic() {
   // in storage". This guard makes sure the exchange only ever runs once
   // per real mount.
   const hasRun = useRef(false)
-  // Mirrors AuthCard's goWithSplash — every other sign-in path (OTP, passkey)
-  // shows BrandSplash before navigating; Google shouldn't be the odd one out.
-  const [showSplash, setShowSplash] = useState(false)
-  const [pendingRoute, setPendingRoute] = useState("/home")
 
-  const goWithSplash = (route: string) => {
-    setPendingRoute(route)
-    setShowSplash(true)
-  }
+  // The brand splash plays IMMEDIATELY on landing here, while the code exchange
+  // + profile lookup run underneath it. We navigate only once BOTH are done:
+  //   - splashDone: the splash animation has finished
+  //   - destination: the async work has decided where to send the user
+  // This gives sign-in -> splash -> home (loading if still needed), instead of
+  // the old sign-in -> loading spinner -> splash -> loading again -> home.
+  const [splashDone, setSplashDone] = useState(false)
+  const [destination, setDestination] = useState<string | null>(null)
+  const onSplashDone = useCallback(() => setSplashDone(true), [])
+
+  // Navigate when the splash has played AND we know where to go. If the async
+  // work is slower than the splash, the splash simply stays on screen until
+  // the destination resolves (no blank flash).
+  useEffect(() => {
+    if (splashDone && destination) router.replace(destination)
+  }, [splashDone, destination, router])
 
   useEffect(() => {
     if (hasRun.current) return
@@ -51,13 +59,13 @@ function AuthCallbackLogic() {
       // signs a brand-new person up as a volunteer) — an "organization"
       // user_type here means an already-approved org signing back in.
       if (role === "org") {
-        goWithSplash(home)
+        setDestination(home)
         return
       }
 
       const profileRes = await api.getUserProfile().catch(() => null)
       if (profileRes?.profile) {
-        goWithSplash(home)
+        setDestination(home)
         return
       }
 
@@ -67,29 +75,23 @@ function AuthCallbackLogic() {
       const googleName = user?.user_metadata?.full_name || user?.user_metadata?.name || ""
       await api.ensureVolunteerProfile(googleName).catch(() => {})
       await api.sendWelcomeEmail().catch(() => {})
-      goWithSplash("/onboarding")
+      setDestination("/onboarding")
     })
   }, [params, router])
 
   return (
     <>
-      <div className="fixed inset-0 bg-card flex items-center justify-center">
-        <div className="w-8 h-8 rounded-full border-2 border-[#80242a] border-t-transparent animate-spin" />
-      </div>
-      <BrandSplash show={showSplash} onDone={() => router.push(pendingRoute)} />
+      {/* Plain brand background under the splash — no spinner, so nothing reads
+          as "loading" before the splash wipes up. */}
+      <div className="fixed inset-0 bg-card" />
+      <BrandSplash show onDone={onSplashDone} />
     </>
   )
 }
 
 export default function AuthCallbackPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="fixed inset-0 bg-card flex items-center justify-center">
-          <div className="w-8 h-8 rounded-full border-2 border-[#80242a] border-t-transparent animate-spin" />
-        </div>
-      }
-    >
+    <Suspense fallback={<div className="fixed inset-0 bg-card" />}>
       <AuthCallbackLogic />
     </Suspense>
   )

@@ -3,6 +3,7 @@ import { SupabaseService } from '../supabase/supabase.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { CreateCommentDto } from './dto/create-comment.dto';
+import { removeFromStorage } from '../common/storage.util';
 
 @Injectable()
 export class PostsService {
@@ -339,7 +340,7 @@ export class PostsService {
 
     const { data: post } = await client
       .from('posts')
-      .select('id, volunteer_id')
+      .select('id, volunteer_id, photo_urls')
       .eq('id', postId)
       .maybeSingle();
 
@@ -348,6 +349,9 @@ export class PostsService {
 
     const { error } = await client.from('posts').delete().eq('id', postId);
     if (error) throw new BadRequestException(error.message);
+
+    // Clean up the post's photos from storage (photo_urls is a text[]).
+    await removeFromStorage(client, 'post-photos', post.photo_urls ?? []);
 
     return { message: 'Post deleted' };
   }

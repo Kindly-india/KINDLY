@@ -948,47 +948,10 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
     return { message: 'Event marked as completed', event };
   }
 
-  async autoCompleteEvents() {
-    const supabase = this.supabaseService.getClient();
-
-    const { data: events, error } = await supabase
-      .from('events')
-      .select('id, event_date, end_time, start_time')
-      .eq('status', 'published');
-
-    if (error) throw error;
-
-    const cutoff = Date.now() - 24 * 60 * 60 * 1000;
-    const toComplete: string[] = [];
-
-    for (const event of events ?? []) {
-      const timeStr = event.end_time || event.start_time;
-      if (!timeStr) continue;
-      const eventEnd = new Date(`${event.event_date}T${timeStr}:00+05:30`).getTime();
-      if (eventEnd < cutoff) toComplete.push(event.id);
-    }
-
-    if (toComplete.length === 0) return { completed_count: 0, event_ids: [] };
-
-    await supabase
-      .from('events')
-      .update({ status: 'completed' })
-      .in('id', toComplete);
-
-    await supabase
-      .from('event_registrations')
-      .update({ status: 'completed' })
-      .in('event_id', toComplete)
-      .eq('status', 'checked_in');
-
-    await supabase
-      .from('event_registrations')
-      .update({ status: 'missed' })
-      .in('event_id', toComplete)
-      .eq('status', 'registered');
-
-    return { completed_count: toComplete.length, event_ids: toComplete };
-  }
+  // NOTE: event auto-completion now runs inside Postgres via pg_cron
+  // (backend/migrations/auto_complete_events_cron.sql), not from this service.
+  // The former autoCompleteEvents() method and its /events/auto-complete route
+  // were removed along with the external cron.
 
   async createEvent(userId: string, dto: CreateEventDto) {
     const supabase = this.supabaseService.getClient();

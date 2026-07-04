@@ -154,6 +154,23 @@ export function AuthCard() {
     setPasskeySupported(typeof window !== "undefined" && !!window.PublicKeyCredential)
   }, [])
 
+  // handleGoogle sets isGoogleBusy=true and then redirects the browser to Google.
+  // If the user hits Back, the browser restores this page from the bfcache with
+  // that state frozen — so the Google button stays spinning and every other
+  // auth button stays disabled. `pageshow` (fired on bfcache restore) lets us
+  // clear all in-flight flags so the form is usable again.
+  useEffect(() => {
+    const onPageShow = (e: PageTransitionEvent) => {
+      if (e.persisted) {
+        setIsGoogleBusy(false)
+        setIsSubmitting(false)
+        setIsPasskeyBusy(false)
+      }
+    }
+    window.addEventListener("pageshow", onPageShow)
+    return () => window.removeEventListener("pageshow", onPageShow)
+  }, [])
+
   const goWithSplash = (route: string) => {
     setPendingRoute(route)
     setShowSplash(true)

@@ -26,6 +26,7 @@ import { Card } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { api } from "@/lib/api"
 import { supabase } from "@/lib/supabase"
+import { toast } from "sonner"
 
 type OrgType = "registered" | "supported" | "informal" | "individual" | null
 type ViewState = "category" | "form" | "success"
@@ -88,13 +89,33 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
 
     const formData = new FormData(e.currentTarget);
 
+    // Client-side validation (all org types) — the backend requires these, and
+    // without this a blank submit returns a cryptic 400. Toasts, not the browser's
+    // native popups, to match the rest of the app.
+    const name = (formData.get('name') as string)?.trim();
+    const email = (formData.get('email') as string)?.trim();
+    const phone = (formData.get('phone') as string)?.trim();
+
+    if (!name || !email || !phone) {
+      toast.error('Please fill in your name, email, and phone number.');
+      return;
+    }
+    if (!/^\S+@\S+\.\S+$/.test(email)) {
+      toast.error('Please enter a valid email address.');
+      return;
+    }
+    if (!/^[0-9]{10}$/.test(phone)) {
+      toast.error('Please enter a valid 10-digit phone number.');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const data: any = {
         orgType: selectedOrg,
-        name: formData.get('name') as string,
-        email: formData.get('email') as string,
-        phone: formData.get('phone') as string,
+        name,
+        email,
+        phone,
       };
 
       // Add conditional fields based on org type
@@ -103,7 +124,10 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
         data.registrationNumber = formData.get('registrationNumber') as string;
         data.representativeName = formData.get('representativeName') as string;
         data.designation = formData.get('designation') as string;
-        data.website = formData.get('website') as string;
+        // Only send website if the user actually entered one — an empty string
+        // fails the backend's @IsUrl() (which @IsOptional doesn't skip for '').
+        const website = (formData.get('website') as string)?.trim();
+        if (website) data.website = website;
         data.registrationCertificateUrl = uploadedFiles.registrationCertificate;
         data.panCardUrl = uploadedFiles.panCard;
       } else if (selectedOrg === 'supported') {
@@ -120,7 +144,7 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
       await api.signupOrganization(data);
       setCurrentView('success');
     } catch (error: any) {
-      alert(error.message || 'Signup failed. Please try again.');
+      toast.error(error.message || 'Signup failed. Please try again.');
       setIsSubmitting(false);
     }
   };
@@ -133,14 +157,14 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      alert('File size must be less than 5MB');
+      toast.error('File size must be less than 5MB');
       return;
     }
 
     // Validate file type
     const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
     if (!allowedTypes.includes(file.type)) {
-      alert('Only PDF and image files (JPG, PNG) are allowed');
+      toast.error('Only PDF and image files (JPG, PNG) are allowed');
       return;
     }
 
@@ -157,15 +181,12 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('organization-documents')
-        .getPublicUrl(filePath);
-
-      setUploadedFiles(prev => ({ ...prev, [fileType]: publicUrl }));
-      alert('File uploaded successfully!');
+      // Store the object PATH, not a public URL — the bucket is private and the
+      // backend hands admins a signed URL from this path during review.
+      setUploadedFiles(prev => ({ ...prev, [fileType]: filePath }));
+      toast.success('File uploaded');
     } catch (error: any) {
-      alert(error.message || 'Upload failed');
+      toast.error(error.message || 'Upload failed');
     } finally {
       setUploading(false);
     }
