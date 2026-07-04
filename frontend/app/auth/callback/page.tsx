@@ -1,9 +1,10 @@
 "use client"
 
-import { Suspense, useEffect, useRef } from "react"
+import { Suspense, useEffect, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { supabase, destinationForUserType, applyRoleSession } from "@/lib/supabase"
 import { api } from "@/lib/api"
+import { BrandSplash } from "@/components/brand-splash"
 
 function AuthCallbackLogic() {
   const router = useRouter()
@@ -14,6 +15,15 @@ function AuthCallbackLogic() {
   // in storage". This guard makes sure the exchange only ever runs once
   // per real mount.
   const hasRun = useRef(false)
+  // Mirrors AuthCard's goWithSplash — every other sign-in path (OTP, passkey)
+  // shows BrandSplash before navigating; Google shouldn't be the odd one out.
+  const [showSplash, setShowSplash] = useState(false)
+  const [pendingRoute, setPendingRoute] = useState("/home")
+
+  const goWithSplash = (route: string) => {
+    setPendingRoute(route)
+    setShowSplash(true)
+  }
 
   useEffect(() => {
     if (hasRun.current) return
@@ -41,13 +51,13 @@ function AuthCallbackLogic() {
       // signs a brand-new person up as a volunteer) — an "organization"
       // user_type here means an already-approved org signing back in.
       if (role === "org") {
-        router.replace(home)
+        goWithSplash(home)
         return
       }
 
       const profileRes = await api.getUserProfile().catch(() => null)
       if (profileRes?.profile) {
-        router.replace(home)
+        goWithSplash(home)
         return
       }
 
@@ -57,14 +67,17 @@ function AuthCallbackLogic() {
       const googleName = user?.user_metadata?.full_name || user?.user_metadata?.name || ""
       await api.ensureVolunteerProfile(googleName).catch(() => {})
       await api.sendWelcomeEmail().catch(() => {})
-      router.replace("/onboarding")
+      goWithSplash("/onboarding")
     })
   }, [params, router])
 
   return (
-    <div className="fixed inset-0 bg-card flex items-center justify-center">
-      <div className="w-8 h-8 rounded-full border-2 border-[#80242a] border-t-transparent animate-spin" />
-    </div>
+    <>
+      <div className="fixed inset-0 bg-card flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full border-2 border-[#80242a] border-t-transparent animate-spin" />
+      </div>
+      <BrandSplash show={showSplash} onDone={() => router.push(pendingRoute)} />
+    </>
   )
 }
 

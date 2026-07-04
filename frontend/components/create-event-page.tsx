@@ -95,11 +95,8 @@ export function CreateEventPage() {
             async (position) => {
                 const { latitude, longitude } = position.coords
                 try {
-                    const url = `https://photon.komoot.io/reverse?lat=${latitude}&lon=${longitude}&limit=1&lang=en`
-                    const res = await fetch(url)
-                    const data = await res.json()
-                    const p = data.features?.[0]?.properties ?? {}
-                    const address = [p.name, p.street, p.city, p.state].filter(Boolean).join(', ') || `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`
+                    const { label } = await api.reverseGeocodeLocation(latitude, longitude)
+                    const address = label || `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`
                     setFormData(prev => ({ ...prev, location: address, latitude, longitude }))
                     mapCenterRef.current = { lng: longitude, lat: latitude }
                 } catch {
@@ -127,10 +124,8 @@ export function CreateEventPage() {
             setSearchLoading(true)
             try {
                 const { lng, lat } = mapCenterRef.current
-                const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(value)}&limit=5&lang=en&lat=${lat}&lon=${lng}`
-                const res = await fetch(url)
-                const data = await res.json()
-                setSuggestions(data.features || [])
+                const { suggestions } = await api.searchLocations(value, lat, lng)
+                setSuggestions(suggestions)
                 setShowSuggestions(true)
                 setHighlightedIndex(-1)
             } catch {
@@ -141,11 +136,9 @@ export function CreateEventPage() {
         }, 300)
     }
 
-    const handleSelectSuggestion = (feature: any) => {
-        const [lng, lat] = feature.geometry.coordinates
-        const p = feature.properties
-        const name = [p.name, p.street, p.city, p.state].filter(Boolean).join(', ')
-        setFormData(prev => ({ ...prev, location: name, latitude: lat, longitude: lng }))
+    const handleSelectSuggestion = (suggestion: { label: string; lat: number; lng: number }) => {
+        const { label, lat, lng } = suggestion
+        setFormData(prev => ({ ...prev, location: label, latitude: lat, longitude: lng }))
         mapCenterRef.current = { lng, lat }
         setSuggestions([])
         setShowSuggestions(false)
@@ -591,13 +584,13 @@ export function CreateEventPage() {
                                         {suggestions.length === 0 ? (
                                             <div className="px-4 py-3 text-sm text-muted-foreground">No locations found. Try a different search term.</div>
                                         ) : (
-                                            suggestions.map((feature, i) => {
-                                                const primary = feature.properties.name
-                                                const secondary = [feature.properties.street, feature.properties.city, feature.properties.state].filter(Boolean).join(', ')
+                                            suggestions.map((suggestion, i) => {
+                                                const [primary, ...rest] = suggestion.label.split(', ')
+                                                const secondary = rest.join(', ')
                                                 return (
                                                     <button
-                                                        key={feature.properties.osm_id ?? i}
-                                                        onMouseDown={(e) => { e.preventDefault(); handleSelectSuggestion(feature) }}
+                                                        key={`${suggestion.lat},${suggestion.lng},${i}`}
+                                                        onMouseDown={(e) => { e.preventDefault(); handleSelectSuggestion(suggestion) }}
                                                         className={`w-full px-4 py-3 text-left flex flex-col gap-0.5 transition-colors ${i === highlightedIndex ? 'bg-emerald-50 dark:bg-emerald-500/15' : 'hover:bg-muted'} ${i > 0 ? 'border-t border-border' : ''}`}
                                                     >
                                                         <span className="text-sm font-medium text-foreground truncate">{primary}</span>
@@ -682,7 +675,7 @@ export function CreateEventPage() {
                                 placeholder="e.g., Grabbing breakfast at Roastery Coffee after!"
                                 value={formData.connectPlan}
                                 onChange={(e) => setFormData({ ...formData, connectPlan: e.target.value })}
-                                className="w-full h-12 md:h-14 px-4 bg-muted rounded-xl border-0 text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-emerald-500 focus:bg-card transition-all text-sm md:text-base border border-emerald-200"
+                                className="w-full h-12 md:h-14 px-4 bg-muted rounded-xl text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-emerald-500 focus:bg-card transition-all text-sm md:text-base border border-emerald-200"
                             />
                         </div>
 
