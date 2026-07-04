@@ -12,6 +12,7 @@ import { CronSecretGuard } from '../auth/guards/cron-secret.guard';
 import { OptionalAuthGuard } from '../auth/guards/optional-auth.guard';
 import { UploadedFile, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller('events')
 export class EventController {
@@ -49,6 +50,36 @@ export class EventController {
     @Body() updateData: any // Using 'any' or 'Partial<CreateEventDto>' here since you're the admin overriding it
   ) {
     return this.eventService.adminApproveEvent(eventId, updateData);
+  }
+
+  // ==========================================
+  // LOCATION SEARCH (event creation/editing — org only)
+  // ==========================================
+
+  // Global default (named 'short' in app.module.ts) is 20 req/60s, too tight
+  // for search-as-you-type with a 300ms debounce — this overrides it to
+  // something that fits actual typing cadence instead of the generic API cap.
+  @Get('location-autocomplete')
+  @Throttle({ short: { limit: 60, ttl: 60_000 } })
+  @UseGuards(JwtAuthGuard)
+  async locationAutocomplete(
+    @Query('q') query: string,
+    @Query('lat') lat: string,
+    @Query('lng') lng: string,
+  ) {
+    if (!query) throw new BadRequestException('Missing search query');
+    const suggestions = await this.eventService.searchLocations(query, parseFloat(lat), parseFloat(lng));
+    return { suggestions };
+  }
+
+  @Get('location-reverse-geocode')
+  @UseGuards(JwtAuthGuard)
+  async locationReverseGeocode(
+    @Query('lat') lat: string,
+    @Query('lng') lng: string,
+  ) {
+    if (!lat || !lng) throw new BadRequestException('Missing coordinates');
+    return this.eventService.reverseGeocodeLocation(parseFloat(lat), parseFloat(lng));
   }
 
   // ==========================================

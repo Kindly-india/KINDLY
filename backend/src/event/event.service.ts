@@ -37,12 +37,59 @@ async function geocodeLocation(location: string): Promise<{ lat: number; lng: nu
   return null;
 }
 
+export interface LocationSuggestion {
+  label: string;
+  lat: number;
+  lng: number;
+}
+
+// Ola Maps' Places Autocomplete — swapped in for Photon/OSM (frontend) because
+// OSM's POI database has real coverage gaps for tier-2 Indian cities like
+// Nashik. Response shape mirrors Google's legacy Places Autocomplete API.
+async function searchPlaces(query: string, lat: number, lng: number): Promise<LocationSuggestion[]> {
+  const apiKey = process.env.OLA_MAPS_API_KEY;
+  if (!apiKey) throw new BadRequestException('Location search is not configured');
+
+  const url = `https://api.olamaps.io/places/v1/autocomplete?input=${encodeURIComponent(query)}&location=${lat},${lng}&api_key=${apiKey}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new BadRequestException('Location search failed');
+
+  const data: any = await res.json();
+  const predictions: any[] = data.predictions || [];
+  return predictions.map((p) => ({
+    label: p.description,
+    lat: p.geometry?.location?.lat,
+    lng: p.geometry?.location?.lng,
+  })).filter((s) => s.lat != null && s.lng != null);
+}
+
+// Ola Maps' Reverse Geocoding — same rationale as searchPlaces above.
+async function reverseGeocodePoint(lat: number, lng: number): Promise<string | null> {
+  const apiKey = process.env.OLA_MAPS_API_KEY;
+  if (!apiKey) throw new BadRequestException('Location search is not configured');
+
+  const url = `https://api.olamaps.io/places/v1/reverse-geocode?latlng=${lat},${lng}&api_key=${apiKey}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new BadRequestException('Reverse geocoding failed');
+
+  const data: any = await res.json();
+  return data.results?.[0]?.formatted_address ?? null;
+}
+
 @Injectable()
 export class EventService {
   constructor(
     private supabaseService: SupabaseService,
     private emailService: EmailService,
   ) { }
+
+  async searchLocations(query: string, lat: number, lng: number): Promise<LocationSuggestion[]> {
+    return searchPlaces(query, lat, lng);
+  }
+
+  async reverseGeocodeLocation(lat: number, lng: number): Promise<{ label: string | null }> {
+    return { label: await reverseGeocodePoint(lat, lng) };
+  }
 
   async uploadEventImage(userId: string, file: Express.Multer.File) {
     validateImageFile(file);

@@ -28,6 +28,11 @@ export function LocationPickerMap({ latitude, longitude, onCoordinatesChange, on
   const onCenterRef = useRef(onCenterChange)
   onChangeRef.current = onCoordinatesChange
   onCenterRef.current = onCenterChange
+  // Set right before a click/drag reports its new coordinates, so the prop
+  // effect below can tell "user tapped the map" (marker already placed,
+  // don't touch the zoom) apart from "coordinates arrived from outside"
+  // (search selection, GPS button — the map needs to jump there).
+  const isInternalChange = useRef(false)
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return
@@ -42,6 +47,11 @@ export function LocationPickerMap({ latitude, longitude, onCoordinatesChange, on
         zoom: 13,
         zoomControl: true,
         scrollWheelZoom: false,
+        // Explicit (matches Leaflet defaults, but stated here since this is
+        // the primary touch surface on mobile — don't want a future default
+        // change or plugin to silently disable pinch/drag here).
+        touchZoom: true,
+        dragging: true,
       })
 
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -64,7 +74,17 @@ export function LocationPickerMap({ latitude, longitude, onCoordinatesChange, on
 
       marker.on("dragend", () => {
         const { lat, lng } = marker.getLatLng()
+        isInternalChange.current = true
         onChangeRef.current(lat, lng)
+      })
+
+      // Tap/click anywhere on the map to drop the pin there directly —
+      // dragging a tiny marker to an exact spot is fiddly on a phone screen.
+      map.on("click", (e: any) => {
+        marker.setLatLng(e.latlng)
+        marker.setOpacity(1)
+        isInternalChange.current = true
+        onChangeRef.current(e.latlng.lat, e.latlng.lng)
       })
 
       map.on("moveend", () => {
@@ -89,6 +109,12 @@ export function LocationPickerMap({ latitude, longitude, onCoordinatesChange, on
   useEffect(() => {
     if (latitude == null || longitude == null) return
     if (!mapRef.current || !markerRef.current) return
+    if (isInternalChange.current) {
+      // Marker position was already set directly by the click/dragend
+      // handler — this round-trip through props is just for form state.
+      isInternalChange.current = false
+      return
+    }
     markerRef.current.setLatLng([latitude, longitude])
     markerRef.current.setOpacity(1)
     mapRef.current.setView([latitude, longitude], 17)
@@ -99,10 +125,15 @@ export function LocationPickerMap({ latitude, longitude, onCoordinatesChange, on
       <div
         ref={containerRef}
         className="w-full rounded-xl overflow-hidden border border-border"
-        style={{ height: 220 }}
+        // touch-action: none hands all touch gestures on this element to
+        // Leaflet's own handlers instead of the browser's default pan/zoom —
+        // needed because the app's global viewport config disables page
+        // pinch-zoom (see app/layout.tsx), which otherwise fights with
+        // Leaflet's touch handling on some mobile browsers.
+        style={{ height: 300, touchAction: "none" }}
       />
       <p className="text-[11px] text-muted-foreground mt-1.5 text-center">
-        Drag the pin to your exact location
+        Tap or drag the pin to your exact location
       </p>
     </div>
   )

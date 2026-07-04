@@ -1442,6 +1442,32 @@ export const api = {
     return response.json();
   },
 
+  // Location search for event creation/editing — proxied through the backend
+  // (Ola Maps) instead of calling a geocoder directly from the browser.
+  searchLocations: async (query: string, lat: number, lng: number): Promise<{ suggestions: { label: string; lat: number; lng: number }[] }> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const params = new URLSearchParams({ q: query, lat: String(lat), lng: String(lng) });
+    const response = await fetch(`${API_URL}/events/location-autocomplete?${params}`, {
+      headers: { 'Authorization': `Bearer ${session.access_token}` },
+    });
+    if (!response.ok) throw new Error('Location search failed');
+    return response.json();
+  },
+
+  reverseGeocodeLocation: async (lat: number, lng: number): Promise<{ label: string | null }> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const params = new URLSearchParams({ lat: String(lat), lng: String(lng) });
+    const response = await fetch(`${API_URL}/events/location-reverse-geocode?${params}`, {
+      headers: { 'Authorization': `Bearer ${session.access_token}` },
+    });
+    if (!response.ok) throw new Error('Reverse geocoding failed');
+    return response.json();
+  },
+
   // Fire after email verification — sends the Welcome email exactly once
   sendWelcomeEmail: async () => {
     const { data: { session } } = await supabase.auth.getSession();
