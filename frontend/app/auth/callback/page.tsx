@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { supabase, destinationForUserType, applyRoleSession } from "@/lib/supabase"
 import { api } from "@/lib/api"
 import { BrandSplash } from "@/components/brand-splash"
+import { POST_AUTH_SPLASH_EVENT } from "@/components/post-auth-splash-bridge"
 
 function AuthCallbackLogic() {
   const router = useRouter()
@@ -29,8 +30,17 @@ function AuthCallbackLogic() {
   // Navigate when the splash has played AND we know where to go. If the async
   // work is slower than the splash, the splash simply stays on screen until
   // the destination resolves (no blank flash).
+  //
+  // This page's own <BrandSplash> is about to unmount the instant router.replace
+  // fires (hard-navigated page, whole tree tears down) — right as the destination
+  // page mounts. Firing this event hands off to the root-layout-level bridge
+  // *before* that happens, so there's no gap for the destination's real content
+  // to flash through.
   useEffect(() => {
-    if (splashDone && destination) router.replace(destination)
+    if (splashDone && destination) {
+      window.dispatchEvent(new Event(POST_AUTH_SPLASH_EVENT))
+      router.replace(destination)
+    }
   }, [splashDone, destination, router])
 
   useEffect(() => {

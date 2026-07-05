@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { useRouter, usePathname } from "next/navigation"
+import { motion } from "framer-motion"
 import {
   Calendar,
   MapPin,
@@ -19,6 +19,7 @@ import {
 import { api } from "@/lib/api"
 import { cn } from "@/lib/utils"
 import Image from "next/image"
+import { ScrollReveal } from "@/components/ui/scroll-reveal"
 
 type EventTab = "pending" | "active" | "completed" | "cancelled"
 
@@ -40,9 +41,6 @@ interface Event {
 }
 
 export function OrgEventManagement() {
-  const router = useRouter()
-  const pathname = usePathname()
-
   // --- Navbar State ---
   const [profile, setProfile] = useState<any>(null)
 
@@ -124,15 +122,11 @@ export function OrgEventManagement() {
     return Math.round((event.registered_count / event.total_slots) * 100)
   }
 
-  // Navbar Helper
-  const isActive = (path: string) =>
-    pathname === path ? "text-[#0066cc] font-medium" : "text-foreground hover:text-[#0066cc]"
-
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-black">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600 mb-4"></div>
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#ff6b6b] mb-4"></div>
           <p className="text-sm text-muted-foreground">Loading...</p>
         </div>
       </div>
@@ -151,14 +145,22 @@ export function OrgEventManagement() {
   else displayEvents = completedEvents
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 dark:from-blue-50/10 via-white dark:via-background to-green-50 dark:to-green-50/10 pb-24">
+    <div className="min-h-screen bg-neutral-50 dark:bg-black pb-24 relative overflow-hidden">
+      <div className="pointer-events-none fixed top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-gradient-to-b from-[#ff6b6b]/[0.1] dark:from-[#ff6b6b]/[0.08] to-transparent blur-3xl" />
 
-      <div className="fixed top-20 left-8 w-12 h-12 bg-card rounded-xl shadow-lg hidden md:flex items-center justify-center pointer-events-none">
-        <Heart className="w-5 h-5 text-red-400" />
-      </div>
-      <div className="fixed top-32 right-16 w-12 h-12 bg-card rounded-xl shadow-lg hidden md:flex items-center justify-center pointer-events-none">
-        <Sparkles className="w-5 h-5 text-amber-500" />
-      </div>
+      {[
+        { icon: Heart, color: "text-red-400", pos: "top-20 left-8", delay: 0 },
+        { icon: Sparkles, color: "text-amber-500", pos: "top-32 right-16", delay: 0.8 },
+      ].map(({ icon: Icon, color, pos, delay }, i) => (
+        <motion.div
+          key={i}
+          animate={{ y: [0, -10, 0] }}
+          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay }}
+          className={cn("fixed w-12 h-12 bg-white/70 dark:bg-neutral-900/50 backdrop-blur-xl border border-black/5 dark:border-white/10 rounded-xl shadow-lg shadow-neutral-200/40 dark:shadow-black/40 hidden md:flex items-center justify-center pointer-events-none", pos)}
+        >
+          <Icon className={cn("w-5 h-5", color)} />
+        </motion.div>
+      ))}
 
       <div className="max-w-6xl mx-auto px-4 md:px-8 py-5 md:py-8 relative">
         <Link href="/org-home" className="inline-flex items-center gap-1.5 text-xs md:text-sm text-muted-foreground hover:text-foreground transition-colors mb-3 md:mb-4">
@@ -166,60 +168,60 @@ export function OrgEventManagement() {
           Back to Dashboard
         </Link>
 
-        <div className="mb-4 md:mb-6">
+        <ScrollReveal className="mb-4 md:mb-6">
           <h1 className="text-xl md:text-3xl font-bold text-foreground mb-1 md:mb-2">My Events</h1>
           <p className="text-[13px] md:text-base text-muted-foreground">Manage your volunteering events</p>
-        </div>
+        </ScrollReveal>
 
-        {/* --- UPDATED TABS WITH PENDING SECTION --- */}
-        <div className="flex gap-2 md:gap-3 mb-4 md:mb-6 overflow-x-auto no-scrollbar pb-2">
+        {/* --- TABS --- */}
+        <ScrollReveal delay={0.05} className="flex gap-2 md:gap-3 mb-4 md:mb-6 overflow-x-auto no-scrollbar pb-2">
           <button
             onClick={() => setActiveTab("pending")}
-            className={`px-4 py-1.5 md:px-6 md:py-2.5 rounded-full font-medium text-[12px] md:text-sm transition-all whitespace-nowrap ${activeTab === "pending"
-                ? "bg-amber-500 text-white shadow-md"
-                : "bg-card text-muted-foreground border border-border md:border-transparent hover:bg-muted"
+            className={`px-4 py-1.5 md:px-6 md:py-2.5 rounded-full font-semibold text-[12px] md:text-sm transition-all whitespace-nowrap ${activeTab === "pending"
+                ? "bg-amber-500 text-white shadow-md shadow-amber-500/20"
+                : "bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl text-muted-foreground border border-black/5 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5"
               }`}
           >
             Pending {pendingEvents.length > 0 && `(${pendingEvents.length})`}
           </button>
           <button
             onClick={() => setActiveTab("active")}
-            className={`px-4 py-1.5 md:px-6 md:py-2.5 rounded-full font-medium text-[12px] md:text-sm transition-all whitespace-nowrap ${activeTab === "active"
-                ? "bg-orange-500 text-white shadow-md"
-                : "bg-card text-muted-foreground border border-border md:border-transparent hover:bg-muted"
+            className={`px-4 py-1.5 md:px-6 md:py-2.5 rounded-full font-semibold text-[12px] md:text-sm transition-all whitespace-nowrap ${activeTab === "active"
+                ? "bg-[#ff6b6b] text-white shadow-md shadow-[#ff6b6b]/20"
+                : "bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl text-muted-foreground border border-black/5 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5"
               }`}
           >
             Active
           </button>
           <button
             onClick={() => setActiveTab("completed")}
-            className={`px-4 py-1.5 md:px-6 md:py-2.5 rounded-full font-medium text-[12px] md:text-sm transition-all whitespace-nowrap ${activeTab === "completed"
-                ? "bg-orange-500 text-white shadow-md"
-                : "bg-card text-muted-foreground border border-border md:border-transparent hover:bg-muted"
+            className={`px-4 py-1.5 md:px-6 md:py-2.5 rounded-full font-semibold text-[12px] md:text-sm transition-all whitespace-nowrap ${activeTab === "completed"
+                ? "bg-blue-500 text-white shadow-md shadow-blue-500/20"
+                : "bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl text-muted-foreground border border-black/5 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5"
               }`}
           >
             Completed
           </button>
           <button
             onClick={() => setActiveTab("cancelled")}
-            className={`px-4 py-1.5 md:px-6 md:py-2.5 rounded-full font-medium text-[12px] md:text-sm transition-all whitespace-nowrap ${activeTab === "cancelled"
-                ? "bg-red-500 text-white shadow-md"
-                : "bg-card text-red-500 border border-red-100 md:border-transparent hover:bg-red-50 dark:bg-red-500/15"
+            className={`px-4 py-1.5 md:px-6 md:py-2.5 rounded-full font-semibold text-[12px] md:text-sm transition-all whitespace-nowrap ${activeTab === "cancelled"
+                ? "bg-red-500 text-white shadow-md shadow-red-500/20"
+                : "bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl text-red-500 border border-red-200 dark:border-red-500/20 hover:bg-red-50 dark:hover:bg-red-500/10"
               }`}
           >
             Cancelled Drops {cancelledEvents.length > 0 && `(${cancelledEvents.length})`}
           </button>
-        </div>
+        </ScrollReveal>
 
         {error && (
-          <div className="bg-red-50 dark:bg-red-500/15 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 text-sm">
+          <div className="bg-red-50 dark:bg-red-500/15 border border-red-200 dark:border-red-500/20 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg mb-6 text-sm">
             {error}
           </div>
         )}
 
         {/* Event List */}
         {displayEvents.length === 0 ? (
-          <div className="text-center py-10 md:py-16 bg-card rounded-2xl shadow-sm border border-border">
+          <ScrollReveal delay={0.1} className="text-center py-10 md:py-16 bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl rounded-2xl shadow-xl shadow-neutral-200/30 dark:shadow-2xl dark:shadow-black/50 border border-black/5 dark:border-white/5">
             {activeTab === "pending" ? (
               <Hourglass className="w-10 h-10 md:w-16 md:h-16 text-amber-300 mx-auto mb-3 md:mb-4" />
             ) : (
@@ -240,23 +242,23 @@ export function OrgEventManagement() {
             {activeTab === "active" && (
               <Link
                 href="/org-events/create"
-                className="inline-flex items-center gap-2 px-5 py-2 md:px-6 md:py-3 bg-gradient-to-r from-teal-500 to-emerald-500 text-white rounded-xl text-[13px] md:text-base font-medium hover:shadow-lg transition-shadow"
+                className="inline-flex items-center gap-2 px-5 py-2 md:px-6 md:py-3 bg-[#ff6b6b] hover:bg-[#ee5a5a] text-white rounded-xl text-[13px] md:text-base font-semibold hover:scale-105 transition-all"
               >
                 Create Event
               </Link>
             )}
-          </div>
+          </ScrollReveal>
         ) : (
           <div className="space-y-2.5 md:space-y-4">
-            {displayEvents.map((event) => (
-              <div
-                key={event.id}
-                className="bg-card rounded-2xl md:rounded-2xl shadow-sm border border-border overflow-hidden hover:shadow-md transition-shadow"
-              >
+            {displayEvents.map((event, idx) => (
+              <ScrollReveal key={event.id} delay={Math.min(idx * 0.05, 0.3)}>
+                <div
+                  className="bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl rounded-2xl shadow-xl shadow-neutral-200/30 dark:shadow-2xl dark:shadow-black/50 border border-black/5 dark:border-white/5 overflow-hidden hover:scale-[1.01] hover:-translate-y-0.5 transition-all duration-300 ease-out"
+                >
                 <div className="flex flex-col md:flex-row">
-                  
+
                   {/* Desktop Image */}
-                  <div className="hidden md:flex w-48 bg-gradient-to-br from-teal-400 to-emerald-400 items-center justify-center shrink-0">
+                  <div className="hidden md:flex w-48 bg-gradient-to-br from-emerald-400 to-teal-400 items-center justify-center shrink-0">
                     {event.cover_image_url ? (
                       <img
                         src={event.cover_image_url}
@@ -270,9 +272,9 @@ export function OrgEventManagement() {
 
                   <div className="flex-1 p-3.5 md:p-6">
                     <div className="flex gap-3 md:gap-0 md:block items-start mb-0 md:mb-3">
-                      
+
                       {/* Mobile Image Thumbnail */}
-                      <div className="w-16 h-16 md:hidden rounded-xl bg-gradient-to-br from-teal-400 to-emerald-400 flex items-center justify-center shrink-0 overflow-hidden shadow-sm">
+                      <div className="w-16 h-16 md:hidden rounded-xl bg-gradient-to-br from-emerald-400 to-teal-400 flex items-center justify-center shrink-0 overflow-hidden shadow-sm">
                         {event.cover_image_url ? (
                           <img
                             src={event.cover_image_url}
@@ -289,17 +291,17 @@ export function OrgEventManagement() {
                           <h3 className="text-[15px] md:text-xl font-bold text-foreground truncate leading-tight mt-0.5 md:mt-0">
                             {event.title}
                           </h3>
-                          
-                          {/* --- UPDATED STATUS BADGES --- */}
+
+                          {/* --- STATUS BADGES --- */}
                           <span className={cn(
                             "px-2 py-0.5 md:px-3 md:py-1 text-[9px] md:text-xs font-bold rounded-full shrink-0 border uppercase tracking-wider",
                             event.status === 'pending'
-                              ? "bg-amber-50 dark:bg-amber-500/15 text-amber-600 border-amber-100"
+                              ? "bg-amber-50 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-500/20"
                               : event.status === 'cancelled'
-                              ? "bg-red-50 dark:bg-red-500/15 text-red-500 border-red-100"
+                              ? "bg-red-50 dark:bg-red-500/15 text-red-500 dark:text-red-400 border-red-100 dark:border-red-500/20"
                               : (event.status === 'completed' || isEventCompleted(event))
                               ? "bg-muted text-muted-foreground border-border"
-                              : "bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 border-emerald-100"
+                              : "bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-500/20"
                           )}>
                             {event.status === 'pending'
                               ? 'Pending Review'
@@ -310,7 +312,7 @@ export function OrgEventManagement() {
                               : 'Published'}
                           </span>
                         </div>
-                        
+
                         <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-4 text-[11px] md:text-sm text-muted-foreground">
                           <div className="flex items-center gap-1.5 truncate">
                             <Calendar className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0 text-muted-foreground" />
@@ -327,15 +329,15 @@ export function OrgEventManagement() {
                     <div className="mb-3 md:mb-4 mt-3 md:mt-0">
                       <div className="flex items-center justify-between text-[11px] md:text-sm mb-1.5 md:mb-2">
                         <span className="text-muted-foreground">
-                          <span className="font-medium text-foreground">{event.registered_count}</span>/{event.total_slots} Registered
+                          <span className="font-semibold text-foreground">{event.registered_count}</span>/{event.total_slots} Registered
                         </span>
-                        <span className="font-bold text-teal-600">
+                        <span className="font-bold text-[#10b981]">
                           {getRegistrationPercentage(event)}%
                         </span>
                       </div>
                       <div className="w-full h-1.5 md:h-2 bg-muted rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-gradient-to-r from-teal-500 to-emerald-500 transition-all rounded-full"
+                          className="h-full bg-gradient-to-r from-[#10b981] to-[#34d399] transition-all rounded-full"
                           style={{ width: `${getRegistrationPercentage(event)}%` }}
                         />
                       </div>
@@ -347,7 +349,7 @@ export function OrgEventManagement() {
                         href={activeTab === "completed"
                           ? `/org-events/${event.id}/report`
                           : `/org-events/${event.id}`}
-                        className="px-3 py-1.5 md:px-4 md:py-2 bg-teal-50 dark:bg-teal-500/15 text-teal-600 rounded-lg text-[11px] md:text-sm font-semibold hover:bg-teal-100 dark:bg-teal-500/15 transition-colors inline-flex items-center gap-1.5 md:gap-2 border border-teal-100/50"
+                        className="px-3 py-1.5 md:px-4 md:py-2 bg-[#ff6b6b]/10 text-[#ff6b6b] rounded-lg text-[11px] md:text-sm font-semibold hover:bg-[#ff6b6b]/20 transition-colors inline-flex items-center gap-1.5 md:gap-2 border border-[#ff6b6b]/20"
                       >
                         <Eye className="w-3.5 h-3.5 md:w-4 md:h-4" />
                         View
@@ -357,7 +359,7 @@ export function OrgEventManagement() {
                       {(activeTab === "pending" || event.status === 'pending') && (
                         <Link
                           href={`/edit-event/${event.id}`}
-                          className="px-3 py-1.5 md:px-4 md:py-2 bg-blue-50 dark:bg-blue-500/15 text-blue-600 rounded-lg text-[11px] md:text-sm font-semibold hover:bg-blue-100 dark:bg-blue-500/15 transition-colors inline-flex items-center gap-1.5 md:gap-2 border border-blue-100/50"
+                          className="px-3 py-1.5 md:px-4 md:py-2 bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 rounded-lg text-[11px] md:text-sm font-semibold hover:bg-blue-100 dark:hover:bg-blue-500/25 transition-colors inline-flex items-center gap-1.5 md:gap-2 border border-blue-100/50 dark:border-blue-500/20"
                         >
                           <Edit className="w-3.5 h-3.5 md:w-4 md:h-4" />
                           Edit
@@ -369,7 +371,7 @@ export function OrgEventManagement() {
                         <button
                           onClick={() => handleCancelEvent(event.id)}
                           disabled={deletingEventId === event.id}
-                          className="px-3 py-1.5 md:px-4 md:py-2 bg-red-50 dark:bg-red-500/15 text-red-600 rounded-lg text-[11px] md:text-sm font-semibold hover:bg-red-100 dark:bg-red-500/15 transition-colors inline-flex items-center gap-1.5 md:gap-2 disabled:opacity-50 border border-red-100/50 ml-auto md:ml-0"
+                          className="px-3 py-1.5 md:px-4 md:py-2 bg-red-50 dark:bg-red-500/15 text-red-600 dark:text-red-400 rounded-lg text-[11px] md:text-sm font-semibold hover:bg-red-100 dark:hover:bg-red-500/25 transition-colors inline-flex items-center gap-1.5 md:gap-2 disabled:opacity-50 border border-red-100/50 dark:border-red-500/20 ml-auto md:ml-0"
                         >
                           <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
                           {deletingEventId === event.id ? "Wait..." : "Cancel"}
@@ -378,7 +380,8 @@ export function OrgEventManagement() {
                     </div>
                   </div>
                 </div>
-              </div>
+                </div>
+              </ScrollReveal>
             ))}
           </div>
         )}
