@@ -3,6 +3,7 @@ import { SupabaseService } from '../supabase/supabase.service';
 import { EmailService } from '../email/email.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { validateImageFile } from '../common/file-validation.util';
+import { removeFromStorage } from '../common/storage.util';
 
 const GEOLOCK_RADIUS_METERS = 200;
 
@@ -1268,7 +1269,7 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
   async uploadOrgSignature(userId: string, file: Express.Multer.File) {
     const supabase = this.supabaseService.getClient();
 
-    const { data: orgProfile } = await supabase.from('organization_profiles').select('id').eq('user_id', userId).single();
+    const { data: orgProfile } = await supabase.from('organization_profiles').select('id, signature_url').eq('user_id', userId).single();
     if (!orgProfile) throw new NotFoundException('Organization not found');
     validateImageFile(file);
 
@@ -1290,6 +1291,9 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
       .eq('id', orgProfile.id);
 
     if (dbError) throw dbError;
+
+    // Remove the previous signature file so it doesn't orphan.
+    await removeFromStorage(supabase, 'org-signatures', [orgProfile.signature_url]);
 
     return { message: 'Signature uploaded successfully', signatureUrl: publicUrl };
   }

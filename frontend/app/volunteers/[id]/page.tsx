@@ -459,10 +459,20 @@ export default function VolunteerProfile() {
       try {
         setLoading(true)
 
-        const [profileRes, journeyRes, currentUser] = await Promise.all([
-          api.getVolunteerPublicProfile(id as string),
-          api.getVolunteerJourney(id as string),
-          api.getCurrentUser().catch(() => null)
+        // "me" is a stable self-profile alias the nav links to, so the profile
+        // link never depends on an async-loaded id (which made clicks no-op
+        // until getUserProfile resolved). Resolve it to the current user here.
+        const currentUser = await api.getCurrentUser().catch(() => null)
+        const effectiveId = id === 'me' ? currentUser?.id : (id as string)
+
+        if (!effectiveId) {
+          if (isMounted) { setLoading(false); router.replace('/login') }
+          return
+        }
+
+        const [profileRes, journeyRes] = await Promise.all([
+          api.getVolunteerPublicProfile(effectiveId),
+          api.getVolunteerJourney(effectiveId),
         ])
 
         if (!isMounted) return;
@@ -470,7 +480,7 @@ export default function VolunteerProfile() {
         const fetchedProfile = profileRes.profile;
         setJourney(journeyRes.journey || [])
 
-        const isSelf = currentUser?.id === fetchedProfile.user_id;
+        const isSelf = id === 'me' || currentUser?.id === fetchedProfile.user_id;
         setIsOwnProfile(isSelf);
         if (currentUser?.id) setCurrentUserId(currentUser.id);
 

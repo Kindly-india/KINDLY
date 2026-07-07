@@ -59,6 +59,7 @@ export function NavbarManager() {
     pathname.startsWith("/how-it-works") ||
     pathname.startsWith("/for-") ||
     pathname.startsWith("/legal") ||
+    pathname.startsWith("/auth") ||
     pathname === "/onboarding" ||
     pathname === "/org-signup"
 

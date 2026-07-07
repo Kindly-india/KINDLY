@@ -46,12 +46,10 @@ export function MobileNav() {
 
   const isActive = (path: string) => pathname === path
 
-  let profileLink = "/login" 
-  if (profile) {
-    profileLink = profile.org_type 
-      ? `/organizations/${profile.id}` 
-      : `/volunteers/${profile.id}`
-  }
+  // Static self-profile aliases so the link works on first paint (no dead href
+  // while the profile is still loading). Fall back to volunteer until we know
+  // the role — an org will still resolve correctly via /organizations/me.
+  const profileLink = profile?.org_type ? "/organizations/me" : "/volunteers/me"
 
   const isProfileActive = pathname.startsWith('/volunteers/') || pathname.startsWith('/organizations/')
 

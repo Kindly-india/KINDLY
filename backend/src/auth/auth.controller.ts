@@ -10,21 +10,22 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 export class AuthController {
   constructor(private authService: AuthService) {}
 
-  @Throttle({ default: { limit: 5, ttl: 3_600_000 } })
+  @Throttle({ short: { limit: 5, ttl: 3_600_000 } })
   @Post('signup/volunteer')
   async signupVolunteer(@Body(ValidationPipe) dto: VolunteerSignupDto) {
     return this.authService.signupVolunteer(dto);
   }
 
-  @Throttle({ default: { limit: 3, ttl: 3_600_000 } })
+  @Throttle({ short: { limit: 10, ttl: 3_600_000 } })
   @Post('signup/organization')
   async signupOrganization(@Body(ValidationPipe) dto: OrganizationSignupDto) {
     return this.authService.signupOrganization(dto);
   }
 
   // Pre-flight check the universal sign-in box calls before sending an OTP —
-  // blocks login for organizations still awaiting approval.
-  @Throttle({ default: { limit: 20, ttl: 3_600_000 } })
+  // blocks login for organizations still awaiting approval. No per-route
+  // override: it's called on every login and shared public IPs (colleges) would
+  // trip an hourly cap, so it inherits the generous global per-IP limit.
   @Post('check-org-status')
   async checkOrgStatus(@Body('email') email: string) {
     return this.authService.checkOrgStatus(email);
@@ -37,7 +38,7 @@ export class AuthController {
     return { message: 'ok' };
   }
 
-  @Throttle({ default: { limit: 5, ttl: 3_600_000 } })
+  @Throttle({ short: { limit: 5, ttl: 3_600_000 } })
   @Post('reset-password')
   async resetPassword(@Body('email') email: string) {
     return this.authService.resetPassword(email);

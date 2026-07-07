@@ -25,7 +25,8 @@ export function OrgMobileNav() {
         fetchUser()
     }, [])
 
-    const profileLink = profile?.id ? `/organizations/${profile.id}` : "/login"
+    // Static self-profile alias so the link works on first paint.
+    const profileLink = "/organizations/me"
 
     const items = [
         { href: "/org-home", icon: LayoutDashboard, label: "Dash", active: isActive("/org-home") },

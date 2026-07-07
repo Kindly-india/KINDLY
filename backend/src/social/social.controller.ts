@@ -16,7 +16,7 @@ export class SocialController {
   }
 
   // Follow a user (privacy-aware: returns { status: 'pending' | 'accepted' })
-  @Throttle({ default: { limit: 60, ttl: 3_600_000 } })
+  @Throttle({ short: { limit: 60, ttl: 3_600_000 } })
   @UseGuards(JwtAuthGuard)
   @Post('follow/:targetId')
   async followUser(@Request() req: any, @Param('targetId') targetId: string) {

@@ -240,7 +240,7 @@ export function OrgTopNav() {
           </div>
 
           {/* Profile avatar (Desktop only) */}
-          <Link href={profile?.id ? `/organizations/${profile.id}` : "#"} className="hidden md:block group">
+          <Link href="/organizations/me" className="hidden md:block group">
             <div className="w-9 h-9 md:w-10 md:h-10 rounded-full overflow-hidden border border-border group-hover:border-orange-400 group-active:scale-95 transition-all bg-muted flex items-center justify-center shadow-sm">
               {displayImage ? (
                 <img src={displayImage} alt="Profile" className="w-full h-full object-cover" />

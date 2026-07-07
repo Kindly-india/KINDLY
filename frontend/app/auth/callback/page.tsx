@@ -55,13 +55,23 @@ function AuthCallbackLogic() {
     }
 
     supabase.auth.exchangeCodeForSession(code).then(async ({ data, error }) => {
-      if (error) {
-        console.error("Auth callback error:", error.message)
+      let session = data?.session ?? null
+
+      // Resilience: if the exchange hiccups (e.g. the code was already consumed
+      // by a quick double-navigation), a valid session may still exist. Use it
+      // rather than bouncing the user back to the landing page.
+      if (error || !session) {
+        const { data: got } = await supabase.auth.getSession()
+        session = got.session ?? null
+      }
+
+      if (!session) {
+        console.error("Auth callback error:", error?.message ?? "no session established")
         router.replace("/")
         return
       }
 
-      const user = data.session?.user
+      const user = session.user
       const { role, home } = destinationForUserType(user?.user_metadata?.user_type)
       applyRoleSession(role)
 

@@ -24,7 +24,9 @@ export function VolunteerMobileNav() {
     fetchUser()
   }, [])
 
-  const profileLink = profile?.id ? `/volunteers/${profile.id}` : "/login"
+  // Static self-profile alias so the link works on first paint — never a dead
+  // href while the profile is still loading.
+  const profileLink = "/volunteers/me"
 
   const items = [
     { href: "/home", icon: Home, label: "Home", active: isActive("/home") },
