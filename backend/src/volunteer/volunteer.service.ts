@@ -23,29 +23,38 @@ export class VolunteerService {
       .eq('user_id', userId)
       .maybeSingle();
 
-    if (existing) {
-      return { profile: existing };
+    let profile = existing;
+
+    if (!existing) {
+      const { data: created, error } = await client
+        .from('volunteer_profiles')
+        .insert({
+          user_id: userId,
+          full_name: fullName,
+          total_hours: 0,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        throw new BadRequestException('Failed to create volunteer profile');
+      }
+      profile = created;
     }
 
-    const { data: profile, error } = await client
-      .from('volunteer_profiles')
-      .insert({
-        user_id: userId,
-        full_name: fullName,
-        total_hours: 0,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      throw new BadRequestException('Failed to create volunteer profile');
+    // ALWAYS ensure user_metadata.user_type is set — not just when we create the
+    // row. A prior partial/failed signup (e.g. an interrupted Google flow) can
+    // leave the row present but user_type unset, which permanently breaks
+    // getUserProfile() and every role-gated surface (profile link, nav, routing).
+    // We merge into existing metadata so Google's avatar/name aren't clobbered,
+    // and only write when something actually needs changing.
+    const { data: authData } = await client.auth.admin.getUserById(userId);
+    const meta = authData?.user?.user_metadata ?? {};
+    if (meta.user_type !== 'volunteer' || !meta.full_name) {
+      await client.auth.admin.updateUserById(userId, {
+        user_metadata: { ...meta, user_type: 'volunteer', full_name: meta.full_name ?? fullName },
+      });
     }
-
-    // Keep user_metadata in sync so getUserProfile()'s userType branch resolves
-    // correctly on the very next call (verifyOtp's own response predates this row).
-    await client.auth.admin.updateUserById(userId, {
-      user_metadata: { user_type: 'volunteer', full_name: fullName },
-    });
 
     return { profile };
   }
@@ -310,13 +319,25 @@ export class VolunteerService {
     return { journey };
   }
 
-  // --- UPDATE PROFILE (Unchanged) ---
   async updateProfile(userId: string, dto: UpdateVolunteerProfileDto) {
     const client = this.supabase.getClient();
-    const { data: profile } = await client.from('volunteer_profiles').select('id').eq('user_id', userId).single();
+    const { data: profile } = await client
+      .from('volunteer_profiles')
+      .select('id, avatar_url, cover_url')
+      .eq('user_id', userId)
+      .single();
     if (!profile) throw new NotFoundException('Profile not found');
+
     const { data, error } = await client.from('volunteer_profiles').update({ ...dto, updated_at: new Date().toISOString() }).eq('id', profile.id).select().single();
     if (error) throw error;
+
+    // Delete any image that was just replaced — the new upload has a fresh path,
+    // so the old file would otherwise orphan in the bucket.
+    const replaced: (string | null | undefined)[] = [];
+    if (dto.avatar_url && profile.avatar_url && dto.avatar_url !== profile.avatar_url) replaced.push(profile.avatar_url);
+    if (dto.cover_url && profile.cover_url && dto.cover_url !== profile.cover_url) replaced.push(profile.cover_url);
+    await removeFromStorage(client, 'profile-images', replaced);
+
     return { profile: data };
   }
 

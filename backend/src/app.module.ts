@@ -12,7 +12,8 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { EmailModule } from './email/email.module';
 import { PhoneVerificationModule } from './phone-verification/phone-verification.module';
 import { PostsModule } from './posts/posts.module';
-import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { UserThrottlerGuard } from './common/user-throttler.guard';
 import { APP_GUARD } from '@nestjs/core/constants';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -34,10 +35,15 @@ import { AppService } from './app.service';
     EmailModule,
     PhoneVerificationModule,
     PostsModule,
+    // Global catch-all limit. Keyed per-USER for authenticated requests (see
+    // UserThrottlerGuard), so 100/min is generous headroom for normal SPA usage
+    // (a page fires several API calls) while still stopping runaway loops. The
+    // abuse-prone endpoints (signup, reset, post, follow, comment) set their own
+    // tighter @Throttle({ short: ... }) overrides on top of this.
     ThrottlerModule.forRoot([{
       name: 'short',
       ttl: 60000,
-      limit: 20,
+      limit: 100,
     }]),
   ],
   controllers: [AppController],
@@ -45,7 +51,7 @@ import { AppService } from './app.service';
     AppService,
     {
       provide: APP_GUARD,
-      useClass: ThrottlerGuard,
+      useClass: UserThrottlerGuard,
     },
   ],
 })

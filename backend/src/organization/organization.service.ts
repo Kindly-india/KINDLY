@@ -333,7 +333,7 @@ export class OrganizationService {
 
     const { data: existing } = await client
       .from('organization_profiles')
-      .select('id')
+      .select('id, logo_url, cover_url')
       .eq('user_id', userId)
       .single();
 
@@ -351,6 +351,14 @@ export class OrganizationService {
     const profile = data as OrgProfilePrivate | null;
 
     if (error || !profile) throw error;
+
+    // Delete any logo/cover that was just replaced (new upload = fresh path, so
+    // the old file would otherwise orphan). logo/cover share the profile-images
+    // bucket with volunteer avatars.
+    const replaced: (string | null | undefined)[] = [];
+    if (updateData.logo_url && existing.logo_url && updateData.logo_url !== existing.logo_url) replaced.push(existing.logo_url);
+    if (updateData.cover_url && existing.cover_url && updateData.cover_url !== existing.cover_url) replaced.push(existing.cover_url);
+    await removeFromStorage(client, 'profile-images', replaced);
     return { profile };
   }
 

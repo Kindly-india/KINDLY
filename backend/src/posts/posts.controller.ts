@@ -29,7 +29,7 @@ export class PostsController {
   }
 
   // Create a post (must have attended the event)
-  @Throttle({ default: { limit: 10, ttl: 3_600_000 } })
+  @Throttle({ short: { limit: 10, ttl: 3_600_000 } })
   @UseGuards(JwtAuthGuard)
   @Post()
   async createPost(@Request() req: any, @Body() dto: CreatePostDto) {
@@ -83,7 +83,7 @@ export class PostsController {
   }
 
   // Add a comment to a post
-  @Throttle({ default: { limit: 30, ttl: 3_600_000 } })
+  @Throttle({ short: { limit: 30, ttl: 3_600_000 } })
   @UseGuards(JwtAuthGuard)
   @Post(':id/comments')
   async addComment(

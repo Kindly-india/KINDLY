@@ -78,56 +78,25 @@ export function OrgHomePage() {
         setEvents(fetchedEvents)
         setRecentActivity(activityRes.activities || [])
 
-        // Initialize Stats
-        const calculatedStats = {
-          totalHours: 0,
-          activeVolunteers: 0,
-          eventsHosted: 0,
-          upcomingEventsCount: 0
-        }
+        // Impact figures come from the backend profile (getPublicProfile), so
+        // the dashboard and the public org profile always agree — this is the
+        // P1-1 fix. "Hours generated" and "volunteers engaged" count completed
+        // events; "events hosted" likewise means events that actually ran.
+        // Only "upcoming" is computed here, since the backend doesn't provide it.
+        // (This also removed an N+1 loop that fetched every event's roster just
+        // to count unique volunteers.)
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        const upcomingEventsCount = fetchedEvents.filter((event: any) =>
+          event.status !== 'cancelled' && new Date(event.event_date) >= today
+        ).length
 
-        // Process Events Basic Stats — exclude cancelled events from all counts
-        fetchedEvents.forEach((event: any) => {
-          if (event.status === 'cancelled') return
-
-          calculatedStats.eventsHosted += 1
-
-          const start = new Date(`1970-01-01T${event.start_time}`)
-          const end = new Date(`1970-01-01T${event.end_time}`)
-          let durationHours = (end.getTime() - start.getTime()) / (1000 * 60 * 60)
-          if (durationHours < 0) durationHours = 0;
-
-          const volunteerCount = event.checked_in_count || 0
-          calculatedStats.totalHours += Math.round(durationHours * volunteerCount)
-
-          const eventDate = new Date(event.event_date)
-          const today = new Date()
-          today.setHours(0, 0, 0, 0)
-          if (eventDate >= today) {
-            calculatedStats.upcomingEventsCount += 1
-          }
-        });
-
-        // Calculate UNIQUE Active Volunteers
-        const uniqueVolunteerIds = new Set<string>();
-        const activeEvents = fetchedEvents.filter((e: any) => (e.registered_count || 0) > 0);
-
-        await Promise.all(activeEvents.map(async (ev: any) => {
-          try {
-            const regRes = await api.getEventRegistrations(ev.id);
-            if (regRes.registrations && Array.isArray(regRes.registrations)) {
-              regRes.registrations.forEach((reg: any) => {
-                const vId = reg.volunteer_id || reg.volunteer_profiles?.id;
-                if (vId) uniqueVolunteerIds.add(vId);
-              });
-            }
-          } catch (err) {
-            console.warn(`Could not fetch roster for event ${ev.id}`, err);
-          }
-        }));
-
-        calculatedStats.activeVolunteers = uniqueVolunteerIds.size;
-        setStats(calculatedStats)
+        setStats({
+          totalHours: orgProfile.total_hours_generated ?? 0,
+          activeVolunteers: orgProfile.volunteers_engaged ?? 0,
+          eventsHosted: orgProfile.events_hosted ?? 0,
+          upcomingEventsCount,
+        })
 
       } catch (err: any) {
         setError(err.message || 'Failed to load dashboard data')

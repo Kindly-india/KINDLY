@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
-import { supabase, supabaseAuthClient, destinationForUserType, applyRoleSession } from "@/lib/supabase"
+import { supabase, destinationForUserType, applyRoleSession } from "@/lib/supabase"
 import { api } from "@/lib/api"
 import { BrandSplash } from "@/components/brand-splash"
 
@@ -201,7 +201,7 @@ export function AuthCard() {
         return
       }
 
-      const { error } = await supabaseAuthClient.auth.signInWithOtp({
+      const { error } = await supabase.auth.signInWithOtp({
         email: identifier,
         options: { shouldCreateUser: true },
       })

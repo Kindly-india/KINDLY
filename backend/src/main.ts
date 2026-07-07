@@ -20,6 +20,13 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.use(compression());
 
+  // Behind Render's proxy the real client IP is in X-Forwarded-For. Without
+  // this, req.ip is the proxy's (constant) IP, which would make the rate
+  // limiter key every request to one bucket. `1` trusts exactly one proxy hop
+  // (Render's LB) so clients can't spoof the header — bump to 2 if you later
+  // put Cloudflare (or another proxy) in front.
+  app.getHttpAdapter().getInstance().set('trust proxy', 1);
+
   // Enable CORS for frontend
   app.enableCors({
     origin: (origin, callback) => {

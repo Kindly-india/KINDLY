@@ -262,11 +262,23 @@ export default function OrganizationProfile() {
     const fetchProfile = async () => {
       try {
         setLoading(true)
-        const [profileRes, eventsRes, reviewsRes, currentUser] = await Promise.all([
-          api.getOrgPublicProfile(id as string),
-          api.getOrgEvents(id as string),
-          api.getOrgReviews(id as string),
-          api.getCurrentUser().catch(() => null)
+
+        // "me" is a stable self-profile alias the org nav links to, so the link
+        // never depends on an async-loaded id. Resolve it to the current user
+        // (the backend accepts either the org profile id or the user_id).
+        const currentUser = await api.getCurrentUser().catch(() => null)
+        const effectiveId = id === 'me' ? currentUser?.id : (id as string)
+
+        if (!effectiveId) {
+          setLoading(false)
+          router.replace('/login')
+          return
+        }
+
+        const [profileRes, eventsRes, reviewsRes] = await Promise.all([
+          api.getOrgPublicProfile(effectiveId),
+          api.getOrgEvents(effectiveId),
+          api.getOrgReviews(effectiveId),
         ])
 
         setProfile(profileRes.profile)
@@ -286,7 +298,7 @@ export default function OrganizationProfile() {
         setActivityData(last6Months);
 
         // Permissions Logic
-        const isSelf = currentUser?.id === profileRes.profile.user_id;
+        const isSelf = id === 'me' || currentUser?.id === profileRes.profile.user_id;
         setIsOwnProfile(isSelf);
         setIsFollowing(profileRes.profile.is_followed_by_current_user ?? false)
         if (currentUser?.user_metadata?.user_type === 'organization') {

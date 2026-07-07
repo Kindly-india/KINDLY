@@ -133,7 +133,7 @@ export function TopNav() {
             </Link>
           )}
           {/* Avatar — desktop only */}
-          <Link href={profile?.id ? `/volunteers/${profile.id}` : '#'} className="hidden md:block group">
+          <Link href="/volunteers/me" className="hidden md:block group">
             <div className="w-10 h-10 rounded-full overflow-hidden border border-border group-hover:border-border group-active:scale-95 transition-all bg-muted flex items-center justify-center shadow-sm">
               {displayImage ? (
                 <Image src={displayImage} alt="Profile" width={40} height={40} className="w-full h-full object-cover" />
