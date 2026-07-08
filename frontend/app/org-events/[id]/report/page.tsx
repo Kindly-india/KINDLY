@@ -9,7 +9,7 @@ import {
   Download, RefreshCw, X, Square, CheckSquare, UserCheck,
 } from "lucide-react"
 import { api, EventCertificate } from "@/lib/api"
-import { downloadFromUrl } from "@/lib/utils"
+import { downloadFromUrl, formatHours } from "@/lib/utils"
 
 export default function EventReportPage() {
   const params = useParams()
@@ -452,7 +452,7 @@ export default function EventReportPage() {
                     )}
                     <div>
                       <p className="text-sm font-semibold text-foreground">{cert.volunteer_name}</p>
-                      <p className="text-xs text-muted-foreground">{cert.hours_credited}h · {new Date(cert.issued_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                      <p className="text-xs text-muted-foreground">{formatHours(cert.hours_credited)} · {new Date(cert.issued_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
                     </div>
                   </div>
                   <button

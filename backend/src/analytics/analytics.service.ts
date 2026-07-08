@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
+import { eventHours } from '../common/hours.util';
 
 @Injectable()
 export class AnalyticsService {
@@ -24,7 +25,6 @@ export class AnalyticsService {
             .from('event_registrations')
             .select(`
         status,
-        hours_contributed,
         events (
           id, title, category, event_date, start_time, end_time, location
         )
@@ -55,13 +55,8 @@ export class AnalyticsService {
             const isVerified = status === 'completed' || status === 'checked_in';
             const isRegistered = status === 'registered';
 
-            // Duration Logic
-            let duration = r.hours_contributed || 0;
-            if (!duration && evt.start_time && evt.end_time) {
-                const [sh, sm] = evt.start_time.split(':').map(Number);
-                const [eh, em] = evt.end_time.split(':').map(Number);
-                duration = Math.max(0, (eh * 60 + em) - (sh * 60 + sm)) / 60;
-            }
+            // Duration Logic (single source: eventHours — overnight-aware, 2dp)
+            const duration = eventHours(evt.start_time, evt.end_time);
 
             if (isVerified) {
                 verifiedHours += duration;
@@ -106,8 +101,9 @@ export class AnalyticsService {
         history.forEach(r => {
             const status = (r.status || '').toLowerCase();
             if (status === 'completed' || status === 'checked_in') {
+                const evt = r.events as any;
                 const now = new Date();
-                const d = new Date((r.events as any)?.event_date);
+                const d = new Date(evt?.event_date);
 
                 const monthsAgo =
                     (now.getFullYear() - d.getFullYear()) * 12 +
@@ -116,7 +112,7 @@ export class AnalyticsService {
                 const monthIndex = 5 - monthsAgo;
 
                 if (monthIndex >= 0 && monthIndex < 6) {
-                    monthlyActivity[monthIndex].hours += (r.hours_contributed || 1);
+                    monthlyActivity[monthIndex].hours += eventHours(evt?.start_time, evt?.end_time);
                 }
             }
         });
@@ -164,7 +160,6 @@ export class AnalyticsService {
         registered_count,
         event_registrations (
           status,
-          hours_contributed,
           volunteer_id,
           volunteer_profiles ( full_name )
         )
@@ -191,13 +186,8 @@ export class AnalyticsService {
             const regs = e.event_registrations || [];
             registeredTotal += regs.length;
 
-            // Calculate Default Duration from Event Times (The Fix!)
-            let eventDuration = 0;
-            if (e.start_time && e.end_time) {
-                const [sh, sm] = e.start_time.split(':').map(Number);
-                const [eh, em] = e.end_time.split(':').map(Number);
-                eventDuration = Math.max(0, (eh * 60 + em) - (sh * 60 + sm)) / 60;
-            }
+            // Per-person event duration (single source: eventHours — overnight-aware, 2dp)
+            const eventDuration = eventHours(e.start_time, e.end_time);
 
             const eDate = new Date(e.event_date);
             const monthEntry = monthlyGrowth.find(m => m.monthIdx === eDate.getMonth());
@@ -208,8 +198,7 @@ export class AnalyticsService {
                 const volName = reg.volunteer_profiles?.full_name || 'Volunteer';
                 const volId = reg.volunteer_id;
 
-                // ✅ FIX: If hours_contributed is missing, use Event Duration
-                const hours = reg.hours_contributed || eventDuration || 0;
+                const hours = eventDuration;
 
                 if (status === 'completed' || status === 'checked_in') {
                     totalHours += hours;

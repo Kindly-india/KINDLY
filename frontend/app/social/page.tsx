@@ -18,7 +18,7 @@ import {
   Clock,
   Building2,
 } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { cn, formatHoursTotal } from "@/lib/utils"
 import { VerifiedBadge } from "@/components/verified-badge"
 import { Card } from "@/components/ui/card"
 import { ScrollReveal } from "@/components/ui/scroll-reveal"
@@ -136,7 +136,7 @@ function EventsTab() {
                 </span>
                 {ev.total_hours > 0 && (
                   <span className="flex items-center gap-0.5 bg-emerald-600/80 backdrop-blur-sm rounded-sm px-1.5 py-0.5 text-white text-[9px] font-semibold leading-none">
-                    <Clock className="w-2.5 h-2.5 mr-0.5" />{ev.total_hours}h
+                    <Clock className="w-2.5 h-2.5 mr-0.5" />{formatHoursTotal(ev.total_hours)}h
                   </span>
                 )}
               </div>
@@ -479,7 +479,7 @@ function CommunityTab() {
                                   {s.city || "—"}
                                 </p>
                                 <p className={cn("text-[11px] font-medium text-[#ff6b6b]", s.total_hours <= 0 && "invisible")}>
-                                  {s.total_hours}h volunteered
+                                  {formatHoursTotal(s.total_hours)}h volunteered
                                 </p>
                               </div>
                             </div>

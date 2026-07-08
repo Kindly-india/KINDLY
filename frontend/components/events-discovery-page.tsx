@@ -29,7 +29,7 @@ import {
     Clock,
     CheckCircle2,
 } from "lucide-react"
-import { cn, formatLabel } from "@/lib/utils"
+import { cn, formatLabel, formatHoursTotal } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
@@ -781,7 +781,7 @@ const FilterContent = () => (
                                                                 {ev.total_hours > 0 && (
                                                                     <span className="flex items-center gap-1">
                                                                         <Clock className="w-3 h-3 shrink-0" />
-                                                                        {ev.total_hours}h
+                                                                        {formatHoursTotal(ev.total_hours)}h
                                                                     </span>
                                                                 )}
                                                             </div>

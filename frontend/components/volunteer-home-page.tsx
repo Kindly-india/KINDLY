@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { cn, formatLabel } from "@/lib/utils"
+import { cn, formatLabel, eventHours, formatHoursTotal } from "@/lib/utils"
 import Link from "next/link"
 import Image from "next/image"
 import {
@@ -99,19 +99,6 @@ export function VolunteerHomePage() {
     attendance: 0
   })
 
-  // --- Helper to Calculate Exact Hours (with minutes) ---
-  const calculateExactHours = (start: string, end: string) => {
-    if (!start || !end) return 0;
-    const [startH, startM] = start.split(':').map(Number);
-    const [endH, endM] = end.split(':').map(Number);
-
-    const startTotalMins = (startH * 60) + startM;
-    const endTotalMins = (endH * 60) + endM;
-
-    const diffMins = Math.max(0, endTotalMins - startTotalMins);
-    return diffMins / 60;
-  }
-
   // --- Fetch Data ---
   useEffect(() => {
     const checkAuthAndLoadData = async () => {
@@ -175,8 +162,7 @@ export function VolunteerHomePage() {
           const isMissed = status === 'missed';
 
           if (isCompleted || isCheckedIn) {
-            const eventHours = calculateExactHours(ev.start_time, ev.end_time);
-            totalHours += (eventHours > 0 ? eventHours : 1);
+            totalHours += eventHours(ev.start_time, ev.end_time);
             completed += 1
           }
 
@@ -199,7 +185,7 @@ export function VolunteerHomePage() {
           : 100;
 
         setStats({
-          hoursContributed: parseFloat(totalHours.toFixed(1)),
+          hoursContributed: Math.round(totalHours * 100) / 100,
           eventsThisWeek: thisWeek,
           impactScore: Math.round((totalHours * 10) + (completed * 50)),
           supportedCauses: Array.from(categoriesSet),
@@ -344,7 +330,7 @@ export function VolunteerHomePage() {
             <ScrollReveal delay={0.16}>
               <Card className="gap-0 px-3 md:px-6 py-3 md:py-4">
                 <p className="text-[18px] md:text-[28px] font-bold text-[#10b981]">
-                  {stats.hoursContributed}
+                  {formatHoursTotal(stats.hoursContributed)}
                 </p>
                 <p className="text-[10px] md:text-[12px] text-muted-foreground dark:text-neutral-400">Hours Contributed</p>
               </Card>
@@ -477,12 +463,12 @@ export function VolunteerHomePage() {
                     />
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-[28px] md:text-[40px] font-bold text-[#10b981]">{stats.hoursContributed}</span>
+                    <span className="text-[28px] md:text-[40px] font-bold text-[#10b981]">{formatHoursTotal(stats.hoursContributed)}</span>
                     <span className="text-[11px] md:text-[13px] text-muted-foreground dark:text-neutral-400">hours</span>
                   </div>
                 </div>
                 <div className="text-center md:text-left">
-                  <h3 className="text-[18px] md:text-[26px] font-bold text-foreground dark:text-white">{stats.hoursContributed} Volunteer Hours</h3>
+                  <h3 className="text-[18px] md:text-[26px] font-bold text-foreground dark:text-white">{formatHoursTotal(stats.hoursContributed)} Volunteer Hours</h3>
                   <p className="text-[13px] md:text-[15px] text-muted-foreground dark:text-neutral-400 mt-0.5">Total Contribution</p>
                   <p className="text-[13px] md:text-[15px] text-foreground dark:text-neutral-300 mt-3 max-w-md">You're making a real difference in {profile?.city || "Nashik"}. Keep up the amazing work!</p>
 
@@ -522,7 +508,7 @@ export function VolunteerHomePage() {
                 <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-neutral-800/5 dark:bg-neutral-800/50 flex items-center justify-center mb-2">
                   <Award className="w-4 h-4 md:w-5 md:h-5 text-[#f59e0b]" />
                 </div>
-                <p className="text-[20px] md:text-[28px] font-bold text-foreground dark:text-white">{stats.hoursContributed}</p>
+                <p className="text-[20px] md:text-[28px] font-bold text-foreground dark:text-white">{formatHoursTotal(stats.hoursContributed)}</p>
                 <p className="text-[10px] md:text-[12px] text-muted-foreground dark:text-neutral-400">Total Hours</p>
               </Card>
             </ScrollReveal>

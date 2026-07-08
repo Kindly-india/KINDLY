@@ -9,7 +9,7 @@ import {
   Download, X, Award, Star, Sparkles, Share2
 } from "lucide-react"
 import { api, VolunteerCertificate, ShowcaseData } from "@/lib/api"
-import { downloadFromUrl } from "@/lib/utils"
+import { downloadFromUrl, eventHours, formatHours } from "@/lib/utils"
 import { Card } from "@/components/ui/card"
 import { ScrollReveal } from "@/components/ui/scroll-reveal"
 
@@ -278,10 +278,7 @@ export default function ShowcaseClient() {
     setGeneratingCard(true)
     try {
       const hoursRaw = (() => {
-        if (!event.start_time || !event.end_time) return null
-        const [sh, sm] = event.start_time.split(':').map(Number)
-        const [eh, em] = event.end_time.split(':').map(Number)
-        const diff = (eh * 60 + em - (sh * 60 + sm)) / 60
+        const diff = eventHours(event.start_time, event.end_time)
         if (diff <= 0) return null
         return Number.isInteger(diff) ? `${diff} hrs` : `${diff.toFixed(1)} hrs`
       })()
@@ -609,7 +606,7 @@ export default function ShowcaseClient() {
                     <div className="bg-amber-50 dark:bg-amber-500/15 border border-amber-200 dark:border-amber-500/20 rounded-xl p-4 mb-4">
                       <p className="text-xs font-semibold text-amber-900 dark:text-amber-400">{cert.event_title}</p>
                       <p className="text-[10px] text-amber-700 dark:text-amber-400/80 mt-0.5">
-                        {cert.hours_credited}h · Issued{' '}
+                        {formatHours(cert.hours_credited)} · Issued{' '}
                         {new Date(cert.issued_at).toLocaleDateString('en-IN', {
                           day: 'numeric', month: 'short', year: 'numeric',
                         })}

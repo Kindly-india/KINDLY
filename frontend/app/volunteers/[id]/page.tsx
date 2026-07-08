@@ -12,7 +12,7 @@ import {
   Camera, Images,
 } from "lucide-react"
 import { api } from "@/lib/api"
-import { cn, formatLabel } from "@/lib/utils"
+import { cn, formatLabel, formatHours, formatHoursTotal } from "@/lib/utils"
 import { VerifiedBadge } from "@/components/verified-badge"
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from "recharts"
 import { Card } from "@/components/ui/card"
@@ -782,7 +782,7 @@ export default function VolunteerProfile() {
                   <span className="text-xs text-muted-foreground uppercase tracking-wide">Following</span>
                 </button>
                 <div className="text-center border-l border-black/5 dark:border-white/10">
-                  <span className="block font-bold text-foreground text-lg">{profile?.total_hours || 0}</span>
+                  <span className="block font-bold text-foreground text-lg">{formatHoursTotal(profile?.total_hours)}</span>
                   <span className="text-xs text-muted-foreground uppercase tracking-wide">Hours</span>
                 </div>
               </div>
@@ -987,7 +987,7 @@ export default function VolunteerProfile() {
                                   <p className="text-xs text-muted-foreground">{item.organization_name}</p>
                                 </div>
                               </div>
-                              <span className={cn("px-2 py-1 border rounded text-xs font-medium whitespace-nowrap", item.hours_contributed > 0 ? "bg-green-50 dark:bg-green-500/15 text-green-700 dark:text-green-400 border-green-100 dark:border-green-500/20" : "bg-black/5 dark:bg-white/5 text-muted-foreground border-black/10 dark:border-white/10")}>{item.hours_contributed} hrs</span>
+                              <span className={cn("px-2 py-1 border rounded text-xs font-medium whitespace-nowrap", item.hours_contributed > 0 ? "bg-green-50 dark:bg-green-500/15 text-green-700 dark:text-green-400 border-green-100 dark:border-green-500/20" : "bg-black/5 dark:bg-white/5 text-muted-foreground border-black/10 dark:border-white/10")}>{formatHours(item.hours_contributed)}</span>
                             </div>
                             {item.endorsements?.comment && (
                               <div className="mt-3 bg-blue-50 dark:bg-blue-500/15 p-3 rounded-lg border border-blue-100 dark:border-blue-500/20">

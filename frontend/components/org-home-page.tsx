@@ -22,7 +22,7 @@ import {
   Loader2,
   BarChart3
 } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { cn, formatHoursTotal } from "@/lib/utils"
 import { api } from "@/lib/api"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
@@ -229,7 +229,7 @@ export function OrgHomePage() {
             <ScrollReveal delay={0}>
               <Card className="gap-0 px-3 md:px-6 py-3 md:py-4">
                 <p className="text-[18px] md:text-[28px] font-bold text-[#ff6b6b]">
-                  {stats.totalHours.toLocaleString()}
+                  {formatHoursTotal(stats.totalHours)}
                 </p>
                 <p className="text-[10px] md:text-[12px] text-muted-foreground dark:text-neutral-400">Total Hours</p>
               </Card>
