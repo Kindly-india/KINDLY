@@ -4,6 +4,7 @@ import { UpdateVolunteerProfileDto } from './dto/update-volunteer-profile.dto';
 import { OnboardingDto } from './dto/onboarding.dto';
 import { validateImageFile } from '../common/file-validation.util';
 import { removeFromStorage } from '../common/storage.util';
+import { eventHours } from '../common/hours.util';
 
 @Injectable()
 export class VolunteerService {
@@ -123,8 +124,14 @@ export class VolunteerService {
     });
 
     const totalAttended = completedRegs.length;
-    let totalHours = 0;
-    
+
+    // Authoritative total — the check-in trigger maintains volunteer_profiles.total_hours
+    // as Σ eventHours over credited registrations. Read it directly (single source of
+    // truth) rather than recomputing, so this profile always agrees with the landing
+    // page, suggested-people, and org numbers. (Cancelled events can't hold credited
+    // registrations, so the column already excludes them — see cancelEvent + check-in guard.)
+    const totalHours = Number(profile.total_hours) || 0;
+
     // Initialize Graph (Last 6 Months)
     const activityGraph = Array(6).fill(0).map((_, i) => {
        const d = new Date();
@@ -136,29 +143,21 @@ export class VolunteerService {
        };
     });
 
+    // Build the 6-month activity graph from per-event hours (single source: eventHours).
     completedRegs.forEach(r => {
-        const reg = r as any; 
+        const reg = r as any;
         if (!reg.events) return;
 
-        // 1. Determine Hours (Smart Calc)
-        let hrs = reg.hours_contributed || 0;
-        
-        // If DB hours are 0, use start/end time difference
-        if (!hrs && reg.events.start_time && reg.events.end_time) {
-            const [sh, sm] = reg.events.start_time.split(':').map(Number);
-            const [eh, em] = reg.events.end_time.split(':').map(Number);
-            hrs = Math.max(0, (eh * 60 + em) - (sh * 60 + sm)) / 60;
-        }
-        
-        totalHours += hrs;
+        const hrs = eventHours(reg.events.start_time, reg.events.end_time);
 
-        // 2. Add to Graph
         if (reg.events.event_date) {
             const d = new Date(reg.events.event_date);
             const entry = activityGraph.find(m => m.monthIdx === d.getMonth());
             if (entry) entry.hours += hrs;
         }
     });
+    // Kill floating-point noise from summing 2dp values.
+    activityGraph.forEach(m => { m.hours = Math.round(m.hours * 100) / 100; });
 
     // Impact Score: (Hours * 10) + (Events * 50)
     const impactScore = Math.round((totalHours * 10) + (totalAttended * 50));
@@ -183,7 +182,7 @@ export class VolunteerService {
       ...profile,
       followers_count: followersCount || 0,
       following_count: followingCount || 0,
-      total_hours: Math.round(totalHours * 10) / 10,
+      total_hours: totalHours,
       events_attended: totalAttended,
       reliability_score: reliabilityScore,
       impact_score: impactScore, 
@@ -296,13 +295,10 @@ export class VolunteerService {
       const event = reg.events;
       if (!event) return null;
       const endorsement = endorsements?.find(e => e.event_id === event.id);
-      
-      let hours = reg.hours_contributed || 0;
-      if (!hours && event.start_time && event.end_time) {
-          const start = new Date(`1970-01-01T${event.start_time}`);
-          const end = new Date(`1970-01-01T${event.end_time}`);
-          hours = Math.max(0, (end.getTime() - start.getTime()) / (1000 * 60 * 60));
-      }
+
+      // Per-event credited hours (single source: eventHours). Only credited
+      // statuses show hours; everything else shows 0.
+      const hours = eventHours(event.start_time, event.end_time);
 
       return {
         id: reg.id,
@@ -310,7 +306,7 @@ export class VolunteerService {
         event_date: event.event_date,
         organization_name: event.organization_profiles?.name,
         organization_logo: event.organization_profiles?.logo_url,
-        hours_contributed: ['checked_in', 'completed'].includes(reg.status) ? Math.round(hours*10)/10 : 0,
+        hours_contributed: ['checked_in', 'completed'].includes(reg.status) ? hours : 0,
         status: reg.status,
         endorsements: endorsement ? { skills: endorsement.skills, comment: endorsement.comment } : null
       };

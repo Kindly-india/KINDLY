@@ -17,7 +17,7 @@ import {
 } from "recharts"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
-import { formatLabel } from "@/lib/utils"
+import { formatLabel, eventHours, formatHoursTotal } from "@/lib/utils"
 import { Card } from "@/components/ui/card"
 import { ScrollReveal } from "@/components/ui/scroll-reveal"
 
@@ -89,12 +89,7 @@ useEffect(() => {
            const isVerified = status === 'completed' || status === 'checked_in';
            const isRegistered = status === 'registered';
 
-           let duration = ev.hours_contributed || 0;
-           if (!duration && ev.start_time && ev.end_time) {
-              const [sh, sm] = ev.start_time.split(':').map(Number);
-              const [eh, em] = ev.end_time.split(':').map(Number);
-              duration = Math.max(0, (eh * 60 + em) - (sh * 60 + sm)) / 60;
-           }
+           const duration = eventHours(ev.start_time, ev.end_time);
 
            if (isVerified) {
              verified += duration;
@@ -228,7 +223,7 @@ useEffect(() => {
              <div className="absolute w-32 h-32 rounded-full bg-emerald-500/10 blur-2xl -bottom-8 -left-8 pointer-events-none" />
              <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-semibold text-sm uppercase tracking-wide relative"><CheckCircle2 className="w-4 h-4" /> Verified Hours</div>
              <div className="relative">
-                <span className="text-5xl font-bold text-foreground">{stats.verifiedHours}</span>
+                <span className="text-5xl font-bold text-foreground">{formatHoursTotal(stats.verifiedHours)}</span>
                 <span className="text-sm text-muted-foreground ml-1">hrs contributed</span>
              </div>
           </Card>
@@ -237,7 +232,7 @@ useEffect(() => {
             <Card className="p-6 flex flex-col justify-between min-h-[140px]">
                <div className="flex items-center gap-2 text-orange-500 dark:text-orange-400 font-semibold text-sm uppercase tracking-wide"><Clock className="w-4 h-4" /> Committed</div>
                <div>
-                  <span className="text-3xl md:text-4xl font-bold text-foreground">{stats.pendingHours}</span>
+                  <span className="text-3xl md:text-4xl font-bold text-foreground">{formatHoursTotal(stats.pendingHours)}</span>
                   <span className="text-sm text-muted-foreground ml-1 block md:inline">hrs pending</span>
                </div>
             </Card>

@@ -10,6 +10,7 @@ import { renderCertificateHTML } from '../event/templates/certificate.template';
 import { v4 as uuidv4 } from 'uuid';
 import chromium from '@sparticuz/chromium';
 import puppeteer, { Browser } from 'puppeteer-core';
+import { eventHours } from '../common/hours.util';
 
 function formatEventDate(dateStr: string): string {
   const months = [
@@ -18,13 +19,6 @@ function formatEventDate(dateStr: string): string {
   ];
   const [year, month, day] = dateStr.split('-').map(Number);
   return `${day} ${months[month - 1]} ${year}`;
-}
-
-function calcHours(startTime: string, endTime: string): number {
-  const [sh, sm] = startTime.split(':').map(Number);
-  const [eh, em] = endTime.split(':').map(Number);
-  const diff = (eh * 60 + em) - (sh * 60 + sm);
-  return Math.max(0, Math.round((diff / 60) * 10) / 10);
 }
 
 @Injectable()
@@ -160,7 +154,7 @@ export class CertificateService {
     if (eventError || !event) throw new NotFoundException('Event not found');
 
     const org = (event as any).organization_profiles;
-    const hours = calcHours(event.start_time, event.end_time);
+    const hours = eventHours(event.start_time, event.end_time);
     const formattedEventDate = formatEventDate(event.event_date);
     const formattedIssuedDate = formatEventDate(
       new Date().toISOString().split('T')[0],

@@ -4,6 +4,7 @@ import { EmailService } from '../email/email.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { validateImageFile } from '../common/file-validation.util';
 import { removeFromStorage } from '../common/storage.util';
+import { eventHours } from '../common/hours.util';
 
 const GEOLOCK_RADIUS_METERS = 200;
 
@@ -385,13 +386,8 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
           (r) => r.status === 'checked_in' || r.status === 'completed',
         ).length;
 
-        let totalHours = 0;
-        if (ev.start_time && ev.end_time) {
-          const [sh, sm] = (ev.start_time as string).split(':').map(Number);
-          const [eh, em] = (ev.end_time as string).split(':').map(Number);
-          const hrs = Math.max(0, (eh * 60 + em - sh * 60 - sm) / 60);
-          totalHours = Math.round(hrs * attendeeCount * 10) / 10;
-        }
+        // Event man-hours = per-person duration × attendees (single source: eventHours)
+        const totalHours = Math.round(eventHours(ev.start_time, ev.end_time) * attendeeCount * 100) / 100;
 
         return {
           id: ev.id,
@@ -1504,9 +1500,8 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
 
     if (!regs?.length) return;
 
-    const start = new Date(`${event.event_date}T${event.start_time}`);
-    const end = new Date(`${event.event_date}T${event.end_time}`);
-    const hours = Math.max(1, Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60)));
+    // Per-volunteer credited hours for this event (single source: eventHours)
+    const hours = eventHours(event.start_time, event.end_time);
 
     await Promise.all(
       regs.map(async (reg: any) => {

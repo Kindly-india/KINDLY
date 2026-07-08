@@ -17,7 +17,7 @@ import {
 import { api } from "@/lib/api"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
-import { downloadFromUrl, cn } from "@/lib/utils"
+import { downloadFromUrl, cn, eventHours, formatHoursTotal } from "@/lib/utils"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ScrollReveal } from "@/components/ui/scroll-reveal"
@@ -41,21 +41,6 @@ export function EventHistoryPage() {
   const [certMap, setCertMap] = useState<Record<string, string>>({})
   const [downloadingCertId, setDownloadingCertId] = useState<string | null>(null)
   const [cancellingId, setCancellingId] = useState<string | null>(null)
-
-  // --- Helper to Calculate Exact Hours ---
-  const calculateExactHours = (start: string, end: string) => {
-    if (!start || !end) return "0";
-    const [startH, startM] = start.split(':').map(Number);
-    const [endH, endM] = end.split(':').map(Number);
-
-    const startTotalMins = (startH * 60) + startM;
-    const endTotalMins = (endH * 60) + endM;
-
-    const diffMins = Math.max(0, endTotalMins - startTotalMins);
-    const hours = diffMins / 60;
-
-    return parseFloat(hours.toFixed(1));
-  }
 
   // --- Fetch Data Logic ---
   useEffect(() => {
@@ -103,7 +88,7 @@ export function EventHistoryPage() {
           // True when the event itself was cancelled by the org (not by the volunteer)
           cancelledByHost: ev.status === 'cancelled',
           org: ev.organization_profiles?.name || "Organizer",
-          hours: calculateExactHours(ev.start_time, ev.end_time),
+          hours: eventHours(ev.start_time, ev.end_time),
           certId: map[ev.id] || null,
           event_date: ev.event_date,
           start_time: ev.start_time,
@@ -244,7 +229,7 @@ export function EventHistoryPage() {
           </Card>
           <Card className="p-3 md:p-4 items-center text-center gap-1">
             <Clock className="w-4 h-4 md:w-5 md:h-5 text-[#ff6b6b] mb-0.5" />
-            <p className="text-lg md:text-2xl font-bold text-foreground leading-none">{totalHours}</p>
+            <p className="text-lg md:text-2xl font-bold text-foreground leading-none">{formatHoursTotal(totalHours)}</p>
             <p className="text-[10px] md:text-[12px] text-muted-foreground">Hours</p>
           </Card>
           <Card className="p-3 md:p-4 items-center text-center gap-1">

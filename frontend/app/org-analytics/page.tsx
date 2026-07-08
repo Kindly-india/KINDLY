@@ -15,7 +15,7 @@ import {
    AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
    PieChart, Pie, Cell
 } from "recharts"
-import { cn } from "@/lib/utils"
+import { cn, eventHours, formatHoursTotal } from "@/lib/utils"
 import { ScrollReveal } from "@/components/ui/scroll-reveal"
 
 const COLORS = ['#10b981', '#ef4444', '#f59e0b', '#3b82f6'];
@@ -62,13 +62,8 @@ function computeAnalytics(allData: any[]) {
    });
 
    allData.forEach((ev: any) => {
-      // A. Calculate Duration
-      let duration = 0;
-      if (ev.start_time && ev.end_time) {
-         const [sh, sm] = ev.start_time.split(':').map(Number);
-         const [eh, em] = ev.end_time.split(':').map(Number);
-         duration = Math.max(0, (eh * 60 + em) - (sh * 60 + sm)) / 60;
-      }
+      // A. Calculate Duration (single source: eventHours — overnight-aware, 2dp)
+      const duration = eventHours(ev.start_time, ev.end_time);
 
       // B. Growth Chart Helper
       const evDate = new Date(ev.event_date);
@@ -360,7 +355,7 @@ export default function OrgAnalyticsPage() {
                         {data.totalHours > 0 && <span className="flex items-center text-[10px] md:text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/15 px-1.5 md:px-2 py-0.5 rounded-full"><ArrowUpRight className="w-2.5 h-2.5 md:w-3 md:h-3 mr-0.5 md:mr-1" />Live</span>}
                      </div>
                      <div>
-                        <p className="text-2xl md:text-3xl font-bold text-[#ff6b6b]">{data.totalHours.toLocaleString()}</p>
+                        <p className="text-2xl md:text-3xl font-bold text-[#ff6b6b]">{formatHoursTotal(data.totalHours)}</p>
                         <p className="text-[11px] md:text-sm text-muted-foreground mt-0.5 md:mt-1 leading-tight">Total Impact Hours</p>
                      </div>
                   </div>
@@ -498,7 +493,7 @@ export default function OrgAnalyticsPage() {
                                  </div>
                                  <div className="flex items-center gap-2 pl-2">
                                     <span className="px-2 py-1 bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 rounded-md text-[10px] md:text-xs font-bold border border-amber-100 dark:border-amber-500/20 flex items-center gap-1 shrink-0">
-                                       <Award className="w-3 h-3 hidden sm:block" /> {Math.round(vol.hours)} hrs
+                                       <Award className="w-3 h-3 hidden sm:block" /> {formatHoursTotal(vol.hours)} hrs
                                     </span>
                                  </div>
                               </div>

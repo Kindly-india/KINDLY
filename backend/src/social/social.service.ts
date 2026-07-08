@@ -504,27 +504,17 @@ export class SocialService {
     const top10 = candidates.slice(0, 10);
     if (!top10.length) return { suggestions: [] };
 
-    // 6. Batch-compute total_hours for the 10 candidates (no N+1)
+    // 6. Batch-read the authoritative total_hours column for the 10 candidates
+    // (single source of truth — maintained by the check-in trigger; no N+1, no recompute).
     const profileIds = top10.map((p: any) => p.id);
-    const { data: allRegs } = await client
-      .from('event_registrations')
-      .select(`
-        volunteer_id,
-        events ( start_time, end_time, status )
-      `)
-      .in('volunteer_id', profileIds)
-      .in('status', ['checked_in', 'completed']);
+    const { data: hoursRows } = await client
+      .from('volunteer_profiles')
+      .select('id, total_hours')
+      .in('id', profileIds);
 
     const hoursMap: Record<string, number> = {};
-    for (const reg of (allRegs ?? []) as any[]) {
-      if (reg.events?.status === 'cancelled') continue;
-      let hrs = 0;
-      if (reg.events?.start_time && reg.events?.end_time) {
-        const [sh, sm] = reg.events.start_time.split(':').map(Number);
-        const [eh, em] = reg.events.end_time.split(':').map(Number);
-        hrs = Math.max(0, (eh * 60 + em) - (sh * 60 + sm)) / 60;
-      }
-      hoursMap[reg.volunteer_id] = (hoursMap[reg.volunteer_id] ?? 0) + hrs;
+    for (const row of (hoursRows ?? []) as any[]) {
+      hoursMap[row.id] = Number(row.total_hours) || 0;
     }
 
     return {
@@ -534,7 +524,7 @@ export class SocialService {
         avatar_url: p.avatar_url ?? null,
         city: p.city ?? null,
         is_verified: p.is_verified ?? false,
-        total_hours: Math.round((hoursMap[p.id] ?? 0) * 10) / 10,
+        total_hours: hoursMap[p.id] ?? 0,
       })),
     };
   }

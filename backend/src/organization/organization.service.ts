@@ -6,6 +6,7 @@ import { UpdateOrganizationProfileDto } from './dto/update-organization-profile.
 import { AddReviewDto } from './dto/add-review.dto';
 import { validateImageFile } from '../common/file-validation.util';
 import { removeFromStorage, storagePathFromStored } from '../common/storage.util';
+import { eventHours } from '../common/hours.util';
 
 export interface OrgProfilePublic {
   id: string;
@@ -245,14 +246,13 @@ export class OrganizationService {
     const eventsHosted = completedEvents?.length ?? 0;
     const volunteersEngaged = new Set((attendedRegs || []).map((r: any) => r.volunteer_id)).size;
 
+    // Org man-hours = Σ over completed events of (per-person duration × attendees).
+    // Single source: eventHours (overnight-aware, 2dp).
     let totalHours = 0;
     for (const ev of completedEvents || []) {
       const attendees = (attendedRegs || []).filter((r: any) => r.event_id === ev.id).length;
-      if (attendees > 0 && ev.start_time && ev.end_time) {
-        const [sh, sm] = (ev.start_time as string).split(':').map(Number);
-        const [eh, em] = (ev.end_time as string).split(':').map(Number);
-        const hours = Math.max(0, (eh * 60 + em - sh * 60 - sm) / 60);
-        totalHours += hours * attendees;
+      if (attendees > 0) {
+        totalHours += eventHours(ev.start_time, ev.end_time) * attendees;
       }
     }
 
@@ -262,7 +262,7 @@ export class OrganizationService {
         is_owner: isOwner,
         is_followed_by_current_user: isFollowedByCurrentUser,
         followers_count: followersCount ?? 0,
-        total_hours_generated: Math.round(totalHours * 10) / 10,
+        total_hours_generated: Math.round(totalHours * 100) / 100,
         volunteers_engaged: volunteersEngaged,
         events_hosted: eventsHosted,
       },
