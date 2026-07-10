@@ -113,8 +113,8 @@ export interface UpdateVolunteerProfileDto {
   twitter?: string;
   website?: string;
   skills?: string[];
-  interests?: string[];
-  availability_status?: string;
+  interest_tags?: string[];
+  preferred_availability?: string;
   avatar_url?: string;
   cover_url?: string;
   is_private?: boolean;

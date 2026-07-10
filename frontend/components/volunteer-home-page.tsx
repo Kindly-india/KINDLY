@@ -387,7 +387,7 @@ export function VolunteerHomePage() {
                   className="shrink-0 w-64 md:w-auto snap-start group bg-white/70 dark:bg-neutral-900/40 backdrop-blur-md rounded-xl md:rounded-2xl overflow-hidden border border-neutral-200/60 dark:border-white/5 shadow-xl shadow-neutral-200/30 dark:shadow-2xl dark:shadow-black/50 hover:shadow-lg hover:scale-[1.015] hover:-translate-y-0.5 transition-all duration-300 ease-out flex flex-col self-stretch"
                 >
                   {/* Swapped aspect-4/3 to bulletproof 16:9 aspect ratio container */}
-                  <div className="relative aspect-video aspect-[16/9] w-full overflow-hidden bg-muted shrink-0">
+                  <div className="relative aspect-[16/9] w-full overflow-hidden bg-muted shrink-0">
                     {event.cover_image_url ? (
                       <img
                         src={event.cover_image_url}

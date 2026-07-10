@@ -47,7 +47,6 @@ export class AuthService {
         user_id: authData.user.id,
         full_name: dto.fullName,
         city: dto.city,
-        interests: dto.interests,
         total_hours: 0,
       })
       .select()

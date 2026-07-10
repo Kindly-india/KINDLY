@@ -135,7 +135,7 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
     // 2. Verify Event Ownership
     const { data: event, error: eventError } = await supabase
       .from('events')
-      .select('organization_id')
+      .select('organization_id, cover_image_url, gallery_images')
       .eq('id', eventId)
       .single();
 
@@ -209,6 +209,20 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
 
     if (updateError) throw updateError;
 
+    // Clean up storage now that the row-level change is committed: an old
+    // cover that got replaced, and any gallery images dropped from the array.
+    if (dto.coverImageUrl && event.cover_image_url && event.cover_image_url !== dto.coverImageUrl) {
+      await removeFromStorage(supabase, 'event-images', [event.cover_image_url]);
+    }
+    if (updateData.gallery_images) {
+      const oldGallery: string[] = event.gallery_images ?? [];
+      const newGallery: string[] = updateData.gallery_images;
+      const removedImages = oldGallery.filter((url) => !newGallery.includes(url));
+      if (removedImages.length > 0) {
+        await removeFromStorage(supabase, 'event-images', removedImages);
+      }
+    }
+
     return {
       message: 'Event updated successfully',
       event: updatedEvent,
@@ -228,7 +242,7 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
 
     const { data: event } = await supabase
       .from('events')
-      .select('organization_id')
+      .select('organization_id, gallery_images')
       .eq('id', eventId)
       .maybeSingle();
 
@@ -243,6 +257,13 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
       .single();
 
     if (error) throw error;
+
+    // Clean up any images dropped from the array (best-effort, mirrors updateEvent).
+    const oldGallery: string[] = event.gallery_images ?? [];
+    const removedImages = oldGallery.filter((url) => !galleryImages.includes(url));
+    if (removedImages.length > 0) {
+      await removeFromStorage(supabase, 'event-images', removedImages);
+    }
 
     return { gallery_images: updated.gallery_images };
   }
@@ -578,8 +599,7 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
           user_id,
           full_name,
           phone,
-          city,
-          interests
+          city
         )
       `)
       .eq('event_id', eventId)

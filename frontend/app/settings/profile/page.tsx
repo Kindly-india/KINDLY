@@ -9,6 +9,14 @@ import {
   Users2, Trophy, Trash2, Link as LinkIcon, Upload, Image as ImageIcon, Lock
 } from "lucide-react"
 import { api } from "@/lib/api"
+import { INTEREST_TAG_OPTIONS } from "@/lib/interest-tags"
+
+const AVAILABILITY_OPTIONS = [
+  { value: "weekends", label: "Weekends" },
+  { value: "weekdays", label: "Weekdays" },
+  { value: "remote", label: "Remote" },
+  { value: "flexible", label: "Flexible" },
+]
 
 export default function EditProfile() {
   const router = useRouter()
@@ -17,10 +25,9 @@ export default function EditProfile() {
   const [userType, setUserType] = useState<'volunteer' | 'organization' | null>(null)
 
   const [formData, setFormData] = useState<any>({})
-  
+
   // Volunteer State
   const [newSkill, setNewSkill] = useState("")
-  const [newInterest, setNewInterest] = useState("")
 
   // ✅ TEAM MEMBER STATE
   const [teamName, setTeamName] = useState("")
@@ -68,8 +75,8 @@ export default function EditProfile() {
             instagram: p.instagram || '',
             website: p.website || '',
             skills: p.skills || [],
-            interests: p.interests || [],
-            availability_status: p.availability_status || '',
+            interest_tags: p.interest_tags || [],
+            preferred_availability: p.preferred_availability || '',
             avatar_url: p.avatar_url || '',
             cover_url: p.cover_url || '',
             is_private: p.is_private ?? false,
@@ -138,14 +145,14 @@ export default function EditProfile() {
     finally { setUploadingAvatar(false); setUploadingCover(false) }
   }
 
-  const handleAddItem = (field: 'skills' | 'interests', value: string, setValue: (s: string) => void) => {
+  const handleAddItem = (field: 'skills' | 'interest_tags', value: string, setValue: (s: string) => void) => {
     if (value.trim() && !formData[field]?.includes(value.trim())) {
       setFormData((prev: any) => ({ ...prev, [field]: [...(prev[field] || []), value.trim()] }))
       setValue("")
     }
   }
-  
-  const handleRemoveItem = (field: 'skills' | 'interests', itemToRemove: string) => {
+
+  const handleRemoveItem = (field: 'skills' | 'interest_tags', itemToRemove: string) => {
     setFormData((prev: any) => ({ ...prev, [field]: prev[field]?.filter((item: string) => item !== itemToRemove) || [] }))
   }
 
@@ -300,6 +307,24 @@ export default function EditProfile() {
 
                    <div className="pt-4 border-t border-border">
                     <TagInput label="Skills" items={formData.skills} newItem={newSkill} setNewItem={setNewSkill} onAdd={(e: any) => { e?.preventDefault(); handleAddItem('skills', newSkill, setNewSkill)}} onRemove={(item: string) => handleRemoveItem('skills', item)} />
+                   </div>
+
+                   <div className="pt-4 border-t border-border">
+                    <InterestTagPicker
+                      selected={formData.interest_tags || []}
+                      onAdd={(tag: string) => setFormData((prev: any) => prev.interest_tags?.includes(tag) ? prev : ({ ...prev, interest_tags: [...(prev.interest_tags || []), tag] }))}
+                      onRemove={(tag: string) => handleRemoveItem('interest_tags', tag)}
+                    />
+                   </div>
+
+                   <div className="pt-4 border-t border-border">
+                    <SelectField
+                      label="Availability"
+                      icon={<CalendarDays className="w-4 h-4" />}
+                      value={formData.preferred_availability}
+                      onChange={(v: string) => setFormData({ ...formData, preferred_availability: v })}
+                      options={AVAILABILITY_OPTIONS}
+                    />
                    </div>
 
                    <div className="pt-4 border-t border-border">
@@ -482,6 +507,90 @@ function TextAreaField({ label, value, onChange, placeholder }: any) {
         <FileText className="w-3 h-3" /> {label}
       </label>
       <textarea rows={4} value={value || ''} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="w-full px-4 py-3 bg-muted border border-border rounded-xl text-sm focus:bg-card focus:ring-2 focus:ring-black/5 transition-all outline-none resize-none placeholder:text-muted-foreground" />
+    </div>
+  )
+}
+
+function SelectField({ label, value, onChange, icon, options }: any) {
+  return (
+    <div>
+      <label className="flex items-center gap-1.5 text-xs font-semibold text-foreground uppercase tracking-wider mb-2">
+        {icon} {label}
+      </label>
+      <select value={value || ''} onChange={(e) => onChange(e.target.value)} className="w-full px-4 py-3 bg-muted border border-border rounded-xl text-sm focus:bg-card focus:ring-2 focus:ring-black/5 transition-all outline-none">
+        <option value="">Select...</option>
+        {options.map((opt: { value: string; label: string }) => (
+          <option key={opt.value} value={opt.value}>{opt.label}</option>
+        ))}
+      </select>
+    </div>
+  )
+}
+
+// LinkedIn-style typeahead: search the fixed interest vocabulary and click a
+// suggestion to add it, instead of a free-text box — interest_tags backs real
+// feed-personalization matching, so it can't hold arbitrary user-typed text.
+function InterestTagPicker({ selected, onAdd, onRemove }: { selected: string[]; onAdd: (tag: string) => void; onRemove: (tag: string) => void }) {
+  const [query, setQuery] = useState("")
+  const [open, setOpen] = useState(false)
+  const atMinimum = selected.length <= 3
+
+  const availableOptions = INTEREST_TAG_OPTIONS.filter((opt) => !selected.includes(opt.tag))
+  const suggestions = open
+    ? (query.trim()
+        ? availableOptions.filter((opt) => opt.label.toLowerCase().includes(query.trim().toLowerCase()))
+        : availableOptions
+      ).slice(0, 8)
+    : []
+
+  return (
+    <div>
+      <label className="block text-xs font-semibold text-foreground uppercase tracking-wider mb-2">Interests</label>
+      <div className="relative">
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onFocus={() => setOpen(true)}
+          onBlur={() => setTimeout(() => setOpen(false), 150)}
+          placeholder="Search interests to add..."
+          className="w-full px-4 py-2.5 bg-muted border border-border rounded-xl text-sm outline-none focus:bg-card focus:ring-2 focus:ring-black/5"
+        />
+        {open && suggestions.length > 0 && (
+          <div className="absolute z-10 mt-1 w-full max-h-60 overflow-y-auto bg-card border border-border rounded-xl shadow-lg">
+            {suggestions.map((opt) => (
+              <button
+                key={opt.tag}
+                type="button"
+                onMouseDown={(e) => { e.preventDefault(); onAdd(opt.tag); setQuery("") }}
+                className="w-full text-left px-4 py-2.5 text-sm hover:bg-muted transition-colors"
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+      <p className="text-xs text-muted-foreground mt-2">{selected.length} selected (minimum 3)</p>
+      <div className="flex flex-wrap gap-2 mt-3">
+        {selected.map((tag) => {
+          const match = INTEREST_TAG_OPTIONS.find((opt) => opt.tag === tag)
+          return (
+            <span key={tag} className="inline-flex items-center gap-1 px-3 py-1 bg-card text-foreground rounded-full text-xs font-medium border border-border shadow-sm">
+              {match?.label || tag}
+              <button
+                type="button"
+                onClick={() => !atMinimum && onRemove(tag)}
+                disabled={atMinimum}
+                title={atMinimum ? "At least 3 interests required" : undefined}
+                className={`p-0.5 rounded-full transition-colors ${atMinimum ? "opacity-30 cursor-not-allowed" : "hover:bg-muted"}`}
+              >
+                <X className="w-3 h-3 text-muted-foreground hover:text-red-500 transition-colors" />
+              </button>
+            </span>
+          )
+        })}
+      </div>
     </div>
   )
 }

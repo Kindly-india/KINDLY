@@ -35,7 +35,6 @@ interface Volunteer {
   full_name: string
   phone: string
   city: string
-  interests: string[]
 }
 
 interface Registration {

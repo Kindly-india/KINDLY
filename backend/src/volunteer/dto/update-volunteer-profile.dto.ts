@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsArray, IsUrl, IsIn, IsBoolean, IsEmail, MaxLength, ArrayMaxSize } from 'class-validator';
+import { IsOptional, IsString, IsArray, IsUrl, IsIn, IsBoolean, IsEmail, MaxLength, ArrayMaxSize, ArrayMinSize } from 'class-validator';
 
 export class UpdateVolunteerProfileDto {
   @IsOptional()
@@ -56,14 +56,14 @@ export class UpdateVolunteerProfileDto {
 
   @IsOptional()
   @IsArray()
-  @ArrayMaxSize(20)
+  @ArrayMinSize(3)
+  @ArrayMaxSize(25)
   @IsString({ each: true })
-  @MaxLength(50, { each: true })
-  interests?: string[];
+  interest_tags?: string[];
 
   @IsOptional()
   @IsIn(['weekends', 'weekdays', 'remote', 'flexible'])
-  availability_status?: string;
+  preferred_availability?: string;
 
   // System-generated URLs from Supabase storage — require full URL
   @IsOptional()
