@@ -994,12 +994,9 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
       .eq('event_id', eventId)
       .eq('status', 'registered');
 
-    // Generates the org's bill for this event, if it had any paid
-    // registrations (no-op for free events). Must run after the status-flip
-    // updates above — see finalize_event_billing's doc comment in
-    // backend/migrations/paid_events_functions.sql. The pg_cron auto-complete
-    // path (backend/migrations/auto_complete_events_cron.sql) does the same.
-    await supabase.rpc('finalize_event_billing', { p_event_id: eventId });
+    // The org's bill for this event (if any) is computed live by
+    // PaymentsService when viewed, not generated here — see FINANCE.md's
+    // Architecture section.
 
     // Fire-and-forget — email every checked-in volunteer that their hours are verified
     this.sendImpactEmails(supabase, eventId, event).catch(() => {});
@@ -1180,8 +1177,8 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
     // Razorpay BEFORE deleting the row. If the refund call itself fails, do
     // NOT delete the registration — the volunteer's money hasn't moved, so
     // deleting now would silently lose it. No org clawback is needed either
-    // way: the org isn't paid until event completion (finalize_event_billing
-    // only counts registrations that still exist at that point).
+    // way: the org isn't paid until event completion, and the bill
+    // computation only counts registrations that still exist at that point.
     if (reg.payment_id) {
       const { data: eventForDeadline } = await supabase
         .from('events')

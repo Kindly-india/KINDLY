@@ -61,9 +61,9 @@ export class PaymentsController {
     return this.paymentsService.getAdminDashboard();
   }
 
-  @Patch('payments/admin/bills/:billId/mark-paid')
+  @Patch('payments/admin/events/:id/bill/mark-paid')
   @UseGuards(AdminGuard)
-  async markBillPaid(@Param('billId') billId: string, @Body(ValidationPipe) dto: MarkBillPaidDto) {
-    return this.paymentsService.markBillPaid(billId, dto.paidReference);
+  async markEventBillPaid(@Param('id') eventId: string, @Body(ValidationPipe) dto: MarkBillPaidDto) {
+    return this.paymentsService.markEventBillPaid(eventId, dto.paidReference);
   }
 }

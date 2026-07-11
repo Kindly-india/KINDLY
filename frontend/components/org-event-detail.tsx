@@ -52,7 +52,7 @@ export function OrgEventDetail() {
 
   const [event, setEvent] = useState<any>(null)
   const [registrations, setRegistrations] = useState<Registration[]>([])
-  const [bill, setBill] = useState<{ org_amount_paise: number; status: string; eligible_registration_count: number } | null>(null)
+  const [bill, setBill] = useState<{ orgAmountPaise: number; status: string; eligibleRegistrationCount: number } | null>(null)
 
   // State for Broadcasts
   const [broadcasts, setBroadcasts] = useState<any[]>([])
@@ -90,8 +90,8 @@ export function OrgEventDetail() {
         setRegistrations(registrationsResponse.registrations || [])
         setBroadcasts(broadcastsResponse.broadcasts || [])
 
-        // Paid event: fetch the bill (null until the event completes and
-        // finalize_event_billing runs — see FINANCE.md, payouts are manual).
+        // Paid event: fetch the bill (null until the event completes —
+        // computed live by the backend, see FINANCE.md, payouts are manual).
         if (eventResponse.event?.ticket_price) {
           api.getEventBill(eventId).then((res) => setBill(res.bill)).catch(() => {})
         }
@@ -398,8 +398,8 @@ export function OrgEventDetail() {
                 <p className="text-xs text-muted-foreground">Ticket price: ₹{(event.ticket_price / 100).toLocaleString('en-IN')}</p>
                 {bill ? (
                   <p className="text-sm font-bold text-foreground mt-0.5">
-                    Your payout: ₹{(bill.org_amount_paise / 100).toLocaleString('en-IN')}
-                    <span className="font-normal text-muted-foreground"> ({bill.eligible_registration_count} paid registrations)</span>
+                    Your payout: ₹{(bill.orgAmountPaise / 100).toLocaleString('en-IN')}
+                    <span className="font-normal text-muted-foreground"> ({bill.eligibleRegistrationCount} paid registrations)</span>
                   </p>
                 ) : (
                   <p className="text-sm text-muted-foreground mt-0.5">Payout is calculated once the event is marked complete</p>

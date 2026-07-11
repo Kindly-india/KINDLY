@@ -149,16 +149,13 @@ export interface UpdateOrganizationProfileDto {
 }
 
 export interface EventBill {
-  id: string;
-  event_id: string;
-  organization_id: string;
-  gross_amount_paise: number;
-  org_amount_paise: number;
-  platform_fee_paise: number;
-  eligible_registration_count: number;
+  grossAmountPaise: number;
+  orgAmountPaise: number;
+  platformFeePaise: number;
+  eligibleRegistrationCount: number;
   status: 'pending' | 'paid';
-  paid_at: string | null;
-  paid_reference: string | null;
+  paidAt: string | null;
+  paidReference: string | null;
 }
 
 export interface AdminPaymentsDashboardEvent {
@@ -598,11 +595,11 @@ export const api = {
     return response.json();
   },
 
-  markBillPaid: async (billId: string, paidReference?: string) => {
+  markBillPaid: async (eventId: string, paidReference?: string) => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error('Not authenticated');
 
-    const response = await fetch(`${API_URL}/payments/admin/bills/${billId}/mark-paid`, {
+    const response = await fetch(`${API_URL}/payments/admin/events/${eventId}/bill/mark-paid`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',

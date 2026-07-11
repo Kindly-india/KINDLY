@@ -371,13 +371,58 @@ export class PaymentsService {
   }
 
   // ─── Bill / dashboard ────────────────────────────────────────────────────
+  //
+  // No stored-at-completion billing function: the bill is computed live from
+  // event_payments every time it's viewed, and a row is only written to
+  // event_bills at the moment admin marks it paid (freezing the amount then,
+  // not at event-completion). This picks up any late-arriving payment
+  // confirmation right up until the bill is actually paid, and avoids needing
+  // a Postgres function shared between the pg_cron completion path and
+  // completeEvent() — see FINANCE.md's Architecture section.
+
+  private buildStoredBillView(row: any) {
+    return {
+      grossAmountPaise: row.gross_amount_paise,
+      orgAmountPaise: row.org_amount_paise,
+      platformFeePaise: row.platform_fee_paise,
+      eligibleRegistrationCount: row.eligible_registration_count,
+      status: 'paid' as const,
+      paidAt: row.paid_at,
+      paidReference: row.paid_reference,
+    };
+  }
+
+  private buildLiveBillView(paidAmountsPaise: number[]) {
+    if (paidAmountsPaise.length === 0) return null;
+    const grossAmountPaise = paidAmountsPaise.reduce((sum, a) => sum + a, 0);
+    const orgAmountPaise = Math.floor(grossAmountPaise * 0.93);
+    return {
+      grossAmountPaise,
+      orgAmountPaise,
+      platformFeePaise: grossAmountPaise - orgAmountPaise,
+      eligibleRegistrationCount: paidAmountsPaise.length,
+      status: 'pending' as const,
+      paidAt: null,
+      paidReference: null,
+    };
+  }
+
+  private async getPaidAmounts(eventId: string): Promise<number[]> {
+    const supabase = this.supabaseService.getClient();
+    const { data } = await supabase
+      .from('event_payments')
+      .select('amount_paise')
+      .eq('event_id', eventId)
+      .eq('status', 'paid');
+    return (data ?? []).map((p: any) => p.amount_paise);
+  }
 
   async getBill(userId: string, eventId: string) {
     const supabase = this.supabaseService.getClient();
 
     const { data: event } = await supabase
       .from('events')
-      .select('organization_id')
+      .select('organization_id, status')
       .eq('id', eventId)
       .maybeSingle();
 
@@ -393,13 +438,16 @@ export class PaymentsService {
 
     if (!isOwner && !isAdmin) throw new ForbiddenException('Not authorized to view this bill');
 
-    const { data: bill } = await supabase
+    const { data: storedBill } = await supabase
       .from('event_bills')
       .select('*')
       .eq('event_id', eventId)
       .maybeSingle();
 
-    return { bill: bill ?? null };
+    if (storedBill) return { bill: this.buildStoredBillView(storedBill) };
+    if (event.status !== 'completed') return { bill: null };
+
+    return { bill: this.buildLiveBillView(await this.getPaidAmounts(eventId)) };
   }
 
   async getAdminDashboard() {
@@ -424,7 +472,13 @@ export class PaymentsService {
     const dashboard = events.map((event: any) => {
       const eventPayments = (payments ?? []).filter((p: any) => p.event_id === event.id);
       const paidPayments = eventPayments.filter((p: any) => p.status === 'paid');
-      const bill = (bills ?? []).find((b: any) => b.event_id === event.id) ?? null;
+      const storedBill = (bills ?? []).find((b: any) => b.event_id === event.id) ?? null;
+
+      const bill = storedBill
+        ? this.buildStoredBillView(storedBill)
+        : event.status === 'completed'
+          ? this.buildLiveBillView(paidPayments.map((p: any) => p.amount_paise))
+          : null;
 
       return {
         eventId: event.id,
@@ -444,23 +498,60 @@ export class PaymentsService {
     return { events: dashboard };
   }
 
-  async markBillPaid(billId: string, paidReference?: string) {
+  async markEventBillPaid(eventId: string, paidReference?: string) {
     const supabase = this.supabaseService.getClient();
+
+    const { data: event } = await supabase
+      .from('events')
+      .select('organization_id, status')
+      .eq('id', eventId)
+      .maybeSingle();
+
+    if (!event) throw new NotFoundException('Event not found');
+    if (event.status !== 'completed') {
+      throw new BadRequestException('Event has not completed yet');
+    }
+
+    const { data: existing } = await supabase
+      .from('event_bills')
+      .select('id')
+      .eq('event_id', eventId)
+      .maybeSingle();
+
+    if (existing) {
+      throw new BadRequestException('This bill has already been marked paid');
+    }
+
+    const amounts = await this.getPaidAmounts(eventId);
+    const live = this.buildLiveBillView(amounts);
+    if (!live) {
+      throw new BadRequestException('No paid registrations to bill for this event');
+    }
 
     const { data: bill, error } = await supabase
       .from('event_bills')
-      .update({
+      .insert({
+        event_id: eventId,
+        organization_id: event.organization_id,
+        gross_amount_paise: live.grossAmountPaise,
+        org_amount_paise: live.orgAmountPaise,
+        platform_fee_paise: live.platformFeePaise,
+        eligible_registration_count: live.eligibleRegistrationCount,
         status: 'paid',
         paid_at: new Date().toISOString(),
         paid_reference: paidReference ?? null,
-        updated_at: new Date().toISOString(),
       })
-      .eq('id', billId)
       .select()
       .single();
 
-    if (error || !bill) throw new NotFoundException('Bill not found');
+    if (error) {
+      // Unique-violation race: two concurrent mark-paid calls for the same event.
+      if ((error as any).code === '23505') {
+        throw new BadRequestException('This bill has already been marked paid');
+      }
+      throw error;
+    }
 
-    return { message: 'Bill marked as paid', bill };
+    return { message: 'Bill marked as paid', bill: this.buildStoredBillView(bill) };
   }
 }

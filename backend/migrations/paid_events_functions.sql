@@ -80,71 +80,10 @@ begin
 end;
 $$;
 
--- Computes and stores the bill owed to an event's organization: 93% of the
--- gross amount collected from still-existing, paid registrations.
---
--- This naturally includes no-shows -- by the time this runs (after the
--- registered->missed / checked_in->completed status flip), every remaining
--- registration is either 'completed' or 'missed', both billable -- and
--- naturally excludes cancelled/refunded registrations, since cancelling a
--- registration hard-deletes its event_registrations row.
---
--- Idempotent: no-ops if a bill already exists for this event (never
--- overwrites a bill an admin may have already marked paid), and returns null
--- (no bill created) if there are zero paid registrations -- which is always
--- true for free events, so this is safe to call unconditionally on every
--- completed event, not just paid ones.
---
--- Call this AFTER the status-flip updates, from BOTH completion paths:
--- auto_complete_events() (below) and NestJS's completeEvent().
-create or replace function public.finalize_event_billing(p_event_id uuid)
-returns public.event_bills
-language plpgsql
-security definer
-set search_path = public, pg_temp
-as $$
-declare
-  v_organization_id uuid;
-  v_gross integer;
-  v_org_amount integer;
-  v_count integer;
-  v_bill public.event_bills;
-begin
-  select * into v_bill from public.event_bills where event_id = p_event_id;
-  if found then
-    return v_bill;
-  end if;
-
-  select organization_id into v_organization_id
-    from public.events where id = p_event_id;
-
-  if v_organization_id is null then
-    raise exception 'EVENT_NOT_FOUND';
-  end if;
-
-  select coalesce(sum(ep.amount_paise), 0), count(*)
-    into v_gross, v_count
-    from public.event_registrations er
-    join public.event_payments ep on ep.id = er.payment_id
-    where er.event_id = p_event_id and ep.status = 'paid';
-
-  if v_count = 0 then
-    return null;
-  end if;
-
-  v_org_amount := floor(v_gross * 0.93)::integer;
-
-  insert into public.event_bills (
-    event_id, organization_id, gross_amount_paise, org_amount_paise,
-    platform_fee_paise, eligible_registration_count
-  )
-  values (
-    p_event_id, v_organization_id, v_gross, v_org_amount,
-    v_gross - v_org_amount, v_count
-  )
-  on conflict (event_id) do nothing
-  returning * into v_bill;
-
-  return v_bill;
-end;
-$$;
+-- NOTE: there is deliberately no "finalize_event_billing" function here.
+-- Billing amounts are computed live by PaymentsService (backend/src/payments/
+-- payments.service.ts) whenever an org/admin views a completed paid event,
+-- and only written to event_bills at the moment admin marks it paid -- see
+-- FINANCE.md's Architecture section for why (no need for DB-level atomicity
+-- here, and freezing the amount at "paid" time rather than "completed" time
+-- correctly picks up any late-arriving payment confirmations).

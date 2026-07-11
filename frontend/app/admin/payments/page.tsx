@@ -50,8 +50,8 @@ export default function AdminPaymentsPage() {
   const handleMarkPaid = async (event: AdminPaymentsDashboardEvent) => {
     if (!event.bill) return
     try {
-      setActingId(event.bill.id)
-      await api.markBillPaid(event.bill.id, referenceInputs[event.bill.id])
+      setActingId(event.eventId)
+      await api.markBillPaid(event.eventId, referenceInputs[event.eventId])
       toast.success(`${event.organizationName ?? "Organization"} marked as paid.`)
       await fetchDashboard()
     } catch (err: any) {
@@ -139,7 +139,7 @@ export default function AdminPaymentsPage() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Owed to org</p>
-                        <p className="text-lg font-black text-foreground">{rupees(event.bill.org_amount_paise)}</p>
+                        <p className="text-lg font-black text-foreground">{rupees(event.bill.orgAmountPaise)}</p>
                       </div>
                       <span className={`px-3 py-1 rounded-full text-xs font-bold ${
                         event.bill.status === "paid"
@@ -155,22 +155,22 @@ export default function AdminPaymentsPage() {
                         <input
                           type="text"
                           placeholder="Reference (UTR, optional)"
-                          value={referenceInputs[event.bill.id] ?? ""}
-                          onChange={(e) => setReferenceInputs((prev) => ({ ...prev, [event.bill!.id]: e.target.value }))}
+                          value={referenceInputs[event.eventId] ?? ""}
+                          onChange={(e) => setReferenceInputs((prev) => ({ ...prev, [event.eventId]: e.target.value }))}
                           className="flex-1 h-10 px-3 bg-muted border border-border rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500/30"
                         />
                         <button
                           onClick={() => handleMarkPaid(event)}
-                          disabled={actingId === event.bill.id}
+                          disabled={actingId === event.eventId}
                           className="h-10 px-4 flex items-center justify-center gap-2 bg-primary text-primary-foreground rounded-xl font-bold text-sm active:scale-[0.98] transition-all disabled:opacity-50 shrink-0"
                         >
-                          {actingId === event.bill.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                          {actingId === event.eventId ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                           Mark Paid
                         </button>
                       </div>
                     )}
-                    {event.bill.paid_reference && (
-                      <p className="text-[11px] text-muted-foreground mt-2">Reference: {event.bill.paid_reference}</p>
+                    {event.bill.paidReference && (
+                      <p className="text-[11px] text-muted-foreground mt-2">Reference: {event.bill.paidReference}</p>
                     )}
                   </div>
                 )}
