@@ -44,6 +44,7 @@ export default function EditEventPage() {
   // OPTION C State: Lock editing if not pending
   const [isLocked, setIsLocked] = useState(false)
   const [limitVolunteers, setLimitVolunteers] = useState(false)
+  const [isPaidEvent, setIsPaidEvent] = useState(false)
 
   // Form State
   const [formData, setFormData] = useState({
@@ -67,6 +68,7 @@ export default function EditEventPage() {
     registrationDeadline: "", // Updated default
     minimumAge: "",
     coverImageUrl: "",
+    ticketPriceRupees: "",
   })
 
   // Image State
@@ -121,9 +123,11 @@ export default function EditEventPage() {
           registrationDeadline: formattedDeadline,
           minimumAge: event.minimum_age?.toString() || "",
           coverImageUrl: event.cover_image_url || "",
+          ticketPriceRupees: event.ticket_price ? (event.ticket_price / 100).toString() : "",
         })
 
         setLimitVolunteers(event.total_slots != null)
+        setIsPaidEvent(!!event.ticket_price && event.ticket_price > 0)
 
         if (event.cover_image_url) {
           setImagePreview(event.cover_image_url)
@@ -205,6 +209,10 @@ export default function EditEventPage() {
       if (deadlineDateTime > oneHourBeforeStart) {
          throw new Error("Registration Deadline must be at least 1 hour before the event starts.");
       }
+
+      if (isPaidEvent && (!formData.ticketPriceRupees || parseFloat(formData.ticketPriceRupees) < 1)) {
+        throw new Error('Please set a valid ticket price, or turn off "Paid Event".');
+      }
       // --------------------
 
       let coverImageUrl = formData.coverImageUrl
@@ -234,6 +242,7 @@ export default function EditEventPage() {
         minimumAge: formData.minimumAge ? parseInt(formData.minimumAge) : undefined,
         latitude: formData.latitude,
         longitude: formData.longitude,
+        ticketPrice: isPaidEvent && formData.ticketPriceRupees ? Math.round(parseFloat(formData.ticketPriceRupees) * 100) : null,
       })
 
       alert("Event updated successfully!")
@@ -620,6 +629,43 @@ export default function EditEventPage() {
                   className="w-full px-4 py-3 bg-muted border border-border rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                 />
               </div>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Paid Event
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setIsPaidEvent(v => !v)}
+                  className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${isPaidEvent ? 'bg-teal-500' : 'bg-muted'}`}
+                >
+                  <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-card shadow transition-transform ${isPaidEvent ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                </button>
+              </div>
+              {isPaidEvent ? (
+                <>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">₹</span>
+                    <input
+                      type="number"
+                      min="1"
+                      placeholder="e.g. 100"
+                      value={formData.ticketPriceRupees}
+                      onChange={(e) => setFormData({ ...formData, ticketPriceRupees: e.target.value })}
+                      className="w-full pl-7 pr-4 py-3 bg-muted border border-border rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    You'll keep 93% of every ticket sold — KINDLY retains a 7% platform fee to cover payment processing and platform costs.
+                  </p>
+                </>
+              ) : (
+                <p className="w-full px-4 py-3 bg-muted border border-border rounded-xl text-sm text-muted-foreground">
+                  Free event
+                </p>
+              )}
             </div>
 
             {/* Registration Deadline */}

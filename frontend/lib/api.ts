@@ -98,6 +98,11 @@ export interface CreateEventData {
   connectPlan?: string;
   latitude?: number;
   longitude?: number;
+  // Ticket price in paise. Omit/null when the "paid event" toggle is off —
+  // see PaymentCheckoutModal and the toggle UI in create-event-page.tsx /
+  // edit-event/[id]/page.tsx. Once set and paid registrations exist, the
+  // backend rejects further changes to this field.
+  ticketPrice?: number | null;
 }
 
 export interface UpdateVolunteerProfileDto {
@@ -138,6 +143,34 @@ export interface UpdateOrganizationProfileDto {
   coordinator_name?: string;
   logo_url?: string;
   cover_url?: string;
+  // Payout destination for paid events (see FINANCE.md — payouts are manual
+  // in v1). Private field, only ever visible to the org itself and admins.
+  upi_id?: string;
+}
+
+export interface EventBill {
+  id: string;
+  event_id: string;
+  organization_id: string;
+  gross_amount_paise: number;
+  org_amount_paise: number;
+  platform_fee_paise: number;
+  eligible_registration_count: number;
+  status: 'pending' | 'paid';
+  paid_at: string | null;
+  paid_reference: string | null;
+}
+
+export interface AdminPaymentsDashboardEvent {
+  eventId: string;
+  title: string;
+  status: string;
+  organizationName: string | null;
+  organizationUpiId: string | null;
+  paidRegistrationCount: number;
+  grossCollectedPaise: number;
+  bill: EventBill | null;
+  needsRefundAttention: number;
 }
 
 export interface VolunteerCertificate {
@@ -483,6 +516,104 @@ export const api = {
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.message || 'Failed to register for event');
+    }
+
+    return response.json();
+  },
+
+  // ─── Paid events ──────────────────────────────────────────────────────
+
+  createPaymentOrder: async (eventId: string): Promise<{ orderId: string; amount: number; currency: string }> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Please login to register for events');
+
+    const response = await fetch(`${API_URL}/events/${eventId}/payment/order`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${session.access_token}` },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to start payment');
+    }
+
+    return response.json();
+  },
+
+  verifyPayment: async (
+    eventId: string,
+    payload: { razorpayOrderId: string; razorpayPaymentId: string; razorpaySignature: string },
+  ) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Please login to register for events');
+
+    const response = await fetch(`${API_URL}/events/${eventId}/payment/verify`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Payment verification failed');
+    }
+
+    return response.json();
+  },
+
+  getEventBill: async (eventId: string): Promise<{ bill: EventBill | null }> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const response = await fetch(`${API_URL}/events/${eventId}/bill`, {
+      headers: { 'Authorization': `Bearer ${session.access_token}` },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to fetch bill');
+    }
+
+    return response.json();
+  },
+
+  getAdminPaymentsDashboard: async (): Promise<{ events: AdminPaymentsDashboardEvent[] }> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const response = await fetch(`${API_URL}/payments/admin/dashboard`, {
+      headers: { 'Authorization': `Bearer ${session.access_token}` },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const err = new Error(errorData.message || 'Failed to fetch payments dashboard') as Error & { status?: number };
+      err.status = response.status;
+      throw err;
+    }
+
+    return response.json();
+  },
+
+  markBillPaid: async (billId: string, paidReference?: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const response = await fetch(`${API_URL}/payments/admin/bills/${billId}/mark-paid`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ paidReference }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to mark bill as paid');
     }
 
     return response.json();

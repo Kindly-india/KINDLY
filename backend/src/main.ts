@@ -17,7 +17,10 @@ async function bootstrap() {
       throw new Error(`Missing required environment variable: ${key}`);
     }
   }
-  const app = await NestFactory.create(AppModule);
+  // rawBody: true preserves req.rawBody (a Buffer) alongside the normal
+  // parsed req.body, needed to verify Razorpay's webhook HMAC signature
+  // against the exact bytes Razorpay signed (see payments.controller.ts).
+  const app = await NestFactory.create(AppModule, { rawBody: true });
   app.use(compression());
 
   // Behind Render's proxy the real client IP is in X-Forwarded-For. Without

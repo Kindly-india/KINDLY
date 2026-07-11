@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsNumber, IsArray, IsEmail, IsUrl, MaxLength, ArrayMaxSize } from 'class-validator';
+import { IsOptional, IsString, IsNumber, IsArray, IsEmail, IsUrl, MaxLength, ArrayMaxSize, Matches } from 'class-validator';
 
 export class UpdateOrganizationProfileDto {
   @IsOptional()
@@ -98,4 +98,13 @@ export class UpdateOrganizationProfileDto {
   @IsArray()
   @ArrayMaxSize(20)
   achievements?: any[];
+
+  // Used for manually paying out the org's share of paid-event ticket sales
+  // (see FINANCE.md — no automated Razorpay Payouts in v1). Shown to the org
+  // on its own bill and to the superadmin on the payments dashboard.
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  @Matches(/^[\w.\-]{2,49}@[a-zA-Z]{2,49}$/, { message: 'upi_id must look like a UPI ID, e.g. name@bank' })
+  upi_id?: string;
 }

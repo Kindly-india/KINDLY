@@ -52,6 +52,7 @@ export function OrgEventDetail() {
 
   const [event, setEvent] = useState<any>(null)
   const [registrations, setRegistrations] = useState<Registration[]>([])
+  const [bill, setBill] = useState<{ org_amount_paise: number; status: string; eligible_registration_count: number } | null>(null)
 
   // State for Broadcasts
   const [broadcasts, setBroadcasts] = useState<any[]>([])
@@ -88,6 +89,12 @@ export function OrgEventDetail() {
         ])
         setRegistrations(registrationsResponse.registrations || [])
         setBroadcasts(broadcastsResponse.broadcasts || [])
+
+        // Paid event: fetch the bill (null until the event completes and
+        // finalize_event_billing runs — see FINANCE.md, payouts are manual).
+        if (eventResponse.event?.ticket_price) {
+          api.getEventBill(eventId).then((res) => setBill(res.bill)).catch(() => {})
+        }
       } catch (err: any) {
         setError(err.message || 'Failed to load event')
         console.error('Error fetching event:', err)
@@ -383,6 +390,29 @@ export function OrgEventDetail() {
             </span>
           </div>
         </div>
+
+        {event.ticket_price ? (
+          <div className="max-w-5xl mx-auto mt-3">
+            <div className="flex items-center justify-between px-4 py-3 bg-card rounded-2xl shadow-sm border border-border">
+              <div>
+                <p className="text-xs text-muted-foreground">Ticket price: ₹{(event.ticket_price / 100).toLocaleString('en-IN')}</p>
+                {bill ? (
+                  <p className="text-sm font-bold text-foreground mt-0.5">
+                    Your payout: ₹{(bill.org_amount_paise / 100).toLocaleString('en-IN')}
+                    <span className="font-normal text-muted-foreground"> ({bill.eligible_registration_count} paid registrations)</span>
+                  </p>
+                ) : (
+                  <p className="text-sm text-muted-foreground mt-0.5">Payout is calculated once the event is marked complete</p>
+                )}
+              </div>
+              {bill && (
+                <span className={`px-3 py-1 rounded-full text-xs font-bold ${bill.status === 'paid' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400' : 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400'}`}>
+                  {bill.status === 'paid' ? 'Paid' : 'Pending'}
+                </span>
+              )}
+            </div>
+          </div>
+        ) : null}
       </div>
 
       <div className="px-4 md:px-8 py-3">
@@ -472,10 +502,10 @@ export function OrgEventDetail() {
                           <p className="text-xs text-muted-foreground">{registration.volunteer_profiles.city}</p>
 
                           <div className="flex items-center gap-1.5 mt-1">
-                            <a href={`tel:${registration.volunteer_profiles.phone}`} className="w-6 h-6 md:w-7 md:h-7 rounded-full bg-teal-50 dark:bg-teal-500/15 flex items-center justify-center hover:bg-teal-100 dark:bg-teal-500/15 transition-colors">
+                            <a href={`tel:${registration.volunteer_profiles.phone}`} className="w-6 h-6 md:w-7 md:h-7 rounded-full bg-teal-50 dark:bg-teal-500/15 flex items-center justify-center hover:bg-teal-100 transition-colors">
                               <Phone className="w-3 h-3 md:w-3.5 md:h-3.5 text-teal-600" />
                             </a>
-                            <a href={`sms:${registration.volunteer_profiles.phone}`} className="w-6 h-6 md:w-7 md:h-7 rounded-full bg-blue-50 dark:bg-blue-500/15 flex items-center justify-center hover:bg-blue-100 dark:bg-blue-500/15 transition-colors">
+                            <a href={`sms:${registration.volunteer_profiles.phone}`} className="w-6 h-6 md:w-7 md:h-7 rounded-full bg-blue-50 dark:bg-blue-500/15 flex items-center justify-center hover:bg-blue-100 transition-colors">
                               <MessageSquare className="w-3 h-3 md:w-3.5 md:h-3.5 text-blue-600" />
                             </a>
                           </div>
@@ -679,7 +709,7 @@ export function OrgEventDetail() {
               {event.status !== 'cancelled' && event.status !== 'completed' && (
                 <div className="flex flex-col gap-3">
                   <button onClick={handleCompleteEvent} disabled={completeLoading || !eventStarted} className={`w-full h-12 rounded-xl font-medium transition-colors flex items-center justify-center gap-2 shadow-md ${!eventStarted ? 'bg-muted text-muted-foreground cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20'}`}><CheckCircle2 className="w-5 h-5" />{completeLoading ? "Completing..." : "Mark as Completed"}</button>
-                  <div className="flex flex-col sm:flex-row gap-3"><Link href={`/edit-event/${eventId}`} className="flex-1 h-11 bg-blue-50 dark:bg-blue-500/15 text-blue-600 rounded-xl text-sm font-medium hover:bg-blue-100 dark:bg-blue-500/15 transition-colors flex items-center justify-center">Edit Event</Link><button onClick={handleCancelEvent} disabled={cancelLoading} className="flex-1 h-11 bg-red-50 dark:bg-red-500/15 text-red-600 rounded-xl text-sm font-medium hover:bg-red-100 dark:bg-red-500/15 transition-colors disabled:opacity-50">{cancelLoading ? 'Cancelling...' : 'Cancel Event'}</button></div>
+                  <div className="flex flex-col sm:flex-row gap-3"><Link href={`/edit-event/${eventId}`} className="flex-1 h-11 bg-blue-50 dark:bg-blue-500/15 text-blue-600 rounded-xl text-sm font-medium hover:bg-blue-100 transition-colors flex items-center justify-center">Edit Event</Link><button onClick={handleCancelEvent} disabled={cancelLoading} className="flex-1 h-11 bg-red-50 dark:bg-red-500/15 text-red-600 rounded-xl text-sm font-medium hover:bg-red-100 transition-colors disabled:opacity-50">{cancelLoading ? 'Cancelling...' : 'Cancel Event'}</button></div>
                 </div>
               )}
 

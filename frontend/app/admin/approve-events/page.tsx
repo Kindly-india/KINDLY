@@ -197,6 +197,12 @@ export default function AdminApprovalPage() {
           >
             Organization approvals →
           </Link>
+          <Link
+            href="/admin/payments"
+            className="inline-block mt-2 text-[12px] font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+          >
+            Paid events →
+          </Link>
         </div>
 
         <div className="flex-1 overflow-y-auto divide-y divide-border pt-20 lg:pt-0">

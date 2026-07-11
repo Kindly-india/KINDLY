@@ -89,4 +89,13 @@ export class CreateEventDto {
   @IsOptional()
   @IsNumber()
   longitude?: number;
+
+  // Ticket price in paise. Omit/null = free event. Only meaningful when the
+  // "paid event" toggle is on in the create/edit UI — see event.service.ts's
+  // createEvent/updateEvent for the enforcement that this can't be set/changed
+  // once an event has a paid registration (see backend/migrations/paid_events_schema.sql).
+  @IsOptional()
+  @IsInt()
+  @Min(100)
+  ticketPrice?: number | null;
 }

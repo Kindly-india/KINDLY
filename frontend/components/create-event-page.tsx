@@ -20,7 +20,8 @@ import {
     Info,
     Navigation,
     Search,
-    Loader2
+    Loader2,
+    IndianRupee
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { api } from "@/lib/api"
@@ -58,6 +59,7 @@ export function CreateEventPage() {
     const [gettingLocation, setGettingLocation] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [limitVolunteers, setLimitVolunteers] = useState(false);
+    const [isPaidEvent, setIsPaidEvent] = useState(false);
     const [suggestions, setSuggestions] = useState<any[]>([])
     const [showSuggestions, setShowSuggestions] = useState(false)
     const [searchLoading, setSearchLoading] = useState(false)
@@ -83,8 +85,9 @@ export function CreateEventPage() {
         connectPlan: '',
         // ------------------
         totalSlots: 0,
-        registrationDeadline: '', 
+        registrationDeadline: '',
         minimumAge: undefined as number | undefined,
+        ticketPriceRupees: undefined as number | undefined,
     });
 
     const handleGetCurrentLocation = () => {
@@ -209,6 +212,11 @@ export function CreateEventPage() {
                 return;
             }
 
+            if (isPaidEvent && (!formData.ticketPriceRupees || formData.ticketPriceRupees < 1)) {
+                alert('Please set a valid ticket price, or turn off "Paid Event"');
+                return;
+            }
+
             const eventStartDateTime = new Date(`${formData.eventDate}T${formData.startTime}`);
             const eventEndDateTime = new Date(`${formData.eventDate}T${formData.endTime}`);
             const regDeadline = new Date(formData.registrationDeadline);
@@ -264,6 +272,7 @@ export function CreateEventPage() {
                 minimumAge: formData.minimumAge,
                 latitude: formData.latitude,
                 longitude: formData.longitude,
+                ticketPrice: isPaidEvent && formData.ticketPriceRupees ? Math.round(formData.ticketPriceRupees * 100) : null,
             });
 
             setShowSuccess(true);
@@ -809,6 +818,47 @@ export function CreateEventPage() {
                             ) : (
                                 <p className="text-sm text-muted-foreground bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl rounded-xl border border-black/5 dark:border-white/10 px-4 py-3">
                                     Unlimited — anyone can register
+                                </p>
+                            )}
+                        </div>
+
+                        <div>
+                            <div className="flex items-center justify-between mb-3">
+                                <label className="text-sm font-semibold text-foreground flex items-center gap-2">
+                                    <IndianRupee className="w-4 h-4 text-[#ff6b6b]" />
+                                    Paid Event
+                                </label>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsPaidEvent(v => !v)}
+                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${isPaidEvent ? 'bg-[#ff6b6b]' : 'bg-muted'}`}
+                                >
+                                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${isPaidEvent ? 'translate-x-6' : 'translate-x-1'}`} />
+                                </button>
+                            </div>
+                            {isPaidEvent ? (
+                                <>
+                                    <div className="relative">
+                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold">₹</span>
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            placeholder="e.g. 100"
+                                            value={formData.ticketPriceRupees ?? ''}
+                                            onKeyDown={(e) => {
+                                                if (e.key === '-' || e.key === 'e') e.preventDefault();
+                                            }}
+                                            onChange={(e) => setFormData({ ...formData, ticketPriceRupees: e.target.value ? parseFloat(e.target.value) : undefined })}
+                                            className="w-full h-12 md:h-14 pl-8 pr-4 bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl rounded-xl border border-black/5 dark:border-white/10 text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-[#ff6b6b] focus:border-transparent transition-all text-sm md:text-base"
+                                        />
+                                    </div>
+                                    <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+                                        You'll keep 93% of every ticket sold — KINDLY retains a 7% platform fee to cover payment processing and platform costs. Your payout is calculated automatically once the event is marked complete.
+                                    </p>
+                                </>
+                            ) : (
+                                <p className="text-sm text-muted-foreground bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl rounded-xl border border-black/5 dark:border-white/10 px-4 py-3">
+                                    Free — anyone can register at no cost
                                 </p>
                             )}
                         </div>

@@ -6,7 +6,8 @@ import {
   ChevronLeft, Camera, Loader2, X, Plus, MapPin, User,
   Briefcase, FileText, Globe, Building2, Phone, Mail, Hash,
   CalendarDays, BadgeCheck, Linkedin, Instagram, Home, UserCheck,
-  Users2, Trophy, Trash2, Link as LinkIcon, Upload, Image as ImageIcon, Lock
+  Users2, Trophy, Trash2, Link as LinkIcon, Upload, Image as ImageIcon, Lock,
+  IndianRupee
 } from "lucide-react"
 import { api } from "@/lib/api"
 import { INTEREST_TAG_OPTIONS } from "@/lib/interest-tags"
@@ -101,7 +102,8 @@ export default function EditProfile() {
             logo_url: p.logo_url || '',
             cover_url: p.cover_url || '',
             team_members: p.team_members || [],
-            achievements: p.achievements || []
+            achievements: p.achievements || [],
+            upi_id: p.upi_id || '',
           })
         }
       } catch (err) {
@@ -474,6 +476,12 @@ export default function EditProfile() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                       <InputField label="Representative Name" icon={<UserCheck className="w-4 h-4" />} value={formData.representative_name} onChange={(v: string) => setFormData({ ...formData, representative_name: v })} />
                       <InputField label="Designation" value={formData.designation} onChange={(v: string) => setFormData({ ...formData, designation: v })} />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-5">
+                      <div>
+                        <InputField label="UPI ID (for payouts)" icon={<IndianRupee className="w-4 h-4" />} placeholder="name@bank" value={formData.upi_id} onChange={(v: string) => setFormData({ ...formData, upi_id: v })} />
+                        <p className="text-xs text-muted-foreground mt-1.5">Used to manually pay out your share of paid-event ticket sales.</p>
+                      </div>
                     </div>
                   </div>
                 </>

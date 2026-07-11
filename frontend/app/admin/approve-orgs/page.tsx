@@ -133,12 +133,20 @@ export default function AdminApproveOrgsPage() {
               </p>
             </div>
           </div>
-          <Link
-            href="/admin/approve-events"
-            className="text-[12px] font-semibold text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Events →
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link
+              href="/admin/approve-events"
+              className="text-[12px] font-semibold text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Events →
+            </Link>
+            <Link
+              href="/admin/payments"
+              className="text-[12px] font-semibold text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Paid events →
+            </Link>
+          </div>
         </div>
       </header>
 

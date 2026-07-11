@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { EmailService } from '../email/email.service';
+import { PaymentsService } from '../payments/payments.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { validateImageFile } from '../common/file-validation.util';
 import { removeFromStorage } from '../common/storage.util';
@@ -83,6 +84,7 @@ export class EventService {
   constructor(
     private supabaseService: SupabaseService,
     private emailService: EmailService,
+    private paymentsService: PaymentsService,
   ) { }
 
   async searchLocations(query: string, lat: number, lng: number): Promise<LocationSuggestion[]> {
@@ -135,7 +137,7 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
     // 2. Verify Event Ownership
     const { data: event, error: eventError } = await supabase
       .from('events')
-      .select('organization_id, cover_image_url, gallery_images')
+      .select('organization_id, cover_image_url, gallery_images, ticket_price')
       .eq('id', eventId)
       .single();
 
@@ -145,6 +147,25 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
 
     if (event.organization_id !== orgProfile.id) {
       throw new ForbiddenException('You do not have access to this event');
+    }
+
+    // Ticket price can only be set/changed while the event has zero paid
+    // registrations. Changing it (or reverting to free) after money has
+    // already changed hands would corrupt the bill calculation and confuse
+    // volunteers who already paid.
+    const requestedTicketPrice = dto.ticketPrice ?? null;
+    if (requestedTicketPrice !== (event.ticket_price ?? null)) {
+      const { count: paidCount } = await supabase
+        .from('event_payments')
+        .select('id', { count: 'exact', head: true })
+        .eq('event_id', eventId)
+        .eq('status', 'paid');
+
+      if (paidCount && paidCount > 0) {
+        throw new BadRequestException(
+          'Ticket price cannot be changed once volunteers have paid for this event',
+        );
+      }
     }
 
     // 3. Validate Deadlines (Only if dates are provided)
@@ -181,6 +202,7 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
       total_slots: dto.totalSlots ?? null,
       registration_deadline: dto.registrationDeadline,
       minimum_age: dto.minimumAge,
+      ticket_price: requestedTicketPrice,
       updated_at: new Date().toISOString(),
     };
 
@@ -889,6 +911,14 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
 
     if (updateError) throw updateError;
 
+    // Best-effort 100% refund for every paid registration. Doesn't block or
+    // fail the cancellation on individual refund failures — the org
+    // cancelling already affects potentially many volunteers and is already
+    // time-locked, so we don't want one stuck Razorpay refund to prevent the
+    // whole cancellation. Failed refunds stay 'paid' (unrefunded) and surface
+    // on the admin dashboard's refund-attention list for manual follow-up.
+    const { failedCount } = await this.paymentsService.refundForEventCancellation(eventId);
+
     // Fire-and-forget — email every RSVP'd volunteer about the cancellation
     this.sendCancellationEmails(supabase, eventId, updatedEvent).catch(() => {});
 
@@ -909,6 +939,7 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
     return {
       message: 'Event cancelled successfully',
       event: updatedEvent,
+      ...(failedCount > 0 ? { refundFailures: failedCount } : {}),
     };
   }
 
@@ -925,12 +956,16 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
 
     const { data: eventData, error: fetchError } = await supabase
       .from('events')
-      .select('event_date, start_time')
+      .select('event_date, start_time, status')
       .eq('id', eventId)
       .eq('organization_id', orgProfile.id)
       .single();
 
     if (fetchError || !eventData) throw new NotFoundException('Event not found');
+
+    if (eventData.status === 'completed') {
+      throw new BadRequestException('This event has already been marked as completed');
+    }
 
     const eventStart = new Date(`${eventData.event_date}T${eventData.start_time}+05:30`);
     if (new Date() < eventStart) {
@@ -958,6 +993,13 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
       .update({ status: 'missed' })
       .eq('event_id', eventId)
       .eq('status', 'registered');
+
+    // Generates the org's bill for this event, if it had any paid
+    // registrations (no-op for free events). Must run after the status-flip
+    // updates above — see finalize_event_billing's doc comment in
+    // backend/migrations/paid_events_functions.sql. The pg_cron auto-complete
+    // path (backend/migrations/auto_complete_events_cron.sql) does the same.
+    await supabase.rpc('finalize_event_billing', { p_event_id: eventId });
 
     // Fire-and-forget — email every checked-in volunteer that their hours are verified
     this.sendImpactEmails(supabase, eventId, event).catch(() => {});
@@ -1032,6 +1074,7 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
         minimum_age: dto.minimumAge,
         latitude: coords?.lat ?? dto.latitude ?? null,
         longitude: coords?.lng ?? dto.longitude ?? null,
+        ticket_price: dto.ticketPrice ?? null,
         status: 'pending', // <--- CHANGED FROM 'published' TO 'pending'
       })
       .select()
@@ -1044,6 +1087,22 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
 
   async registerForEvent(userId: string, eventId: string) {
     const supabase = this.supabaseService.getClient();
+
+    // Paid events bypass register_for_event entirely — registration is only
+    // created after payment confirms (see PaymentsService.createOrder /
+    // confirm_paid_registration). This guard stops a paid event's "free"
+    // registration route from being used to skip payment.
+    const { data: eventForPriceCheck } = await supabase
+      .from('events')
+      .select('ticket_price')
+      .eq('id', eventId)
+      .maybeSingle();
+
+    if (eventForPriceCheck?.ticket_price && eventForPriceCheck.ticket_price > 0) {
+      throw new BadRequestException(
+        'This is a paid event — use the payment flow to register (POST /events/:id/payment/order)',
+      );
+    }
 
     // Retry up to 3 times on transient advisory-lock contention.
     // Root cause: pg_advisory_lock (session-scoped) conflicts with PgBouncer
@@ -1103,7 +1162,7 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
     // Find the active registration
     const { data: reg, error: regError } = await supabase
       .from('event_registrations')
-      .select('id, status')
+      .select('id, status, payment_id')
       .eq('event_id', eventId)
       .eq('volunteer_id', volProfile.id)
       .maybeSingle();
@@ -1114,6 +1173,26 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
     // Block cancellation if already checked in or completed
     if (reg.status === 'checked_in' || reg.status === 'completed') {
       throw new BadRequestException('Cannot cancel a registration that is already checked in or completed');
+    }
+
+    // Paid registration: compute the tiered refund (80% if cancelling more
+    // than 24h before the registration deadline, else 0%) and refund via
+    // Razorpay BEFORE deleting the row. If the refund call itself fails, do
+    // NOT delete the registration — the volunteer's money hasn't moved, so
+    // deleting now would silently lose it. No org clawback is needed either
+    // way: the org isn't paid until event completion (finalize_event_billing
+    // only counts registrations that still exist at that point).
+    if (reg.payment_id) {
+      const { data: eventForDeadline } = await supabase
+        .from('events')
+        .select('registration_deadline')
+        .eq('id', eventId)
+        .maybeSingle();
+
+      await this.paymentsService.refundForVolunteerCancellation(
+        reg.payment_id,
+        eventForDeadline?.registration_deadline ?? null,
+      );
     }
 
     // Delete the registration record entirely

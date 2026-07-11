@@ -56,7 +56,10 @@ const PUBLIC_ORG_FIELDS = [
   'linkedin', 'instagram', 'team_members', 'achievements',
 ].join(', ');
 
-const PRIVATE_ORG_FIELDS = PUBLIC_ORG_FIELDS + ', registration_number, pan_card_url, registration_certificate_url, proof_document_url, signature_url';
+// upi_id is private (payout destination) — only the org itself and the
+// superadmin see it (PaymentsService.getAdminDashboard/getBill read it
+// directly from the DB, not through this field list).
+const PRIVATE_ORG_FIELDS = PUBLIC_ORG_FIELDS + ', registration_number, pan_card_url, registration_certificate_url, proof_document_url, signature_url, upi_id';
 
 @Injectable()
 export class OrganizationService {

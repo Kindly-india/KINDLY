@@ -27,6 +27,7 @@ import { Button } from "@/components/ui/button"
 import { api } from "@/lib/api"
 import { cn } from "@/lib/utils"
 import { PhoneVerificationModal } from "@/components/phone-verification-modal"
+import { EventCheckoutModal } from "@/components/event-checkout-modal"
 import { VerifiedBadge } from "@/components/verified-badge"
 import { ScrollReveal } from "@/components/ui/scroll-reveal"
 
@@ -67,6 +68,7 @@ export default function EventDetailsPage() {
   const [isRegistering, setIsRegistering] = useState(false)
   const [isRegistered, setIsRegistered] = useState(false)
   const [showConfirmModal, setShowConfirmModal] = useState(false)
+  const [showCheckoutModal, setShowCheckoutModal] = useState(false)
   const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [showPhoneModal, setShowPhoneModal] = useState(false)
   const [userPhone, setUserPhone] = useState<string | null>(undefined as any)
@@ -128,11 +130,26 @@ export default function EventDetailsPage() {
         setShowPhoneModal(true)
         return
       }
+      // Paid event: skip the free RSVP confirm modal entirely, go straight
+      // to checkout. Volunteers never see the 93/7 split — just the price.
+      if (event?.ticket_price && event.ticket_price > 0) {
+        setShowCheckoutModal(true)
+        return
+      }
       setAgreedToTerms(false)
       setShowConfirmModal(true)
     } catch {
       router.push('/login')
     }
+  }
+
+  const handleCheckoutSuccess = () => {
+    setShowCheckoutModal(false)
+    setIsRegistered(true)
+    setEvent((prev: any) => ({
+      ...prev,
+      registered_count: (prev.registered_count || 0) + 1
+    }))
   }
 
   /**
@@ -687,6 +704,17 @@ export default function EventDetailsPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* --- PAID EVENT CHECKOUT MODAL --- */}
+      {showCheckoutModal && (
+        <EventCheckoutModal
+          eventId={eventId}
+          eventTitle={event.title}
+          ticketPricePaise={event.ticket_price}
+          onSuccess={handleCheckoutSuccess}
+          onClose={() => setShowCheckoutModal(false)}
+        />
       )}
 
       {/* --- MOBILE STICKY FOOTER --- */}
