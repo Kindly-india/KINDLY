@@ -3,8 +3,11 @@
 -- Safe to re-run (CREATE OR REPLACE).
 
 -- Atomically confirms a paid registration: re-checks capacity/deadline/
--- duplicate, then inserts the event_registrations row and increments
--- events.current_volunteers.
+-- duplicate, then inserts the event_registrations row. events.registered_count
+-- is NOT touched manually here -- the existing update_registered_count_trigger
+-- on event_registrations already maintains it on insert/delete, same as the
+-- free-registration path. (There is no events.current_volunteers column --
+-- an earlier version of this function incorrectly assumed one existed.)
 --
 -- Idempotent by payment_id: if a registration already references this
 -- payment, returns it instead of erroring. This WILL be called twice in
@@ -43,7 +46,7 @@ begin
     return v_existing;
   end if;
 
-  select id, total_slots, registration_deadline, current_volunteers
+  select id, total_slots, registration_deadline, registered_count
     into v_event
     from public.events
     where id = p_event_id
@@ -64,17 +67,13 @@ begin
     raise exception 'ALREADY_REGISTERED';
   end if;
 
-  if v_event.total_slots is not null and v_event.current_volunteers >= v_event.total_slots then
+  if v_event.total_slots is not null and v_event.registered_count >= v_event.total_slots then
     raise exception 'EVENT_FULL';
   end if;
 
   insert into public.event_registrations (event_id, volunteer_id, status, registered_at, payment_id)
   values (p_event_id, p_volunteer_id, 'registered', now(), p_payment_id)
   returning * into v_registration;
-
-  update public.events
-    set current_volunteers = current_volunteers + 1
-    where id = p_event_id;
 
   return v_registration;
 end;

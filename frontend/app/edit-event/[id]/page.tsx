@@ -658,7 +658,7 @@ export default function EditEventPage() {
                     />
                   </div>
                   <p className="text-xs text-muted-foreground mt-2">
-                    You'll keep 93% of every ticket sold — KINDLY retains a 7% platform fee to cover payment processing and platform costs.
+                    You'll keep 92% of every ticket sold — KINDLY retains an 8% platform fee to cover payment processing and platform costs.
                   </p>
                 </>
               ) : (

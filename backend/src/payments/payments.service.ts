@@ -34,12 +34,13 @@ export class PaymentsService {
 
     if (!volProfile) throw new NotFoundException('Volunteer profile not found');
 
-    const { data: event } = await supabase
+    const { data: event, error: eventError } = await supabase
       .from('events')
-      .select('id, ticket_price, registration_deadline, total_slots, current_volunteers, status')
+      .select('id, ticket_price, registration_deadline, total_slots, registered_count, status')
       .eq('id', eventId)
       .maybeSingle();
 
+    if (eventError) throw eventError;
     if (!event) throw new NotFoundException('Event not found');
     if (!event.ticket_price || event.ticket_price <= 0) {
       throw new BadRequestException('This event is not a paid event');
@@ -54,7 +55,7 @@ export class PaymentsService {
     // The real enforcement is confirm_paid_registration's atomic check at
     // confirm time — capacity can still change during checkout (UPI payments
     // can take minutes to settle).
-    if (event.total_slots !== null && event.current_volunteers >= event.total_slots) {
+    if (event.total_slots !== null && event.registered_count >= event.total_slots) {
       throw new BadRequestException('Event is already full');
     }
 
@@ -395,7 +396,7 @@ export class PaymentsService {
   private buildLiveBillView(paidAmountsPaise: number[]) {
     if (paidAmountsPaise.length === 0) return null;
     const grossAmountPaise = paidAmountsPaise.reduce((sum, a) => sum + a, 0);
-    const orgAmountPaise = Math.floor(grossAmountPaise * 0.93);
+    const orgAmountPaise = Math.floor(grossAmountPaise * 0.92);
     return {
       grossAmountPaise,
       orgAmountPaise,
@@ -453,12 +454,14 @@ export class PaymentsService {
   async getAdminDashboard() {
     const supabase = this.supabaseService.getClient();
 
-    const { data: paidEvents } = await supabase
+    const { data: paidEvents, error: paidEventsError } = await supabase
       .from('events')
-      .select('id, title, status, organization_id, ticket_price, current_volunteers, organization_profiles(name, upi_id)')
+      .select('id, title, status, organization_id, ticket_price, organization_profiles(name, upi_id)')
       .not('ticket_price', 'is', null)
       .gt('ticket_price', 0)
       .order('event_date', { ascending: false });
+
+    if (paidEventsError) throw paidEventsError;
 
     const events = paidEvents ?? [];
     const eventIds = events.map((e: any) => e.id);

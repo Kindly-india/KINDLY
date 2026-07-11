@@ -131,7 +131,7 @@ export default function EventDetailsPage() {
         return
       }
       // Paid event: skip the free RSVP confirm modal entirely, go straight
-      // to checkout. Volunteers never see the 93/7 split — just the price.
+      // to checkout. Volunteers never see the 92/8 split — just the price.
       if (event?.ticket_price && event.ticket_price > 0) {
         setShowCheckoutModal(true)
         return

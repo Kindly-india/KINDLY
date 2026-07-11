@@ -853,7 +853,7 @@ export function CreateEventPage() {
                                         />
                                     </div>
                                     <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-                                        You'll keep 93% of every ticket sold — KINDLY retains a 7% platform fee to cover payment processing and platform costs. Your payout is calculated automatically once the event is marked complete.
+                                        You'll keep 92% of every ticket sold — KINDLY retains an 8% platform fee to cover payment processing and platform costs. Your payout is calculated automatically once the event is marked complete.
                                     </p>
                                 </>
                             ) : (
