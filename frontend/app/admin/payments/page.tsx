@@ -84,12 +84,26 @@ export default function AdminPaymentsPage() {
               </p>
             </div>
           </div>
-          <Link
-            href="/admin/approve-orgs"
-            className="text-[12px] font-semibold text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Orgs →
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link
+              href="/admin"
+              className="text-[12px] font-semibold text-muted-foreground hover:text-foreground transition-colors"
+            >
+              ← Admin home
+            </Link>
+            <Link
+              href="/admin/approve-events"
+              className="text-[12px] font-semibold text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Events →
+            </Link>
+            <Link
+              href="/admin/approve-orgs"
+              className="text-[12px] font-semibold text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Orgs →
+            </Link>
+          </div>
         </div>
       </header>
 

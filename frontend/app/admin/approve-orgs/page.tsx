@@ -135,6 +135,12 @@ export default function AdminApproveOrgsPage() {
           </div>
           <div className="flex items-center gap-4">
             <Link
+              href="/admin"
+              className="text-[12px] font-semibold text-muted-foreground hover:text-foreground transition-colors"
+            >
+              ← Admin home
+            </Link>
+            <Link
               href="/admin/approve-events"
               className="text-[12px] font-semibold text-muted-foreground hover:text-foreground transition-colors"
             >

@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsNumber, IsArray, IsEmail, IsUrl, MaxLength, ArrayMaxSize, Matches } from 'class-validator';
+import { IsOptional, IsString, IsNumber, IsArray, IsUrl, MaxLength, ArrayMaxSize, Matches } from 'class-validator';
 
 export class UpdateOrganizationProfileDto {
   @IsOptional()
@@ -10,9 +10,9 @@ export class UpdateOrganizationProfileDto {
   @IsString()
   org_type?: string;
 
-  @IsOptional()
-  @IsEmail()
-  email?: string;
+  // email is intentionally not here — it must change in lockstep with the
+  // Supabase Auth login email, so it goes through the dedicated
+  // PATCH /organizations/email endpoint (ChangeEmailDto) instead.
 
   @IsOptional()
   @IsString()

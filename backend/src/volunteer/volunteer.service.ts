@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { UpdateVolunteerProfileDto } from './dto/update-volunteer-profile.dto';
 import { OnboardingDto } from './dto/onboarding.dto';
@@ -324,8 +324,14 @@ export class VolunteerService {
       .single();
     if (!profile) throw new NotFoundException('Profile not found');
 
-    const { data, error } = await client.from('volunteer_profiles').update({ ...dto, updated_at: new Date().toISOString() }).eq('id', profile.id).select().single();
-    if (error) throw error;
+    // email has its own dedicated endpoint (changeEmail) because it must stay
+    // in lockstep with the Supabase Auth login email — dropped explicitly
+    // (not just omitted from the DTO) so a client can't reintroduce the old
+    // profile/auth email drift bug by posting the field directly.
+    const { email, ...rest } = dto as any;
+
+    const { data, error } = await client.from('volunteer_profiles').update({ ...rest, updated_at: new Date().toISOString() }).eq('id', profile.id).select().single();
+    if (error) throw new BadRequestException(error.message || 'Failed to update profile');
 
     // Delete any image that was just replaced — the new upload has a fresh path,
     // so the old file would otherwise orphan in the bucket.
@@ -333,6 +339,53 @@ export class VolunteerService {
     if (dto.avatar_url && profile.avatar_url && dto.avatar_url !== profile.avatar_url) replaced.push(profile.avatar_url);
     if (dto.cover_url && profile.cover_url && dto.cover_url !== profile.cover_url) replaced.push(profile.cover_url);
     await removeFromStorage(client, 'profile-images', replaced);
+
+    return { profile: data };
+  }
+
+  // Dedicated, separate-from-updateProfile email change — mirrors
+  // OrganizationService.changeEmail. Auth (auth.users) changes first; the
+  // profile row is only touched if that succeeds, and is rolled back on a
+  // profile-write failure so the two can never end up disagreeing.
+  async changeEmail(userId: string, newEmailRaw: string) {
+    const client = this.supabase.getClient();
+    const newEmail = newEmailRaw.trim().toLowerCase();
+
+    const { data: existing } = await client
+      .from('volunteer_profiles')
+      .select('id, email')
+      .eq('user_id', userId)
+      .single();
+
+    if (!existing) throw new NotFoundException('Profile not found');
+    if (existing.email.toLowerCase() === newEmail) {
+      throw new BadRequestException('That is already your current email.');
+    }
+
+    const { error: authError } = await client.auth.admin.updateUserById(userId, {
+      email: newEmail,
+      email_confirm: true,
+    });
+
+    if (authError) {
+      const msg = authError.message || '';
+      if (msg.toLowerCase().includes('already been registered') || msg.toLowerCase().includes('already registered') || msg.toLowerCase().includes('already exists')) {
+        throw new ConflictException('That email is already in use by another account.');
+      }
+      throw new BadRequestException(msg || 'Failed to change email');
+    }
+
+    const { data, error } = await client
+      .from('volunteer_profiles')
+      .update({ email: newEmail, updated_at: new Date().toISOString() })
+      .eq('id', existing.id)
+      .select()
+      .single();
+
+    if (error || !data) {
+      await client.auth.admin.updateUserById(userId, { email: existing.email, email_confirm: true }).catch(() => {});
+      throw new BadRequestException(error?.message || 'Failed to update profile email — the change was reverted, please try again.');
+    }
 
     return { profile: data };
   }

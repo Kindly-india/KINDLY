@@ -1200,15 +1200,9 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
 
     if (deleteError) throw new BadRequestException(deleteError.message);
 
-    // Decrement current_volunteers on the event (floor at 0)
-    const { data: eventRow } = await supabase
-      .from('events')
-      .select('current_volunteers')
-      .eq('id', eventId)
-      .maybeSingle();
-
-    const newCount = Math.max(0, (eventRow?.current_volunteers ?? 1) - 1);
-    await supabase.from('events').update({ current_volunteers: newCount }).eq('id', eventId);
+    // registered_count is maintained automatically by the DB trigger
+    // (update_registered_count_trigger) on delete from event_registrations —
+    // no manual decrement needed here.
 
     return { message: 'Registration cancelled successfully' };
   }

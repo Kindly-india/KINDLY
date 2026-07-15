@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsArray, IsUrl, IsIn, IsBoolean, IsEmail, MaxLength, ArrayMaxSize, ArrayMinSize } from 'class-validator';
+import { IsOptional, IsString, IsArray, IsUrl, IsIn, IsBoolean, MaxLength, ArrayMaxSize, ArrayMinSize } from 'class-validator';
 
 export class UpdateVolunteerProfileDto {
   @IsOptional()
@@ -31,9 +31,9 @@ export class UpdateVolunteerProfileDto {
   @MaxLength(20)
   phone?: string;
 
-  @IsOptional()
-  @IsEmail()
-  email?: string;
+  // email is intentionally not here — it must change in lockstep with the
+  // Supabase Auth login email, so it goes through the dedicated
+  // PATCH /volunteers/email endpoint (ChangeEmailDto) instead.
 
   @IsOptional()
   @IsUrl({ require_protocol: false })

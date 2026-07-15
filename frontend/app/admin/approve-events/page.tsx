@@ -192,8 +192,14 @@ export default function AdminApprovalPage() {
             {events.length} Awaiting Polish
           </p>
           <Link
-            href="/admin/approve-orgs"
+            href="/admin"
             className="inline-block mt-3 text-[12px] font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+          >
+            ← Admin home
+          </Link>
+          <Link
+            href="/admin/approve-orgs"
+            className="inline-block mt-2 text-[12px] font-semibold text-blue-600 dark:text-blue-400 hover:underline"
           >
             Organization approvals →
           </Link>

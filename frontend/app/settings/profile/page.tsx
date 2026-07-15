@@ -7,8 +7,9 @@ import {
   Briefcase, FileText, Globe, Building2, Phone, Mail, Hash,
   CalendarDays, BadgeCheck, Linkedin, Instagram, Home, UserCheck,
   Users2, Trophy, Trash2, Link as LinkIcon, Upload, Image as ImageIcon, Lock,
-  IndianRupee
+  IndianRupee, AlertTriangle, ShieldAlert
 } from "lucide-react"
+import { toast } from "sonner"
 import { api } from "@/lib/api"
 import { INTEREST_TAG_OPTIONS } from "@/lib/interest-tags"
 
@@ -52,6 +53,14 @@ export default function EditProfile() {
   const [uploadingCover, setUploadingCover] = useState(false)
   const avatarInputRef = useRef<HTMLInputElement>(null)
   const coverInputRef = useRef<HTMLInputElement>(null)
+
+  // Login-email change — deliberately kept out of formData/handleSave. It
+  // goes through its own confirm step and its own API call (api.changeOrgEmail
+  // / api.changeVolunteerEmail) so it can never be silently bundled into a
+  // normal profile save (see P0-1 in PROJECT_REVIEW.md).
+  const [newEmail, setNewEmail] = useState("")
+  const [confirmingEmailChange, setConfirmingEmailChange] = useState(false)
+  const [changingEmail, setChangingEmail] = useState(false)
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -99,6 +108,8 @@ export default function EditProfile() {
             registration_number: p.registration_number || '',
             representative_name: p.representative_name || '',
             designation: p.designation || '',
+            parent_institution: p.parent_institution || '',
+            coordinator_name: p.coordinator_name || '',
             logo_url: p.logo_url || '',
             cover_url: p.cover_url || '',
             team_members: p.team_members || [],
@@ -127,7 +138,7 @@ export default function EditProfile() {
       else setAchImageUrl(url)
 
     } catch (err: any) {
-      alert("Upload failed: " + err.message)
+      toast.error("Upload failed: " + err.message)
     } finally {
       setIsUploadingTeam(false)
       setIsUploadingAch(false)
@@ -143,7 +154,7 @@ export default function EditProfile() {
         ...prev,
         [type === 'avatar' ? (userType === 'volunteer' ? 'avatar_url' : 'logo_url') : 'cover_url']: url
       }))
-    } catch (err: any) { alert(err.message) } 
+    } catch (err: any) { toast.error(err.message) }
     finally { setUploadingAvatar(false); setUploadingCover(false) }
   }
 
@@ -208,6 +219,9 @@ export default function EditProfile() {
       Object.keys(cleanedData).forEach(key => {
         if (cleanedData[key] === '') delete cleanedData[key]
       })
+      // email changes login credentials — always goes through the dedicated
+      // Change Email flow below, never through this general save.
+      delete cleanedData.email
 
       if (userType === 'volunteer') {
         const volunteerPayload: any = { ...cleanedData }
@@ -219,12 +233,31 @@ export default function EditProfile() {
         if (orgPayload.years_active) orgPayload.years_active = parseInt(orgPayload.years_active)
         await api.updateOrgProfile(orgPayload)
       }
+      toast.success("Profile updated")
       router.back()
     } catch (err: any) {
       console.error(err)
-      alert("Update Failed: " + err.message)
+      toast.error(err.message || "Failed to update profile")
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleChangeEmail = async () => {
+    const trimmed = newEmail.trim()
+    if (!trimmed) return
+    try {
+      setChangingEmail(true)
+      if (userType === 'volunteer') await api.changeVolunteerEmail(trimmed)
+      else await api.changeOrgEmail(trimmed)
+      toast.success("Email changed. Please log in again with your new email.")
+      await api.logout()
+      router.push('/login')
+    } catch (err: any) {
+      toast.error(err.message || "Failed to change email")
+    } finally {
+      setChangingEmail(false)
+      setConfirmingEmailChange(false)
     }
   }
 
@@ -290,7 +323,7 @@ export default function EditProfile() {
                    <div className="pt-4 border-t border-border">
                     <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2"><MapPin className="w-4 h-4 text-blue-600" /> Contact & Location</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
-                        <InputField label="Email" icon={<Mail className="w-4 h-4" />} value={formData.email} onChange={(v: string) => setFormData({ ...formData, email: v })} />
+                        <ReadOnlyField label="Email" icon={<Mail className="w-4 h-4" />} value={formData.email} hint="This is your login email — change it at the bottom of this page." />
                         <InputField label="Phone" icon={<Phone className="w-4 h-4" />} value={formData.phone} onChange={(v: string) => setFormData({ ...formData, phone: v })} />
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -347,6 +380,16 @@ export default function EditProfile() {
                        </button>
                      </div>
                    </div>
+
+                   <EmailChangeSection
+                     currentEmail={formData.email}
+                     newEmail={newEmail}
+                     setNewEmail={setNewEmail}
+                     confirming={confirmingEmailChange}
+                     setConfirming={setConfirmingEmailChange}
+                     changing={changingEmail}
+                     onConfirm={handleChangeEmail}
+                   />
                  </>
               )}
 
@@ -362,15 +405,34 @@ export default function EditProfile() {
 
                   <div className="pt-4 border-t border-border">
                     <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2"><MapPin className="w-4 h-4 text-blue-600" /> Contact Details</h3>
+                    {/* City and Website apply to any org — a supported club or informal
+                        group can have a website just as much as a registered NGO, and
+                        every org operates somewhere. Not gated by org_type; the signup
+                        wizard only skipped asking for these per-type to cut friction,
+                        it wasn't declaring the concept invalid for that type. */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
                       <InputField label="City" icon={<MapPin className="w-4 h-4" />} value={formData.area_locality} onChange={(v: string) => setFormData({ ...formData, area_locality: v })} />
                       <InputField label="Website" icon={<Globe className="w-4 h-4" />} value={formData.website} onChange={(v: string) => setFormData({ ...formData, website: v })} />
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                      <InputField label="Email" icon={<Mail className="w-4 h-4" />} value={formData.email} onChange={(v: string) => setFormData({ ...formData, email: v })} />
+                      <ReadOnlyField label="Email" icon={<Mail className="w-4 h-4" />} value={formData.email} hint="This is your login email — change it at the bottom of this page." />
                       <InputField label="Phone" icon={<Phone className="w-4 h-4" />} value={formData.phone} onChange={(v: string) => setFormData({ ...formData, phone: v })} />
                     </div>
                   </div>
+
+                  {/* Supported orgs (college clubs / CSR teams) only — mirrors the
+                      signup wizard, which never asks these of any other org_type.
+                      Was previously missing from this page entirely: a supported org
+                      had no way to ever edit these two fields after signup. */}
+                  {formData.org_type === 'supported' && (
+                    <div className="pt-4 border-t border-border">
+                      <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2"><Building2 className="w-4 h-4 text-indigo-600" /> Institution Details</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <InputField label="Parent Institution" icon={<Building2 className="w-4 h-4" />} value={formData.parent_institution} onChange={(v: string) => setFormData({ ...formData, parent_institution: v })} />
+                        <InputField label="Coordinator Name" icon={<UserCheck className="w-4 h-4" />} value={formData.coordinator_name} onChange={(v: string) => setFormData({ ...formData, coordinator_name: v })} />
+                      </div>
+                    </div>
+                  )}
 
                   <div className="pt-4 border-t border-border">
                     <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2"><Globe className="w-4 h-4 text-purple-600" /> Social Links</h3>
@@ -466,11 +528,18 @@ export default function EditProfile() {
                     </div>
                   </div>
 
-                  {/* Admin Details */}
+                  {/* Admin Details — Registration No. is gated to `registered` because
+                      it's definitional: only a legally registered entity has a
+                      registration number at all, it's not a matter of preference.
+                      Representative Name + Designation (a title only makes sense
+                      attached to a named person) apply to any org type — any org can
+                      name a point of contact, so these stay ungated. */}
                   <div className="pt-4 border-t border-border">
                     <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2"><BadgeCheck className="w-4 h-4 text-emerald-600" /> Administrative Details</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
-                      <InputField label="Registration No." icon={<Hash className="w-4 h-4" />} value={formData.registration_number} onChange={(v: string) => setFormData({ ...formData, registration_number: v })} />
+                      {formData.org_type === 'registered' && (
+                        <InputField label="Registration No." icon={<Hash className="w-4 h-4" />} value={formData.registration_number} onChange={(v: string) => setFormData({ ...formData, registration_number: v })} />
+                      )}
                       <InputField label="Years Active" type="number" icon={<CalendarDays className="w-4 h-4" />} value={formData.years_active} onChange={(v: string) => setFormData({ ...formData, years_active: v })} />
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -484,6 +553,16 @@ export default function EditProfile() {
                       </div>
                     </div>
                   </div>
+
+                  <EmailChangeSection
+                    currentEmail={formData.email}
+                    newEmail={newEmail}
+                    setNewEmail={setNewEmail}
+                    confirming={confirmingEmailChange}
+                    setConfirming={setConfirmingEmailChange}
+                    changing={changingEmail}
+                    onConfirm={handleChangeEmail}
+                  />
                 </>
               )}
             </div>
@@ -504,6 +583,83 @@ function InputField({ label, value, onChange, icon, type = "text", placeholder }
         {icon} {label}
       </label>
       <input type={type} value={value || ''} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="w-full px-4 py-3 bg-muted border border-border rounded-xl text-sm focus:bg-card focus:ring-2 focus:ring-black/5 transition-all outline-none placeholder:text-muted-foreground" />
+    </div>
+  )
+}
+
+function ReadOnlyField({ label, value, icon, hint }: any) {
+  return (
+    <div>
+      <label className="flex items-center gap-1.5 text-xs font-semibold text-foreground uppercase tracking-wider mb-2">
+        {icon} {label}
+      </label>
+      <div className="w-full px-4 py-3 bg-muted/60 border border-border rounded-xl text-sm text-muted-foreground flex items-center gap-2">
+        <Lock className="w-3.5 h-3.5 shrink-0" /> {value || '—'}
+      </div>
+      {hint && <p className="text-xs text-muted-foreground mt-1.5">{hint}</p>}
+    </div>
+  )
+}
+
+function EmailChangeSection({ currentEmail, newEmail, setNewEmail, confirming, setConfirming, changing, onConfirm }: any) {
+  return (
+    <div className="pt-4 border-t border-border">
+      <h3 className="text-sm font-bold text-foreground mb-1 flex items-center gap-2">
+        <ShieldAlert className="w-4 h-4 text-red-500" /> Change Login Email
+      </h3>
+      <p className="text-xs text-muted-foreground mb-4">
+        This is the email you use to sign in — it's different from every other field on this page. Changing it takes effect immediately.
+      </p>
+
+      <div className="bg-muted p-4 rounded-xl border border-border space-y-3">
+        <InputField
+          label="New Email"
+          icon={<Mail className="w-4 h-4" />}
+          value={newEmail}
+          onChange={(v: string) => { setNewEmail(v); setConfirming(false) }}
+          placeholder="new-email@example.com"
+        />
+
+        {!confirming ? (
+          <button
+            type="button"
+            disabled={!newEmail.trim() || newEmail.trim() === currentEmail}
+            onClick={() => setConfirming(true)}
+            className="text-sm font-bold text-red-600 hover:text-red-700 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Change Email…
+          </button>
+        ) : (
+          <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900 rounded-lg p-3 space-y-3">
+            <div className="flex gap-2 text-red-700 dark:text-red-400 text-xs leading-relaxed">
+              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>
+                You'll be logged out and must sign in again at <strong>{newEmail.trim()}</strong> using a one-time code.
+                Your old email (<strong>{currentEmail}</strong>) will no longer work for login. Make sure you have access
+                to this inbox before continuing.
+              </span>
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                disabled={changing}
+                onClick={onConfirm}
+                className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-red-700 disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {changing && <Loader2 className="w-3.5 h-3.5 animate-spin" />} Yes, change my login email
+              </button>
+              <button
+                type="button"
+                disabled={changing}
+                onClick={() => setConfirming(false)}
+                className="px-4 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

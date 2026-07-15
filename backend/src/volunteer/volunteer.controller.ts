@@ -16,6 +16,7 @@ import { VolunteerService } from './volunteer.service';
 import { CertificateService } from '../certificate/certificate.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UpdateVolunteerProfileDto } from './dto/update-volunteer-profile.dto';
+import { ChangeEmailDto } from './dto/change-email.dto';
 import { OnboardingDto } from './dto/onboarding.dto';
 import { EnsureProfileDto } from './dto/ensure-profile.dto';
 import { OptionalAuthGuard } from '../auth/guards/optional-auth.guard';
@@ -42,6 +43,15 @@ export class VolunteerController {
     @Body() dto: UpdateVolunteerProfileDto
   ) {
     return this.volunteerService.updateProfile(req.user.id, dto);
+  }
+
+  // Dedicated endpoint for the login email — kept separate from the general
+  // profile PATCH so it always goes through changeEmail's auth-first,
+  // rollback-safe path instead of a plain table write.
+  @UseGuards(JwtAuthGuard)
+  @Patch('email')
+  async changeEmail(@Request() req: any, @Body() dto: ChangeEmailDto) {
+    return this.volunteerService.changeEmail(req.user.id, dto.email);
   }
 
   // 3. Smart Profile View (Public / Resume / Private)

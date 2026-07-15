@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException, ConflictException } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { EmailService } from '../email/email.service';
@@ -342,7 +342,13 @@ export class OrganizationService {
 
     if (!existing) throw new NotFoundException('Profile not found');
 
-    const { org_type, ...updateData } = dto as any;
+    // org_type is admin/KYC-controlled, not user-editable. email has its own
+    // dedicated endpoint (changeEmail) because it must stay in lockstep with
+    // the Supabase Auth login email — silently accepting it here is how a
+    // profile row and the login email used to drift apart (see changeEmail).
+    // Dropped explicitly (not just omitted from the DTO) so a client can't
+    // reintroduce the bug by posting the field directly — whitelist isn't on.
+    const { org_type, email, ...updateData } = dto as any;
 
     const { data, error } = await client
       .from('organization_profiles')
@@ -353,7 +359,7 @@ export class OrganizationService {
 
     const profile = data as OrgProfilePrivate | null;
 
-    if (error || !profile) throw error;
+    if (error || !profile) throw new BadRequestException(error?.message || 'Failed to update organization profile');
 
     // Delete any logo/cover that was just replaced (new upload = fresh path, so
     // the old file would otherwise orphan). logo/cover share the profile-images
@@ -362,6 +368,59 @@ export class OrganizationService {
     if (updateData.logo_url && existing.logo_url && updateData.logo_url !== existing.logo_url) replaced.push(existing.logo_url);
     if (updateData.cover_url && existing.cover_url && updateData.cover_url !== existing.cover_url) replaced.push(existing.cover_url);
     await removeFromStorage(client, 'profile-images', replaced);
+    return { profile };
+  }
+
+  // Dedicated, separate-from-updateProfile email change. Auth (auth.users) is
+  // the source of truth for login — it's changed FIRST, and the profile row
+  // is only touched if that succeeds, so the two can never disagree the way
+  // a plain profile-table write would let them. If the profile write fails
+  // after auth already changed, the auth email is rolled back rather than
+  // left pointing somewhere the profile row doesn't corroborate.
+  async changeEmail(userId: string, newEmailRaw: string) {
+    const client = this.supabase.getClient();
+    const newEmail = newEmailRaw.trim().toLowerCase();
+
+    const { data: existing } = await client
+      .from('organization_profiles')
+      .select('id, email')
+      .eq('user_id', userId)
+      .single();
+
+    if (!existing) throw new NotFoundException('Profile not found');
+    if (existing.email.toLowerCase() === newEmail) {
+      throw new BadRequestException('That is already your current email.');
+    }
+
+    const { error: authError } = await client.auth.admin.updateUserById(userId, {
+      email: newEmail,
+      email_confirm: true,
+    });
+
+    if (authError) {
+      const msg = authError.message || '';
+      if (msg.toLowerCase().includes('already been registered') || msg.toLowerCase().includes('already registered') || msg.toLowerCase().includes('already exists')) {
+        throw new ConflictException('That email is already in use by another account.');
+      }
+      throw new BadRequestException(msg || 'Failed to change email');
+    }
+
+    const { data, error } = await client
+      .from('organization_profiles')
+      .update({ email: newEmail })
+      .eq('id', existing.id)
+      .select(PRIVATE_ORG_FIELDS)
+      .single();
+
+    const profile = data as OrgProfilePrivate | null;
+
+    if (error || !profile) {
+      // Auth already changed — revert it so login email and profile email
+      // can't end up disagreeing, then surface a clear error.
+      await client.auth.admin.updateUserById(userId, { email: existing.email, email_confirm: true }).catch(() => {});
+      throw new BadRequestException(error?.message || 'Failed to update profile email — the change was reverted, please try again.');
+    }
+
     return { profile };
   }
 

@@ -2,6 +2,20 @@ import { supabase } from './supabase'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
+// Nest's ValidationPipe returns `message` as a string[] on DTO validation
+// failures and a plain string for thrown HttpExceptions — this reads either
+// shape off a failed response body instead of discarding it behind a
+// hardcoded string, so the caller's toast/error actually says what broke.
+async function parseApiError(res: Response, fallback: string): Promise<string> {
+  try {
+    const body = await res.json();
+    if (Array.isArray(body?.message)) return body.message.join(', ');
+    return body?.message || fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 // ─── Posts ────────────────────────────────────────────────────────────────────
 
 export interface PostAuthor {
@@ -111,7 +125,6 @@ export interface UpdateVolunteerProfileDto {
   bio?: string;
   city?: string;
   phone?: string;
-  email?: string;
   address?: string;
   linkedin?: string;
   instagram?: string;
@@ -128,7 +141,6 @@ export interface UpdateVolunteerProfileDto {
 export interface UpdateOrganizationProfileDto {
   name?: string;
   org_type?: string;
-  email?: string;
   phone?: string;
   tagline?: string;
   mission_statement?: string;
@@ -1179,7 +1191,26 @@ export const api = {
       },
       body: JSON.stringify(data)
     });
-    if (!res.ok) throw new Error('Failed to update profile');
+    if (!res.ok) throw new Error(await parseApiError(res, 'Failed to update profile'));
+    return res.json();
+  },
+
+  // Separate from updateVolunteerProfile — the backend requires the login
+  // email to go through its own auth-first endpoint (see P0-1 in
+  // PROJECT_REVIEW.md) so it can never drift from the Supabase Auth email.
+  changeVolunteerEmail: async (email: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const res = await fetch(`${API_URL}/volunteers/email`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify({ email })
+    });
+    if (!res.ok) throw new Error(await parseApiError(res, 'Failed to change email'));
     return res.json();
   },
 
@@ -1327,7 +1358,26 @@ export const api = {
       },
       body: JSON.stringify(data)
     });
-    if (!res.ok) throw new Error('Failed to update org profile');
+    if (!res.ok) throw new Error(await parseApiError(res, 'Failed to update org profile'));
+    return res.json();
+  },
+
+  // Separate from updateOrgProfile — the backend requires the login email to
+  // go through its own auth-first endpoint (see P0-1 in PROJECT_REVIEW.md) so
+  // it can never drift from the Supabase Auth email.
+  changeOrgEmail: async (email: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const res = await fetch(`${API_URL}/organizations/email`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify({ email })
+    });
+    if (!res.ok) throw new Error(await parseApiError(res, 'Failed to change email'));
     return res.json();
   },
 

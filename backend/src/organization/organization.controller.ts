@@ -17,6 +17,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { OptionalAuthGuard } from '../auth/guards/optional-auth.guard';
 import { AdminGuard } from '../auth/guards/admin.guard';
 import { UpdateOrganizationProfileDto } from './dto/update-organization-profile.dto';
+import { ChangeEmailDto } from './dto/change-email.dto';
 import { AddReviewDto } from './dto/add-review.dto';
 import { SetApprovalDto } from './dto/set-approval.dto';
 
@@ -76,6 +77,15 @@ export class OrganizationController {
     @Body() dto: UpdateOrganizationProfileDto
   ) {
     return this.organizationService.updateProfile(req.user.id, dto);
+  }
+
+  // Dedicated endpoint for the login email — kept separate from the general
+  // profile PATCH so it always goes through changeEmail's auth-first,
+  // rollback-safe path instead of a plain table write.
+  @UseGuards(JwtAuthGuard)
+  @Patch('email')
+  async changeEmail(@Request() req: any, @Body() dto: ChangeEmailDto) {
+    return this.organizationService.changeEmail(req.user.id, dto.email);
   }
 
   // Toggle follow
