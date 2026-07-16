@@ -10,7 +10,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
 import { CertificateModule } from './certificate/certificate.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { EmailModule } from './email/email.module';
-import { PhoneVerificationModule } from './phone-verification/phone-verification.module';
+import { VolunteerContactModule } from './volunteer-contact/volunteer-contact.module';
 import { PostsModule } from './posts/posts.module';
 import { PaymentsModule } from './payments/payments.module';
 import { ThrottlerModule } from '@nestjs/throttler';
@@ -34,7 +34,7 @@ import { AppService } from './app.service';
     CertificateModule,
     NotificationsModule,
     EmailModule,
-    PhoneVerificationModule,
+    VolunteerContactModule,
     PostsModule,
     PaymentsModule,
     // Global catch-all limit. Keyed per-USER for authenticated requests (see

@@ -16,7 +16,7 @@ interface Props {
   onClose: () => void
 }
 
-export function PhoneVerificationModal({ onSaved, onClose }: Props) {
+export function VolunteerContactModal({ onSaved, onClose }: Props) {
   const [phone, setPhone] = useState("")
   const [saving, setSaving] = useState(false)
   const [touched, setTouched] = useState(false)

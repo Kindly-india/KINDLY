@@ -1,7 +1,6 @@
 import { Injectable, ConflictException, BadRequestException } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { EmailService } from '../email/email.service';
-import { VolunteerSignupDto } from './dto/volunteer-signup.dto';
 import { OrganizationSignupDto } from './dto/organization-signup.dto';
 
 @Injectable()
@@ -10,72 +9,6 @@ export class AuthService {
     private supabaseService: SupabaseService,
     private emailService: EmailService,
   ) { }
-
-  async signupVolunteer(dto: VolunteerSignupDto) {
-    const supabase = this.supabaseService.getClient();
-
-    // 1. Sign up the user (Triggers confirmation email if enabled in Supabase)
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: dto.email,
-      password: dto.password,
-      options: {
-        data: {
-          user_type: 'volunteer',
-          full_name: dto.fullName,
-        },
-        emailRedirectTo: `${process.env.FRONTEND_URL ?? process.env.SITE_URL ?? 'http://localhost:3000'}/auth/callback?next=/onboarding`,
-      },
-    });
-
-    if (authError) {
-      if (authError.message.includes('already registered')) {
-        throw new ConflictException('Email already registered');
-      }
-      throw new BadRequestException(authError.message);
-    }
-
-    if (!authData.user) {
-      throw new BadRequestException('User creation failed');
-    }
-
-    // 2. Create volunteer profile
-    // Note: If email confirmation is ON, the user cannot login yet, 
-    // but we still create the profile so it's ready when they verify.
-    const { data: profile, error: profileError } = await supabase
-      .from('volunteer_profiles')
-      .insert({
-        user_id: authData.user.id,
-        full_name: dto.fullName,
-        city: dto.city,
-        total_hours: 0,
-      })
-      .select()
-      .single();
-
-    if (profileError) {
-      try {
-        await supabase.auth.admin.deleteUser(authData.user.id);
-      } catch (rollbackError) {
-        // Log for manual cleanup — the profile failure is the real error
-        console.error(
-          `CRITICAL: Failed to rollback auth user ${authData.user.id} after profile creation failure.`,
-          rollbackError
-        );
-      }
-      throw new BadRequestException(
-        'Failed to create volunteer profile. Please try again or contact support.'
-      );
-    }
-
-    return {
-      message: 'Signup successful. Please check your email to verify your account.',
-      user: {
-        id: authData.user.id,
-        email: authData.user.email,
-        profile,
-      },
-    };
-  }
 
   async signupOrganization(dto: OrganizationSignupDto) {
     const supabase = this.supabaseService.getClient();
@@ -129,7 +62,7 @@ export class AuthService {
         proof_document_url: dto.proofDocumentUrl,
         approval_status: 'pending',
       })
-      .select()
+      .select('id')
       .single();
 
     if (profileError) {

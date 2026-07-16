@@ -10,27 +10,45 @@ import { eventHours } from '../common/hours.util';
 const GEOLOCK_RADIUS_METERS = 200;
 
 // City/district-level types are too coarse for geo-lock (would be km off)
-const COARSE_TYPES = new Set(['city', 'town', 'village', 'municipality', 'district', 'state', 'country', 'administrative']);
+const COARSE_TYPES = new Set([
+  'locality', 'sublocality', 'sublocality_level_1',
+  'administrative_area_level_1', 'administrative_area_level_2', 'administrative_area_level_3',
+  'country', 'postal_code', 'political',
+]);
 
+// Ola Maps' forward Geocode API — swapped in for Nominatim/OSM (same rationale
+// as searchPlaces/reverseGeocodePoint below): now that the create-event picker
+// sets coordinates directly, this only fires when an organizer types/edits a
+// location without using autocomplete/GPS/the map pin, so it should stay
+// consistent with the rest of the location stack rather than falling back to OSM.
 async function geocodeLocation(location: string): Promise<{ lat: number; lng: number } | null> {
-  const headers = { 'User-Agent': 'KINDLYApp/1.0 (kindly.co.in)', 'Accept-Language': 'en' };
+  const apiKey = process.env.OLA_MAPS_API_KEY;
+  if (!apiKey) {
+    console.warn('[Geo] OLA_MAPS_API_KEY not configured — skipping geocode fallback');
+    return null;
+  }
   const parts = location.split(',').map(s => s.trim()).filter(Boolean);
   for (let i = 0; i < parts.length; i++) {
     const query = parts.slice(i).join(', ');
     try {
-      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&countrycodes=in&addressdetails=1`;
+      const url = `https://api.olamaps.io/places/v1/geocode?address=${encodeURIComponent(query)}&api_key=${apiKey}`;
       console.log(`[Geo] Trying: "${query}"`);
-      const res = await fetch(url, { headers });
-      const data: any[] = await res.json();
-      if (data.length > 0) {
-        const result = data[0];
-        const type = result.type || result.class || '';
+      const res = await fetch(url);
+      if (!res.ok) continue;
+      const data: any = await res.json();
+      const results: any[] = data.geocodingResults || data.results || [];
+      if (results.length > 0) {
+        const result = results[0];
+        const type = result.types?.[0] || '';
         if (COARSE_TYPES.has(type)) {
           console.log(`[Geo] Skipping coarse result (type="${type}") for: "${query}"`);
           continue;
         }
-        console.log(`[Geo] Using result type="${type}" lat=${result.lat} lon=${result.lon}`);
-        return { lat: parseFloat(result.lat), lng: parseFloat(result.lon) };
+        const loc = result.geometry?.location;
+        if (loc?.lat != null && loc?.lng != null) {
+          console.log(`[Geo] Using result type="${type}" lat=${loc.lat} lng=${loc.lng}`);
+          return { lat: loc.lat, lng: loc.lng };
+        }
       }
     } catch (err) {
       console.error(`[Geo] Error on attempt ${i + 1}:`, err);
@@ -226,7 +244,7 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
       .from('events')
       .update(updateData)
       .eq('id', eventId)
-      .select()
+      .select('id, organization_id, title, description, cover_image_url, gallery_images, category, is_urgent, event_date, start_time, end_time, location, latitude, longitude, dress_code, things_to_bring, point_of_contact, connect_plan, total_slots, registered_count, registration_deadline, minimum_age, ticket_price, status, certificates_issued, updated_at, created_at')
       .single();
 
     if (updateError) throw updateError;
@@ -729,7 +747,7 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
       })
       .eq('id', registrationId)
       .eq('event_id', eventId)
-      .select()
+      .select('id, event_id, volunteer_id, status, registered_at, checked_in_at, payment_id')
       .single();
 
     if (updateError) throw updateError;
@@ -849,7 +867,7 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
       })
       .eq('id', registrationId)
       .eq('event_id', eventId)
-      .select()
+      .select('id, event_id, volunteer_id, status, registered_at, checked_in_at, payment_id')
       .single();
 
     if (updateError) throw updateError;
@@ -906,7 +924,7 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
       .from('events')
       .update({ status: 'cancelled' })
       .eq('id', eventId)
-      .select()
+      .select('id, title, event_date, location, status')
       .single();
 
     if (updateError) throw updateError;
@@ -977,7 +995,7 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
       .update({ status: 'completed' })
       .eq('id', eventId)
       .eq('organization_id', orgProfile.id)
-      .select()
+      .select('id, title, start_time, end_time, status')
       .single();
 
     if (error) throw error;
@@ -1074,7 +1092,7 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
         ticket_price: dto.ticketPrice ?? null,
         status: 'pending', // <--- CHANGED FROM 'published' TO 'pending'
       })
-      .select()
+      .select('id, organization_id, title, status, event_date, start_time, location, created_at')
       .single();
 
     if (eventError) throw eventError;
@@ -1260,7 +1278,7 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
         message: message,
         is_important: true
       })
-      .select()
+      .select('id, event_id, organization_id, message, is_important, created_at')
       .single();
 
     if (error) throw error;
@@ -1272,7 +1290,7 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
 
     const { data: broadcasts, error } = await supabase
       .from('event_broadcasts')
-      .select('*')
+      .select('id, message, is_important, created_at')
       .eq('event_id', eventId)
       .order('created_at', { ascending: false });
 
@@ -1479,7 +1497,7 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
 
     const { data: review } = await supabase
       .from('organization_reviews')
-      .select('*')
+      .select('id, rating, comment, created_at')
       .eq('event_id', eventId)
       .eq('volunteer_id', volProfile.id)
       .maybeSingle();
@@ -1542,7 +1560,7 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
       .from('events')
       .update(dbUpdateData)
       .eq('id', eventId)
-      .select()
+      .select('id, title, status, event_date, start_time, location, updated_at')
       .single();
 
     if (error) throw error;

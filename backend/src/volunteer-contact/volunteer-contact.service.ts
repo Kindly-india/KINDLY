@@ -2,7 +2,7 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 
 @Injectable()
-export class PhoneVerificationService {
+export class VolunteerContactService {
   constructor(private supabaseService: SupabaseService) {}
 
   async savePhone(userId: string, phone: string): Promise<void> {

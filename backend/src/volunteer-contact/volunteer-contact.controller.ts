@@ -1,11 +1,11 @@
 import { Controller, Post, Body, UseGuards, Request, BadRequestException } from '@nestjs/common';
-import { PhoneVerificationService } from './phone-verification.service';
+import { VolunteerContactService } from './volunteer-contact.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
-@Controller('phone-verification')
+@Controller('volunteer-contact')
 @UseGuards(JwtAuthGuard)
-export class PhoneVerificationController {
-  constructor(private service: PhoneVerificationService) {}
+export class VolunteerContactController {
+  constructor(private service: VolunteerContactService) {}
 
   @Post('save')
   async save(@Request() req: any, @Body('phone') phone: string) {

@@ -55,7 +55,7 @@ async function bootstrap() {
     ],
   });
 
-  app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
   app.useGlobalFilters(new SentryExceptionFilter());
 
   const port = process.env.PORT || 3001;

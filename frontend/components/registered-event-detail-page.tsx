@@ -60,6 +60,7 @@ export default function RegisteredEventDetailPage() {
 
   // ── data state ────────────────────────────────────────────────────────────────
   const [loading, setLoading] = useState(true)
+  const [redirecting, setRedirecting] = useState(false)
   const [event, setEvent] = useState<any>(null)
   const [broadcasts, setBroadcasts] = useState<any[]>([])
   const [isSaved, setIsSaved] = useState(false)
@@ -108,6 +109,15 @@ export default function RegisteredEventDetailPage() {
           api.getVolunteerRegistrations().catch(() => ({ events: [] })),
         ])
 
+        // Event wrapped up by the org — send the volunteer to the showcase
+        // (cert + review + photos) instead of leaving them on this page.
+        const myReg = regsRes.events?.find((e: any) => e.id === eventId)
+        if (myReg?.registration_status === 'completed') {
+          setRedirecting(true)
+          router.replace(`/events/${eventId}/showcase`)
+          return
+        }
+
         setEvent(eventRes.event)
         setBroadcasts(broadcastRes.broadcasts || [])
 
@@ -117,11 +127,7 @@ export default function RegisteredEventDetailPage() {
         if (myCert) setCert(myCert)
 
         // Detect already-checked-in before this session
-        const myReg = regsRes.events?.find((e: any) => e.id === eventId)
-        if (
-          myReg?.registration_status === 'checked_in' ||
-          myReg?.registration_status === 'completed'
-        ) {
+        if (myReg?.registration_status === 'checked_in') {
           setCheckInState('already_checked_in')
         }
       } catch (err) {
@@ -275,7 +281,7 @@ export default function RegisteredEventDetailPage() {
 
   // ── loading / error ───────────────────────────────────────────────────────────
 
-  if (loading) {
+  if (loading || redirecting) {
     return (
       <div className="min-h-screen bg-muted flex flex-col items-center justify-center">
         <Loader2 className="w-10 h-10 text-emerald-600 animate-spin mb-4" />

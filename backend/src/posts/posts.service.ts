@@ -64,7 +64,7 @@ export class PostsService {
         photo_urls: dto.photo_urls,
         caption: dto.caption ?? null,
       })
-      .select()
+      .select('id, volunteer_id, event_id, photo_urls, caption, created_at')
       .single();
 
     if (error) {

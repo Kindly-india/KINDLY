@@ -20,6 +20,35 @@ const AVAILABILITY_OPTIONS = [
   { value: "flexible", label: "Flexible" },
 ]
 
+// Live, client-side-only hints — mirror the backend's actual validators so
+// the user sees the problem before hitting Save instead of after. The
+// backend stays the source of truth; these are advisory, not blocking (Save
+// is never disabled by them), since a mismatch here should never be able to
+// stop a genuinely valid save from going through. Short on purpose — shown
+// under a live text field, not a place for a paragraph.
+const UPI_PATTERN = /^[\w.\-]{2,49}@[a-zA-Z0-9]{2,49}$/
+const URL_PATTERN = /^(https?:\/\/)?[\w-]+(\.[\w-]+)+([/?#]\S*)?$/i
+
+function upiError(v: string): string | null {
+  if (!v.trim()) return null
+  if (UPI_PATTERN.test(v.trim())) return null
+  return "Should look like name@bank (e.g. 98xxxxxxxx@ybl). Sure it's right? Skip it and contact us."
+}
+
+function urlError(v: string, label: string): string | null {
+  if (!v.trim()) return null
+  if (URL_PATTERN.test(v.trim())) return null
+  return `Paste your full ${label} link, not just a handle. Sure it's right? Skip it and contact us.`
+}
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+function emailFormatError(v: string): string | null {
+  if (!v.trim()) return null
+  if (EMAIL_PATTERN.test(v.trim())) return null
+  return "Doesn't look like a valid email address."
+}
+
 export default function EditProfile() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
@@ -171,7 +200,10 @@ export default function EditProfile() {
 
   const addTeamMember = (e: React.MouseEvent) => {
     e.preventDefault(); // Prevent form submission
-    if (!teamName || !teamRole) return;
+    if (!teamName || !teamRole) {
+      toast.error("Add a name and role before adding this person.")
+      return
+    }
     const newMember = { 
         name: teamName, 
         role: teamRole, 
@@ -191,7 +223,10 @@ export default function EditProfile() {
 
   const addAchievement = (e: React.MouseEvent) => {
     e.preventDefault(); // Prevent form submission
-    if (!achTitle) return;
+    if (!achTitle) {
+      toast.error("Add a title before adding this achievement.")
+      return
+    }
     const newAch = { 
         title: achTitle, 
         date: achDate, 
@@ -335,8 +370,8 @@ export default function EditProfile() {
                    <div className="pt-4 border-t border-border">
                     <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2"><Globe className="w-4 h-4 text-purple-600" /> Social Links</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <InputField label="LinkedIn" icon={<Linkedin className="w-4 h-4" />} value={formData.linkedin} onChange={(v: string) => setFormData({ ...formData, linkedin: v })} />
-                        <InputField label="Instagram" icon={<Instagram className="w-4 h-4" />} value={formData.instagram} onChange={(v: string) => setFormData({ ...formData, instagram: v })} />
+                        <ValidatedInputField label="LinkedIn" icon={<Linkedin className="w-4 h-4" />} placeholder="https://linkedin.com/in/you" value={formData.linkedin} onChange={(v: string) => setFormData({ ...formData, linkedin: v })} error={urlError(formData.linkedin || '', 'LinkedIn')} />
+                        <ValidatedInputField label="Instagram" icon={<Instagram className="w-4 h-4" />} placeholder="https://instagram.com/you" value={formData.instagram} onChange={(v: string) => setFormData({ ...formData, instagram: v })} error={urlError(formData.instagram || '', 'Instagram')} />
                     </div>
                   </div>
 
@@ -412,7 +447,7 @@ export default function EditProfile() {
                         it wasn't declaring the concept invalid for that type. */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
                       <InputField label="City" icon={<MapPin className="w-4 h-4" />} value={formData.area_locality} onChange={(v: string) => setFormData({ ...formData, area_locality: v })} />
-                      <InputField label="Website" icon={<Globe className="w-4 h-4" />} value={formData.website} onChange={(v: string) => setFormData({ ...formData, website: v })} />
+                      <ValidatedInputField label="Website" icon={<Globe className="w-4 h-4" />} placeholder="https://yourorg.org" value={formData.website} onChange={(v: string) => setFormData({ ...formData, website: v })} error={urlError(formData.website || '', 'website')} />
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                       <ReadOnlyField label="Email" icon={<Mail className="w-4 h-4" />} value={formData.email} hint="This is your login email — change it at the bottom of this page." />
@@ -437,8 +472,8 @@ export default function EditProfile() {
                   <div className="pt-4 border-t border-border">
                     <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2"><Globe className="w-4 h-4 text-purple-600" /> Social Links</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <InputField label="LinkedIn" icon={<Linkedin className="w-4 h-4" />} value={formData.linkedin} onChange={(v: string) => setFormData({ ...formData, linkedin: v })} />
-                        <InputField label="Instagram" icon={<Instagram className="w-4 h-4" />} value={formData.instagram} onChange={(v: string) => setFormData({ ...formData, instagram: v })} />
+                        <ValidatedInputField label="LinkedIn" icon={<Linkedin className="w-4 h-4" />} placeholder="https://linkedin.com/company/yourorg" value={formData.linkedin} onChange={(v: string) => setFormData({ ...formData, linkedin: v })} error={urlError(formData.linkedin || '', 'LinkedIn')} />
+                        <ValidatedInputField label="Instagram" icon={<Instagram className="w-4 h-4" />} placeholder="https://instagram.com/yourorg" value={formData.instagram} onChange={(v: string) => setFormData({ ...formData, instagram: v })} error={urlError(formData.instagram || '', 'Instagram')} />
                     </div>
                   </div>
 
@@ -547,10 +582,15 @@ export default function EditProfile() {
                       <InputField label="Designation" value={formData.designation} onChange={(v: string) => setFormData({ ...formData, designation: v })} />
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-5">
-                      <div>
-                        <InputField label="UPI ID (for payouts)" icon={<IndianRupee className="w-4 h-4" />} placeholder="name@bank" value={formData.upi_id} onChange={(v: string) => setFormData({ ...formData, upi_id: v })} />
-                        <p className="text-xs text-muted-foreground mt-1.5">Used to manually pay out your share of paid-event ticket sales.</p>
-                      </div>
+                      <ValidatedInputField
+                        label="UPI ID (for payouts)"
+                        icon={<IndianRupee className="w-4 h-4" />}
+                        placeholder="name@bank"
+                        value={formData.upi_id}
+                        onChange={(v: string) => setFormData({ ...formData, upi_id: v })}
+                        error={upiError(formData.upi_id || '')}
+                        hint="Used to manually pay out your share of paid-event ticket sales."
+                      />
                     </div>
                   </div>
 
@@ -587,6 +627,24 @@ function InputField({ label, value, onChange, icon, type = "text", placeholder }
   )
 }
 
+function ValidatedInputField({ label, value, onChange, icon, placeholder, error, hint }: any) {
+  return (
+    <div>
+      <label className="flex items-center gap-1.5 text-xs font-semibold text-foreground uppercase tracking-wider mb-2">
+        {icon} {label}
+      </label>
+      <input
+        type="text"
+        value={value || ''}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className={`w-full px-4 py-3 bg-muted border rounded-xl text-sm focus:bg-card focus:ring-2 transition-all outline-none placeholder:text-muted-foreground ${error ? 'border-red-400 focus:ring-red-200' : 'border-border focus:ring-black/5'}`}
+      />
+      {error ? <p className="text-xs text-red-600 mt-1.5">{error}</p> : hint ? <p className="text-xs text-muted-foreground mt-1.5">{hint}</p> : null}
+    </div>
+  )
+}
+
 function ReadOnlyField({ label, value, icon, hint }: any) {
   return (
     <div>
@@ -612,18 +670,19 @@ function EmailChangeSection({ currentEmail, newEmail, setNewEmail, confirming, s
       </p>
 
       <div className="bg-muted p-4 rounded-xl border border-border space-y-3">
-        <InputField
+        <ValidatedInputField
           label="New Email"
           icon={<Mail className="w-4 h-4" />}
           value={newEmail}
           onChange={(v: string) => { setNewEmail(v); setConfirming(false) }}
           placeholder="new-email@example.com"
+          error={emailFormatError(newEmail)}
         />
 
         {!confirming ? (
           <button
             type="button"
-            disabled={!newEmail.trim() || newEmail.trim() === currentEmail}
+            disabled={!newEmail.trim() || newEmail.trim().toLowerCase() === currentEmail?.toLowerCase() || !!emailFormatError(newEmail)}
             onClick={() => setConfirming(true)}
             className="text-sm font-bold text-red-600 hover:text-red-700 disabled:opacity-40 disabled:cursor-not-allowed"
           >

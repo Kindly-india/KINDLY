@@ -6,14 +6,29 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 // failures and a plain string for thrown HttpExceptions — this reads either
 // shape off a failed response body instead of discarding it behind a
 // hardcoded string, so the caller's toast/error actually says what broke.
+// Reads the body as text ONCE (calling .json() first would consume the
+// stream, so a failed parse would leave nothing to fall back to) then tries
+// JSON.parse on that text. If the backend didn't return the expected
+// {message} shape at all — a Render gateway error page, a crash that never
+// reaches Nest's exception filter, a proxy timeout — this still surfaces the
+// HTTP status and whatever text came back instead of silently reverting to
+// a hardcoded string with zero diagnostic value.
 async function parseApiError(res: Response, fallback: string): Promise<string> {
+  let text = '';
   try {
-    const body = await res.json();
-    if (Array.isArray(body?.message)) return body.message.join(', ');
-    return body?.message || fallback;
+    text = await res.text();
   } catch {
-    return fallback;
+    return `${fallback} (${res.status})`;
   }
+  try {
+    const body = JSON.parse(text);
+    if (Array.isArray(body?.message)) return body.message.join(', ');
+    if (body?.message) return body.message;
+  } catch {
+    // Not JSON — fall through to the raw text below.
+  }
+  if (text.trim()) return `${fallback} (${res.status}): ${text.slice(0, 200)}`;
+  return `${fallback} (${res.status})`;
 }
 
 // ─── Posts ────────────────────────────────────────────────────────────────────
@@ -64,14 +79,6 @@ export interface VolunteerPostsResponse {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-
-export interface VolunteerSignupData {
-  fullName: string;
-  email: string;
-  password: string;
-  city: string;
-  interests: string[];
-}
 
 export interface OrganizationSignupData {
   orgType: string;
@@ -211,27 +218,6 @@ export interface EventCertificate {
 }
 
 export const api = {
-  // Volunteer signup
-  signupVolunteer: async (data: VolunteerSignupData) => {
-    const response = await fetch(`${API_URL}/auth/signup/volunteer`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Signup failed');
-    }
-
-    const result = await response.json();
-
-    return result;
-  },
-
-
   // Organization signup
   signupOrganization: async (data: OrganizationSignupData) => {
     const response = await fetch(`${API_URL}/auth/signup/organization`, {
@@ -301,7 +287,7 @@ export const api = {
     if (userType === 'volunteer') {
       const { data, error } = await supabase
         .from('volunteer_profiles')
-        .select('*')
+        .select('id, user_id, full_name, email, phone, headline, bio, city, address, linkedin, instagram, website, skills, interest_tags, preferred_availability, avatar_url, cover_url, is_private, onboarding_completed')
         .eq('user_id', user.id)
         .single();
 
@@ -327,7 +313,7 @@ export const api = {
   },
 
   // Backfill volunteer_profiles for OTP signups (AuthCard's name-capture step) —
-  // password-based signupVolunteer() creates this row inline, OTP signups don't.
+  // OTP signups never get a volunteer_profiles row created inline elsewhere.
   ensureVolunteerProfile: async (fullName: string) => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error('Not authenticated');
@@ -1218,7 +1204,7 @@ export const api = {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error('Not authenticated');
 
-    const res = await fetch(`${API_URL}/phone-verification/save`, {
+    const res = await fetch(`${API_URL}/volunteer-contact/save`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

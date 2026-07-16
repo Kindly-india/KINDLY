@@ -1,4 +1,8 @@
 import { IsOptional, IsString, IsArray, IsUrl, IsIn, IsBoolean, MaxLength, ArrayMaxSize, ArrayMinSize } from 'class-validator';
+import { Transform } from 'class-transformer';
+
+// Trims before validation runs — see update-organization-profile.dto.ts for why.
+const trim = ({ value }: { value: unknown }) => typeof value === 'string' ? value.trim() : value;
 
 export class UpdateVolunteerProfileDto {
   @IsOptional()
@@ -36,14 +40,17 @@ export class UpdateVolunteerProfileDto {
   // PATCH /volunteers/email endpoint (ChangeEmailDto) instead.
 
   @IsOptional()
+  @Transform(trim)
   @IsUrl({ require_protocol: false })
   linkedin?: string;
 
   @IsOptional()
+  @Transform(trim)
   @IsUrl({ require_protocol: false })
   instagram?: string;
 
   @IsOptional()
+  @Transform(trim)
   @IsUrl({ require_protocol: false })
   website?: string;
 

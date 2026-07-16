@@ -5,22 +5,22 @@ import { OnboardingDto } from './dto/onboarding.dto';
 import { validateImageFile } from '../common/file-validation.util';
 import { removeFromStorage } from '../common/storage.util';
 import { eventHours } from '../common/hours.util';
+import { normalizeUrlField, trimAllStrings } from '../common/text-normalize.util';
 
 @Injectable()
 export class VolunteerService {
   constructor(private readonly supabase: SupabaseService) {}
 
-  // Volunteers signed up via the OTP AuthCard never go through signupVolunteer(),
-  // so they have an auth user but no volunteer_profiles row and no
-  // user_metadata.user_type. This backfills both, idempotently, right after the
-  // user types their name — everything downstream (getUserProfile, onboarding
-  // PATCH, my-registrations) assumes that row already exists.
+  // Volunteers signed up via the OTP AuthCard have an auth user but no
+  // volunteer_profiles row and no user_metadata.user_type. This backfills both,
+  // idempotently, right after the user types their name — everything downstream
+  // (getUserProfile, onboarding PATCH, my-registrations) assumes that row already exists.
   async ensureProfile(userId: string, fullName: string) {
     const client = this.supabase.getClient();
 
     const { data: existing } = await client
       .from('volunteer_profiles')
-      .select('*')
+      .select('id, user_id, full_name, total_hours')
       .eq('user_id', userId)
       .maybeSingle();
 
@@ -34,7 +34,7 @@ export class VolunteerService {
           full_name: fullName,
           total_hours: 0,
         })
-        .select()
+        .select('id, user_id, full_name, total_hours')
         .single();
 
       if (error) {
@@ -64,17 +64,19 @@ export class VolunteerService {
     const client = this.supabase.getClient();
 
     // 1. Fetch Target Volunteer Profile (Robust Search: checks User ID first, then Profile ID)
+    const profileColumns = 'id, user_id, full_name, avatar_url, cover_url, headline, bio, city, address, email, phone, linkedin, instagram, website, skills, total_hours, is_verified, is_private, created_at';
+
     let { data: profile, error } = await client
       .from('volunteer_profiles')
-      .select('*')
+      .select(profileColumns)
       .eq('user_id', targetUserId)
-      .maybeSingle(); 
+      .maybeSingle();
 
     if (error || !profile) {
        // Fallback: Try fetching by UUID if User ID failed
        const { data: profileById } = await client
         .from('volunteer_profiles')
-        .select('*')
+        .select(profileColumns)
         .eq('id', targetUserId)
         .single();
         
@@ -283,13 +285,13 @@ export class VolunteerService {
 
     const { data: registrations, error } = await client
       .from('event_registrations')
-      .select(`*, events (id, title, event_date, start_time, end_time, organization_id, organization_profiles ( id, name, logo_url ))`)
+      .select(`id, status, events (id, title, event_date, start_time, end_time, organization_id, organization_profiles ( id, name, logo_url ))`)
       .eq('volunteer_id', profile.id)
       .order('registered_at', { ascending: false });
 
     if (error) throw error;
 
-    const { data: endorsements } = await client.from('volunteer_endorsements').select('*').eq('volunteer_id', profile.id);
+    const { data: endorsements } = await client.from('volunteer_endorsements').select('event_id, skills, comment').eq('volunteer_id', profile.id);
 
     const journey = registrations?.map((reg: any) => {
       const event = reg.events;
@@ -302,6 +304,7 @@ export class VolunteerService {
 
       return {
         id: reg.id,
+        event_id: event.id,
         event_title: event.title,
         event_date: event.event_date,
         organization_name: event.organization_profiles?.name,
@@ -330,7 +333,18 @@ export class VolunteerService {
     // profile/auth email drift bug by posting the field directly.
     const { email, ...rest } = dto as any;
 
-    const { data, error } = await client.from('volunteer_profiles').update({ ...rest, updated_at: new Date().toISOString() }).eq('id', profile.id).select().single();
+    // Re-apply here what the DTO's @Transform already did for validation —
+    // see organization.service.ts's updateProfile for why (transform:false
+    // on the global pipe). trimAllStrings covers every plain text field
+    // (full_name, phone, city, ...) generically; website/linkedin/instagram
+    // additionally need a protocol — used as raw <a href> targets on the
+    // public profile, they resolve as broken relative links without one.
+    trimAllStrings(rest);
+    if (rest.website !== undefined) rest.website = normalizeUrlField(rest.website);
+    if (rest.linkedin !== undefined) rest.linkedin = normalizeUrlField(rest.linkedin);
+    if (rest.instagram !== undefined) rest.instagram = normalizeUrlField(rest.instagram);
+
+    const { data, error } = await client.from('volunteer_profiles').update({ ...rest, updated_at: new Date().toISOString() }).eq('id', profile.id).select('id, user_id, full_name, headline, bio, city, address, phone, email, linkedin, instagram, website, skills, interest_tags, preferred_availability, avatar_url, cover_url, is_private, updated_at').single();
     if (error) throw new BadRequestException(error.message || 'Failed to update profile');
 
     // Delete any image that was just replaced — the new upload has a fresh path,
@@ -379,7 +393,7 @@ export class VolunteerService {
       .from('volunteer_profiles')
       .update({ email: newEmail, updated_at: new Date().toISOString() })
       .eq('id', existing.id)
-      .select()
+      .select('id, user_id, email, updated_at')
       .single();
 
     if (error || !data) {
@@ -399,7 +413,7 @@ export class VolunteerService {
     
     const { data, error } = await client
       .from('volunteer_gallery')
-      .select('*')
+      .select('id, user_id, image_url, caption, created_at')
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
 
@@ -441,7 +455,7 @@ export class VolunteerService {
         image_url: publicUrl,
         caption: caption
       })
-      .select()
+      .select('id, user_id, image_url, caption, created_at')
       .single();
 
     if (error) throw error;
@@ -485,7 +499,7 @@ export class VolunteerService {
         onboarding_completed: true,
       })
       .eq('user_id', userId)
-      .select()
+      .select('id, user_id, interest_tags, preferred_availability, social_preference, onboarding_completed')
       .single();
 
     if (error) throw error;

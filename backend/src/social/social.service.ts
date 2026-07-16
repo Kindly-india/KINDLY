@@ -535,7 +535,7 @@ export class SocialService {
     const client = this.supabase.getClient();
     const { data, error } = await client
       .from('search_history')
-      .select('*')
+      .select('id, result_id, result_type, result_name, result_image, created_at')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(10);
@@ -567,7 +567,7 @@ export class SocialService {
         },
         { onConflict: 'user_id,result_id' },
       )
-      .select()
+      .select('id, user_id, result_id, result_type, result_name, result_image, created_at')
       .single();
     if (error) throw new BadRequestException(error.message);
     return data;

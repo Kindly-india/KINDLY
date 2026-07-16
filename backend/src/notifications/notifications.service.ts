@@ -31,7 +31,7 @@ export class NotificationsService {
     const client = this.supabase.getClient();
     let query = client
       .from('notifications')
-      .select('*')
+      .select('id, recipient_id, actor_id, type, message, read, entity_id, created_at')
       .eq('recipient_id', userId)
       .order('created_at', { ascending: false })
       .limit(30);

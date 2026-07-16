@@ -71,7 +71,7 @@ export class PaymentsService {
     // Reuse a pending order instead of minting a new one on double-click/retry.
     const { data: existingPayment } = await supabase
       .from('event_payments')
-      .select('*')
+      .select('razorpay_order_id, amount_paise')
       .eq('event_id', eventId)
       .eq('volunteer_id', volProfile.id)
       .eq('status', 'created')
@@ -117,7 +117,7 @@ export class PaymentsService {
 
     const { data: payment } = await supabase
       .from('event_payments')
-      .select('*')
+      .select('id, status, event_id, volunteer_id, amount_paise')
       .eq('razorpay_order_id', dto.razorpayOrderId)
       .eq('event_id', eventId)
       .eq('volunteer_id', volProfile.id)
@@ -173,7 +173,7 @@ export class PaymentsService {
       if (orderId && razorpayPaymentId) {
         const { data: payment } = await supabase
           .from('event_payments')
-          .select('*')
+          .select('id, status, event_id, volunteer_id, amount_paise')
           .eq('razorpay_order_id', orderId)
           .maybeSingle();
 
@@ -300,7 +300,7 @@ export class PaymentsService {
 
     const { data: payment } = await supabase
       .from('event_payments')
-      .select('*')
+      .select('id, status, amount_paise, razorpay_payment_id')
       .eq('id', paymentId)
       .maybeSingle();
 
@@ -345,7 +345,7 @@ export class PaymentsService {
 
     const { data: payments } = await supabase
       .from('event_payments')
-      .select('*')
+      .select('id, razorpay_payment_id, amount_paise')
       .eq('event_id', eventId)
       .eq('status', 'paid');
 
@@ -441,7 +441,7 @@ export class PaymentsService {
 
     const { data: storedBill } = await supabase
       .from('event_bills')
-      .select('*')
+      .select('id, event_id, organization_id, gross_amount_paise, org_amount_paise, platform_fee_paise, eligible_registration_count, status, paid_at, paid_reference')
       .eq('event_id', eventId)
       .maybeSingle();
 
@@ -469,7 +469,7 @@ export class PaymentsService {
 
     const [{ data: payments }, { data: bills }] = await Promise.all([
       supabase.from('event_payments').select('event_id, status, amount_paise').in('event_id', safeIds),
-      supabase.from('event_bills').select('*').in('event_id', safeIds),
+      supabase.from('event_bills').select('id, event_id, organization_id, gross_amount_paise, org_amount_paise, platform_fee_paise, eligible_registration_count, status, paid_at, paid_reference').in('event_id', safeIds),
     ]);
 
     const dashboard = events.map((event: any) => {
@@ -544,7 +544,7 @@ export class PaymentsService {
         paid_at: new Date().toISOString(),
         paid_reference: paidReference ?? null,
       })
-      .select()
+      .select('id, event_id, organization_id, gross_amount_paise, org_amount_paise, platform_fee_paise, eligible_registration_count, status, paid_at, paid_reference')
       .single();
 
     if (error) {

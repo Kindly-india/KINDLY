@@ -971,7 +971,11 @@ export default function VolunteerProfile() {
                     <div className="space-y-8 relative pl-2">
                       <div className="absolute top-2 left-[27px] h-full w-0.5 bg-black/10 dark:bg-white/10 -z-10" />
                       {journey.map((item, idx) => (
-                        <div key={idx} className="flex gap-4 relative group">
+                        <Link
+                          key={idx}
+                          href={item.event_id ? `/events/${item.event_id}/showcase` : '#'}
+                          className="flex gap-4 relative group"
+                        >
                           <div className="w-14 shrink-0 flex flex-col items-center">
                             <div className="w-3 h-3 rounded-full bg-card border-2 border-blue-500 z-10 shadow-[0_0_0_4px_var(--card)] mb-2" />
                             <span className="text-xs font-semibold text-muted-foreground">{formatDate(item.event_date).split(',')[0]}</span>
@@ -995,7 +999,7 @@ export default function VolunteerProfile() {
                               </div>
                             )}
                           </div>
-                        </div>
+                        </Link>
                       ))}
                     </div>
                   )}

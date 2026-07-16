@@ -7,6 +7,7 @@ import { AddReviewDto } from './dto/add-review.dto';
 import { validateImageFile } from '../common/file-validation.util';
 import { removeFromStorage, storagePathFromStored } from '../common/storage.util';
 import { eventHours } from '../common/hours.util';
+import { normalizeUrlField, normalizeTrimmedField, trimAllStrings, normalizeTeamMembers, normalizeAchievements } from '../common/text-normalize.util';
 
 export interface OrgProfilePublic {
   id: string;
@@ -285,7 +286,7 @@ export class OrganizationService {
 
     const { data: events, error } = await client
       .from('events')
-      .select('*')
+      .select('id, title, status, event_date, location, registered_count')
       .eq('organization_id', finalId)
       .in('status', ['published', 'completed'])
       .order('event_date', { ascending: false });
@@ -349,6 +350,21 @@ export class OrganizationService {
     // Dropped explicitly (not just omitted from the DTO) so a client can't
     // reintroduce the bug by posting the field directly — whitelist isn't on.
     const { org_type, email, ...updateData } = dto as any;
+
+    // Re-apply here what the DTO's @Transform already did for validation —
+    // transform:false on the global pipe means the handler receives the
+    // original untrimmed body, not the instance validation actually ran
+    // against. trimAllStrings covers every plain text field (name, phone,
+    // tagline, ...) generically; website/linkedin/instagram additionally need
+    // a protocol — used as raw <a href> targets on the public profile, they
+    // resolve as broken relative links without one.
+    trimAllStrings(updateData);
+    if (updateData.website !== undefined) updateData.website = normalizeUrlField(updateData.website);
+    if (updateData.linkedin !== undefined) updateData.linkedin = normalizeUrlField(updateData.linkedin);
+    if (updateData.instagram !== undefined) updateData.instagram = normalizeUrlField(updateData.instagram);
+    if (updateData.upi_id !== undefined) updateData.upi_id = normalizeTrimmedField(updateData.upi_id);
+    if (updateData.team_members !== undefined) updateData.team_members = normalizeTeamMembers(updateData.team_members);
+    if (updateData.achievements !== undefined) updateData.achievements = normalizeAchievements(updateData.achievements);
 
     const { data, error } = await client
       .from('organization_profiles')
@@ -533,7 +549,7 @@ export class OrganizationService {
     const { data, error } = await client
       .from('organization_reviews')
       .insert({ ...dto, volunteer_id: volunteer.id })
-      .select()
+      .select('id, organization_id, volunteer_id, event_id, rating, comment, created_at')
       .single();
 
     if (error) throw error;
@@ -597,7 +613,7 @@ export class OrganizationService {
     const { data, error } = await client
       .from('org_gallery')
       .insert({ org_id: orgProfile.id, user_id: userId, image_url: publicUrl, caption })
-      .select()
+      .select('id, image_url, caption, created_at')
       .single();
 
     if (error) throw error;

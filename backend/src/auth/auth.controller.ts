@@ -1,6 +1,5 @@
 import { Controller, Post, Body, ValidationPipe, BadRequestException, UseGuards, Request } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { VolunteerSignupDto } from './dto/volunteer-signup.dto';
 import { OrganizationSignupDto } from './dto/organization-signup.dto';
 import { UpdatePasswordDto } from './dto/update-password.dto';
 import { Throttle } from '@nestjs/throttler';
@@ -9,12 +8,6 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
-
-  @Throttle({ short: { limit: 5, ttl: 3_600_000 } })
-  @Post('signup/volunteer')
-  async signupVolunteer(@Body(ValidationPipe) dto: VolunteerSignupDto) {
-    return this.authService.signupVolunteer(dto);
-  }
 
   @Throttle({ short: { limit: 10, ttl: 3_600_000 } })
   @Post('signup/organization')

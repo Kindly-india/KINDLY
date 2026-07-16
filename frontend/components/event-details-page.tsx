@@ -26,7 +26,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { api } from "@/lib/api"
 import { cn } from "@/lib/utils"
-import { PhoneVerificationModal } from "@/components/phone-verification-modal"
+import { VolunteerContactModal } from "@/components/volunteer-contact-modal"
 import { EventCheckoutModal } from "@/components/event-checkout-modal"
 import { VerifiedBadge } from "@/components/verified-badge"
 import { ScrollReveal } from "@/components/ui/scroll-reveal"
@@ -125,7 +125,7 @@ export default function EventDetailsPage() {
         router.push('/login')
         return
       }
-      // Phone not yet verified — show OTP modal before the commitment modal
+      // No phone on file — collect one before the commitment modal
       if (!userPhone) {
         setShowPhoneModal(true)
         return
@@ -751,7 +751,7 @@ export default function EventDetailsPage() {
       </div>
 
       {showPhoneModal && (
-        <PhoneVerificationModal
+        <VolunteerContactModal
           onSaved={(phone) => {
             setUserPhone(phone)
             setShowPhoneModal(false)
