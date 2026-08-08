@@ -377,7 +377,7 @@ export default function RegisteredEventDetailPage() {
           <div className="w-28 h-28 rounded-full bg-emerald-500 flex items-center justify-center mb-8 shadow-2xl animate-bounce">
             <CheckCircle2 className="w-14 h-14 text-white" strokeWidth={2.5} />
           </div>
-          <h1 className="text-3xl font-black text-foreground mb-3">You're checked in ✓</h1>
+          <h1 className="text-3xl font-black text-foreground mb-3">You&apos;re checked in ✓</h1>
           <p className="text-lg font-bold text-muted-foreground text-center mb-2">{event.title}</p>
           <p className="text-3xl mt-4">Enjoy your time 🙌</p>
         </div>
@@ -693,7 +693,7 @@ export default function RegisteredEventDetailPage() {
                 <div className="flex flex-col items-center gap-3 py-2">
                   <div className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-200 text-emerald-700 font-bold text-sm px-5 py-2.5 rounded-full w-full justify-center">
                     <CheckCircle2 className="w-4 h-4" />
-                    You're checked in ✓
+                    You&apos;re checked in ✓
                   </div>
                   <p className="text-[11px] text-muted-foreground text-center leading-relaxed">
                     Your certificate and moment will be available once the organizer marks the event complete.
@@ -716,7 +716,7 @@ export default function RegisteredEventDetailPage() {
                 <button
                   onClick={handleCertDownload}
                   disabled={downloadingCert}
-                  className="w-full h-14 flex items-center justify-center gap-3 bg-amber-50 dark:bg-amber-500/15 hover:bg-amber-100 dark:bg-amber-500/15 border border-amber-200 text-amber-800 font-black rounded-2xl transition-all disabled:opacity-60"
+                  className="w-full h-14 flex items-center justify-center gap-3 bg-amber-50 dark:bg-amber-500/15 hover:bg-amber-100 border border-amber-200 text-amber-800 font-black rounded-2xl transition-all disabled:opacity-60"
                 >
                   {downloadingCert ? <Loader2 className="w-5 h-5 animate-spin" /> : <Award className="w-5 h-5 text-amber-500" />}
                   Download Certificate
@@ -728,7 +728,7 @@ export default function RegisteredEventDetailPage() {
                 <button
                   onClick={handleCancelRsvp}
                   disabled={cancellingRsvp}
-                  className="w-full h-12 flex items-center justify-center gap-2 bg-red-50 dark:bg-red-500/15 hover:bg-red-100 dark:bg-red-500/15 border border-red-200 text-red-600 font-bold text-sm rounded-2xl transition-all disabled:opacity-50"
+                  className="w-full h-12 flex items-center justify-center gap-2 bg-red-50 dark:bg-red-500/15 hover:bg-red-100 border border-red-200 text-red-600 font-bold text-sm rounded-2xl transition-all disabled:opacity-50"
                 >
                   {cancellingRsvp ? <Loader2 className="w-4 h-4 animate-spin" /> : <X className="w-4 h-4" />}
                   Cancel Registration
@@ -798,7 +798,7 @@ export default function RegisteredEventDetailPage() {
           <div className="bg-card border-t border-border shadow-[0_-8px_30px_rgba(0,0,0,0.08)] px-5 py-4">
             <div className="flex items-center justify-center gap-2 bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-200 text-emerald-700 font-bold text-sm px-5 py-2.5 rounded-full">
               <CheckCircle2 className="w-4 h-4" />
-              You're checked in ✓
+              You&apos;re checked in ✓
             </div>
             <p className="text-[11px] text-muted-foreground text-center mt-2 leading-relaxed">
               Hang tight — your moment unlocks once the org wraps up.

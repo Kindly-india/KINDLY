@@ -1,4 +1,12 @@
-import { IsString, IsNotEmpty, IsOptional, IsUUID, IsIn, IsUrl, MaxLength } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsUUID,
+  IsIn,
+  IsUrl,
+  MaxLength,
+} from 'class-validator';
 
 export class SaveSearchHistoryDto {
   @IsUUID()

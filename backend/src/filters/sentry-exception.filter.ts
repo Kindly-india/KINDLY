@@ -22,9 +22,11 @@ export class SentryExceptionFilter implements ExceptionFilter {
     if (exception instanceof HttpException) {
       const status = exception.getStatus();
       const res = exception.getResponse();
-      response.status(status).json(
-        typeof res === 'string' ? { statusCode: status, message: res } : res,
-      );
+      response
+        .status(status)
+        .json(
+          typeof res === 'string' ? { statusCode: status, message: res } : res,
+        );
     } else {
       response.status(500).json({
         statusCode: 500,

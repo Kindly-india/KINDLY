@@ -19,8 +19,7 @@ import {
   Calendar,
   Building2,
   AlertTriangle,
-  Loader2,
-  BarChart3
+  Loader2
 } from "lucide-react"
 import { cn, formatHoursTotal } from "@/lib/utils"
 import { api } from "@/lib/api"
@@ -47,7 +46,6 @@ export function OrgHomePage() {
     eventsHosted: 0,
     upcomingEventsCount: 0
   })
-  const [error, setError] = useState<string | null>(null)
 
   // --- Fetch Data on Mount ---
   useEffect(() => {
@@ -98,8 +96,8 @@ export function OrgHomePage() {
           upcomingEventsCount,
         })
 
-      } catch (err: any) {
-        setError(err.message || 'Failed to load dashboard data')
+      } catch {
+        // Silently keep prior/default state — no UI surface consumes an error message here.
       } finally {
         setLoading(false)
       }
@@ -159,7 +157,7 @@ export function OrgHomePage() {
 
   const formatTime = (timeString: string) => {
     if (!timeString) return ""
-    const [hours, minutes] = timeString.split(':')
+    const [hours] = timeString.split(':')
     const hour = parseInt(hours)
     const ampm = hour >= 12 ? 'PM' : 'AM'
     const displayHour = hour % 12 || 12
@@ -231,7 +229,7 @@ export function OrgHomePage() {
                 <p className="text-[18px] md:text-[28px] font-bold text-[#ff6b6b]">
                   {formatHoursTotal(stats.totalHours)}
                 </p>
-                <p className="text-[10px] md:text-[12px] text-muted-foreground dark:text-neutral-400">Total Hours</p>
+                <p className="text-[10px] md:text-[12px] text-muted-foreground dark:text-neutral-400">Total Man-Hours</p>
               </Card>
             </ScrollReveal>
             <ScrollReveal delay={0.08}>
@@ -537,7 +535,7 @@ export function OrgHomePage() {
                 <InstagramIcon className="w-5 h-5" />
               </a>
               <a
-                href="#"
+                href="https://in.linkedin.com/company/teamkindly"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="LinkedIn"
@@ -558,7 +556,7 @@ export function OrgHomePage() {
           </div>
 
           <div className="border-t border-white/10 mt-6 pt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-[12px] text-neutral-500">
-            <span className="whitespace-nowrap">manasdhivare@gmail.com</span>
+            <span className="whitespace-nowrap">team@kindly.co.in</span>
             <span className="whitespace-nowrap">+91 7517018954</span>
             <span className="flex items-center gap-1 whitespace-nowrap"><MapPin className="w-3 h-3" /> Nashik, India</span>
           </div>

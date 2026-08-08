@@ -1,8 +1,19 @@
-import { IsOptional, IsString, IsArray, IsUrl, IsIn, IsBoolean, MaxLength, ArrayMaxSize, ArrayMinSize } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsArray,
+  IsUrl,
+  IsIn,
+  IsBoolean,
+  MaxLength,
+  ArrayMaxSize,
+  ArrayMinSize,
+} from 'class-validator';
 import { Transform } from 'class-transformer';
 
 // Trims before validation runs — see update-organization-profile.dto.ts for why.
-const trim = ({ value }: { value: unknown }) => typeof value === 'string' ? value.trim() : value;
+const trim = ({ value }: { value: unknown }) =>
+  typeof value === 'string' ? value.trim() : value;
 
 export class UpdateVolunteerProfileDto {
   @IsOptional()

@@ -1,4 +1,9 @@
-import { Injectable, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { NotificationsService } from '../notifications/notifications.service';
 
@@ -27,23 +32,23 @@ export class SocialService {
       .ilike('name', searchTerm)
       .limit(5);
 
-    const formattedVols = (vols || []).map(v => ({
+    const formattedVols = (vols || []).map((v) => ({
       type: 'volunteer',
       id: v.user_id,
       name: v.full_name,
       subtitle: v.city || 'Volunteer',
       image: v.avatar_url,
-      verified: v.is_verified
+      verified: v.is_verified,
     }));
 
-    const formattedOrgs = (orgs || []).map(o => ({
+    const formattedOrgs = (orgs || []).map((o) => ({
       type: 'org',
       id: o.id,
       target_user_id: o.user_id,
       name: o.name,
       subtitle: o.area_locality || 'Organization',
       image: o.logo_url,
-      verified: o.is_verified
+      verified: o.is_verified,
     }));
 
     return [...formattedVols, ...formattedOrgs];
@@ -51,7 +56,8 @@ export class SocialService {
 
   // --- PRIVACY-AWARE FOLLOW ---
   async followUser(followerId: string, targetId: string) {
-    if (followerId === targetId) throw new BadRequestException('You cannot follow yourself');
+    if (followerId === targetId)
+      throw new BadRequestException('You cannot follow yourself');
     const client = this.supabase.getClient();
 
     // Organizations are broadcast-only — they cannot follow anyone
@@ -60,7 +66,10 @@ export class SocialService {
       .select('id')
       .eq('user_id', followerId)
       .maybeSingle();
-    if (orgCheck) throw new ForbiddenException('Organizations cannot follow other accounts.');
+    if (orgCheck)
+      throw new ForbiddenException(
+        'Organizations cannot follow other accounts.',
+      );
 
     // Return early if a row already exists (idempotent)
     const { data: existing } = await client
@@ -82,9 +91,11 @@ export class SocialService {
     const isPrivate = targetProfile?.is_private ?? false;
     const followStatus = isPrivate ? 'pending' : 'accepted';
 
-    const { error } = await client
-      .from('follows')
-      .insert({ follower_id: followerId, following_id: targetId, status: followStatus });
+    const { error } = await client.from('follows').insert({
+      follower_id: followerId,
+      following_id: targetId,
+      status: followStatus,
+    });
 
     if (error) {
       if (error.code === '23505') return { status: followStatus };
@@ -92,9 +103,19 @@ export class SocialService {
     }
 
     if (isPrivate) {
-      this.notifications.createNotification(targetId, followerId, 'follow_request', 'sent you a follow request.');
+      this.notifications.createNotification(
+        targetId,
+        followerId,
+        'follow_request',
+        'sent you a follow request.',
+      );
     } else {
-      this.notifications.createNotification(targetId, followerId, 'new_follower', 'started following you.');
+      this.notifications.createNotification(
+        targetId,
+        followerId,
+        'new_follower',
+        'started following you.',
+      );
     }
 
     return { status: followStatus };
@@ -111,7 +132,9 @@ export class SocialService {
     if (error) throw new BadRequestException(error.message);
 
     // Clean up any pending follow_request notification from this actor (no-op if none)
-    await client.from('notifications').delete()
+    await client
+      .from('notifications')
+      .delete()
       .eq('recipient_id', targetId)
       .eq('actor_id', followerId)
       .eq('type', 'follow_request');
@@ -155,10 +178,13 @@ export class SocialService {
       .select('id');
 
     if (updateError) throw new BadRequestException(updateError.message);
-    if (!updated?.length) throw new NotFoundException('Follow request no longer exists');
+    if (!updated?.length)
+      throw new NotFoundException('Follow request no longer exists');
 
     // Clean up the source follow_request notification
-    await client.from('notifications').delete()
+    await client
+      .from('notifications')
+      .delete()
       .eq('recipient_id', currentUserId)
       .eq('actor_id', requesterId)
       .eq('type', 'follow_request');
@@ -185,7 +211,10 @@ export class SocialService {
       .eq('status', 'pending')
       .maybeSingle();
 
-    if (!existing) throw new NotFoundException('Follow request not found or already processed');
+    if (!existing)
+      throw new NotFoundException(
+        'Follow request not found or already processed',
+      );
 
     const { error } = await client
       .from('follows')
@@ -195,7 +224,9 @@ export class SocialService {
     if (error) throw new BadRequestException(error.message);
 
     // Clean up the source follow_request notification
-    await client.from('notifications').delete()
+    await client
+      .from('notifications')
+      .delete()
       .eq('recipient_id', currentUserId)
       .eq('actor_id', requesterId)
       .eq('type', 'follow_request');
@@ -278,14 +309,17 @@ export class SocialService {
   private normalizeVolunteer(p: any, statusMap: Record<string, string>) {
     return {
       user_id: p.user_id,
-      profile_id: p.user_id,      // volunteer URL uses user_id
+      profile_id: p.user_id, // volunteer URL uses user_id
       entity_type: 'volunteer' as const,
       full_name: p.full_name,
       avatar_url: p.avatar_url ?? null,
       city: p.city ?? null,
       headline: p.headline ?? null,
       is_verified: p.is_verified ?? false,
-      requester_follow_status: (statusMap[p.user_id] ?? 'none') as 'none' | 'pending' | 'accepted',
+      requester_follow_status: (statusMap[p.user_id] ?? 'none') as
+        | 'none'
+        | 'pending'
+        | 'accepted',
     };
   }
 
@@ -293,21 +327,28 @@ export class SocialService {
   private normalizeOrg(o: any, statusMap: Record<string, string>) {
     return {
       user_id: o.user_id,
-      profile_id: o.id,            // org URL uses the profile UUID, not user_id
+      profile_id: o.id, // org URL uses the profile UUID, not user_id
       entity_type: 'org' as const,
       full_name: o.name,
       avatar_url: o.logo_url ?? null,
       city: o.area_locality ?? null,
       headline: null,
       is_verified: o.is_verified ?? false,
-      requester_follow_status: (statusMap[o.user_id] ?? 'none') as 'none' | 'pending' | 'accepted',
+      requester_follow_status: (statusMap[o.user_id] ?? 'none') as
+        | 'none'
+        | 'pending'
+        | 'accepted',
     };
   }
 
   // Fetch volunteer + org profiles for a given set of user_ids, returning a
   // unified list. Both tables are queried in parallel; org rows fill the gaps
   // for any user_id not found in volunteer_profiles.
-  private async buildProfileList(ids: string[], viewerId: string | null, client: any) {
+  private async buildProfileList(
+    ids: string[],
+    viewerId: string | null,
+    client: any,
+  ) {
     const [volResult, orgResult, statusMap] = await Promise.all([
       client
         .from('volunteer_profiles')
@@ -320,10 +361,14 @@ export class SocialService {
       this.buildViewerStatusMap(viewerId, ids, client),
     ]);
 
-    const volUserIds = new Set((volResult.data ?? []).map((p: any) => p.user_id));
+    const volUserIds = new Set(
+      (volResult.data ?? []).map((p: any) => p.user_id),
+    );
 
     return [
-      ...(volResult.data ?? []).map((p: any) => this.normalizeVolunteer(p, statusMap)),
+      ...(volResult.data ?? []).map((p: any) =>
+        this.normalizeVolunteer(p, statusMap),
+      ),
       // Only include orgs whose user_id isn't already in volunteer_profiles
       // (a user_id belongs to exactly one type, but this guards against surprises)
       ...(orgResult.data ?? [])
@@ -441,7 +486,11 @@ export class SocialService {
     const seenUserIds = new Set<string>();
 
     const addCandidate = (p: any) => {
-      if (!seenUserIds.has(p.user_id) && !excludeIds.has(p.user_id) && !p.is_private) {
+      if (
+        !seenUserIds.has(p.user_id) &&
+        !excludeIds.has(p.user_id) &&
+        !p.is_private
+      ) {
         seenUserIds.add(p.user_id);
         candidates.push(p);
       }
@@ -451,7 +500,9 @@ export class SocialService {
     if (me.city) {
       const { data: cityVols } = await client
         .from('volunteer_profiles')
-        .select('id, user_id, full_name, avatar_url, city, is_verified, is_private')
+        .select(
+          'id, user_id, full_name, avatar_url, city, is_verified, is_private',
+        )
         .eq('city', me.city)
         .eq('is_private', false)
         .limit(20);
@@ -476,12 +527,16 @@ export class SocialService {
           .in('status', ['checked_in', 'completed'])
           .neq('volunteer_id', me.id);
 
-        const sharedProfileIds = [...new Set((sharedRegs ?? []).map((r: any) => r.volunteer_id))];
+        const sharedProfileIds = [
+          ...new Set((sharedRegs ?? []).map((r: any) => r.volunteer_id)),
+        ];
 
         if (sharedProfileIds.length > 0) {
           const { data: sharedVols } = await client
             .from('volunteer_profiles')
-            .select('id, user_id, full_name, avatar_url, city, is_verified, is_private')
+            .select(
+              'id, user_id, full_name, avatar_url, city, is_verified, is_private',
+            )
             .in('id', sharedProfileIds)
             .eq('is_private', false)
             .limit(20);
@@ -494,7 +549,9 @@ export class SocialService {
     if (candidates.length < 10) {
       const { data: fallback } = await client
         .from('volunteer_profiles')
-        .select('id, user_id, full_name, avatar_url, city, is_verified, is_private')
+        .select(
+          'id, user_id, full_name, avatar_url, city, is_verified, is_private',
+        )
         .eq('is_private', false)
         .order('created_at', { ascending: true })
         .limit(30);
@@ -535,7 +592,9 @@ export class SocialService {
     const client = this.supabase.getClient();
     const { data, error } = await client
       .from('search_history')
-      .select('id, result_id, result_type, result_name, result_image, created_at')
+      .select(
+        'id, result_id, result_type, result_name, result_image, created_at',
+      )
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(10);
@@ -543,12 +602,15 @@ export class SocialService {
     return data ?? [];
   }
 
-  async saveSearchHistory(userId: string, item: {
-    result_id: string;
-    result_type: string;
-    result_name: string;
-    result_image?: string | null;
-  }) {
+  async saveSearchHistory(
+    userId: string,
+    item: {
+      result_id: string;
+      result_type: string;
+      result_name: string;
+      result_image?: string | null;
+    },
+  ) {
     const client = this.supabase.getClient();
     // Idempotent: one row per (user_id, result_id). Re-searching the same
     // person updates that row (and bumps created_at so it sorts as most
@@ -567,7 +629,9 @@ export class SocialService {
         },
         { onConflict: 'user_id,result_id' },
       )
-      .select('id, user_id, result_id, result_type, result_name, result_image, created_at')
+      .select(
+        'id, user_id, result_id, result_type, result_name, result_image, created_at',
+      )
       .single();
     if (error) throw new BadRequestException(error.message);
     return data;
@@ -593,5 +657,4 @@ export class SocialService {
     if (error) throw new BadRequestException(error.message);
     return { message: 'Item removed' };
   }
-
 }

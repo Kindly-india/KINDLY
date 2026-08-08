@@ -1,4 +1,18 @@
-import { Controller, Post, Get, Body, Delete, ValidationPipe, Request, UseGuards, Param, Patch, BadRequestException, Query, Header } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  Delete,
+  ValidationPipe,
+  Request,
+  UseGuards,
+  Param,
+  Patch,
+  BadRequestException,
+  Query,
+  Header,
+} from '@nestjs/common';
 import { EventService } from './event.service';
 import { CertificateService } from '../certificate/certificate.service';
 import { CreateEventDto } from './dto/create-event.dto';
@@ -18,7 +32,7 @@ export class EventController {
   constructor(
     private eventService: EventService,
     private certificateService: CertificateService,
-  ) { }
+  ) {}
 
   // Event auto-completion runs inside Postgres now (pg_cron) — see
   // backend/migrations/auto_complete_events_cron.sql. The old
@@ -40,7 +54,7 @@ export class EventController {
   @UseGuards(AdminGuard)
   async adminApproveEvent(
     @Param('id') eventId: string,
-    @Body() updateData: any // Using 'any' or 'Partial<CreateEventDto>' here since you're the admin overriding it
+    @Body() updateData: any, // Using 'any' or 'Partial<CreateEventDto>' here since you're the admin overriding it
   ) {
     return this.eventService.adminApproveEvent(eventId, updateData);
   }
@@ -61,7 +75,11 @@ export class EventController {
     @Query('lng') lng: string,
   ) {
     if (!query) throw new BadRequestException('Missing search query');
-    const suggestions = await this.eventService.searchLocations(query, parseFloat(lat), parseFloat(lng));
+    const suggestions = await this.eventService.searchLocations(
+      query,
+      parseFloat(lat),
+      parseFloat(lng),
+    );
     return { suggestions };
   }
 
@@ -72,7 +90,10 @@ export class EventController {
     @Query('lng') lng: string,
   ) {
     if (!lat || !lng) throw new BadRequestException('Missing coordinates');
-    return this.eventService.reverseGeocodeLocation(parseFloat(lat), parseFloat(lng));
+    return this.eventService.reverseGeocodeLocation(
+      parseFloat(lat),
+      parseFloat(lng),
+    );
   }
 
   // ==========================================
@@ -127,7 +148,11 @@ export class EventController {
   // ✅ NEW: Send Broadcast (Protected for Org)
   @Post(':id/broadcast')
   @UseGuards(JwtAuthGuard)
-  async sendBroadcast(@Request() req: any, @Param('id') id: string, @Body(ValidationPipe) dto: BroadcastMessageDto) {
+  async sendBroadcast(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body(ValidationPipe) dto: BroadcastMessageDto,
+  ) {
     return this.eventService.sendBroadcast(req.user.id, id, dto.message);
   }
 
@@ -142,7 +167,10 @@ export class EventController {
   @Post('org/signature')
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileInterceptor('file'))
-  async uploadSignature(@Request() req: any, @UploadedFile() file: Express.Multer.File) {
+  async uploadSignature(
+    @Request() req: any,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
     return this.eventService.uploadOrgSignature(req.user.id, file);
   }
 
@@ -186,7 +214,10 @@ export class EventController {
 
   @Post('self-check-in')
   @UseGuards(JwtAuthGuard)
-  async selfCheckIn(@Request() req: any, @Body(ValidationPipe) dto: SelfCheckInDto) {
+  async selfCheckIn(
+    @Request() req: any,
+    @Body(ValidationPipe) dto: SelfCheckInDto,
+  ) {
     return this.eventService.selfCheckIn(req.user.id, dto);
   }
 
@@ -199,7 +230,10 @@ export class EventController {
 
   @Post()
   @UseGuards(JwtAuthGuard)
-  async createEvent(@Request() req: any, @Body(ValidationPipe) dto: CreateEventDto) {
+  async createEvent(
+    @Request() req: any,
+    @Body(ValidationPipe) dto: CreateEventDto,
+  ) {
     return this.eventService.createEvent(req.user.id, dto);
   }
 
@@ -208,7 +242,7 @@ export class EventController {
   async deleteBroadcast(
     @Request() req: any,
     @Param('id') eventId: string,
-    @Param('broadcastId') broadcastId: string
+    @Param('broadcastId') broadcastId: string,
   ) {
     return this.eventService.deleteBroadcast(req.user.id, eventId, broadcastId);
   }
@@ -232,7 +266,11 @@ export class EventController {
     @Param('id') eventId: string,
     @Param('registrationId') registrationId: string,
   ) {
-    return this.eventService.checkInVolunteer(req.user.id, eventId, registrationId);
+    return this.eventService.checkInVolunteer(
+      req.user.id,
+      eventId,
+      registrationId,
+    );
   }
 
   @Patch(':id/registrations/:registrationId/undo-check-in')
@@ -250,7 +288,7 @@ export class EventController {
   async updateEvent(
     @Request() req: any,
     @Param('id') id: string,
-    @Body(ValidationPipe) dto: CreateEventDto
+    @Body(ValidationPipe) dto: CreateEventDto,
   ) {
     return this.eventService.updateEvent(req.user.id, id, dto);
   }
@@ -269,7 +307,11 @@ export class EventController {
     @Param('id') id: string,
     @Body(ValidationPipe) body: UpdateGalleryDto,
   ) {
-    return this.eventService.updateEventGallery(req.user.id, id, body.galleryImages);
+    return this.eventService.updateEventGallery(
+      req.user.id,
+      id,
+      body.galleryImages,
+    );
   }
 
   @Get(':id/showcase')
@@ -301,7 +343,12 @@ export class EventController {
     @Param('id') eventId: string,
     @Body(ValidationPipe) dto: SubmitReviewDto,
   ) {
-    return this.eventService.submitReview(req.user.id, eventId, dto.rating, dto.comment);
+    return this.eventService.submitReview(
+      req.user.id,
+      eventId,
+      dto.rating,
+      dto.comment,
+    );
   }
 
   // Add this route
@@ -310,5 +357,4 @@ export class EventController {
   async getMyReview(@Request() req: any, @Param('id') eventId: string) {
     return this.eventService.getVolunteerReview(req.user.id, eventId);
   }
-
 }

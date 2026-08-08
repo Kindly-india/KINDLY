@@ -36,7 +36,9 @@ export class PaymentsService {
 
     const { data: event, error: eventError } = await supabase
       .from('events')
-      .select('id, ticket_price, registration_deadline, total_slots, registered_count, status')
+      .select(
+        'id, ticket_price, registration_deadline, total_slots, registered_count, status',
+      )
       .eq('id', eventId)
       .maybeSingle();
 
@@ -48,14 +50,20 @@ export class PaymentsService {
     if (event.status !== 'published') {
       throw new BadRequestException('This event is not open for registration');
     }
-    if (event.registration_deadline && new Date(event.registration_deadline) < new Date()) {
+    if (
+      event.registration_deadline &&
+      new Date(event.registration_deadline) < new Date()
+    ) {
       throw new BadRequestException('Registration deadline has passed');
     }
     // UX-only pre-check to avoid generating orders for obviously-full events.
     // The real enforcement is confirm_paid_registration's atomic check at
     // confirm time — capacity can still change during checkout (UPI payments
     // can take minutes to settle).
-    if (event.total_slots !== null && event.registered_count >= event.total_slots) {
+    if (
+      event.total_slots !== null &&
+      event.registered_count >= event.total_slots
+    ) {
       throw new BadRequestException('Event is already full');
     }
 
@@ -66,7 +74,8 @@ export class PaymentsService {
       .eq('volunteer_id', volProfile.id)
       .maybeSingle();
 
-    if (existingReg) throw new BadRequestException('Already registered for this event');
+    if (existingReg)
+      throw new BadRequestException('Already registered for this event');
 
     // Reuse a pending order instead of minting a new one on double-click/retry.
     const { data: existingPayment } = await supabase
@@ -87,15 +96,20 @@ export class PaymentsService {
       };
     }
 
-    const order = await this.razorpayService.createOrder(event.ticket_price, crypto.randomUUID());
+    const order = await this.razorpayService.createOrder(
+      event.ticket_price,
+      crypto.randomUUID(),
+    );
 
-    const { error: insertError } = await supabase.from('event_payments').insert({
-      event_id: eventId,
-      volunteer_id: volProfile.id,
-      razorpay_order_id: order.id,
-      amount_paise: event.ticket_price,
-      status: 'created',
-    });
+    const { error: insertError } = await supabase
+      .from('event_payments')
+      .insert({
+        event_id: eventId,
+        volunteer_id: volProfile.id,
+        razorpay_order_id: order.id,
+        amount_paise: event.ticket_price,
+        status: 'created',
+      });
 
     if (insertError) throw insertError;
 
@@ -125,29 +139,46 @@ export class PaymentsService {
 
     if (!payment) throw new NotFoundException('Payment order not found');
 
-    if (!this.verifyOrderSignature(dto.razorpayOrderId, dto.razorpayPaymentId, dto.razorpaySignature)) {
+    if (
+      !this.verifyOrderSignature(
+        dto.razorpayOrderId,
+        dto.razorpayPaymentId,
+        dto.razorpaySignature,
+      )
+    ) {
       throw new BadRequestException('Invalid payment signature');
     }
 
     return this.markPaidAndConfirm(payment, dto.razorpayPaymentId);
   }
 
-  async handleWebhook(rawBody: Buffer, signature: string | undefined): Promise<{ received: boolean }> {
+  async handleWebhook(
+    rawBody: Buffer,
+    signature: string | undefined,
+  ): Promise<{ received: boolean }> {
     const expected = crypto
-      .createHmac('sha256', this.config.getOrThrow<string>('RAZORPAY_WEBHOOK_SECRET'))
+      .createHmac(
+        'sha256',
+        this.config.getOrThrow<string>('RAZORPAY_WEBHOOK_SECRET'),
+      )
       .update(rawBody)
       .digest('hex');
 
     const expectedBuf = Buffer.from(expected, 'hex');
     const actualBuf = Buffer.from(signature ?? '', 'hex');
 
-    if (expectedBuf.length !== actualBuf.length || !crypto.timingSafeEqual(expectedBuf, actualBuf)) {
+    if (
+      expectedBuf.length !== actualBuf.length ||
+      !crypto.timingSafeEqual(expectedBuf, actualBuf)
+    ) {
       throw new BadRequestException('Invalid webhook signature');
     }
 
     const payload = JSON.parse(rawBody.toString('utf8'));
     const entityId =
-      payload?.payload?.payment?.entity?.id ?? payload?.payload?.refund?.entity?.id ?? 'unknown';
+      payload?.payload?.payment?.entity?.id ??
+      payload?.payload?.refund?.entity?.id ??
+      'unknown';
     const razorpayEventId = `${payload?.event}:${entityId}:${payload?.created_at ?? ''}`;
 
     const supabase = this.supabaseService.getClient();
@@ -155,11 +186,13 @@ export class PaymentsService {
     // Insert-before-process for at-least-once dedup — if this exact
     // delivery was already recorded, the unique constraint conflicts and we
     // no-op rather than reprocessing.
-    const { error: insertError } = await supabase.from('payment_webhook_events').insert({
-      razorpay_event_id: razorpayEventId,
-      event_type: payload?.event,
-      payload,
-    });
+    const { error: insertError } = await supabase
+      .from('payment_webhook_events')
+      .insert({
+        razorpay_event_id: razorpayEventId,
+        event_type: payload?.event,
+        payload,
+      });
 
     if (insertError) {
       return { received: true };
@@ -177,10 +210,18 @@ export class PaymentsService {
           .eq('razorpay_order_id', orderId)
           .maybeSingle();
 
-        if (payment && payment.status !== 'refunded' && payment.status !== 'failed') {
-          await this.markPaidAndConfirm(payment, razorpayPaymentId).catch((err: any) => {
-            this.logger.error(`Webhook confirm failed for order ${orderId}: ${err?.message}`);
-          });
+        if (
+          payment &&
+          payment.status !== 'refunded' &&
+          payment.status !== 'failed'
+        ) {
+          await this.markPaidAndConfirm(payment, razorpayPaymentId).catch(
+            (err: any) => {
+              this.logger.error(
+                `Webhook confirm failed for order ${orderId}: ${err?.message}`,
+              );
+            },
+          );
         }
       }
     } else if (payload.event === 'payment.failed') {
@@ -197,9 +238,16 @@ export class PaymentsService {
     return { received: true };
   }
 
-  private verifyOrderSignature(orderId: string, paymentId: string, signature: string): boolean {
+  private verifyOrderSignature(
+    orderId: string,
+    paymentId: string,
+    signature: string,
+  ): boolean {
     const expected = crypto
-      .createHmac('sha256', this.config.getOrThrow<string>('RAZORPAY_KEY_SECRET'))
+      .createHmac(
+        'sha256',
+        this.config.getOrThrow<string>('RAZORPAY_KEY_SECRET'),
+      )
       .update(`${orderId}|${paymentId}`)
       .digest('hex');
 
@@ -232,11 +280,22 @@ export class PaymentsService {
     }
 
     try {
-      const registration = await this.confirmRegistration(payment.event_id, payment.volunteer_id, payment.id);
-      return { message: 'Payment confirmed, registration complete', registration };
+      const registration = await this.confirmRegistration(
+        payment.event_id,
+        payment.volunteer_id,
+        payment.id,
+      );
+      return {
+        message: 'Payment confirmed, registration complete',
+        registration,
+      };
     } catch (err: any) {
       const code = err?.message ?? '';
-      if (code === 'EVENT_FULL' || code === 'DEADLINE_PASSED' || code === 'ALREADY_REGISTERED') {
+      if (
+        code === 'EVENT_FULL' ||
+        code === 'DEADLINE_PASSED' ||
+        code === 'ALREADY_REGISTERED'
+      ) {
         await this.autoRefundOrphanedPayment(payment, razorpayPaymentId);
         const reason =
           code === 'ALREADY_REGISTERED'
@@ -248,7 +307,11 @@ export class PaymentsService {
     }
   }
 
-  private async confirmRegistration(eventId: string, volunteerId: string, paymentId: string) {
+  private async confirmRegistration(
+    eventId: string,
+    volunteerId: string,
+    paymentId: string,
+  ) {
     const supabase = this.supabaseService.getClient();
     const { data, error } = await supabase.rpc('confirm_paid_registration', {
       p_event_id: eventId,
@@ -258,20 +321,28 @@ export class PaymentsService {
 
     if (error) {
       const msg = error.message ?? '';
-      if (msg.includes('EVENT_NOT_FOUND')) throw new NotFoundException('Event not found');
+      if (msg.includes('EVENT_NOT_FOUND'))
+        throw new NotFoundException('Event not found');
       if (msg.includes('DEADLINE_PASSED')) throw new Error('DEADLINE_PASSED');
       if (msg.includes('EVENT_FULL')) throw new Error('EVENT_FULL');
-      if (msg.includes('ALREADY_REGISTERED')) throw new Error('ALREADY_REGISTERED');
+      if (msg.includes('ALREADY_REGISTERED'))
+        throw new Error('ALREADY_REGISTERED');
       throw error;
     }
 
     return data;
   }
 
-  private async autoRefundOrphanedPayment(payment: any, razorpayPaymentId: string) {
+  private async autoRefundOrphanedPayment(
+    payment: any,
+    razorpayPaymentId: string,
+  ) {
     const supabase = this.supabaseService.getClient();
     try {
-      await this.razorpayService.refundPayment(razorpayPaymentId, payment.amount_paise);
+      await this.razorpayService.refundPayment(
+        razorpayPaymentId,
+        payment.amount_paise,
+      );
       await supabase
         .from('event_payments')
         .update({
@@ -284,7 +355,9 @@ export class PaymentsService {
       // Leave status as 'paid' — this becomes visible on the admin
       // dashboard as an unrefunded payment with no matching registration,
       // needing manual attention.
-      this.logger.error(`Auto-refund failed for orphaned payment ${payment.id}: ${refundErr?.message}`);
+      this.logger.error(
+        `Auto-refund failed for orphaned payment ${payment.id}: ${refundErr?.message}`,
+      );
     }
   }
 
@@ -295,7 +368,10 @@ export class PaymentsService {
    * Razorpay refund call itself fails — callers must NOT delete the
    * registration row in that case, since the money hasn't actually moved.
    */
-  async refundForVolunteerCancellation(paymentId: string, registrationDeadline: string | null) {
+  async refundForVolunteerCancellation(
+    paymentId: string,
+    registrationDeadline: string | null,
+  ) {
     const supabase = this.supabaseService.getClient();
 
     const { data: payment } = await supabase
@@ -310,7 +386,8 @@ export class PaymentsService {
     }
 
     const hoursToDeadline = registrationDeadline
-      ? (new Date(registrationDeadline).getTime() - Date.now()) / (1000 * 60 * 60)
+      ? (new Date(registrationDeadline).getTime() - Date.now()) /
+        (1000 * 60 * 60)
       : 0;
     const refundPercent = hoursToDeadline > 24 ? 80 : 0;
 
@@ -318,9 +395,14 @@ export class PaymentsService {
       return { refundPercent: 0, refundAmountPaise: 0 };
     }
 
-    const refundAmountPaise = Math.floor((payment.amount_paise * refundPercent) / 100);
+    const refundAmountPaise = Math.floor(
+      (payment.amount_paise * refundPercent) / 100,
+    );
 
-    await this.razorpayService.refundPayment(payment.razorpay_payment_id, refundAmountPaise);
+    await this.razorpayService.refundPayment(
+      payment.razorpay_payment_id,
+      refundAmountPaise,
+    );
 
     await supabase
       .from('event_payments')
@@ -340,7 +422,9 @@ export class PaymentsService {
    * 'paid' (unrefunded), which is exactly what surfaces them on the admin
    * dashboard's refund-attention list.
    */
-  async refundForEventCancellation(eventId: string): Promise<{ failedCount: number }> {
+  async refundForEventCancellation(
+    eventId: string,
+  ): Promise<{ failedCount: number }> {
     const supabase = this.supabaseService.getClient();
 
     const { data: payments } = await supabase
@@ -353,7 +437,10 @@ export class PaymentsService {
 
     for (const payment of payments ?? []) {
       try {
-        await this.razorpayService.refundPayment(payment.razorpay_payment_id, payment.amount_paise);
+        await this.razorpayService.refundPayment(
+          payment.razorpay_payment_id,
+          payment.amount_paise,
+        );
         await supabase
           .from('event_payments')
           .update({
@@ -364,7 +451,9 @@ export class PaymentsService {
           .eq('id', payment.id);
       } catch (err: any) {
         failedCount++;
-        this.logger.error(`Refund failed for payment ${payment.id} (event cancellation): ${err?.message}`);
+        this.logger.error(
+          `Refund failed for payment ${payment.id} (event cancellation): ${err?.message}`,
+        );
       }
     }
 
@@ -430,18 +519,29 @@ export class PaymentsService {
     if (!event) throw new NotFoundException('Event not found');
 
     const [{ data: orgProfile }, { data: volProfile }] = await Promise.all([
-      supabase.from('organization_profiles').select('id').eq('user_id', userId).maybeSingle(),
-      supabase.from('volunteer_profiles').select('is_admin').eq('user_id', userId).maybeSingle(),
+      supabase
+        .from('organization_profiles')
+        .select('id')
+        .eq('user_id', userId)
+        .maybeSingle(),
+      supabase
+        .from('volunteer_profiles')
+        .select('is_admin')
+        .eq('user_id', userId)
+        .maybeSingle(),
     ]);
 
     const isOwner = orgProfile?.id === event.organization_id;
     const isAdmin = !!volProfile?.is_admin;
 
-    if (!isOwner && !isAdmin) throw new ForbiddenException('Not authorized to view this bill');
+    if (!isOwner && !isAdmin)
+      throw new ForbiddenException('Not authorized to view this bill');
 
     const { data: storedBill } = await supabase
       .from('event_bills')
-      .select('id, event_id, organization_id, gross_amount_paise, org_amount_paise, platform_fee_paise, eligible_registration_count, status, paid_at, paid_reference')
+      .select(
+        'id, event_id, organization_id, gross_amount_paise, org_amount_paise, platform_fee_paise, eligible_registration_count, status, paid_at, paid_reference',
+      )
       .eq('event_id', eventId)
       .maybeSingle();
 
@@ -456,7 +556,9 @@ export class PaymentsService {
 
     const { data: paidEvents, error: paidEventsError } = await supabase
       .from('events')
-      .select('id, title, status, organization_id, ticket_price, organization_profiles(name, upi_id)')
+      .select(
+        'id, title, status, organization_id, ticket_price, organization_profiles(name, upi_id)',
+      )
       .not('ticket_price', 'is', null)
       .gt('ticket_price', 0)
       .order('event_date', { ascending: false });
@@ -465,17 +567,32 @@ export class PaymentsService {
 
     const events = paidEvents ?? [];
     const eventIds = events.map((e: any) => e.id);
-    const safeIds = eventIds.length ? eventIds : ['00000000-0000-0000-0000-000000000000'];
+    const safeIds = eventIds.length
+      ? eventIds
+      : ['00000000-0000-0000-0000-000000000000'];
 
     const [{ data: payments }, { data: bills }] = await Promise.all([
-      supabase.from('event_payments').select('event_id, status, amount_paise').in('event_id', safeIds),
-      supabase.from('event_bills').select('id, event_id, organization_id, gross_amount_paise, org_amount_paise, platform_fee_paise, eligible_registration_count, status, paid_at, paid_reference').in('event_id', safeIds),
+      supabase
+        .from('event_payments')
+        .select('event_id, status, amount_paise')
+        .in('event_id', safeIds),
+      supabase
+        .from('event_bills')
+        .select(
+          'id, event_id, organization_id, gross_amount_paise, org_amount_paise, platform_fee_paise, eligible_registration_count, status, paid_at, paid_reference',
+        )
+        .in('event_id', safeIds),
     ]);
 
     const dashboard = events.map((event: any) => {
-      const eventPayments = (payments ?? []).filter((p: any) => p.event_id === event.id);
-      const paidPayments = eventPayments.filter((p: any) => p.status === 'paid');
-      const storedBill = (bills ?? []).find((b: any) => b.event_id === event.id) ?? null;
+      const eventPayments = (payments ?? []).filter(
+        (p: any) => p.event_id === event.id,
+      );
+      const paidPayments = eventPayments.filter(
+        (p: any) => p.status === 'paid',
+      );
+      const storedBill =
+        (bills ?? []).find((b: any) => b.event_id === event.id) ?? null;
 
       const bill = storedBill
         ? this.buildStoredBillView(storedBill)
@@ -490,11 +607,15 @@ export class PaymentsService {
         organizationName: event.organization_profiles?.name,
         organizationUpiId: event.organization_profiles?.upi_id,
         paidRegistrationCount: paidPayments.length,
-        grossCollectedPaise: paidPayments.reduce((sum: number, p: any) => sum + p.amount_paise, 0),
+        grossCollectedPaise: paidPayments.reduce(
+          (sum: number, p: any) => sum + p.amount_paise,
+          0,
+        ),
         bill,
         // Unrefunded paid payments on a cancelled event need manual follow-up
         // (refundForEventCancellation is best-effort and doesn't retry).
-        needsRefundAttention: event.status === 'cancelled' ? paidPayments.length : 0,
+        needsRefundAttention:
+          event.status === 'cancelled' ? paidPayments.length : 0,
       };
     });
 
@@ -528,7 +649,9 @@ export class PaymentsService {
     const amounts = await this.getPaidAmounts(eventId);
     const live = this.buildLiveBillView(amounts);
     if (!live) {
-      throw new BadRequestException('No paid registrations to bill for this event');
+      throw new BadRequestException(
+        'No paid registrations to bill for this event',
+      );
     }
 
     const { data: bill, error } = await supabase
@@ -544,7 +667,9 @@ export class PaymentsService {
         paid_at: new Date().toISOString(),
         paid_reference: paidReference ?? null,
       })
-      .select('id, event_id, organization_id, gross_amount_paise, org_amount_paise, platform_fee_paise, eligible_registration_count, status, paid_at, paid_reference')
+      .select(
+        'id, event_id, organization_id, gross_amount_paise, org_amount_paise, platform_fee_paise, eligible_registration_count, status, paid_at, paid_reference',
+      )
       .single();
 
     if (error) {
@@ -555,6 +680,9 @@ export class PaymentsService {
       throw error;
     }
 
-    return { message: 'Bill marked as paid', bill: this.buildStoredBillView(bill) };
+    return {
+      message: 'Bill marked as paid',
+      bill: this.buildStoredBillView(bill),
+    };
   }
 }

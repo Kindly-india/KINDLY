@@ -1,4 +1,8 @@
-import { Injectable, ConflictException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { EmailService } from '../email/email.service';
 import { OrganizationSignupDto } from './dto/organization-signup.dto';
@@ -8,7 +12,7 @@ export class AuthService {
   constructor(
     private supabaseService: SupabaseService,
     private emailService: EmailService,
-  ) { }
+  ) {}
 
   async signupOrganization(dto: OrganizationSignupDto) {
     const supabase = this.supabaseService.getClient();
@@ -19,17 +23,21 @@ export class AuthService {
     // through the same email+OTP flow volunteers use. email_confirm: true
     // means the account is usable the moment it's approved, with no separate
     // "click this link to verify your email" step ever required.
-    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-      email: dto.email,
-      email_confirm: true,
-      user_metadata: {
-        user_type: 'organization',
-        org_type: dto.orgType,
-      },
-    });
+    const { data: authData, error: authError } =
+      await supabase.auth.admin.createUser({
+        email: dto.email,
+        email_confirm: true,
+        user_metadata: {
+          user_type: 'organization',
+          org_type: dto.orgType,
+        },
+      });
 
     if (authError) {
-      if (authError.message.includes('already registered') || authError.message.includes('already been registered')) {
+      if (
+        authError.message.includes('already registered') ||
+        authError.message.includes('already been registered')
+      ) {
         throw new ConflictException('Email already registered');
       }
       throw new BadRequestException(authError.message);
@@ -71,7 +79,8 @@ export class AuthService {
     }
 
     return {
-      message: "Application submitted. We'll review it and email you once it's approved — no password or email verification needed, just log in with your email once you hear from us.",
+      message:
+        "Application submitted. We'll review it and email you once it's approved — no password or email verification needed, just log in with your email once you hear from us.",
       user: {
         id: authData.user.id,
         email: authData.user.email,
@@ -105,7 +114,9 @@ export class AuthService {
     const supabase = this.supabaseService.getClient();
 
     // Resolve email from Supabase auth (source of truth)
-    const { data: { user } } = await supabase.auth.admin.getUserById(userId);
+    const {
+      data: { user },
+    } = await supabase.auth.admin.getUserById(userId);
     const email = user?.email;
     if (!email) return;
 
@@ -117,7 +128,9 @@ export class AuthService {
       .maybeSingle();
 
     if (vol) {
-      this.emailService.sendWelcomeEmail(email, vol.full_name, 'volunteer').catch(() => {});
+      this.emailService
+        .sendWelcomeEmail(email, vol.full_name, 'volunteer')
+        .catch(() => {});
       return;
     }
 
@@ -129,13 +142,15 @@ export class AuthService {
       .maybeSingle();
 
     if (org) {
-      this.emailService.sendWelcomeEmail(email, org.name, 'org').catch(() => {});
+      this.emailService
+        .sendWelcomeEmail(email, org.name, 'org')
+        .catch(() => {});
     }
   }
 
   async resetPassword(email: string) {
     const supabase = this.supabaseService.getClient();
-    
+
     // Supabase built-in magic to send the reset email
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${process.env.FRONTEND_URL ?? process.env.SITE_URL ?? 'http://localhost:3000'}/update-password`,
@@ -158,7 +173,9 @@ export class AuthService {
     const refreshToken = params.get('refresh_token');
 
     if (!accessToken || !refreshToken) {
-      throw new BadRequestException('Invalid or expired reset link. Please request a new one.');
+      throw new BadRequestException(
+        'Invalid or expired reset link. Please request a new one.',
+      );
     }
 
     // 2. Temporarily set the session using those tokens
@@ -168,7 +185,9 @@ export class AuthService {
     });
 
     if (sessionError) {
-      throw new BadRequestException('Session expired. Please request a new reset link.');
+      throw new BadRequestException(
+        'Session expired. Please request a new reset link.',
+      );
     }
 
     // 3. Update the user's password securely

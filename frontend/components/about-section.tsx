@@ -30,7 +30,7 @@ export function AboutSection() {
         {/* Mission Text: Bumped to 16px (standard mobile body size) */}
         <ScrollReveal delay={0.1}>
           <p className="text-[16px] md:text-[21px] text-foreground dark:text-neutral-300 text-center max-w-2xl mx-auto leading-relaxed mb-12 md:mb-20 px-2">
-            We're on a mission to connect passionate people with organisations that are making real change. Every
+            We&apos;re on a mission to connect passionate people with organisations that are making real change. Every
             connection sparks a difference.
           </p>
         </ScrollReveal>

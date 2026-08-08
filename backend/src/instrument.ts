@@ -9,7 +9,7 @@ Sentry.init({
   environment: process.env.NODE_ENV ?? 'development',
   beforeSend(event) {
     // Don't send client errors (4xx) — those are user errors, not bugs
-    const status = event.contexts?.response?.status_code as number | undefined;
+    const status = event.contexts?.response?.status_code;
     if (status && status < 500) return null;
     return event;
   },

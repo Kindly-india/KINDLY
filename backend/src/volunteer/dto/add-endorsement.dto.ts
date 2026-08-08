@@ -1,4 +1,11 @@
-import { IsUUID, IsArray, IsOptional, IsString, ArrayMaxSize, MaxLength } from 'class-validator';
+import {
+  IsUUID,
+  IsArray,
+  IsOptional,
+  IsString,
+  ArrayMaxSize,
+  MaxLength,
+} from 'class-validator';
 
 export class AddEndorsementDto {
   @IsUUID()

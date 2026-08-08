@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Delete, Query, Param, Body, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Delete,
+  Query,
+  Param,
+  Body,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { CreateCommentDto } from './dto/create-comment.dto';
@@ -18,13 +28,20 @@ export class PostsController {
     @Query('page') page = '1',
     @Query('limit') limit = '20',
   ) {
-    return this.postsService.getFeed(req.user.id, parseInt(page), parseInt(limit));
+    return this.postsService.getFeed(
+      req.user.id,
+      parseInt(page),
+      parseInt(limit),
+    );
   }
 
   // Posts for a specific volunteer's profile grid
   @UseGuards(OptionalAuthGuard)
   @Get('volunteer/:userId')
-  async getVolunteerPosts(@Request() req: any, @Param('userId') userId: string) {
+  async getVolunteerPosts(
+    @Request() req: any,
+    @Param('userId') userId: string,
+  ) {
     return this.postsService.getVolunteerPosts(userId, req.user?.id ?? null);
   }
 

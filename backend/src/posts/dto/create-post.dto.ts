@@ -1,4 +1,14 @@
-import { IsString, IsNotEmpty, IsUUID, IsArray, IsOptional, ArrayMinSize, ArrayMaxSize, IsUrl, MaxLength } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsUUID,
+  IsArray,
+  IsOptional,
+  ArrayMinSize,
+  ArrayMaxSize,
+  IsUrl,
+  MaxLength,
+} from 'class-validator';
 
 export class CreatePostDto {
   @IsUUID()

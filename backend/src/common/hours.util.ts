@@ -7,12 +7,15 @@
 // update_volunteer_hours_on_checkin trigger (see
 // backend/migrations/fractional_volunteer_hours.sql), which maintains the
 // authoritative per-volunteer total in volunteer_profiles.total_hours.
-export function eventHours(startTime?: string | null, endTime?: string | null): number {
+export function eventHours(
+  startTime?: string | null,
+  endTime?: string | null,
+): number {
   if (!startTime || !endTime) return 0;
   const [sh, sm] = startTime.split(':').map(Number);
   const [eh, em] = endTime.split(':').map(Number);
   if ([sh, sm, eh, em].some((n) => Number.isNaN(n))) return 0;
-  let minutes = (eh * 60 + em) - (sh * 60 + sm);
+  let minutes = eh * 60 + em - (sh * 60 + sm);
   if (minutes < 0) minutes += 24 * 60; // event crosses midnight
   return Math.round((minutes / 60) * 100) / 100; // 2 dp
 }

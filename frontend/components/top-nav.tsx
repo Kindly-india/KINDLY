@@ -62,7 +62,7 @@ export function TopNav() {
             setUnreadCount(count ?? 0)
           }
         }
-      } catch (e) {
+      } catch {
         console.log("No active session found")
       }
     }

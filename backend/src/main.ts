@@ -36,7 +36,9 @@ async function bootstrap() {
       const allowedOrigins = [
         'https://www.kindly.co.in',
         'https://kindly-sigma.vercel.app',
-        ...(process.env.NODE_ENV !== 'production' ? ['http://localhost:3000'] : []),
+        ...(process.env.NODE_ENV !== 'production'
+          ? ['http://localhost:3000']
+          : []),
       ];
 
       // Allow server-to-server / Postman / Render health checks
@@ -48,11 +50,7 @@ async function bootstrap() {
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: [
-      'Content-Type',
-      'Authorization',
-      'x-admin-secret',
-    ],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-admin-secret'],
   });
 
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));

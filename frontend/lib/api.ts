@@ -470,7 +470,7 @@ export const api = {
         }
         // If response is NOT ok (e.g. 404 because event is completed/hidden), 
         // just silently fall through to the public endpoint below.
-      } catch (e) {
+      } catch {
         // Ignore network errors here and try public
       }
     }
@@ -1223,7 +1223,7 @@ export const api = {
       const response = await fetch(`${API_URL}/volunteers/${userId}/gallery`);
       if (!response.ok) return [];
       return await response.json();
-    } catch (err) {
+    } catch {
       return [];
     }
   },

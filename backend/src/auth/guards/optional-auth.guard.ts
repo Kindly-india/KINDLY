@@ -17,7 +17,9 @@ export class OptionalAuthGuard implements CanActivate {
 
     try {
       const supabase = this.supabaseService.getClient();
-      const { data: { user } } = await supabase.auth.getUser(token);
+      const {
+        data: { user },
+      } = await supabase.auth.getUser(token);
 
       if (user) {
         request.user = user;

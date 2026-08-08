@@ -51,7 +51,7 @@ export default function SelectEventPage() {
 
         {!loading && error && (
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <p className="text-sm text-muted-foreground">Couldn't load events. Try again.</p>
+            <p className="text-sm text-muted-foreground">Couldn&apos;t load events. Try again.</p>
             <button
               onClick={() => { setError(false); setLoading(true); api.getPostableEvents().then(r => setEvents(r.events)).catch(() => setError(true)).finally(() => setLoading(false)) }}
               className="mt-3 text-sm text-[#80242a] font-semibold"

@@ -10,6 +10,6 @@ import { AdminGuard } from '../auth/guards/admin.guard';
   imports: [SupabaseModule, NotificationsModule, EmailModule],
   controllers: [OrganizationController],
   providers: [OrganizationService, AdminGuard],
-  exports: [OrganizationService]
+  exports: [OrganizationService],
 })
 export class OrganizationModule {}

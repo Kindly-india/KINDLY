@@ -42,11 +42,13 @@ import { AppService } from './app.service';
     // (a page fires several API calls) while still stopping runaway loops. The
     // abuse-prone endpoints (signup, reset, post, follow, comment) set their own
     // tighter @Throttle({ short: ... }) overrides on top of this.
-    ThrottlerModule.forRoot([{
-      name: 'short',
-      ttl: 60000,
-      limit: 100,
-    }]),
+    ThrottlerModule.forRoot([
+      {
+        name: 'short',
+        ttl: 60000,
+        limit: 100,
+      },
+    ]),
   ],
   controllers: [AppController],
   providers: [
@@ -57,4 +59,4 @@ import { AppService } from './app.service';
     },
   ],
 })
-export class AppModule { }
+export class AppModule {}

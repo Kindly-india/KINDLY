@@ -31,7 +31,9 @@ export class NotificationsService {
     const client = this.supabase.getClient();
     let query = client
       .from('notifications')
-      .select('id, recipient_id, actor_id, type, message, read, entity_id, created_at')
+      .select(
+        'id, recipient_id, actor_id, type, message, read, entity_id, created_at',
+      )
       .eq('recipient_id', userId)
       .order('created_at', { ascending: false })
       .limit(30);
@@ -43,28 +45,41 @@ export class NotificationsService {
     if (error) throw error;
     if (!data?.length) return { notifications: [], hasMore: false };
 
-    const actorIds = [...new Set(data.filter(n => n.actor_id).map(n => n.actor_id))];
-    const postEntityIds = [...new Set(
-      data
-        .filter(n => (n.type === 'post_liked' || n.type === 'post_commented') && n.entity_id)
-        .map(n => n.entity_id),
-    )];
+    const actorIds = [
+      ...new Set(data.filter((n) => n.actor_id).map((n) => n.actor_id)),
+    ];
+    const postEntityIds = [
+      ...new Set(
+        data
+          .filter(
+            (n) =>
+              (n.type === 'post_liked' || n.type === 'post_commented') &&
+              n.entity_id,
+          )
+          .map((n) => n.entity_id),
+      ),
+    ];
 
     // Batch-fetch actor profiles and post thumbnails in parallel
     const [{ data: actors }, { data: posts }] = await Promise.all([
-      client.from('volunteer_profiles').select('user_id, full_name, avatar_url').in('user_id', actorIds),
+      client
+        .from('volunteer_profiles')
+        .select('user_id, full_name, avatar_url')
+        .in('user_id', actorIds),
       postEntityIds.length > 0
         ? client.from('posts').select('id, photo_urls').in('id', postEntityIds)
         : Promise.resolve({ data: [] as any[] }),
     ]);
 
-    const actorMap = Object.fromEntries((actors || []).map((a: any) => [a.user_id, a]));
+    const actorMap = Object.fromEntries(
+      (actors || []).map((a: any) => [a.user_id, a]),
+    );
     const thumbnailMap: Record<string, string> = {};
     for (const p of posts ?? []) {
       if (p.photo_urls?.[0]) thumbnailMap[p.id] = p.photo_urls[0];
     }
 
-    const notifications = data.map(n => ({
+    const notifications = data.map((n) => ({
       ...n,
       actor_name: actorMap[n.actor_id]?.full_name ?? null,
       actor_avatar: actorMap[n.actor_id]?.avatar_url ?? null,

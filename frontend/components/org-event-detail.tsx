@@ -287,7 +287,7 @@ export function OrgEventDetail() {
           </div>
           <h2 className="text-2xl font-bold text-foreground mb-2">Event Cancelled</h2>
           <p className="text-muted-foreground text-sm mb-8">
-            <span className="font-bold text-foreground">"{event.title}"</span> was cancelled. All registered volunteers were notified by email.
+            <span className="font-bold text-foreground">&quot;{event.title}&quot;</span> was cancelled. All registered volunteers were notified by email.
           </p>
           <Link
             href="/org-events"
@@ -316,7 +316,7 @@ export function OrgEventDetail() {
 
                 <h2 className="text-2xl font-bold text-foreground mb-2">Review in Progress</h2>
                 <p className="text-muted-foreground text-sm mb-8">
-                    Your event <span className="font-bold text-foreground">"{event.title}"</span> is currently being reviewed by our team. Once approved, it will be published to the volunteer discovery feed.
+                    Your event <span className="font-bold text-foreground">&quot;{event.title}&quot;</span> is currently being reviewed by our team. Once approved, it will be published to the volunteer discovery feed.
                 </p>
 
                 <div className="space-y-3">

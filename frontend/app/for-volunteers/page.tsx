@@ -6,6 +6,7 @@ import {
 } from "lucide-react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 
 const features = [
   {
@@ -117,12 +118,12 @@ export default function ForVolunteersPage() {
             >
               Create Free Account
             </a>
-            <a
+            <Link
               href="/events"
               className="h-12 px-8 bg-card border-2 border-border hover:border-border text-foreground text-[15px] font-bold rounded-full inline-flex items-center justify-center transition-colors"
             >
               Browse Events
-            </a>
+            </Link>
           </div>
         </div>
       </section>
@@ -132,7 +133,7 @@ export default function ForVolunteersPage() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-foreground mb-4">Everything you need to volunteer well</h2>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">Kindly is not just an event directory. It is an end-to-end experience built around the volunteer's journey.</p>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">Kindly is not just an event directory. It is an end-to-end experience built around the volunteer&apos;s journey.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {features.map((f, i) => (
@@ -233,7 +234,7 @@ export default function ForVolunteersPage() {
         <div className="max-w-2xl mx-auto text-center">
           <Heart className="w-12 h-12 mx-auto mb-6 text-rose-500" />
           <h2 className="text-4xl font-bold text-foreground mb-4">You belong here.</h2>
-          <p className="text-muted-foreground mb-8 text-lg">Join a community of people who don't just care — they show up.</p>
+          <p className="text-muted-foreground mb-8 text-lg">Join a community of people who don&apos;t just care — they show up.</p>
           <a
             href="/signup"
             className="h-12 px-10 bg-primary hover:bg-primary text-primary-foreground text-[15px] font-bold rounded-full inline-flex items-center justify-center transition-colors"

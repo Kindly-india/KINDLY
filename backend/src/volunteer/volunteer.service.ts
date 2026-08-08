@@ -1,11 +1,19 @@
-import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ConflictException,
+} from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { UpdateVolunteerProfileDto } from './dto/update-volunteer-profile.dto';
 import { OnboardingDto } from './dto/onboarding.dto';
 import { validateImageFile } from '../common/file-validation.util';
 import { removeFromStorage } from '../common/storage.util';
 import { eventHours } from '../common/hours.util';
-import { normalizeUrlField, trimAllStrings } from '../common/text-normalize.util';
+import {
+  normalizeUrlField,
+  trimAllStrings,
+} from '../common/text-normalize.util';
 
 @Injectable()
 export class VolunteerService {
@@ -53,7 +61,11 @@ export class VolunteerService {
     const meta = authData?.user?.user_metadata ?? {};
     if (meta.user_type !== 'volunteer' || !meta.full_name) {
       await client.auth.admin.updateUserById(userId, {
-        user_metadata: { ...meta, user_type: 'volunteer', full_name: meta.full_name ?? fullName },
+        user_metadata: {
+          ...meta,
+          user_type: 'volunteer',
+          full_name: meta.full_name ?? fullName,
+        },
       });
     }
 
@@ -64,7 +76,8 @@ export class VolunteerService {
     const client = this.supabase.getClient();
 
     // 1. Fetch Target Volunteer Profile (Robust Search: checks User ID first, then Profile ID)
-    const profileColumns = 'id, user_id, full_name, avatar_url, cover_url, headline, bio, city, address, email, phone, linkedin, instagram, website, skills, total_hours, is_verified, is_private, created_at';
+    const profileColumns =
+      'id, user_id, full_name, avatar_url, cover_url, headline, bio, city, address, email, phone, linkedin, instagram, website, skills, total_hours, is_verified, is_private, created_at';
 
     let { data: profile, error } = await client
       .from('volunteer_profiles')
@@ -73,30 +86,37 @@ export class VolunteerService {
       .maybeSingle();
 
     if (error || !profile) {
-       // Fallback: Try fetching by UUID if User ID failed
-       const { data: profileById } = await client
+      // Fallback: Try fetching by UUID if User ID failed
+      const { data: profileById } = await client
         .from('volunteer_profiles')
         .select(profileColumns)
         .eq('id', targetUserId)
         .single();
-        
-       if(!profileById) {
-           throw new NotFoundException('Profile not found');
-       }
-       profile = profileById;
+
+      if (!profileById) {
+        throw new NotFoundException('Profile not found');
+      }
+      profile = profileById;
     }
 
     // 2. Fetch Follow Stats (accepted only)
     const { count: followersCount } = await client
-      .from('follows').select('*', { count: 'exact', head: true }).eq('following_id', profile.user_id).eq('status', 'accepted');
+      .from('follows')
+      .select('*', { count: 'exact', head: true })
+      .eq('following_id', profile.user_id)
+      .eq('status', 'accepted');
 
     const { count: followingCount } = await client
-      .from('follows').select('*', { count: 'exact', head: true }).eq('follower_id', profile.user_id).eq('status', 'accepted');
+      .from('follows')
+      .select('*', { count: 'exact', head: true })
+      .eq('follower_id', profile.user_id)
+      .eq('status', 'accepted');
 
     // 3. Fetch Registrations (With Events Join for calculations)
     const { data: registrations } = await client
       .from('event_registrations')
-      .select(`
+      .select(
+        `
         *,
         events (
           id,
@@ -107,22 +127,23 @@ export class VolunteerService {
           organization_id,
           status
         )
-      `)
+      `,
+      )
       .eq('volunteer_id', profile.id);
 
     // --- CALCULATE METRICS ---
     // Exclude registrations for org-cancelled events from all scoring —
     // the volunteer should never be penalised for a cancellation outside their control.
     const scorableRegistrations = (registrations || []).filter(
-      (r: any) => (r.events?.status ?? '') !== 'cancelled'
+      (r: any) => (r.events?.status ?? '') !== 'cancelled',
     );
 
     const totalRegistered = scorableRegistrations.length;
 
     // Filter for Verified Activity ('checked_in' or 'completed')
-    const completedRegs = scorableRegistrations.filter(r => {
-        const status = (r.status || '').toLowerCase();
-        return status === 'checked_in' || status === 'completed';
+    const completedRegs = scorableRegistrations.filter((r) => {
+      const status = (r.status || '').toLowerCase();
+      return status === 'checked_in' || status === 'completed';
     });
 
     const totalAttended = completedRegs.length;
@@ -135,48 +156,53 @@ export class VolunteerService {
     const totalHours = Number(profile.total_hours) || 0;
 
     // Initialize Graph (Last 6 Months)
-    const activityGraph = Array(6).fill(0).map((_, i) => {
-       const d = new Date();
-       d.setMonth(d.getMonth() - (5 - i));
-       return { 
-           name: d.toLocaleString('default', { month: 'short' }), 
-           hours: 0, 
-           monthIdx: d.getMonth() 
-       };
-    });
+    const activityGraph = Array(6)
+      .fill(0)
+      .map((_, i) => {
+        const d = new Date();
+        d.setMonth(d.getMonth() - (5 - i));
+        return {
+          name: d.toLocaleString('default', { month: 'short' }),
+          hours: 0,
+          monthIdx: d.getMonth(),
+        };
+      });
 
     // Build the 6-month activity graph from per-event hours (single source: eventHours).
-    completedRegs.forEach(r => {
-        const reg = r as any;
-        if (!reg.events) return;
+    completedRegs.forEach((r) => {
+      const reg = r;
+      if (!reg.events) return;
 
-        const hrs = eventHours(reg.events.start_time, reg.events.end_time);
+      const hrs = eventHours(reg.events.start_time, reg.events.end_time);
 
-        if (reg.events.event_date) {
-            const d = new Date(reg.events.event_date);
-            const entry = activityGraph.find(m => m.monthIdx === d.getMonth());
-            if (entry) entry.hours += hrs;
-        }
+      if (reg.events.event_date) {
+        const d = new Date(reg.events.event_date);
+        const entry = activityGraph.find((m) => m.monthIdx === d.getMonth());
+        if (entry) entry.hours += hrs;
+      }
     });
     // Kill floating-point noise from summing 2dp values.
-    activityGraph.forEach(m => { m.hours = Math.round(m.hours * 100) / 100; });
+    activityGraph.forEach((m) => {
+      m.hours = Math.round(m.hours * 100) / 100;
+    });
 
     // Impact Score: (Hours * 10) + (Events * 50)
-    const impactScore = Math.round((totalHours * 10) + (totalAttended * 50));
+    const impactScore = Math.round(totalHours * 10 + totalAttended * 50);
 
     // Reliability Score
-    const reliabilityScore = totalRegistered > 0 
-        ? Math.round((totalAttended / totalRegistered) * 100) 
+    const reliabilityScore =
+      totalRegistered > 0
+        ? Math.round((totalAttended / totalRegistered) * 100)
         : 100;
 
     // Badges Logic
     const badges: string[] = [];
     if (totalHours >= 50) badges.push('Super Star');
     else if (totalHours >= 10) badges.push('Dedicated');
-    
+
     if (totalAttended >= 5) badges.push('Veteran');
     else if (totalAttended >= 3) badges.push('Regular');
-    
+
     if (impactScore >= 100) badges.push('Century Club');
 
     // --- CONSTRUCT COMMON DATA ---
@@ -187,7 +213,7 @@ export class VolunteerService {
       total_hours: totalHours,
       events_attended: totalAttended,
       reliability_score: reliabilityScore,
-      impact_score: impactScore, 
+      impact_score: impactScore,
       activity_graph: activityGraph,
       badges,
     };
@@ -195,7 +221,7 @@ export class VolunteerService {
     // --- VIEW PERMISSIONS LOGIC ---
     let viewType = 'public';
     let isAssociatedOrg = false;
-    
+
     // Check if the Viewer is the Owner
     const isSelf = viewerId && profile.user_id === viewerId;
 
@@ -235,14 +261,23 @@ export class VolunteerService {
     }
 
     // Mutual followers: people viewer follows who also follow the target
-    let mutualFollowers: { count: number; preview: Array<{ user_id: string; full_name: string; avatar_url: string | null }> } = { count: 0, preview: [] };
+    let mutualFollowers: {
+      count: number;
+      preview: Array<{
+        user_id: string;
+        full_name: string;
+        avatar_url: string | null;
+      }>;
+    } = { count: 0, preview: [] };
     if (viewerId && !isSelf) {
       const { data: viewerFollowing } = await client
         .from('follows')
         .select('following_id')
         .eq('follower_id', viewerId)
         .eq('status', 'accepted');
-      const viewerFollowingIds = (viewerFollowing || []).map((f: any) => f.following_id);
+      const viewerFollowingIds = (viewerFollowing || []).map(
+        (f: any) => f.following_id,
+      );
       if (viewerFollowingIds.length > 0) {
         const { data: sharedFollowers } = await client
           .from('follows')
@@ -250,19 +285,25 @@ export class VolunteerService {
           .eq('following_id', profile.user_id)
           .eq('status', 'accepted')
           .in('follower_id', viewerFollowingIds);
-        const mutualIds = (sharedFollowers || []).map((f: any) => f.follower_id);
+        const mutualIds = (sharedFollowers || []).map(
+          (f: any) => f.follower_id,
+        );
         if (mutualIds.length > 0) {
           const { data: mutualProfiles } = await client
             .from('volunteer_profiles')
             .select('user_id, full_name, avatar_url')
             .in('user_id', mutualIds)
             .limit(3);
-          mutualFollowers = { count: mutualIds.length, preview: mutualProfiles || [] };
+          mutualFollowers = {
+            count: mutualIds.length,
+            preview: mutualProfiles || [],
+          };
         }
       }
     }
 
-    const showContactInfo = viewType === 'private' || viewType === 'resume' || isSelf;
+    const showContactInfo =
+      viewType === 'private' || viewType === 'resume' || isSelf;
 
     return {
       profile: {
@@ -273,47 +314,65 @@ export class VolunteerService {
         view_type: viewType,
         follow_status: followStatus,
         mutual_followers: mutualFollowers,
-      }
+      },
     };
   }
 
   // --- JOURNEY (Unchanged) ---
   async getJourney(volunteerId: string) {
     const client = this.supabase.getClient();
-    const { data: profile } = await client.from('volunteer_profiles').select('id').or(`id.eq.${volunteerId},user_id.eq.${volunteerId}`).single();
+    const { data: profile } = await client
+      .from('volunteer_profiles')
+      .select('id')
+      .or(`id.eq.${volunteerId},user_id.eq.${volunteerId}`)
+      .single();
     if (!profile) throw new NotFoundException('Volunteer not found');
 
     const { data: registrations, error } = await client
       .from('event_registrations')
-      .select(`id, status, events (id, title, event_date, start_time, end_time, organization_id, organization_profiles ( id, name, logo_url ))`)
+      .select(
+        `id, status, events (id, title, event_date, start_time, end_time, organization_id, organization_profiles ( id, name, logo_url ))`,
+      )
       .eq('volunteer_id', profile.id)
       .order('registered_at', { ascending: false });
 
     if (error) throw error;
 
-    const { data: endorsements } = await client.from('volunteer_endorsements').select('event_id, skills, comment').eq('volunteer_id', profile.id);
+    const { data: endorsements } = await client
+      .from('volunteer_endorsements')
+      .select('event_id, skills, comment')
+      .eq('volunteer_id', profile.id);
 
-    const journey = registrations?.map((reg: any) => {
-      const event = reg.events;
-      if (!event) return null;
-      const endorsement = endorsements?.find(e => e.event_id === event.id);
+    const journey =
+      registrations
+        ?.map((reg: any) => {
+          const event = reg.events;
+          if (!event) return null;
+          const endorsement = endorsements?.find(
+            (e) => e.event_id === event.id,
+          );
 
-      // Per-event credited hours (single source: eventHours). Only credited
-      // statuses show hours; everything else shows 0.
-      const hours = eventHours(event.start_time, event.end_time);
+          // Per-event credited hours (single source: eventHours). Only credited
+          // statuses show hours; everything else shows 0.
+          const hours = eventHours(event.start_time, event.end_time);
 
-      return {
-        id: reg.id,
-        event_id: event.id,
-        event_title: event.title,
-        event_date: event.event_date,
-        organization_name: event.organization_profiles?.name,
-        organization_logo: event.organization_profiles?.logo_url,
-        hours_contributed: ['checked_in', 'completed'].includes(reg.status) ? hours : 0,
-        status: reg.status,
-        endorsements: endorsement ? { skills: endorsement.skills, comment: endorsement.comment } : null
-      };
-    }).filter(Boolean) || [];
+          return {
+            id: reg.id,
+            event_id: event.id,
+            event_title: event.title,
+            event_date: event.event_date,
+            organization_name: event.organization_profiles?.name,
+            organization_logo: event.organization_profiles?.logo_url,
+            hours_contributed: ['checked_in', 'completed'].includes(reg.status)
+              ? hours
+              : 0,
+            status: reg.status,
+            endorsements: endorsement
+              ? { skills: endorsement.skills, comment: endorsement.comment }
+              : null,
+          };
+        })
+        .filter(Boolean) || [];
 
     return { journey };
   }
@@ -340,18 +399,41 @@ export class VolunteerService {
     // additionally need a protocol — used as raw <a href> targets on the
     // public profile, they resolve as broken relative links without one.
     trimAllStrings(rest);
-    if (rest.website !== undefined) rest.website = normalizeUrlField(rest.website);
-    if (rest.linkedin !== undefined) rest.linkedin = normalizeUrlField(rest.linkedin);
-    if (rest.instagram !== undefined) rest.instagram = normalizeUrlField(rest.instagram);
+    if (rest.website !== undefined)
+      rest.website = normalizeUrlField(rest.website);
+    if (rest.linkedin !== undefined)
+      rest.linkedin = normalizeUrlField(rest.linkedin);
+    if (rest.instagram !== undefined)
+      rest.instagram = normalizeUrlField(rest.instagram);
 
-    const { data, error } = await client.from('volunteer_profiles').update({ ...rest, updated_at: new Date().toISOString() }).eq('id', profile.id).select('id, user_id, full_name, headline, bio, city, address, phone, email, linkedin, instagram, website, skills, interest_tags, preferred_availability, avatar_url, cover_url, is_private, updated_at').single();
-    if (error) throw new BadRequestException(error.message || 'Failed to update profile');
+    const { data, error } = await client
+      .from('volunteer_profiles')
+      .update({ ...rest, updated_at: new Date().toISOString() })
+      .eq('id', profile.id)
+      .select(
+        'id, user_id, full_name, headline, bio, city, address, phone, email, linkedin, instagram, website, skills, interest_tags, preferred_availability, avatar_url, cover_url, is_private, updated_at',
+      )
+      .single();
+    if (error)
+      throw new BadRequestException(
+        error.message || 'Failed to update profile',
+      );
 
     // Delete any image that was just replaced — the new upload has a fresh path,
     // so the old file would otherwise orphan in the bucket.
     const replaced: (string | null | undefined)[] = [];
-    if (dto.avatar_url && profile.avatar_url && dto.avatar_url !== profile.avatar_url) replaced.push(profile.avatar_url);
-    if (dto.cover_url && profile.cover_url && dto.cover_url !== profile.cover_url) replaced.push(profile.cover_url);
+    if (
+      dto.avatar_url &&
+      profile.avatar_url &&
+      dto.avatar_url !== profile.avatar_url
+    )
+      replaced.push(profile.avatar_url);
+    if (
+      dto.cover_url &&
+      profile.cover_url &&
+      dto.cover_url !== profile.cover_url
+    )
+      replaced.push(profile.cover_url);
     await removeFromStorage(client, 'profile-images', replaced);
 
     return { profile: data };
@@ -376,15 +458,24 @@ export class VolunteerService {
       throw new BadRequestException('That is already your current email.');
     }
 
-    const { error: authError } = await client.auth.admin.updateUserById(userId, {
-      email: newEmail,
-      email_confirm: true,
-    });
+    const { error: authError } = await client.auth.admin.updateUserById(
+      userId,
+      {
+        email: newEmail,
+        email_confirm: true,
+      },
+    );
 
     if (authError) {
       const msg = authError.message || '';
-      if (msg.toLowerCase().includes('already been registered') || msg.toLowerCase().includes('already registered') || msg.toLowerCase().includes('already exists')) {
-        throw new ConflictException('That email is already in use by another account.');
+      if (
+        msg.toLowerCase().includes('already been registered') ||
+        msg.toLowerCase().includes('already registered') ||
+        msg.toLowerCase().includes('already exists')
+      ) {
+        throw new ConflictException(
+          'That email is already in use by another account.',
+        );
       }
       throw new BadRequestException(msg || 'Failed to change email');
     }
@@ -397,8 +488,13 @@ export class VolunteerService {
       .single();
 
     if (error || !data) {
-      await client.auth.admin.updateUserById(userId, { email: existing.email, email_confirm: true }).catch(() => {});
-      throw new BadRequestException(error?.message || 'Failed to update profile email — the change was reverted, please try again.');
+      await client.auth.admin
+        .updateUserById(userId, { email: existing.email, email_confirm: true })
+        .catch(() => {});
+      throw new BadRequestException(
+        error?.message ||
+          'Failed to update profile email — the change was reverted, please try again.',
+      );
     }
 
     return { profile: data };
@@ -406,11 +502,11 @@ export class VolunteerService {
 
   async getGallery(userId: string) {
     const client = this.supabase.getClient();
-    
+
     // Get user ID from profile ID if needed, similar to getProfile
     // For simplicity, assuming userId passed is the auth.user_id
     // You might need to resolve profile.id -> user_id if fetching by profile ID
-    
+
     const { data, error } = await client
       .from('volunteer_gallery')
       .select('id, user_id, image_url, caption, created_at')
@@ -422,30 +518,32 @@ export class VolunteerService {
   }
 
   // 2. Add Photo to Gallery
-  async addToGallery(userId: string, file: Express.Multer.File, caption?: string) {
+  async addToGallery(
+    userId: string,
+    file: Express.Multer.File,
+    caption?: string,
+  ) {
     validateImageFile(file);
     const client = this.supabase.getClient();
-    
+
     // 1. Upload Image to Supabase Storage
     const fileName = `${userId}/${Date.now()}-${file.originalname}`;
-    const { data: uploadData, error: uploadError } = await client
-      .storage
+    const { data: uploadData, error: uploadError } = await client.storage
       .from('gallery_images') // ✅ This MUST match the bucket name you created
       .upload(fileName, file.buffer, {
         contentType: file.mimetype,
-        upsert: false
+        upsert: false,
       });
 
     if (uploadError) {
-      console.error("Upload Error:", uploadError);
+      console.error('Upload Error:', uploadError);
       throw new Error(`Upload failed: ${uploadError.message}`);
     }
 
     // 2. Get Public URL
-    const { data: { publicUrl } } = client
-      .storage
-      .from('gallery_images')
-      .getPublicUrl(fileName);
+    const {
+      data: { publicUrl },
+    } = client.storage.from('gallery_images').getPublicUrl(fileName);
 
     // 3. Save metadata to the database
     const { data, error } = await client
@@ -453,7 +551,7 @@ export class VolunteerService {
       .insert({
         user_id: userId,
         image_url: publicUrl,
-        caption: caption
+        caption: caption,
       })
       .select('id, user_id, image_url, caption, created_at')
       .single();
@@ -499,7 +597,9 @@ export class VolunteerService {
         onboarding_completed: true,
       })
       .eq('user_id', userId)
-      .select('id, user_id, interest_tags, preferred_availability, social_preference, onboarding_completed')
+      .select(
+        'id, user_id, interest_tags, preferred_availability, social_preference, onboarding_completed',
+      )
       .single();
 
     if (error) throw error;
@@ -520,19 +620,23 @@ export class VolunteerService {
     // Attended registrations with event data (exclude cancelled events)
     const { data: regs } = await client
       .from('event_registrations')
-      .select(`
+      .select(
+        `
         event_id,
         events!inner(id, title, event_date, status, organization_profiles(name))
-      `)
+      `,
+      )
       .eq('volunteer_id', profile.id)
       .in('status', ['checked_in', 'completed']);
 
     if (!regs?.length) return { events: [] };
 
-    const validRegs = (regs as any[]).filter(r => r.events?.status !== 'cancelled');
+    const validRegs = (regs as any[]).filter(
+      (r) => r.events?.status !== 'cancelled',
+    );
     if (!validRegs.length) return { events: [] };
 
-    const eventIds = validRegs.map(r => r.event_id);
+    const eventIds = validRegs.map((r) => r.event_id);
 
     // Count posts per event for this volunteer
     const { data: posts } = await client
@@ -543,19 +647,23 @@ export class VolunteerService {
 
     const postCountMap: Record<string, number> = {};
     for (const post of posts ?? []) {
-      postCountMap[(post as any).event_id] = (postCountMap[(post as any).event_id] ?? 0) + 1;
+      postCountMap[(post as any).event_id] =
+        (postCountMap[(post as any).event_id] ?? 0) + 1;
     }
 
     const events = validRegs
-      .map(r => ({
+      .map((r) => ({
         id: r.events.id,
         title: r.events.title,
         event_date: r.events.event_date,
         org_name: r.events.organization_profiles?.name ?? 'Unknown',
         post_count: postCountMap[r.event_id] ?? 0,
       }))
-      .filter(e => e.post_count < 3)
-      .sort((a, b) => new Date(b.event_date).getTime() - new Date(a.event_date).getTime());
+      .filter((e) => e.post_count < 3)
+      .sort(
+        (a, b) =>
+          new Date(b.event_date).getTime() - new Date(a.event_date).getTime(),
+      );
 
     return { events };
   }

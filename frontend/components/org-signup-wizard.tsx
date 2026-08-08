@@ -336,7 +336,7 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
               Application Submitted!
             </h1>
             <p className="text-[13px] md:text-[17px] text-muted-foreground mb-5 md:mb-8">
-              We're reviewing your details. You'll hear from us within 24-48 hours.
+              We&apos;re reviewing your details. You&apos;ll hear from us within 24-48 hours.
             </p>
 
             <div className="bg-muted rounded-xl md:rounded-2xl p-4 md:p-6 mb-5 md:mb-8">

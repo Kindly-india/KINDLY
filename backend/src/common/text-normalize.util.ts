@@ -11,14 +11,18 @@
 // of an external one, silently producing a broken link even for input that
 // passes validation (IsUrl's require_protocol:false permits no-protocol
 // values, but nothing was ever adding it back before use).
-export function normalizeUrlField(value: string | undefined): string | undefined {
+export function normalizeUrlField(
+  value: string | undefined,
+): string | undefined {
   if (value === undefined) return undefined;
   const trimmed = value.trim();
   if (!trimmed) return trimmed;
   return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
 }
 
-export function normalizeTrimmedField(value: string | undefined): string | undefined {
+export function normalizeTrimmedField(
+  value: string | undefined,
+): string | undefined {
   return value === undefined ? undefined : value.trim();
 }
 
@@ -43,7 +47,9 @@ export function trimAllStrings<T extends Record<string, any>>(obj: T): T {
 // validation (trimmed, non-empty) also lands in storage trimmed and with a
 // protocol — the array itself receives the raw untransformed body for the
 // same transform:false reason as every other field here.
-export function normalizeTeamMembers(items: any[] | undefined): any[] | undefined {
+export function normalizeTeamMembers(
+  items: any[] | undefined,
+): any[] | undefined {
   if (!items) return items;
   return items.map((m) => ({
     ...m,
@@ -53,7 +59,9 @@ export function normalizeTeamMembers(items: any[] | undefined): any[] | undefine
   }));
 }
 
-export function normalizeAchievements(items: any[] | undefined): any[] | undefined {
+export function normalizeAchievements(
+  items: any[] | undefined,
+): any[] | undefined {
   if (!items) return items;
   return items.map((a) => ({
     ...a,

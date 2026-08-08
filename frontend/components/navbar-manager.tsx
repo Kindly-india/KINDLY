@@ -39,7 +39,7 @@ export function NavbarManager() {
         } else if (res?.profile) {
           setUserType('volunteer')
         }
-      } catch (e) {
+      } catch {
         // Not logged in yet — leave whatever the cookie said (or null)
       }
     }

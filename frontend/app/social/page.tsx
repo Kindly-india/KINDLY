@@ -79,7 +79,7 @@ function EventsTab() {
         <div className="w-12 h-12 rounded-full bg-[#fff5f5] dark:bg-white/5 flex items-center justify-center mb-3">
           <Calendar className="w-5 h-5 text-muted-foreground" />
         </div>
-        <p className="text-[14px] font-semibold text-foreground mb-1">Couldn't load events</p>
+        <p className="text-[14px] font-semibold text-foreground mb-1">Couldn&apos;t load events</p>
         <p className="text-[12px] text-muted-foreground">Please try again later.</p>
       </div>
     )
@@ -92,7 +92,7 @@ function EventsTab() {
           <Calendar className="w-5 h-5 text-emerald-500" />
         </div>
         <p className="text-[14px] font-semibold text-foreground mb-1">No completed events yet</p>
-        <p className="text-[12px] text-muted-foreground">Events will appear here once they're completed.</p>
+        <p className="text-[12px] text-muted-foreground">Events will appear here once they&apos;re completed.</p>
       </div>
     )
   }
@@ -376,7 +376,7 @@ function CommunityTab() {
       {/* NO RESULTS */}
       {!loading && isSearching && displayedResults.length === 0 && (
         <div className="text-center py-12 text-muted-foreground">
-          <p className="text-[13px]">No results for "{searchQuery}"</p>
+          <p className="text-[13px]">No results for &quot;{searchQuery}&quot;</p>
         </div>
       )}
 
@@ -522,7 +522,7 @@ function CommunityTab() {
                 <div className="w-12 h-12 rounded-full bg-[#fff5f5] dark:bg-white/5 flex items-center justify-center mb-3">
                   <ImageIcon className="w-5 h-5 text-muted-foreground" />
                 </div>
-                <p className="text-[14px] font-semibold text-foreground mb-1">Couldn't load posts</p>
+                <p className="text-[14px] font-semibold text-foreground mb-1">Couldn&apos;t load posts</p>
                 <p className="text-[12px] text-muted-foreground">Follow volunteers to see their posts here.</p>
               </div>
             )}

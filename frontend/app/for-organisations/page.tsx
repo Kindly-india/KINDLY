@@ -270,7 +270,7 @@ export default function ForOrganisationsPage() {
             href="/org-signup"
             className="h-12 px-10 bg-primary hover:bg-primary text-primary-foreground text-[15px] font-bold rounded-full inline-flex items-center justify-center transition-colors"
           >
-            Register Your Organisation — It's Free
+            Register Your Organisation — It&apos;s Free
           </a>
         </div>
       </section>

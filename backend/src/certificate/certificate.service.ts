@@ -14,8 +14,18 @@ import { eventHours } from '../common/hours.util';
 
 function formatEventDate(dateStr: string): string {
   const months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December',
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
   ];
   const [year, month, day] = dateStr.split('-').map(Number);
   return `${day} ${months[month - 1]} ${year}`;
@@ -36,7 +46,7 @@ export class CertificateService {
       } catch (err) {
         lastErr = err;
         if (attempt < retries) {
-          await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+          await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
         }
       }
     }
@@ -68,7 +78,11 @@ export class CertificateService {
   // ─────────────────────────────────────────────
   // 1. issueForEvent — combined org/admin auth check + generation
   // ─────────────────────────────────────────────
-  async issueForEvent(userId: string, eventId: string, volunteerUserIds?: string[]) {
+  async issueForEvent(
+    userId: string,
+    eventId: string,
+    volunteerUserIds?: string[],
+  ) {
     const supabase = this.supabaseService.getClient();
 
     // Check if admin
@@ -141,7 +155,12 @@ export class CertificateService {
   async generateForEvent(
     eventId: string,
     volunteerUserIds?: string[],
-  ): Promise<{ issued: number; skipped: number; failed: number; total: number }> {
+  ): Promise<{
+    issued: number;
+    skipped: number;
+    failed: number;
+    total: number;
+  }> {
     const supabase = this.supabaseService.getClient();
 
     // Fetch event with org profile
@@ -153,7 +172,7 @@ export class CertificateService {
 
     if (eventError || !event) throw new NotFoundException('Event not found');
 
-    const org = (event as any).organization_profiles;
+    const org = event.organization_profiles;
     const hours = eventHours(event.start_time, event.end_time);
     const formattedEventDate = formatEventDate(event.event_date);
     const formattedIssuedDate = formatEventDate(
@@ -201,7 +220,8 @@ export class CertificateService {
     // ── Outer try/finally: one browser for the entire batch ───────────────────
     // CHROMIUM_PATH lets local dev point to an installed Chrome.
     // In production (Render), omit it — @sparticuz/chromium supplies the binary.
-    const executablePath = process.env.CHROMIUM_PATH || await chromium.executablePath();
+    const executablePath =
+      process.env.CHROMIUM_PATH || (await chromium.executablePath());
     const browser = await puppeteer.launch({
       args: [...chromium.args, '--disable-dev-shm-usage'],
       executablePath,
@@ -234,9 +254,14 @@ export class CertificateService {
         // ── Inner: page lifecycle is managed inside generatePdf ───────────────
         let pdfBuffer: Buffer;
         try {
-          pdfBuffer = await this.withRetry(() => this.generatePdf(html, browser));
+          pdfBuffer = await this.withRetry(() =>
+            this.generatePdf(html, browser),
+          );
         } catch (err) {
-          console.error(`[certificates] PDF failed for volunteer ${vol.id} — skipping:`, err);
+          console.error(
+            `[certificates] PDF failed for volunteer ${vol.id} — skipping:`,
+            err,
+          );
           failed++;
           continue;
         }
@@ -251,7 +276,10 @@ export class CertificateService {
           });
 
         if (uploadError) {
-          console.error(`[certificates] Upload failed for volunteer ${vol.id}:`, uploadError.message);
+          console.error(
+            `[certificates] Upload failed for volunteer ${vol.id}:`,
+            uploadError.message,
+          );
           failed++;
           continue;
         }
@@ -270,7 +298,10 @@ export class CertificateService {
         if (insertError) {
           // Clean up the uploaded file on DB failure
           await supabase.storage.from('certificates').remove([storagePath]);
-          console.error(`[certificates] DB insert failed for volunteer ${vol.id}:`, insertError.message);
+          console.error(
+            `[certificates] DB insert failed for volunteer ${vol.id}:`,
+            insertError.message,
+          );
           failed++;
           continue;
         }
@@ -287,7 +318,10 @@ export class CertificateService {
   // ─────────────────────────────────────────────
   // 3. getDownloadUrl — volunteer, admin, or event's org
   // ─────────────────────────────────────────────
-  async getDownloadUrl(certificateId: string, requestingUserId: string): Promise<{ signedUrl: string }> {
+  async getDownloadUrl(
+    certificateId: string,
+    requestingUserId: string,
+  ): Promise<{ signedUrl: string }> {
     const supabase = this.supabaseService.getClient();
 
     const { data: cert, error } = await supabase
@@ -329,7 +363,9 @@ export class CertificateService {
     }
 
     if (!isOwner && !isAdmin && !isOrgOwner) {
-      throw new ForbiddenException('You do not have access to this certificate');
+      throw new ForbiddenException(
+        'You do not have access to this certificate',
+      );
     }
 
     // Generate signed URL valid for 1 hour
@@ -360,7 +396,8 @@ export class CertificateService {
 
     const { data: certificates, error } = await supabase
       .from('certificates')
-      .select(`
+      .select(
+        `
         id,
         verification_id,
         issued_at,
@@ -371,7 +408,8 @@ export class CertificateService {
           event_date,
           organization_profiles ( name )
         )
-      `)
+      `,
+      )
       .eq('volunteer_id', volProfile.id)
       .order('issued_at', { ascending: false });
 
@@ -428,13 +466,15 @@ export class CertificateService {
 
     const { data: certificates, error } = await supabase
       .from('certificates')
-      .select(`
+      .select(
+        `
         id,
         verification_id,
         issued_at,
         hours_credited,
         volunteer_profiles ( id, full_name, avatar_url )
-      `)
+      `,
+      )
       .eq('event_id', eventId)
       .order('issued_at', { ascending: true });
 

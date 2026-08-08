@@ -23,7 +23,7 @@ import { SetApprovalDto } from './dto/set-approval.dto';
 
 @Controller('organizations')
 export class OrganizationController {
-  constructor(private readonly organizationService: OrganizationService) { }
+  constructor(private readonly organizationService: OrganizationService) {}
 
   // ─── Admin approval (admin-only) ────────────────────────────────────────────
   // Registered before the ':id/...' routes so 'admin' isn't captured as an :id.
@@ -74,7 +74,7 @@ export class OrganizationController {
   @Patch('profile')
   async updateProfile(
     @Request() req: any,
-    @Body() dto: UpdateOrganizationProfileDto
+    @Body() dto: UpdateOrganizationProfileDto,
   ) {
     return this.organizationService.updateProfile(req.user.id, dto);
   }

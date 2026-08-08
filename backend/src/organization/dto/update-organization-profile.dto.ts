@@ -1,11 +1,25 @@
-import { IsOptional, IsString, IsNumber, IsArray, IsUrl, MaxLength, ArrayMaxSize, Matches, Min, Max, IsNotEmpty, ValidateNested } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsNumber,
+  IsArray,
+  IsUrl,
+  MaxLength,
+  ArrayMaxSize,
+  Matches,
+  Min,
+  Max,
+  IsNotEmpty,
+  ValidateNested,
+} from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 
 // Trims before validation runs — without this, a trailing space/newline
 // (extremely common when a UPI ID or profile link is copy-pasted from a
 // phone) fails @Matches/@IsUrl and 400s the *entire* profile save, not just
 // this field. See text-normalize.util.ts for why storage re-trims separately.
-const trim = ({ value }: { value: unknown }) => typeof value === 'string' ? value.trim() : value;
+const trim = ({ value }: { value: unknown }) =>
+  typeof value === 'string' ? value.trim() : value;
 
 // @IsOptional() only skips validation for null/undefined, NOT ''. The
 // edit-profile form always sends `image_url`/`link`/`img` as '' when the user
@@ -194,6 +208,8 @@ export class UpdateOrganizationProfileDto {
   @Transform(trim)
   // Handle allows digits too (e.g. some PSP handles aren't purely alphabetic) —
   // widened after finding the letters-only version rejected valid real-world VPAs.
-  @Matches(/^[\w.\-]{2,49}@[a-zA-Z0-9]{2,49}$/, { message: 'upi_id must look like a UPI ID, e.g. name@bank' })
+  @Matches(/^[\w.\-]{2,49}@[a-zA-Z0-9]{2,49}$/, {
+    message: 'upi_id must look like a UPI ID, e.g. name@bank',
+  })
   upi_id?: string;
 }

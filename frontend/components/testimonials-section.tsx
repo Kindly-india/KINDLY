@@ -27,7 +27,7 @@ export function TestimonialsSection() {
           <Card className="w-full md:max-w-xl p-8 md:p-12 shadow-md shadow-[#d97706]/5 hover:shadow-xl hover:shadow-[#d97706]/10 dark:hover:shadow-black/50 transition-all duration-300 flex flex-col">
             <Quote className="w-8 h-8 md:w-12 md:h-12 text-[#f59e0b] mb-6 md:mb-8" />
             <p className="text-[17px] md:text-[20px] text-foreground dark:text-white leading-relaxed mb-8 md:mb-10 flex-1">
-              "Wanted a place where people actually show up for each other. The good deed part just comes with it."
+              &quot;Wanted a place where people actually show up for each other. The good deed part just comes with it.&quot;
             </p>
             <div className="flex items-center gap-4">
               <img

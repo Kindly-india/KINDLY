@@ -3,10 +3,10 @@ export interface CertificateTemplateData {
   eventTitle: string;
   orgName: string;
   orgLogoUrl?: string | null;
-  eventDate: string;    // pre-formatted: "12 April 2026"
+  eventDate: string; // pre-formatted: "12 April 2026"
   hoursContributed: number;
   verificationId: string;
-  issuedDate: string;   // pre-formatted: "12 April 2026"
+  issuedDate: string; // pre-formatted: "12 April 2026"
 }
 
 function escapeHtml(str: string): string {

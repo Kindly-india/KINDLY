@@ -81,7 +81,7 @@ export function ImpactSection() {
 
           {/* Header: Bumped to 28px on mobile to act as a proper title */}
           <h2 className="text-[28px] md:text-[56px] font-semibold text-foreground dark:text-white tracking-tight leading-tight">
-            Together, we're
+            Together, we&apos;re
             <br />
             <span className="bg-gradient-to-r from-[#e85d3b] to-[#f59e0b] bg-clip-text text-transparent">
               making a difference.

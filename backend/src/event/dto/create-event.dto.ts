@@ -1,4 +1,18 @@
-import { IsString, IsNotEmpty, IsInt, IsBoolean, IsOptional, IsIn, IsUrl, IsNumber, Min, IsDateString, IsArray, MaxLength, ArrayMaxSize } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsInt,
+  IsBoolean,
+  IsOptional,
+  IsIn,
+  IsUrl,
+  IsNumber,
+  Min,
+  IsDateString,
+  IsArray,
+  MaxLength,
+  ArrayMaxSize,
+} from 'class-validator';
 
 export class CreateEventDto {
   @IsString()
@@ -16,7 +30,20 @@ export class CreateEventDto {
   coverImageUrl?: string;
 
   @IsString()
-  @IsIn(['nature_outdoors', 'food_hunger', 'animal_welfare', 'elderly_care', 'education_mentoring', 'health_medical', 'art_culture', 'civic_community', 'women_empowerment', 'youth_sports', 'mental_wellness', 'donation_drives'])
+  @IsIn([
+    'nature_outdoors',
+    'food_hunger',
+    'animal_welfare',
+    'elderly_care',
+    'education_mentoring',
+    'health_medical',
+    'art_culture',
+    'civic_community',
+    'women_empowerment',
+    'youth_sports',
+    'mental_wellness',
+    'donation_drives',
+  ])
   category: string;
 
   @IsBoolean()

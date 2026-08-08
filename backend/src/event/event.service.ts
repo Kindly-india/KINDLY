@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { EmailService } from '../email/email.service';
 import { PaymentsService } from '../payments/payments.service';
@@ -11,9 +16,15 @@ const GEOLOCK_RADIUS_METERS = 200;
 
 // City/district-level types are too coarse for geo-lock (would be km off)
 const COARSE_TYPES = new Set([
-  'locality', 'sublocality', 'sublocality_level_1',
-  'administrative_area_level_1', 'administrative_area_level_2', 'administrative_area_level_3',
-  'country', 'postal_code', 'political',
+  'locality',
+  'sublocality',
+  'sublocality_level_1',
+  'administrative_area_level_1',
+  'administrative_area_level_2',
+  'administrative_area_level_3',
+  'country',
+  'postal_code',
+  'political',
 ]);
 
 // Ola Maps' forward Geocode API — swapped in for Nominatim/OSM (same rationale
@@ -21,13 +32,20 @@ const COARSE_TYPES = new Set([
 // sets coordinates directly, this only fires when an organizer types/edits a
 // location without using autocomplete/GPS/the map pin, so it should stay
 // consistent with the rest of the location stack rather than falling back to OSM.
-async function geocodeLocation(location: string): Promise<{ lat: number; lng: number } | null> {
+async function geocodeLocation(
+  location: string,
+): Promise<{ lat: number; lng: number } | null> {
   const apiKey = process.env.OLA_MAPS_API_KEY;
   if (!apiKey) {
-    console.warn('[Geo] OLA_MAPS_API_KEY not configured — skipping geocode fallback');
+    console.warn(
+      '[Geo] OLA_MAPS_API_KEY not configured — skipping geocode fallback',
+    );
     return null;
   }
-  const parts = location.split(',').map(s => s.trim()).filter(Boolean);
+  const parts = location
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
   for (let i = 0; i < parts.length; i++) {
     const query = parts.slice(i).join(', ');
     try {
@@ -41,12 +59,16 @@ async function geocodeLocation(location: string): Promise<{ lat: number; lng: nu
         const result = results[0];
         const type = result.types?.[0] || '';
         if (COARSE_TYPES.has(type)) {
-          console.log(`[Geo] Skipping coarse result (type="${type}") for: "${query}"`);
+          console.log(
+            `[Geo] Skipping coarse result (type="${type}") for: "${query}"`,
+          );
           continue;
         }
         const loc = result.geometry?.location;
         if (loc?.lat != null && loc?.lng != null) {
-          console.log(`[Geo] Using result type="${type}" lat=${loc.lat} lng=${loc.lng}`);
+          console.log(
+            `[Geo] Using result type="${type}" lat=${loc.lat} lng=${loc.lng}`,
+          );
           return { lat: loc.lat, lng: loc.lng };
         }
       }
@@ -54,7 +76,11 @@ async function geocodeLocation(location: string): Promise<{ lat: number; lng: nu
       console.error(`[Geo] Error on attempt ${i + 1}:`, err);
     }
   }
-  console.warn('[Geo] No precise geocoding result for:', location, '— org must use GPS button');
+  console.warn(
+    '[Geo] No precise geocoding result for:',
+    location,
+    '— org must use GPS button',
+  );
   return null;
 }
 
@@ -67,9 +93,14 @@ export interface LocationSuggestion {
 // Ola Maps' Places Autocomplete — swapped in for Photon/OSM (frontend) because
 // OSM's POI database has real coverage gaps for tier-2 Indian cities like
 // Nashik. Response shape mirrors Google's legacy Places Autocomplete API.
-async function searchPlaces(query: string, lat: number, lng: number): Promise<LocationSuggestion[]> {
+async function searchPlaces(
+  query: string,
+  lat: number,
+  lng: number,
+): Promise<LocationSuggestion[]> {
   const apiKey = process.env.OLA_MAPS_API_KEY;
-  if (!apiKey) throw new BadRequestException('Location search is not configured');
+  if (!apiKey)
+    throw new BadRequestException('Location search is not configured');
 
   const url = `https://api.olamaps.io/places/v1/autocomplete?input=${encodeURIComponent(query)}&location=${lat},${lng}&api_key=${apiKey}`;
   const res = await fetch(url);
@@ -77,17 +108,23 @@ async function searchPlaces(query: string, lat: number, lng: number): Promise<Lo
 
   const data: any = await res.json();
   const predictions: any[] = data.predictions || [];
-  return predictions.map((p) => ({
-    label: p.description,
-    lat: p.geometry?.location?.lat,
-    lng: p.geometry?.location?.lng,
-  })).filter((s) => s.lat != null && s.lng != null);
+  return predictions
+    .map((p) => ({
+      label: p.description,
+      lat: p.geometry?.location?.lat,
+      lng: p.geometry?.location?.lng,
+    }))
+    .filter((s) => s.lat != null && s.lng != null);
 }
 
 // Ola Maps' Reverse Geocoding — same rationale as searchPlaces above.
-async function reverseGeocodePoint(lat: number, lng: number): Promise<string | null> {
+async function reverseGeocodePoint(
+  lat: number,
+  lng: number,
+): Promise<string | null> {
   const apiKey = process.env.OLA_MAPS_API_KEY;
-  if (!apiKey) throw new BadRequestException('Location search is not configured');
+  if (!apiKey)
+    throw new BadRequestException('Location search is not configured');
 
   const url = `https://api.olamaps.io/places/v1/reverse-geocode?latlng=${lat},${lng}&api_key=${apiKey}`;
   const res = await fetch(url);
@@ -103,13 +140,20 @@ export class EventService {
     private supabaseService: SupabaseService,
     private emailService: EmailService,
     private paymentsService: PaymentsService,
-  ) { }
+  ) {}
 
-  async searchLocations(query: string, lat: number, lng: number): Promise<LocationSuggestion[]> {
+  async searchLocations(
+    query: string,
+    lat: number,
+    lng: number,
+  ): Promise<LocationSuggestion[]> {
     return searchPlaces(query, lat, lng);
   }
 
-  async reverseGeocodeLocation(lat: number, lng: number): Promise<{ label: string | null }> {
+  async reverseGeocodeLocation(
+    lat: number,
+    lng: number,
+  ): Promise<{ label: string | null }> {
     return { label: await reverseGeocodePoint(lat, lng) };
   }
 
@@ -125,20 +169,27 @@ export class EventService {
     // 2. Upload to 'event-images' bucket (CORRECTED NAME)
     const { error: uploadError } = await supabase.storage
       .from('event-images') // 👈 UPDATED HERE
-      .upload(filePath, file.buffer, { contentType: file.mimetype, upsert: false });
+      .upload(filePath, file.buffer, {
+        contentType: file.mimetype,
+        upsert: false,
+      });
 
     if (uploadError) {
-      throw new BadRequestException('Failed to upload image: ' + uploadError.message);
+      throw new BadRequestException(
+        'Failed to upload image: ' + uploadError.message,
+      );
     }
 
     // 3. Get Public URL
-    const { data: { publicUrl } } = supabase.storage
+    const {
+      data: { publicUrl },
+    } = supabase.storage
       .from('event-images') // 👈 UPDATED HERE
       .getPublicUrl(filePath);
     return publicUrl;
   }
 
-async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
+  async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
     const supabase = this.supabaseService.getClient();
 
     // 1. Verify Organization
@@ -188,15 +239,21 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
 
     // 3. Validate Deadlines (Only if dates are provided)
     if (dto.eventDate && dto.startTime && dto.registrationDeadline) {
-      const eventDateTime = new Date(`${dto.eventDate}T${dto.startTime}:00+05:30`);
+      const eventDateTime = new Date(
+        `${dto.eventDate}T${dto.startTime}:00+05:30`,
+      );
       const registrationDeadline = new Date(dto.registrationDeadline);
       const oneHourBefore = new Date(eventDateTime.getTime() - 60 * 60 * 1000);
 
       if (registrationDeadline >= eventDateTime) {
-        throw new BadRequestException('Registration deadline must be before event start time');
+        throw new BadRequestException(
+          'Registration deadline must be before event start time',
+        );
       }
       if (registrationDeadline > oneHourBefore) {
-        throw new BadRequestException('Registration deadline must be at least 1 hour before event start');
+        throw new BadRequestException(
+          'Registration deadline must be at least 1 hour before event start',
+        );
       }
     }
 
@@ -244,20 +301,30 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
       .from('events')
       .update(updateData)
       .eq('id', eventId)
-      .select('id, organization_id, title, description, cover_image_url, gallery_images, category, is_urgent, event_date, start_time, end_time, location, latitude, longitude, dress_code, things_to_bring, point_of_contact, connect_plan, total_slots, registered_count, registration_deadline, minimum_age, ticket_price, status, certificates_issued, updated_at, created_at')
+      .select(
+        'id, organization_id, title, description, cover_image_url, gallery_images, category, is_urgent, event_date, start_time, end_time, location, latitude, longitude, dress_code, things_to_bring, point_of_contact, connect_plan, total_slots, registered_count, registration_deadline, minimum_age, ticket_price, status, certificates_issued, updated_at, created_at',
+      )
       .single();
 
     if (updateError) throw updateError;
 
     // Clean up storage now that the row-level change is committed: an old
     // cover that got replaced, and any gallery images dropped from the array.
-    if (dto.coverImageUrl && event.cover_image_url && event.cover_image_url !== dto.coverImageUrl) {
-      await removeFromStorage(supabase, 'event-images', [event.cover_image_url]);
+    if (
+      dto.coverImageUrl &&
+      event.cover_image_url &&
+      event.cover_image_url !== dto.coverImageUrl
+    ) {
+      await removeFromStorage(supabase, 'event-images', [
+        event.cover_image_url,
+      ]);
     }
     if (updateData.gallery_images) {
       const oldGallery: string[] = event.gallery_images ?? [];
       const newGallery: string[] = updateData.gallery_images;
-      const removedImages = oldGallery.filter((url) => !newGallery.includes(url));
+      const removedImages = oldGallery.filter(
+        (url) => !newGallery.includes(url),
+      );
       if (removedImages.length > 0) {
         await removeFromStorage(supabase, 'event-images', removedImages);
       }
@@ -269,7 +336,11 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
     };
   }
 
-  async updateEventGallery(userId: string, eventId: string, galleryImages: string[]) {
+  async updateEventGallery(
+    userId: string,
+    eventId: string,
+    galleryImages: string[],
+  ) {
     const supabase = this.supabaseService.getClient();
 
     const { data: orgProfile } = await supabase
@@ -287,7 +358,8 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
       .maybeSingle();
 
     if (!event) throw new NotFoundException('Event not found');
-    if (event.organization_id !== orgProfile.id) throw new ForbiddenException('You do not have access to this event');
+    if (event.organization_id !== orgProfile.id)
+      throw new ForbiddenException('You do not have access to this event');
 
     const { data: updated, error } = await supabase
       .from('events')
@@ -300,7 +372,9 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
 
     // Clean up any images dropped from the array (best-effort, mirrors updateEvent).
     const oldGallery: string[] = event.gallery_images ?? [];
-    const removedImages = oldGallery.filter((url) => !galleryImages.includes(url));
+    const removedImages = oldGallery.filter(
+      (url) => !galleryImages.includes(url),
+    );
     if (removedImages.length > 0) {
       await removeFromStorage(supabase, 'event-images', removedImages);
     }
@@ -327,13 +401,15 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
 
     const { data: events, error: eventsError } = await supabase
       .from('events')
-      .select(`
+      .select(
+        `
         *,
         event_registrations (
           id,
           status
         )
-      `)
+      `,
+      )
       .eq('organization_id', orgProfile.id)
       .order('created_at', { ascending: false })
       .limit(200);
@@ -346,8 +422,10 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
       return {
         ...event,
         registered_count: registrations.length,
-        checked_in_count: registrations.filter((r: any) => r.status === 'checked_in' || r.status === 'completed').length,
-        event_registrations: undefined
+        checked_in_count: registrations.filter(
+          (r: any) => r.status === 'checked_in' || r.status === 'completed',
+        ).length,
+        event_registrations: undefined,
       };
     });
 
@@ -359,12 +437,14 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
 
     let query = supabase
       .from('events')
-      .select(`
+      .select(
+        `
         id, title, description, category, cover_image_url, is_urgent,
         event_date, start_time, end_time, location,
         total_slots, registered_count, registration_deadline, connect_plan,
         organization_profiles ( name, org_type )
-      `)
+      `,
+      )
       .eq('status', 'published')
       .gte('event_date', new Date().toISOString().split('T')[0])
       .order('event_date', { ascending: true })
@@ -391,18 +471,27 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
       if (interestTags.length > 0) {
         // Map interest tags to parent event categories
         const TAG_TO_CATEGORY: Record<string, string> = {
-          treks_cleanups: 'nature_outdoors', tree_plantation: 'nature_outdoors',
-          water_cleanup: 'nature_outdoors', wildlife: 'nature_outdoors', urban_gardening: 'nature_outdoors',
+          treks_cleanups: 'nature_outdoors',
+          tree_plantation: 'nature_outdoors',
+          water_cleanup: 'nature_outdoors',
+          wildlife: 'nature_outdoors',
+          urban_gardening: 'nature_outdoors',
           food_drives: 'food_hunger',
           donation_drives: 'donation_drives',
           elderly_care: 'elderly_care',
           women_safety: 'women_empowerment',
-          slum_upliftment: 'civic_community', rallies_awareness: 'civic_community',
-          teaching: 'education_mentoring', kids_art: 'education_mentoring',
-          kids_sports: 'education_mentoring', storytelling: 'education_mentoring',
+          slum_upliftment: 'civic_community',
+          rallies_awareness: 'civic_community',
+          teaching: 'education_mentoring',
+          kids_art: 'education_mentoring',
+          kids_sports: 'education_mentoring',
+          storytelling: 'education_mentoring',
           career_guidance: 'education_mentoring',
-          dog_feeding: 'animal_welfare', animal_shelter: 'animal_welfare',
-          adoption_drives: 'animal_welfare', cat_care: 'animal_welfare', bird_rescue: 'animal_welfare',
+          dog_feeding: 'animal_welfare',
+          animal_shelter: 'animal_welfare',
+          adoption_drives: 'animal_welfare',
+          cat_care: 'animal_welfare',
+          bird_rescue: 'animal_welfare',
           art_culture: 'art_culture',
           health_camps: 'health_medical',
           marathons_sports: 'youth_sports',
@@ -410,11 +499,13 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
         };
 
         const preferredCategories = new Set(
-          interestTags.map(tag => TAG_TO_CATEGORY[tag]).filter(Boolean)
+          interestTags.map((tag) => TAG_TO_CATEGORY[tag]).filter(Boolean),
         );
 
-        const relevant = events.filter(e => preferredCategories.has(e.category));
-        const rest = events.filter(e => !preferredCategories.has(e.category));
+        const relevant = events.filter((e) =>
+          preferredCategories.has(e.category),
+        );
+        const rest = events.filter((e) => !preferredCategories.has(e.category));
         return { events: [...relevant, ...rest] };
       }
     }
@@ -427,13 +518,15 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
 
     const { data: events, error } = await supabase
       .from('events')
-      .select(`
+      .select(
+        `
         id, title, cover_image_url,
         event_date, start_time, end_time, location,
         organization_id,
         organization_profiles ( name, logo_url ),
         event_registrations ( id, status )
-      `)
+      `,
+      )
       .eq('status', 'completed')
       .order('event_date', { ascending: false })
       .limit(50);
@@ -448,7 +541,10 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
         ).length;
 
         // Event man-hours = per-person duration × attendees (single source: eventHours)
-        const totalHours = Math.round(eventHours(ev.start_time, ev.end_time) * attendeeCount * 100) / 100;
+        const totalHours =
+          Math.round(
+            eventHours(ev.start_time, ev.end_time) * attendeeCount * 100,
+          ) / 100;
 
         return {
           id: ev.id,
@@ -456,8 +552,8 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
           cover_image_url: ev.cover_image_url ?? null,
           event_date: ev.event_date,
           location: ev.location,
-          org_name: (ev.organization_profiles as any)?.name ?? null,
-          org_logo_url: (ev.organization_profiles as any)?.logo_url ?? null,
+          org_name: ev.organization_profiles?.name ?? null,
+          org_logo_url: ev.organization_profiles?.logo_url ?? null,
           org_id: ev.organization_id,
           attendee_count: attendeeCount,
           total_hours: totalHours,
@@ -471,12 +567,14 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
 
     const { data: events, error } = await supabase
       .from('events')
-      .select(`
+      .select(
+        `
         id, title, category, cover_image_url, is_urgent,
         event_date, start_time, end_time, location,
         total_slots, registered_count, registration_deadline, connect_plan,
         organization_profiles ( name, org_type )
-      `)
+      `,
+      )
       .eq('status', 'published')
       .gte('event_date', new Date().toISOString().split('T')[0])
       .order('registered_count', { ascending: false })
@@ -492,13 +590,15 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
 
     const { data: event, error } = await supabase
       .from('events')
-      .select(`
+      .select(
+        `
       *,
       organization_profiles (
         name,
         org_type
       )
-    `)
+    `,
+      )
       .eq('id', eventId)
       .single();
 
@@ -526,7 +626,8 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
 
     const { data: event, error } = await supabase
       .from('events')
-      .select(`
+      .select(
+        `
       *,
       organization_profiles (
         name,
@@ -536,7 +637,8 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
         phone,
         is_verified
       )
-    `)
+    `,
+      )
       .eq('id', eventId)
       .single();
 
@@ -556,7 +658,8 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
       .eq('user_id', userId)
       .maybeSingle();
 
-    if (!volProfile) throw new ForbiddenException('You did not attend this event');
+    if (!volProfile)
+      throw new ForbiddenException('You did not attend this event');
 
     const { data: reg } = await supabase
       .from('event_registrations')
@@ -583,12 +686,14 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
       .eq('volunteer_id', volProfile.id)
       .maybeSingle();
 
-    const certificate = rawCert ? {
-      ...rawCert,
-      event_title: event.title,
-      event_date: event.event_date,
-      org_name: (event.organization_profiles as any)?.name,
-    } : null;
+    const certificate = rawCert
+      ? {
+          ...rawCert,
+          event_title: event.title,
+          event_date: event.event_date,
+          org_name: event.organization_profiles?.name,
+        }
+      : null;
 
     const { data: review } = await supabase
       .from('organization_reviews')
@@ -629,7 +734,8 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
 
     const { data: registrations, error: regError } = await supabase
       .from('event_registrations')
-      .select(`
+      .select(
+        `
         id,
         status,
         registered_at,
@@ -641,7 +747,8 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
           phone,
           city
         )
-      `)
+      `,
+      )
       .eq('event_id', eventId)
       .order('registered_at', { ascending: false })
       .limit(500);
@@ -661,11 +768,14 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
       .eq('user_id', userId)
       .single();
 
-    if (volError || !volProfile) throw new NotFoundException('Volunteer profile not found');
+    if (volError || !volProfile)
+      throw new NotFoundException('Volunteer profile not found');
 
     // 2. Fetch Registrations
-    const { data: registrations, error: regError } = await supabase.from('event_registrations')
-      .select(`
+    const { data: registrations, error: regError } = await supabase
+      .from('event_registrations')
+      .select(
+        `
         id,
         status,
         registered_at,
@@ -683,7 +793,8 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
           certificates_issued,
           organization_profiles(name)
         )
-      `)
+      `,
+      )
       .eq('volunteer_id', volProfile.id)
       .order('events(event_date)', { ascending: true })
       .limit(200);
@@ -693,13 +804,17 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
     const formattedEvents = registrations.map((reg: any) => ({
       ...reg.events,
       registration_status: reg.status,
-      registration_id: reg.id
+      registration_id: reg.id,
     }));
 
     return { events: formattedEvents };
   }
 
-  async checkInVolunteer(userId: string, eventId: string, registrationId: string) {
+  async checkInVolunteer(
+    userId: string,
+    eventId: string,
+    registrationId: string,
+  ) {
     const supabase = this.supabaseService.getClient();
 
     const { data: orgProfile, error: orgError } = await supabase
@@ -726,17 +841,25 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
       throw new ForbiddenException('You do not have access to this event');
     }
 
-    const eventStart = new Date(`${event.event_date}T${event.start_time}+05:30`);
+    const eventStart = new Date(
+      `${event.event_date}T${event.start_time}+05:30`,
+    );
     if (new Date() < eventStart) {
-      throw new BadRequestException('Cannot check in volunteers before the event has started');
+      throw new BadRequestException(
+        'Cannot check in volunteers before the event has started',
+      );
     }
 
     if (event.status === 'cancelled') {
-      throw new BadRequestException('Check-in is closed — this event was cancelled');
+      throw new BadRequestException(
+        'Check-in is closed — this event was cancelled',
+      );
     }
 
     if (event.status === 'completed') {
-      throw new BadRequestException('Check-in is closed — the event has been completed');
+      throw new BadRequestException(
+        'Check-in is closed — the event has been completed',
+      );
     }
 
     const { data: registration, error: updateError } = await supabase
@@ -747,7 +870,9 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
       })
       .eq('id', registrationId)
       .eq('event_id', eventId)
-      .select('id, event_id, volunteer_id, status, registered_at, checked_in_at, payment_id')
+      .select(
+        'id, event_id, volunteer_id, status, registered_at, checked_in_at, payment_id',
+      )
       .single();
 
     if (updateError) throw updateError;
@@ -758,7 +883,10 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
     };
   }
 
-  async selfCheckIn(userId: string, data: { eventId: string; latitude: number; longitude: number }) {
+  async selfCheckIn(
+    userId: string,
+    data: { eventId: string; latitude: number; longitude: number },
+  ) {
     const supabase = this.supabaseService.getClient();
 
     const { data: volProfile } = await supabase
@@ -777,17 +905,25 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
 
     if (!event) throw new NotFoundException('Event not found');
 
-    const eventStart = new Date(`${event.event_date}T${event.start_time}+05:30`);
+    const eventStart = new Date(
+      `${event.event_date}T${event.start_time}+05:30`,
+    );
     if (new Date() < eventStart) {
-      throw new BadRequestException('Check-in not open yet. Please wait for event start.');
+      throw new BadRequestException(
+        'Check-in not open yet. Please wait for event start.',
+      );
     }
 
     if (!data.latitude || !data.longitude) {
-      throw new BadRequestException('Location access required for check-in. Enable location and try again.');
+      throw new BadRequestException(
+        'Location access required for check-in. Enable location and try again.',
+      );
     }
 
     if (!event.latitude || !event.longitude) {
-      throw new BadRequestException('Event location not configured. Contact organizer.');
+      throw new BadRequestException(
+        'Event location not configured. Contact organizer.',
+      );
     }
 
     const distance = this.calculateDistance(
@@ -798,7 +934,9 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
     );
 
     if (distance * 1000 > GEOLOCK_RADIUS_METERS) {
-      throw new BadRequestException(`You must be within ${GEOLOCK_RADIUS_METERS}m of the event location to check in. You are ${(distance * 1000).toFixed(0)}m away.`);
+      throw new BadRequestException(
+        `You must be within ${GEOLOCK_RADIUS_METERS}m of the event location to check in. You are ${(distance * 1000).toFixed(0)}m away.`,
+      );
     }
 
     const { error } = await supabase
@@ -807,19 +945,27 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
       .eq('event_id', data.eventId)
       .eq('volunteer_id', volProfile.id);
 
-    if (error) throw new BadRequestException('Failed to check in. Are you registered?');
+    if (error)
+      throw new BadRequestException('Failed to check in. Are you registered?');
 
     return { message: 'Checked in successfully' };
   }
 
-  private calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  private calculateDistance(
+    lat1: number,
+    lon1: number,
+    lat2: number,
+    lon2: number,
+  ): number {
     const R = 6371;
     const dLat = this.deg2rad(lat2 - lat1);
     const dLon = this.deg2rad(lon2 - lon1);
     const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(this.deg2rad(lat1)) * Math.cos(this.deg2rad(lat2)) *
-      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      Math.cos(this.deg2rad(lat1)) *
+        Math.cos(this.deg2rad(lat2)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   }
@@ -856,7 +1002,9 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
     }
 
     if (event.status === 'completed') {
-      throw new BadRequestException('Cannot undo check-in after the event has been completed');
+      throw new BadRequestException(
+        'Cannot undo check-in after the event has been completed',
+      );
     }
 
     const { data: registration, error: updateError } = await supabase
@@ -867,7 +1015,9 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
       })
       .eq('id', registrationId)
       .eq('event_id', eventId)
-      .select('id, event_id, volunteer_id, status, registered_at, checked_in_at, payment_id')
+      .select(
+        'id, event_id, volunteer_id, status, registered_at, checked_in_at, payment_id',
+      )
       .single();
 
     if (updateError) throw updateError;
@@ -893,7 +1043,9 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
 
     const { data: event, error: eventError } = await supabase
       .from('events')
-      .select('organization_id, event_date, start_time, status, title, location')
+      .select(
+        'organization_id, event_date, start_time, status, title, location',
+      )
       .eq('id', eventId)
       .single();
 
@@ -914,10 +1066,14 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
     }
 
     // Time-lock: block cancellation within 2 hours of start time
-    const eventStart = new Date(`${event.event_date}T${event.start_time}+05:30`);
+    const eventStart = new Date(
+      `${event.event_date}T${event.start_time}+05:30`,
+    );
     const twoHoursBefore = new Date(eventStart.getTime() - 2 * 60 * 60 * 1000);
     if (new Date() >= twoHoursBefore) {
-      throw new BadRequestException('Events cannot be cancelled within 2 hours of the start time. Contact support for emergency cancellations.');
+      throw new BadRequestException(
+        'Events cannot be cancelled within 2 hours of the start time. Contact support for emergency cancellations.',
+      );
     }
 
     const { data: updatedEvent, error: updateError } = await supabase
@@ -935,10 +1091,13 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
     // time-locked, so we don't want one stuck Razorpay refund to prevent the
     // whole cancellation. Failed refunds stay 'paid' (unrefunded) and surface
     // on the admin dashboard's refund-attention list for manual follow-up.
-    const { failedCount } = await this.paymentsService.refundForEventCancellation(eventId);
+    const { failedCount } =
+      await this.paymentsService.refundForEventCancellation(eventId);
 
     // Fire-and-forget — email every RSVP'd volunteer about the cancellation
-    this.sendCancellationEmails(supabase, eventId, updatedEvent).catch(() => {});
+    this.sendCancellationEmails(supabase, eventId, updatedEvent).catch(
+      () => {},
+    );
 
     // Fire-and-forget — alert admins about the cancellation
     const { data: orgData } = await supabase
@@ -947,12 +1106,14 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
       .eq('id', orgProfile.id)
       .maybeSingle();
 
-    this.emailService.sendAdminCancellationAlert(
-      event.title ?? 'Untitled Event',
-      orgData?.name ?? 'Unknown Org',
-      event.event_date ?? '',
-      event.location ?? '',
-    ).catch(() => {});
+    this.emailService
+      .sendAdminCancellationAlert(
+        event.title ?? 'Untitled Event',
+        orgData?.name ?? 'Unknown Org',
+        event.event_date ?? '',
+        event.location ?? '',
+      )
+      .catch(() => {});
 
     return {
       message: 'Event cancelled successfully',
@@ -979,15 +1140,22 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
       .eq('organization_id', orgProfile.id)
       .single();
 
-    if (fetchError || !eventData) throw new NotFoundException('Event not found');
+    if (fetchError || !eventData)
+      throw new NotFoundException('Event not found');
 
     if (eventData.status === 'completed') {
-      throw new BadRequestException('This event has already been marked as completed');
+      throw new BadRequestException(
+        'This event has already been marked as completed',
+      );
     }
 
-    const eventStart = new Date(`${eventData.event_date}T${eventData.start_time}+05:30`);
+    const eventStart = new Date(
+      `${eventData.event_date}T${eventData.start_time}+05:30`,
+    );
     if (new Date() < eventStart) {
-      throw new BadRequestException('Cannot mark event as completed before it has started');
+      throw new BadRequestException(
+        'Cannot mark event as completed before it has started',
+      );
     }
 
     const { data: event, error } = await supabase
@@ -1041,29 +1209,40 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
     }
 
     if (orgProfile.approval_status !== 'approved') {
-      throw new ForbiddenException('Your organization must be approved before creating events');
+      throw new ForbiddenException(
+        'Your organization must be approved before creating events',
+      );
     }
 
-    const eventDateTime = new Date(`${dto.eventDate}T${dto.startTime}:00+05:30`);
+    const eventDateTime = new Date(
+      `${dto.eventDate}T${dto.startTime}:00+05:30`,
+    );
     const registrationDeadline = new Date(dto.registrationDeadline);
 
     const oneHourBefore = new Date(eventDateTime.getTime() - 60 * 60 * 1000);
 
     if (registrationDeadline < new Date()) {
-      throw new BadRequestException('Registration deadline cannot be in the past');
+      throw new BadRequestException(
+        'Registration deadline cannot be in the past',
+      );
     }
 
     if (registrationDeadline >= eventDateTime) {
-      throw new BadRequestException('Registration deadline must be before event start time');
+      throw new BadRequestException(
+        'Registration deadline must be before event start time',
+      );
     }
 
     if (registrationDeadline > oneHourBefore) {
-      throw new BadRequestException('Registration deadline must be at least 1 hour before event start');
+      throw new BadRequestException(
+        'Registration deadline must be at least 1 hour before event start',
+      );
     }
 
-    const coords = (dto.latitude == null || dto.longitude == null) && dto.location
-      ? await geocodeLocation(dto.location)
-      : null;
+    const coords =
+      (dto.latitude == null || dto.longitude == null) && dto.location
+        ? await geocodeLocation(dto.location)
+        : null;
 
     const { data: event, error: eventError } = await supabase
       .from('events')
@@ -1092,7 +1271,9 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
         ticket_price: dto.ticketPrice ?? null,
         status: 'pending', // <--- CHANGED FROM 'published' TO 'pending'
       })
-      .select('id, organization_id, title, status, event_date, start_time, location, created_at')
+      .select(
+        'id, organization_id, title, status, event_date, start_time, location, created_at',
+      )
       .single();
 
     if (eventError) throw eventError;
@@ -1113,7 +1294,10 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
       .eq('id', eventId)
       .maybeSingle();
 
-    if (eventForPriceCheck?.ticket_price && eventForPriceCheck.ticket_price > 0) {
+    if (
+      eventForPriceCheck?.ticket_price &&
+      eventForPriceCheck.ticket_price > 0
+    ) {
       throw new BadRequestException(
         'This is a paid event — use the payment flow to register (POST /events/:id/payment/order)',
       );
@@ -1142,11 +1326,16 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
       const msg = error.message ?? '';
 
       // Non-retryable business errors — surface immediately
-      if (msg.includes('VOLUNTEER_NOT_FOUND')) throw new NotFoundException('Volunteer profile not found');
-      if (msg.includes('EVENT_NOT_FOUND')) throw new NotFoundException('Event not found');
-      if (msg.includes('DEADLINE_PASSED')) throw new BadRequestException('Registration deadline has passed');
-      if (msg.includes('EVENT_FULL')) throw new BadRequestException('Event is already full');
-      if (msg.includes('ALREADY_REGISTERED')) throw new BadRequestException('Already registered for this event');
+      if (msg.includes('VOLUNTEER_NOT_FOUND'))
+        throw new NotFoundException('Volunteer profile not found');
+      if (msg.includes('EVENT_NOT_FOUND'))
+        throw new NotFoundException('Event not found');
+      if (msg.includes('DEADLINE_PASSED'))
+        throw new BadRequestException('Registration deadline has passed');
+      if (msg.includes('EVENT_FULL'))
+        throw new BadRequestException('Event is already full');
+      if (msg.includes('ALREADY_REGISTERED'))
+        throw new BadRequestException('Already registered for this event');
 
       // Retryable: lock contention from PgBouncer connection reuse
       const isLockError = msg.toLowerCase().includes('lock');
@@ -1159,7 +1348,9 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
     }
 
     // All retries exhausted
-    throw new BadRequestException('Registration is temporarily busy — please try again in a moment.');
+    throw new BadRequestException(
+      'Registration is temporarily busy — please try again in a moment.',
+    );
   }
 
   async cancelRsvp(userId: string, eventId: string) {
@@ -1172,7 +1363,8 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
       .eq('user_id', userId)
       .maybeSingle();
 
-    if (volError || !volProfile) throw new NotFoundException('Volunteer profile not found');
+    if (volError || !volProfile)
+      throw new NotFoundException('Volunteer profile not found');
 
     // Find the active registration
     const { data: reg, error: regError } = await supabase
@@ -1187,7 +1379,9 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
 
     // Block cancellation if already checked in or completed
     if (reg.status === 'checked_in' || reg.status === 'completed') {
-      throw new BadRequestException('Cannot cancel a registration that is already checked in or completed');
+      throw new BadRequestException(
+        'Cannot cancel a registration that is already checked in or completed',
+      );
     }
 
     // Paid registration: compute the tiered refund (80% if cancelling more
@@ -1228,7 +1422,11 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
   private async sendRsvpEmail(supabase: any, userId: string, eventId: string) {
     const [userResult, eventResult] = await Promise.all([
       supabase.auth.admin.getUserById(userId),
-      supabase.from('events').select('title, event_date, location').eq('id', eventId).maybeSingle(),
+      supabase
+        .from('events')
+        .select('title, event_date, location')
+        .eq('id', eventId)
+        .maybeSingle(),
     ]);
 
     const email = userResult.data?.user?.email;
@@ -1244,10 +1442,20 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
 
     const name = volProfile?.full_name ?? 'Volunteer';
     const eventDate = event.event_date
-      ? new Date(event.event_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
+      ? new Date(event.event_date).toLocaleDateString('en-IN', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+        })
       : '';
 
-    await this.emailService.sendRSVPConfirmation(email, name, event.title, eventDate, event.location ?? '');
+    await this.emailService.sendRSVPConfirmation(
+      email,
+      name,
+      event.title,
+      eventDate,
+      event.location ?? '',
+    );
   }
 
   async sendBroadcast(userId: string, eventId: string, message: string) {
@@ -1268,7 +1476,8 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
       .eq('organization_id', orgProfile.id)
       .single();
 
-    if (!event) throw new ForbiddenException('You can only broadcast to your own events');
+    if (!event)
+      throw new ForbiddenException('You can only broadcast to your own events');
 
     const { data, error } = await supabase
       .from('event_broadcasts')
@@ -1276,9 +1485,11 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
         event_id: eventId,
         organization_id: orgProfile.id,
         message: message,
-        is_important: true
+        is_important: true,
       })
-      .select('id, event_id, organization_id, message, is_important, created_at')
+      .select(
+        'id, event_id, organization_id, message, is_important, created_at',
+      )
       .single();
 
     if (error) throw error;
@@ -1300,10 +1511,18 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
 
   async deleteBroadcast(userId: string, eventId: string, broadcastId: string) {
     const supabase = this.supabaseService.getClient() as any;
-    const { data: orgProfile } = await supabase.from('organization_profiles').select('id').eq('user_id', userId).single();
+    const { data: orgProfile } = await supabase
+      .from('organization_profiles')
+      .select('id')
+      .eq('user_id', userId)
+      .single();
     if (!orgProfile) throw new NotFoundException('Organization not found');
 
-    const { error } = await supabase.from('event_broadcasts').delete().eq('id', broadcastId).eq('organization_id', orgProfile.id);
+    const { error } = await supabase
+      .from('event_broadcasts')
+      .delete()
+      .eq('id', broadcastId)
+      .eq('organization_id', orgProfile.id);
     if (error) throw error;
     return { message: 'Broadcast deleted successfully' };
   }
@@ -1311,7 +1530,11 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
   async getRecentActivity(userId: string) {
     const supabase = this.supabaseService.getClient();
 
-    const { data: orgProfile } = await supabase.from('organization_profiles').select('id').eq('user_id', userId).single();
+    const { data: orgProfile } = await supabase
+      .from('organization_profiles')
+      .select('id')
+      .eq('user_id', userId)
+      .single();
     if (!orgProfile) throw new NotFoundException('Organization not found');
 
     const { data: events } = await supabase
@@ -1323,13 +1546,15 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
 
     const { data: registrations } = await supabase
       .from('event_registrations')
-      .select(`
+      .select(
+        `
         status, 
         registered_at, 
         checked_in_at,
         volunteer_profiles(full_name),
         events!inner(title, organization_id) 
-      `)
+      `,
+      )
       .eq('events.organization_id', orgProfile.id)
       .order('registered_at', { ascending: false })
       .limit(10);
@@ -1373,7 +1598,11 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
   async uploadOrgSignature(userId: string, file: Express.Multer.File) {
     const supabase = this.supabaseService.getClient();
 
-    const { data: orgProfile } = await supabase.from('organization_profiles').select('id, signature_url').eq('user_id', userId).single();
+    const { data: orgProfile } = await supabase
+      .from('organization_profiles')
+      .select('id, signature_url')
+      .eq('user_id', userId)
+      .single();
     if (!orgProfile) throw new NotFoundException('Organization not found');
     validateImageFile(file);
 
@@ -1385,9 +1614,12 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
       .from('org-signatures')
       .upload(filePath, file.buffer, { contentType: file.mimetype });
 
-    if (uploadError) throw new BadRequestException('Failed to upload signature');
+    if (uploadError)
+      throw new BadRequestException('Failed to upload signature');
 
-    const { data: { publicUrl } } = supabase.storage.from('org-signatures').getPublicUrl(filePath);
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from('org-signatures').getPublicUrl(filePath);
 
     const { error: dbError } = await supabase
       .from('organization_profiles')
@@ -1397,24 +1629,44 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
     if (dbError) throw dbError;
 
     // Remove the previous signature file so it doesn't orphan.
-    await removeFromStorage(supabase, 'org-signatures', [orgProfile.signature_url]);
+    await removeFromStorage(supabase, 'org-signatures', [
+      orgProfile.signature_url,
+    ]);
 
-    return { message: 'Signature uploaded successfully', signatureUrl: publicUrl };
+    return {
+      message: 'Signature uploaded successfully',
+      signatureUrl: publicUrl,
+    };
   }
 
   async issueCertificates(userId: string, eventId: string) {
     const supabase = this.supabaseService.getClient();
 
-    const { data: orgProfile } = await supabase.from('organization_profiles').select('id, signature_url').eq('user_id', userId).single();
+    const { data: orgProfile } = await supabase
+      .from('organization_profiles')
+      .select('id, signature_url')
+      .eq('user_id', userId)
+      .single();
     if (!orgProfile) throw new NotFoundException('Organization not found');
 
     if (!orgProfile.signature_url) {
-      throw new BadRequestException('You must upload your organization signature/stamp before issuing certificates.');
+      throw new BadRequestException(
+        'You must upload your organization signature/stamp before issuing certificates.',
+      );
     }
 
-    const { data: event } = await supabase.from('events').select('status').eq('id', eventId).eq('organization_id', orgProfile.id).single();
-    if (!event) throw new ForbiddenException('Event not found or access denied');
-    if (event.status !== 'completed') throw new BadRequestException('Event must be marked as completed before issuing certificates.');
+    const { data: event } = await supabase
+      .from('events')
+      .select('status')
+      .eq('id', eventId)
+      .eq('organization_id', orgProfile.id)
+      .single();
+    if (!event)
+      throw new ForbiddenException('Event not found or access denied');
+    if (event.status !== 'completed')
+      throw new BadRequestException(
+        'Event must be marked as completed before issuing certificates.',
+      );
 
     const { error } = await supabase
       .from('events')
@@ -1428,7 +1680,12 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
 
   // In EventService class
 
-  async submitReview(userId: string, eventId: string, rating: number, comment?: string) {
+  async submitReview(
+    userId: string,
+    eventId: string,
+    rating: number,
+    comment?: string,
+  ) {
     const supabase = this.supabaseService.getClient();
 
     // 1. Get Volunteer Profile
@@ -1458,7 +1715,10 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
       .in('status', ['checked_in', 'completed'])
       .maybeSingle();
 
-    if (!registration) throw new ForbiddenException('Only volunteers who attended this event can leave a review');
+    if (!registration)
+      throw new ForbiddenException(
+        'Only volunteers who attended this event can leave a review',
+      );
 
     // 4. Check if review already exists (prevents duplicates)
     const { data: existing } = await supabase
@@ -1468,20 +1728,22 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
       .eq('volunteer_id', volProfile.id)
       .maybeSingle();
 
-    if (existing) throw new BadRequestException('You have already reviewed this event');
+    if (existing)
+      throw new BadRequestException('You have already reviewed this event');
 
     // 5. Insert Review
-    const { error } = await supabase
-      .from('organization_reviews')
-      .insert({
-        organization_id: event.organization_id,
-        volunteer_id: volProfile.id,
-        event_id: eventId,
-        rating: rating,
-        comment: comment
-      });
+    const { error } = await supabase.from('organization_reviews').insert({
+      organization_id: event.organization_id,
+      volunteer_id: volProfile.id,
+      event_id: eventId,
+      rating: rating,
+      comment: comment,
+    });
 
-    if (error) throw new BadRequestException('Failed to submit review: ' + error.message);
+    if (error)
+      throw new BadRequestException(
+        'Failed to submit review: ' + error.message,
+      );
 
     return { message: 'Review submitted successfully' };
   }
@@ -1491,7 +1753,10 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
     const supabase = this.supabaseService.getClient();
 
     const { data: volProfile } = await supabase
-      .from('volunteer_profiles').select('id').eq('user_id', userId).single();
+      .from('volunteer_profiles')
+      .select('id')
+      .eq('user_id', userId)
+      .single();
 
     if (!volProfile) return null;
 
@@ -1513,14 +1778,16 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
 
     const { data: events, error } = await supabase
       .from('events')
-      .select(`
+      .select(
+        `
       *,
       organization_profiles (
         name,
         email,
         phone
       )
-    `)
+    `,
+      )
       .eq('status', 'pending')
       .order('created_at', { ascending: false });
 
@@ -1530,7 +1797,10 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
   }
 
   // Admin route to forcefully approve and edit an event
-  async adminApproveEvent(eventId: string, updateData: Partial<CreateEventDto>) {
+  async adminApproveEvent(
+    eventId: string,
+    updateData: Partial<CreateEventDto>,
+  ) {
     const supabase = this.supabaseService.getClient();
 
     // Map the incoming DTO back to the database format
@@ -1550,7 +1820,7 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
     };
 
     // Remove undefined fields so we don't accidentally wipe data
-    Object.keys(dbUpdateData).forEach(key => {
+    Object.keys(dbUpdateData).forEach((key) => {
       if (dbUpdateData[key] === undefined) {
         delete dbUpdateData[key];
       }
@@ -1568,7 +1838,11 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
     return { message: 'Event approved and published!', event: updatedEvent };
   }
 
-  private async sendCancellationEmails(supabase: any, eventId: string, event: any) {
+  private async sendCancellationEmails(
+    supabase: any,
+    eventId: string,
+    event: any,
+  ) {
     const { data: regs } = await supabase
       .from('event_registrations')
       .select('volunteer_profiles(user_id, full_name)')
@@ -1578,14 +1852,20 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
     if (!regs?.length) return;
 
     const eventDate = event.event_date
-      ? new Date(event.event_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
+      ? new Date(event.event_date).toLocaleDateString('en-IN', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+        })
       : '';
 
     await Promise.all(
       regs.map(async (reg: any) => {
         const profile = reg.volunteer_profiles;
         if (!profile?.user_id) return;
-        const { data: userResult } = await supabase.auth.admin.getUserById(profile.user_id);
+        const { data: userResult } = await supabase.auth.admin.getUserById(
+          profile.user_id,
+        );
         const email = userResult?.user?.email;
         if (!email) return;
         await this.emailService.sendEventCancellation(
@@ -1615,7 +1895,9 @@ async updateEvent(userId: string, eventId: string, dto: CreateEventDto) {
       regs.map(async (reg: any) => {
         const profile = reg.volunteer_profiles;
         if (!profile?.user_id) return;
-        const { data: userResult } = await supabase.auth.admin.getUserById(profile.user_id);
+        const { data: userResult } = await supabase.auth.admin.getUserById(
+          profile.user_id,
+        );
         const email = userResult?.user?.email;
         if (!email) return;
         await this.emailService.sendImpactLogged(

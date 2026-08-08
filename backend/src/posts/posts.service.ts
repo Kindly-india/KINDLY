@@ -1,4 +1,9 @@
-import { Injectable, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CreatePostDto } from './dto/create-post.dto';
@@ -32,7 +37,8 @@ export class PostsService {
       .eq('status', 'completed')
       .maybeSingle();
 
-    if (!event) throw new BadRequestException('Event is not completed or does not exist');
+    if (!event)
+      throw new BadRequestException('Event is not completed or does not exist');
 
     // Volunteer must have attended
     const { data: registration } = await client
@@ -43,7 +49,8 @@ export class PostsService {
       .in('status', ['checked_in', 'completed'])
       .maybeSingle();
 
-    if (!registration) throw new ForbiddenException('You did not attend this event');
+    if (!registration)
+      throw new ForbiddenException('You did not attend this event');
 
     // Enforce 3-post limit per volunteer per event
     const { count: existingCount } = await client
@@ -84,7 +91,7 @@ export class PostsService {
     viewerUserId: string | null,
     client: any,
   ): Promise<void> {
-    const vol = post.volunteer as any;
+    const vol = post.volunteer;
     if (!vol?.is_private) return; // public account — no restriction
 
     const authorUserId = vol.user_id;
@@ -171,7 +178,9 @@ export class PostsService {
       .eq('follower_id', userId)
       .eq('status', 'accepted');
 
-    const followedUserIds = (followedRows ?? []).map((f: any) => f.following_id);
+    const followedUserIds = (followedRows ?? []).map(
+      (f: any) => f.following_id,
+    );
 
     // 2. Resolve followed user IDs → volunteer profile PKs
     let followedProfileIds: string[] = [];
@@ -184,7 +193,9 @@ export class PostsService {
     }
 
     // High-priority set: viewer's own profile + accepted follows (includes private accounts)
-    const highPriorityProfileIds = [...new Set([viewerProfile.id, ...followedProfileIds])];
+    const highPriorityProfileIds = [
+      ...new Set([viewerProfile.id, ...followedProfileIds]),
+    ];
     const highPrioritySet = new Set(highPriorityProfileIds);
 
     // 3. Public profiles the viewer does NOT follow (low-priority)
@@ -201,7 +212,9 @@ export class PostsService {
       .map((p: any) => p.id);
 
     // 4. Union of all eligible profile IDs for the single DB query
-    const allEligibleIds = [...new Set([...highPriorityProfileIds, ...publicNonFollowedProfileIds])];
+    const allEligibleIds = [
+      ...new Set([...highPriorityProfileIds, ...publicNonFollowedProfileIds]),
+    ];
 
     if (!allEligibleIds.length) return { posts: [], page, limit };
 
@@ -210,11 +223,13 @@ export class PostsService {
     const FEED_BATCH = 300;
     const { data: rawPosts, error } = await client
       .from('posts')
-      .select(`
+      .select(
+        `
         id, volunteer_id, event_id, photo_urls, caption, created_at,
         volunteer:volunteer_profiles(id, user_id, full_name, avatar_url, is_verified),
         event:events(id, title)
-      `)
+      `,
+      )
       .in('volunteer_id', allEligibleIds)
       .order('created_at', { ascending: false })
       .limit(FEED_BATCH);
@@ -222,8 +237,12 @@ export class PostsService {
     if (error) throw new BadRequestException(error.message);
 
     // 6. Two-tier ranking: followed+self first (already sorted by DB), then public
-    const highGroup = (rawPosts ?? []).filter((p: any) => highPrioritySet.has(p.volunteer_id));
-    const lowGroup  = (rawPosts ?? []).filter((p: any) => !highPrioritySet.has(p.volunteer_id));
+    const highGroup = (rawPosts ?? []).filter((p: any) =>
+      highPrioritySet.has(p.volunteer_id),
+    );
+    const lowGroup = (rawPosts ?? []).filter(
+      (p: any) => !highPrioritySet.has(p.volunteer_id),
+    );
     const ranked = [...highGroup, ...lowGroup];
 
     // 7. Paginate the ranked list
@@ -235,15 +254,16 @@ export class PostsService {
     // 8. Batch-fetch engagement data only for the current page's posts
     const postIds = posts.map((p: any) => p.id);
 
-    const [{ data: allLikes }, { data: viewerLikes }, { data: allComments }] = await Promise.all([
-      client.from('post_likes').select('post_id').in('post_id', postIds),
-      client
-        .from('post_likes')
-        .select('post_id')
-        .in('post_id', postIds)
-        .eq('volunteer_id', viewerProfile.id),
-      client.from('post_comments').select('post_id').in('post_id', postIds),
-    ]);
+    const [{ data: allLikes }, { data: viewerLikes }, { data: allComments }] =
+      await Promise.all([
+        client.from('post_likes').select('post_id').in('post_id', postIds),
+        client
+          .from('post_likes')
+          .select('post_id')
+          .in('post_id', postIds)
+          .eq('volunteer_id', viewerProfile.id),
+        client.from('post_comments').select('post_id').in('post_id', postIds),
+      ]);
 
     const likeCountMap: Record<string, number> = {};
     for (const l of allLikes ?? []) {
@@ -253,7 +273,9 @@ export class PostsService {
     for (const c of allComments ?? []) {
       commentCountMap[c.post_id] = (commentCountMap[c.post_id] ?? 0) + 1;
     }
-    const viewerLikedSet = new Set((viewerLikes ?? []).map((l: any) => l.post_id));
+    const viewerLikedSet = new Set(
+      (viewerLikes ?? []).map((l: any) => l.post_id),
+    );
 
     return {
       posts: posts.map((p: any) => ({
@@ -274,11 +296,13 @@ export class PostsService {
     // Include is_private so the privacy gate can inspect it without an extra round-trip.
     const { data: post } = await client
       .from('posts')
-      .select(`
+      .select(
+        `
         id, volunteer_id, event_id, photo_urls, caption, created_at,
         volunteer:volunteer_profiles(id, user_id, full_name, avatar_url, is_verified, is_private),
         event:events(id, title)
-      `)
+      `,
+      )
       .eq('id', postId)
       .maybeSingle();
 
@@ -300,20 +324,27 @@ export class PostsService {
     }
 
     const [{ data: likes }, { data: comments }] = await Promise.all([
-      client.from('post_likes').select('volunteer_id').eq('post_id', postId).limit(200),
+      client
+        .from('post_likes')
+        .select('volunteer_id')
+        .eq('post_id', postId)
+        .limit(200),
       client
         .from('post_comments')
-        .select(`
+        .select(
+          `
           id, content, created_at,
           volunteer:volunteer_profiles(id, user_id, full_name, avatar_url)
-        `)
+        `,
+        )
         .eq('post_id', postId)
         .order('created_at', { ascending: true })
         .limit(100),
     ]);
 
     // Strip internal privacy field before returning to the client
-    const { is_private: _priv, ...volunteerPublic } = (post.volunteer as any) ?? {};
+    const { is_private: _priv, ...volunteerPublic } =
+      (post.volunteer as any) ?? {};
 
     return {
       ...post,
@@ -345,7 +376,8 @@ export class PostsService {
       .maybeSingle();
 
     if (!post) throw new NotFoundException('Post not found');
-    if (post.volunteer_id !== profile.id) throw new ForbiddenException('Not your post');
+    if (post.volunteer_id !== profile.id)
+      throw new ForbiddenException('Not your post');
 
     const { error } = await client.from('posts').delete().eq('id', postId);
     if (error) throw new BadRequestException(error.message);
@@ -400,7 +432,9 @@ export class PostsService {
 
     if (!error) {
       if (!isSelfLike && postOwnerUserId) {
-        this.upsertLikeNotification(postId, postOwnerUserId).catch(console.error);
+        this.upsertLikeNotification(postId, postOwnerUserId).catch(
+          console.error,
+        );
       }
       return { liked: true };
     }
@@ -414,7 +448,9 @@ export class PostsService {
         .eq('volunteer_id', profile.id);
 
       if (!isSelfLike && postOwnerUserId) {
-        this.upsertLikeNotification(postId, postOwnerUserId).catch(console.error);
+        this.upsertLikeNotification(postId, postOwnerUserId).catch(
+          console.error,
+        );
       }
       return { liked: false };
     }
@@ -424,7 +460,10 @@ export class PostsService {
 
   // Upserts a single aggregated "post_liked" notification for the post owner.
   // Re-runs after every like/unlike so the message always reflects current liker list.
-  private async upsertLikeNotification(postId: string, postOwnerUserId: string): Promise<void> {
+  private async upsertLikeNotification(
+    postId: string,
+    postOwnerUserId: string,
+  ): Promise<void> {
     const client = this.supabase.getClient();
 
     const { data: likes } = await client
@@ -447,16 +486,21 @@ export class PostsService {
     }
 
     // Fetch top-2 likers' names + user_id (user_id needed for actor_id on INSERT)
-    const top2ProfileIds = (likes ?? []).slice(0, 2).map((l: any) => l.volunteer_id);
+    const top2ProfileIds = (likes ?? [])
+      .slice(0, 2)
+      .map((l: any) => l.volunteer_id);
     const { data: top2Profiles } = await client
       .from('volunteer_profiles')
       .select('id, user_id, full_name')
       .in('id', top2ProfileIds);
 
-    const profileMap: Record<string, { user_id: string; full_name: string }> = {};
+    const profileMap: Record<string, { user_id: string; full_name: string }> =
+      {};
     for (const p of top2Profiles ?? []) profileMap[p.id] = p;
 
-    const names = top2ProfileIds.map((id: string) => profileMap[id]?.full_name ?? 'Someone');
+    const names = top2ProfileIds.map(
+      (id: string) => profileMap[id]?.full_name ?? 'Someone',
+    );
 
     let message: string;
     if (likerCount === 1) {
@@ -503,10 +547,12 @@ export class PostsService {
 
     const { data: comments, error } = await client
       .from('post_comments')
-      .select(`
+      .select(
+        `
         id, content, created_at,
         volunteer:volunteer_profiles(id, user_id, full_name, avatar_url)
-      `)
+      `,
+      )
       .eq('post_id', postId)
       .order('created_at', { ascending: true })
       .limit(100);
@@ -550,7 +596,10 @@ export class PostsService {
       }
     }
 
-    const { error } = await client.from('post_comments').delete().eq('id', commentId);
+    const { error } = await client
+      .from('post_comments')
+      .delete()
+      .eq('id', commentId);
     if (error) throw new BadRequestException(error.message);
 
     return { message: 'Comment deleted' };
@@ -581,11 +630,17 @@ export class PostsService {
 
     const { data: comment, error } = await client
       .from('post_comments')
-      .insert({ post_id: postId, volunteer_id: profile.id, content: dto.content })
-      .select(`
+      .insert({
+        post_id: postId,
+        volunteer_id: profile.id,
+        content: dto.content,
+      })
+      .select(
+        `
         id, content, created_at,
         volunteer:volunteer_profiles(id, user_id, full_name, avatar_url)
-      `)
+      `,
+      )
       .single();
 
     if (error) throw new BadRequestException(error.message);
@@ -599,7 +654,11 @@ export class PostsService {
         .maybeSingle();
 
       if (authorProfile) {
-        this.upsertCommentNotification(postId, authorProfile.user_id, profile.id).catch(console.error);
+        this.upsertCommentNotification(
+          postId,
+          authorProfile.user_id,
+          profile.id,
+        ).catch(console.error);
       }
     }
 
@@ -641,10 +700,13 @@ export class PostsService {
       .select('id, user_id, full_name')
       .in('id', top2Ids);
 
-    const profileMap: Record<string, { user_id: string; full_name: string }> = {};
+    const profileMap: Record<string, { user_id: string; full_name: string }> =
+      {};
     for (const p of top2Profiles ?? []) profileMap[p.id] = p;
 
-    const names = top2Ids.map((id: string) => profileMap[id]?.full_name ?? 'Someone');
+    const names = top2Ids.map(
+      (id: string) => profileMap[id]?.full_name ?? 'Someone',
+    );
     const total = uniqueCommenters.length;
 
     let message: string;
@@ -701,11 +763,13 @@ export class PostsService {
 
     const { data: likes, error } = await client
       .from('post_likes')
-      .select(`
+      .select(
+        `
         volunteer_id,
         created_at,
         volunteer:volunteer_profiles(id, user_id, full_name, avatar_url, is_verified)
-      `)
+      `,
+      )
       .eq('post_id', postId)
       .order('created_at', { ascending: false })
       .limit(200);
@@ -760,10 +824,12 @@ export class PostsService {
 
     const { data: posts, error } = await client
       .from('posts')
-      .select(`
+      .select(
+        `
         id, volunteer_id, event_id, photo_urls, caption, created_at,
         event:events(id, title)
-      `)
+      `,
+      )
       .eq('volunteer_id', targetProfile.id)
       .order('created_at', { ascending: false })
       .limit(50);
@@ -788,7 +854,9 @@ export class PostsService {
     for (const l of allLikes ?? []) {
       likeCountMap[l.post_id] = (likeCountMap[l.post_id] ?? 0) + 1;
     }
-    const viewerLikedSet = new Set((viewerLikes ?? []).map((l: any) => l.post_id));
+    const viewerLikedSet = new Set(
+      (viewerLikes ?? []).map((l: any) => l.post_id),
+    );
 
     return {
       posts: (posts ?? []).map((p: any) => ({

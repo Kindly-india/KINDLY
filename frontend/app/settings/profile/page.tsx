@@ -6,7 +6,7 @@ import {
   ChevronLeft, Camera, Loader2, X, Plus, MapPin, User,
   Briefcase, FileText, Globe, Building2, Phone, Mail, Hash,
   CalendarDays, BadgeCheck, Linkedin, Instagram, Home, UserCheck,
-  Users2, Trophy, Trash2, Link as LinkIcon, Upload, Image as ImageIcon, Lock,
+  Users2, Trophy, Trash2, Link as LinkIcon, Upload, Lock,
   IndianRupee, AlertTriangle, ShieldAlert
 } from "lucide-react"
 import { toast } from "sonner"
@@ -79,7 +79,7 @@ export default function EditProfile() {
 
   // Profile Image Refs
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
-  const [uploadingCover, setUploadingCover] = useState(false)
+  const [, setUploadingCover] = useState(false)
   const avatarInputRef = useRef<HTMLInputElement>(null)
   const coverInputRef = useRef<HTMLInputElement>(null)
 
@@ -666,7 +666,7 @@ function EmailChangeSection({ currentEmail, newEmail, setNewEmail, confirming, s
         <ShieldAlert className="w-4 h-4 text-red-500" /> Change Login Email
       </h3>
       <p className="text-xs text-muted-foreground mb-4">
-        This is the email you use to sign in — it's different from every other field on this page. Changing it takes effect immediately.
+        This is the email you use to sign in — it&apos;s different from every other field on this page. Changing it takes effect immediately.
       </p>
 
       <div className="bg-muted p-4 rounded-xl border border-border space-y-3">
@@ -693,7 +693,7 @@ function EmailChangeSection({ currentEmail, newEmail, setNewEmail, confirming, s
             <div className="flex gap-2 text-red-700 dark:text-red-400 text-xs leading-relaxed">
               <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
               <span>
-                You'll be logged out and must sign in again at <strong>{newEmail.trim()}</strong> using a one-time code.
+                You&apos;ll be logged out and must sign in again at <strong>{newEmail.trim()}</strong> using a one-time code.
                 Your old email (<strong>{currentEmail}</strong>) will no longer work for login. Make sure you have access
                 to this inbox before continuing.
               </span>

@@ -32,10 +32,16 @@ export class RazorpayService {
   }
 
   private authHeader(): string {
-    return 'Basic ' + Buffer.from(`${this.keyId}:${this.keySecret}`).toString('base64');
+    return (
+      'Basic ' +
+      Buffer.from(`${this.keyId}:${this.keySecret}`).toString('base64')
+    );
   }
 
-  async createOrder(amountPaise: number, receipt: string): Promise<RazorpayOrder> {
+  async createOrder(
+    amountPaise: number,
+    receipt: string,
+  ): Promise<RazorpayOrder> {
     const res = await fetch(`${this.baseUrl}/orders`, {
       method: 'POST',
       headers: {
@@ -52,26 +58,36 @@ export class RazorpayService {
 
     if (!res.ok) {
       const body = await res.text();
-      this.logger.error(`Razorpay order creation failed: ${res.status} ${body}`);
+      this.logger.error(
+        `Razorpay order creation failed: ${res.status} ${body}`,
+      );
       throw new Error('Failed to create payment order');
     }
 
     return res.json() as Promise<RazorpayOrder>;
   }
 
-  async refundPayment(razorpayPaymentId: string, amountPaise: number): Promise<RazorpayRefund> {
-    const res = await fetch(`${this.baseUrl}/payments/${razorpayPaymentId}/refund`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: this.authHeader(),
+  async refundPayment(
+    razorpayPaymentId: string,
+    amountPaise: number,
+  ): Promise<RazorpayRefund> {
+    const res = await fetch(
+      `${this.baseUrl}/payments/${razorpayPaymentId}/refund`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: this.authHeader(),
+        },
+        body: JSON.stringify({ amount: amountPaise }),
       },
-      body: JSON.stringify({ amount: amountPaise }),
-    });
+    );
 
     if (!res.ok) {
       const body = await res.text();
-      this.logger.error(`Razorpay refund failed for ${razorpayPaymentId}: ${res.status} ${body}`);
+      this.logger.error(
+        `Razorpay refund failed for ${razorpayPaymentId}: ${res.status} ${body}`,
+      );
       throw new Error('Failed to process refund');
     }
 

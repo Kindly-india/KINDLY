@@ -5,7 +5,6 @@ import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import {
   ChevronLeft,
-  Calendar,
   Clock,
   MapPin,
   Users,
@@ -428,7 +427,7 @@ export default function EditEventPage() {
                     Mark as Urgent Need
                   </label>
                   <p className="text-xs text-amber-700 mt-0.5">
-                    Adds a "Critical" badge to attract volunteers faster.
+                    Adds a &quot;Critical&quot; badge to attract volunteers faster.
                   </p>
                 </div>
               </div>
@@ -583,7 +582,7 @@ export default function EditEventPage() {
                     className="w-full px-4 py-3 bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 />
                 <p className="text-xs text-muted-foreground mt-2">
-                    What's the after-event hangout? Chai? Walk? Breakfast together? If blank, our team may suggest one.
+                    What&apos;s the after-event hangout? Chai? Walk? Breakfast together? If blank, our team may suggest one.
                 </p>
             </div>
 
@@ -658,7 +657,7 @@ export default function EditEventPage() {
                     />
                   </div>
                   <p className="text-xs text-muted-foreground mt-2">
-                    You'll keep 92% of every ticket sold — KINDLY retains an 8% platform fee to cover payment processing and platform costs.
+                    You&apos;ll keep 92% of every ticket sold — KINDLY retains an 8% platform fee to cover payment processing and platform costs.
                   </p>
                 </>
               ) : (

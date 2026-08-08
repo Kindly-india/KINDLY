@@ -1,13 +1,28 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+  ConflictException,
+} from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { EmailService } from '../email/email.service';
 import { UpdateOrganizationProfileDto } from './dto/update-organization-profile.dto';
 import { AddReviewDto } from './dto/add-review.dto';
 import { validateImageFile } from '../common/file-validation.util';
-import { removeFromStorage, storagePathFromStored } from '../common/storage.util';
+import {
+  removeFromStorage,
+  storagePathFromStored,
+} from '../common/storage.util';
 import { eventHours } from '../common/hours.util';
-import { normalizeUrlField, normalizeTrimmedField, trimAllStrings, normalizeTeamMembers, normalizeAchievements } from '../common/text-normalize.util';
+import {
+  normalizeUrlField,
+  normalizeTrimmedField,
+  trimAllStrings,
+  normalizeTeamMembers,
+  normalizeAchievements,
+} from '../common/text-normalize.util';
 
 export interface OrgProfilePublic {
   id: string;
@@ -48,19 +63,41 @@ export interface OrgProfilePrivate extends OrgProfilePublic {
 }
 
 const PUBLIC_ORG_FIELDS = [
-  'id', 'user_id', 'org_type', 'name', 'email', 'phone',
-  'registration_type', 'representative_name', 'designation',
-  'website', 'parent_institution', 'coordinator_name',
-  'area_locality', 'intent_description', 'approval_status',
-  'created_at', 'updated_at', 'logo_url', 'cover_url',
-  'tagline', 'mission_statement', 'years_active', 'is_verified',
-  'linkedin', 'instagram', 'team_members', 'achievements',
+  'id',
+  'user_id',
+  'org_type',
+  'name',
+  'email',
+  'phone',
+  'registration_type',
+  'representative_name',
+  'designation',
+  'website',
+  'parent_institution',
+  'coordinator_name',
+  'area_locality',
+  'intent_description',
+  'approval_status',
+  'created_at',
+  'updated_at',
+  'logo_url',
+  'cover_url',
+  'tagline',
+  'mission_statement',
+  'years_active',
+  'is_verified',
+  'linkedin',
+  'instagram',
+  'team_members',
+  'achievements',
 ].join(', ');
 
 // upi_id is private (payout destination) — only the org itself and the
 // superadmin see it (PaymentsService.getAdminDashboard/getBill read it
 // directly from the DB, not through this field list).
-const PRIVATE_ORG_FIELDS = PUBLIC_ORG_FIELDS + ', registration_number, pan_card_url, registration_certificate_url, proof_document_url, signature_url, upi_id';
+const PRIVATE_ORG_FIELDS =
+  PUBLIC_ORG_FIELDS +
+  ', registration_number, pan_card_url, registration_certificate_url, proof_document_url, signature_url, upi_id';
 
 @Injectable()
 export class OrganizationService {
@@ -77,9 +114,15 @@ export class OrganizationService {
   // KYC docs live in a PRIVATE bucket now, so a stored value is only usable via a
   // short-lived signed URL. Handles both the new format (a bare object path) and
   // legacy rows that stored a full public URL — extracts the path from either.
-  private async signOrgDoc(client: any, stored: string | null): Promise<string | null> {
+  private async signOrgDoc(
+    client: any,
+    stored: string | null,
+  ): Promise<string | null> {
     if (!stored) return null;
-    const path = storagePathFromStored(stored, OrganizationService.ORG_DOCS_BUCKET);
+    const path = storagePathFromStored(
+      stored,
+      OrganizationService.ORG_DOCS_BUCKET,
+    );
     const { data } = await client.storage
       .from(OrganizationService.ORG_DOCS_BUCKET)
       .createSignedUrl(path, 60 * 60); // 1 hour, for the admin review session
@@ -96,9 +139,9 @@ export class OrganizationService {
       .from('organization_profiles')
       .select(
         'id, user_id, org_type, name, email, phone, registration_type, registration_number, ' +
-        'representative_name, designation, website, parent_institution, coordinator_name, ' +
-        'area_locality, intent_description, registration_certificate_url, pan_card_url, ' +
-        'proof_document_url, created_at',
+          'representative_name, designation, website, parent_institution, coordinator_name, ' +
+          'area_locality, intent_description, registration_certificate_url, pan_card_url, ' +
+          'proof_document_url, created_at',
       )
       .eq('approval_status', 'pending')
       .order('created_at', { ascending: true });
@@ -108,9 +151,15 @@ export class OrganizationService {
     const organizations = await Promise.all(
       (data ?? []).map(async (org: any) => ({
         ...org,
-        registration_certificate_url: await this.signOrgDoc(client, org.registration_certificate_url),
+        registration_certificate_url: await this.signOrgDoc(
+          client,
+          org.registration_certificate_url,
+        ),
         pan_card_url: await this.signOrgDoc(client, org.pan_card_url),
-        proof_document_url: await this.signOrgDoc(client, org.proof_document_url),
+        proof_document_url: await this.signOrgDoc(
+          client,
+          org.proof_document_url,
+        ),
       })),
     );
 
@@ -126,11 +175,14 @@ export class OrganizationService {
 
     const { data: org, error: fetchError } = await client
       .from('organization_profiles')
-      .select('id, user_id, name, email, registration_certificate_url, pan_card_url, proof_document_url')
+      .select(
+        'id, user_id, name, email, registration_certificate_url, pan_card_url, proof_document_url',
+      )
       .eq('id', orgId)
       .single();
 
-    if (fetchError || !org) throw new NotFoundException('Organization not found');
+    if (fetchError || !org)
+      throw new NotFoundException('Organization not found');
 
     if (status === 'rejected') {
       // A rejected application is deleted outright. Reject only ever targets a
@@ -156,13 +208,19 @@ export class OrganizationService {
 
       await client.auth.admin.deleteUser(org.user_id).catch(() => {});
 
-      return { message: 'Organization rejected and removed', organization: { id: org.id, approval_status: 'rejected' } };
+      return {
+        message: 'Organization rejected and removed',
+        organization: { id: org.id, approval_status: 'rejected' },
+      };
     }
 
     // Approved
     const { error: updateError } = await client
       .from('organization_profiles')
-      .update({ approval_status: 'approved', updated_at: new Date().toISOString() })
+      .update({
+        approval_status: 'approved',
+        updated_at: new Date().toISOString(),
+      })
       .eq('id', orgId);
 
     if (updateError) throw new BadRequestException(updateError.message);
@@ -173,12 +231,15 @@ export class OrganizationService {
         org.user_id,
         org.user_id,
         'org_approved',
-        "Your organization has been approved! You can now log in with your email.",
+        'Your organization has been approved! You can now log in with your email.',
         org.id,
       ),
     ]);
 
-    return { message: 'Organization approved', organization: { id: org.id, approval_status: 'approved' } };
+    return {
+      message: 'Organization approved',
+      organization: { id: org.id, approval_status: 'approved' },
+    };
   }
 
   async getPublicProfile(orgId: string, viewerId?: string) {
@@ -211,7 +272,8 @@ export class OrganizationService {
 
     const profile = data as OrgProfilePrivate | null;
 
-    if (error || !profile) throw new NotFoundException('Organization not found');
+    if (error || !profile)
+      throw new NotFoundException('Organization not found');
 
     // Check if current viewer follows this org (used to hydrate the Follow button)
     let isFollowedByCurrentUser = false;
@@ -248,13 +310,17 @@ export class OrganizationService {
       : { data: [] };
 
     const eventsHosted = completedEvents?.length ?? 0;
-    const volunteersEngaged = new Set((attendedRegs || []).map((r: any) => r.volunteer_id)).size;
+    const volunteersEngaged = new Set(
+      (attendedRegs || []).map((r: any) => r.volunteer_id),
+    ).size;
 
     // Org man-hours = Σ over completed events of (per-person duration × attendees).
     // Single source: eventHours (overnight-aware, 2dp).
     let totalHours = 0;
     for (const ev of completedEvents || []) {
-      const attendees = (attendedRegs || []).filter((r: any) => r.event_id === ev.id).length;
+      const attendees = (attendedRegs || []).filter(
+        (r: any) => r.event_id === ev.id,
+      ).length;
       if (attendees > 0) {
         totalHours += eventHours(ev.start_time, ev.end_time) * attendees;
       }
@@ -301,7 +367,8 @@ export class OrganizationService {
 
     const { data: reviews, error } = await client
       .from('organization_reviews')
-      .select(`
+      .select(
+        `
         id,
         rating,
         comment,
@@ -313,7 +380,8 @@ export class OrganizationService {
         events (
           title
         )
-      `)
+      `,
+      )
       .eq('organization_id', orgId)
       .order('created_at', { ascending: false });
 
@@ -359,12 +427,18 @@ export class OrganizationService {
     // a protocol — used as raw <a href> targets on the public profile, they
     // resolve as broken relative links without one.
     trimAllStrings(updateData);
-    if (updateData.website !== undefined) updateData.website = normalizeUrlField(updateData.website);
-    if (updateData.linkedin !== undefined) updateData.linkedin = normalizeUrlField(updateData.linkedin);
-    if (updateData.instagram !== undefined) updateData.instagram = normalizeUrlField(updateData.instagram);
-    if (updateData.upi_id !== undefined) updateData.upi_id = normalizeTrimmedField(updateData.upi_id);
-    if (updateData.team_members !== undefined) updateData.team_members = normalizeTeamMembers(updateData.team_members);
-    if (updateData.achievements !== undefined) updateData.achievements = normalizeAchievements(updateData.achievements);
+    if (updateData.website !== undefined)
+      updateData.website = normalizeUrlField(updateData.website);
+    if (updateData.linkedin !== undefined)
+      updateData.linkedin = normalizeUrlField(updateData.linkedin);
+    if (updateData.instagram !== undefined)
+      updateData.instagram = normalizeUrlField(updateData.instagram);
+    if (updateData.upi_id !== undefined)
+      updateData.upi_id = normalizeTrimmedField(updateData.upi_id);
+    if (updateData.team_members !== undefined)
+      updateData.team_members = normalizeTeamMembers(updateData.team_members);
+    if (updateData.achievements !== undefined)
+      updateData.achievements = normalizeAchievements(updateData.achievements);
 
     const { data, error } = await client
       .from('organization_profiles')
@@ -375,14 +449,27 @@ export class OrganizationService {
 
     const profile = data as OrgProfilePrivate | null;
 
-    if (error || !profile) throw new BadRequestException(error?.message || 'Failed to update organization profile');
+    if (error || !profile)
+      throw new BadRequestException(
+        error?.message || 'Failed to update organization profile',
+      );
 
     // Delete any logo/cover that was just replaced (new upload = fresh path, so
     // the old file would otherwise orphan). logo/cover share the profile-images
     // bucket with volunteer avatars.
     const replaced: (string | null | undefined)[] = [];
-    if (updateData.logo_url && existing.logo_url && updateData.logo_url !== existing.logo_url) replaced.push(existing.logo_url);
-    if (updateData.cover_url && existing.cover_url && updateData.cover_url !== existing.cover_url) replaced.push(existing.cover_url);
+    if (
+      updateData.logo_url &&
+      existing.logo_url &&
+      updateData.logo_url !== existing.logo_url
+    )
+      replaced.push(existing.logo_url);
+    if (
+      updateData.cover_url &&
+      existing.cover_url &&
+      updateData.cover_url !== existing.cover_url
+    )
+      replaced.push(existing.cover_url);
     await removeFromStorage(client, 'profile-images', replaced);
     return { profile };
   }
@@ -408,15 +495,24 @@ export class OrganizationService {
       throw new BadRequestException('That is already your current email.');
     }
 
-    const { error: authError } = await client.auth.admin.updateUserById(userId, {
-      email: newEmail,
-      email_confirm: true,
-    });
+    const { error: authError } = await client.auth.admin.updateUserById(
+      userId,
+      {
+        email: newEmail,
+        email_confirm: true,
+      },
+    );
 
     if (authError) {
       const msg = authError.message || '';
-      if (msg.toLowerCase().includes('already been registered') || msg.toLowerCase().includes('already registered') || msg.toLowerCase().includes('already exists')) {
-        throw new ConflictException('That email is already in use by another account.');
+      if (
+        msg.toLowerCase().includes('already been registered') ||
+        msg.toLowerCase().includes('already registered') ||
+        msg.toLowerCase().includes('already exists')
+      ) {
+        throw new ConflictException(
+          'That email is already in use by another account.',
+        );
       }
       throw new BadRequestException(msg || 'Failed to change email');
     }
@@ -433,8 +529,13 @@ export class OrganizationService {
     if (error || !profile) {
       // Auth already changed — revert it so login email and profile email
       // can't end up disagreeing, then surface a clear error.
-      await client.auth.admin.updateUserById(userId, { email: existing.email, email_confirm: true }).catch(() => {});
-      throw new BadRequestException(error?.message || 'Failed to update profile email — the change was reverted, please try again.');
+      await client.auth.admin
+        .updateUserById(userId, { email: existing.email, email_confirm: true })
+        .catch(() => {});
+      throw new BadRequestException(
+        error?.message ||
+          'Failed to update profile email — the change was reverted, please try again.',
+      );
     }
 
     return { profile };
@@ -511,14 +612,16 @@ export class OrganizationService {
 
     const { data, error } = await client
       .from('event_registrations')
-      .select(`
+      .select(
+        `
       volunteer_id,
       status,
       volunteer_profiles (
         id, full_name, avatar_url, city, headline, total_hours
       ),
       events!inner (organization_id)
-    `)
+    `,
+      )
       .eq('events.organization_id', orgId);
 
     if (error) return { volunteers: [] };
@@ -544,12 +647,15 @@ export class OrganizationService {
       .eq('user_id', userId)
       .single();
 
-    if (!volunteer) throw new ForbiddenException('Only volunteers can leave reviews');
+    if (!volunteer)
+      throw new ForbiddenException('Only volunteers can leave reviews');
 
     const { data, error } = await client
       .from('organization_reviews')
       .insert({ ...dto, volunteer_id: volunteer.id })
-      .select('id, organization_id, volunteer_id, event_id, rating, comment, created_at')
+      .select(
+        'id, organization_id, volunteer_id, event_id, rating, comment, created_at',
+      )
       .single();
 
     if (error) throw error;
@@ -585,7 +691,11 @@ export class OrganizationService {
   }
 
   /** POST /organizations/gallery — auth required, org only */
-  async addToOrgGallery(userId: string, file: Express.Multer.File, caption?: string) {
+  async addToOrgGallery(
+    userId: string,
+    file: Express.Multer.File,
+    caption?: string,
+  ) {
     validateImageFile(file);
     const client = this.supabase.getClient();
 
@@ -595,24 +705,31 @@ export class OrganizationService {
       .eq('user_id', userId)
       .single();
 
-    if (profileError || !orgProfile) throw new ForbiddenException('Organization profile not found');
+    if (profileError || !orgProfile)
+      throw new ForbiddenException('Organization profile not found');
 
     const fileName = `org/${orgProfile.id}/${Date.now()}-${file.originalname}`;
-    const { error: uploadError } = await client
-      .storage
+    const { error: uploadError } = await client.storage
       .from('gallery_images')
-      .upload(fileName, file.buffer, { contentType: file.mimetype, upsert: false });
+      .upload(fileName, file.buffer, {
+        contentType: file.mimetype,
+        upsert: false,
+      });
 
     if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
 
-    const { data: { publicUrl } } = client
-      .storage
-      .from('gallery_images')
-      .getPublicUrl(fileName);
+    const {
+      data: { publicUrl },
+    } = client.storage.from('gallery_images').getPublicUrl(fileName);
 
     const { data, error } = await client
       .from('org_gallery')
-      .insert({ org_id: orgProfile.id, user_id: userId, image_url: publicUrl, caption })
+      .insert({
+        org_id: orgProfile.id,
+        user_id: userId,
+        image_url: publicUrl,
+        caption,
+      })
       .select('id, image_url, caption, created_at')
       .single();
 

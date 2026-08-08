@@ -3,27 +3,19 @@
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { 
-  CheckCircle, 
-  Clock, 
-  MapPin, 
-  Users, 
-  ExternalLink, 
-  Search, 
-  Coffee, 
+import {
+  CheckCircle,
+  Clock,
+  MapPin,
+  Users,
+  Coffee,
   User as UserIcon,
   ShieldCheck,
   AlertCircle,
-  Calendar,
   ImageIcon,
   Upload,
   X,
-  Type,
-  Tag,
-  Briefcase,
-  AlertTriangle,
   Loader2,
-  ChevronDown,
   Menu
 } from "lucide-react"
 import { toast } from "sonner"
@@ -246,7 +238,7 @@ export default function AdminApprovalPage() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
                 <h2 className="text-xl lg:text-2xl font-black text-foreground">Polish Submission</h2>
-                <p className="text-xs lg:text-sm text-muted-foreground">Upgrade this event to KINDLY's club standard.</p>
+                <p className="text-xs lg:text-sm text-muted-foreground">Upgrade this event to KINDLY&apos;s club standard.</p>
               </div>
               <button 
                 onClick={handleApprove}
@@ -347,8 +339,8 @@ export default function AdminApprovalPage() {
                     <h3 className="text-white font-black text-lg">The After</h3>
                   </div>
                   <div className="bg-emerald-900/40 p-3 rounded-xl border border-emerald-700/50">
-                    <p className="text-emerald-300/80 text-[10px] font-bold uppercase tracking-wider mb-1">Org's Proposed After Activity:</p>
-                    <p className="text-emerald-100 text-xs italic">"{selectedEvent.connect_plan || "No suggestion provided"}"</p>
+                    <p className="text-emerald-300/80 text-[10px] font-bold uppercase tracking-wider mb-1">Org&apos;s Proposed After Activity:</p>
+                    <p className="text-emerald-100 text-xs italic">&quot;{selectedEvent.connect_plan || "No suggestion provided"}&quot;</p>
                   </div>
                   <textarea
                     placeholder="Describe the curated after-activity... e.g. ☕ Post-event Coffee at Roastery!"

@@ -1,4 +1,9 @@
-import { Controller, Get, InternalServerErrorException, ServiceUnavailableException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  InternalServerErrorException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { AppService } from './app.service';
 import { SupabaseService } from './supabase/supabase.service';
 
@@ -19,7 +24,8 @@ export class AppController {
     const start = Date.now();
     let dbOk = true;
     try {
-      const { error } = await this.supabase.getClient()
+      const { error } = await this.supabase
+        .getClient()
         .from('volunteer_profiles')
         .select('id', { count: 'exact', head: true });
       if (error) dbOk = false;
@@ -40,6 +46,8 @@ export class AppController {
   // TEMP: remove after confirming Sentry is working
   @Get('sentry-test')
   sentryTest(): never {
-    throw new InternalServerErrorException('Sentry test error — delete this route after confirming');
+    throw new InternalServerErrorException(
+      'Sentry test error — delete this route after confirming',
+    );
   }
 }

@@ -229,7 +229,7 @@ export function VolunteerHomePage() {
 
   const formatTime = (timeStr: string) => {
     if (!timeStr) return ""
-    const [h, m] = timeStr.split(':')
+    const [h] = timeStr.split(':')
     const hour = parseInt(h)
     const ampm = hour >= 12 ? 'PM' : 'AM'
     return `${hour % 12 || 12} ${ampm}`
@@ -241,10 +241,6 @@ export function VolunteerHomePage() {
       storiesRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" })
     }
   }
-
-  const displayImage = profile?.avatar_url || profile?.logo_url
-  const displayName = profile?.full_name || profile?.name || "User"
-  const displayInitial = displayName ? displayName.charAt(0).toUpperCase() : "U"
 
   if (loading) {
     return (
@@ -362,7 +358,7 @@ export function VolunteerHomePage() {
             <ScrollReveal delay={0.1}>
               <Card className="text-center py-12 dark:bg-neutral-900/50 dark:backdrop-blur-md dark:border-neutral-800/60 dark:rounded-2xl dark:shadow-none">
                 <Calendar className="w-12 h-12 text-muted-foreground dark:text-neutral-500 mx-auto mb-3" />
-                <p className="text-muted-foreground dark:text-neutral-400">You don't have any active registrations.</p>
+                <p className="text-muted-foreground dark:text-neutral-400">You don&apos;t have any active registrations.</p>
                 <Button
                   asChild
                   variant="nav-pill"
@@ -470,7 +466,7 @@ export function VolunteerHomePage() {
                 <div className="text-center md:text-left">
                   <h3 className="text-[18px] md:text-[26px] font-bold text-foreground dark:text-white">{formatHoursTotal(stats.hoursContributed)} Volunteer Hours</h3>
                   <p className="text-[13px] md:text-[15px] text-muted-foreground dark:text-neutral-400 mt-0.5">Total Contribution</p>
-                  <p className="text-[13px] md:text-[15px] text-foreground dark:text-neutral-300 mt-3 max-w-md">You're making a real difference in {profile?.city || "Nashik"}. Keep up the amazing work!</p>
+                  <p className="text-[13px] md:text-[15px] text-foreground dark:text-neutral-300 mt-3 max-w-md">You&apos;re making a real difference in {profile?.city || "Nashik"}. Keep up the amazing work!</p>
 
                   <Link
                     href="/volunteer-impact"
@@ -555,7 +551,7 @@ export function VolunteerHomePage() {
                   </div>
                   <div className="p-6">
                     <Quote className="w-6 h-6 text-muted-foreground mb-4" />
-                    <p className="text-foreground italic">"{story.quote}"</p>
+                    <p className="text-foreground italic">&quot;{story.quote}&quot;</p>
                   </div>
                 </div>
               ))}
@@ -622,9 +618,8 @@ export function VolunteerHomePage() {
               >
                 <InstagramIcon className="w-5 h-5" />
               </a>
-              {/* TODO: no LinkedIn URL exists anywhere in the codebase yet — swap in the real company page link */}
               <a
-                href="#"
+                href="https://in.linkedin.com/company/teamkindly"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="LinkedIn"
@@ -645,7 +640,7 @@ export function VolunteerHomePage() {
           </div>
 
           <div className="border-t border-white/10 mt-6 pt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-[12px] text-neutral-500">
-            <span className="whitespace-nowrap">manasdhivare@gmail.com</span>
+            <span className="whitespace-nowrap">team@kindly.co.in</span>
             <span className="whitespace-nowrap">+91 7517018954</span>
             <span className="flex items-center gap-1 whitespace-nowrap"><MapPin className="w-3 h-3" /> Nashik, India</span>
           </div>

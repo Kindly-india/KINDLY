@@ -8,8 +8,8 @@ import {
   Patch,
   Param,
   UseInterceptors, // ✅ Added for file upload
-  UploadedFile,    // ✅ Added for file upload
-  Delete           // ✅ Added for delete
+  UploadedFile, // ✅ Added for file upload
+  Delete, // ✅ Added for delete
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express'; // ✅ Helper for parsing files
 import { VolunteerService } from './volunteer.service';
@@ -26,7 +26,7 @@ export class VolunteerController {
   constructor(
     private readonly volunteerService: VolunteerService,
     private readonly certificateService: CertificateService,
-  ) { }
+  ) {}
 
   // 1. Get Own Profile (Private)
   @UseGuards(JwtAuthGuard)
@@ -40,7 +40,7 @@ export class VolunteerController {
   @Patch('profile')
   async updateProfile(
     @Request() req: any,
-    @Body() dto: UpdateVolunteerProfileDto
+    @Body() dto: UpdateVolunteerProfileDto,
   ) {
     return this.volunteerService.updateProfile(req.user.id, dto);
   }
@@ -57,7 +57,10 @@ export class VolunteerController {
   // 3. Smart Profile View (Public / Resume / Private)
   @Get(':id/profile')
   @UseGuards(OptionalAuthGuard)
-  async getProfileForViewer(@Param('id') targetId: string, @Request() req: any) {
+  async getProfileForViewer(
+    @Param('id') targetId: string,
+    @Request() req: any,
+  ) {
     const viewerId = req.user?.id || null;
     return this.volunteerService.getProfileForViewer(targetId, viewerId);
   }
@@ -95,7 +98,7 @@ export class VolunteerController {
   @Delete('gallery/:photoId')
   async deleteGalleryPhoto(
     @Request() req: any,
-    @Param('photoId') photoId: string
+    @Param('photoId') photoId: string,
   ) {
     return this.volunteerService.deleteFromGallery(req.user.id, photoId);
   }
@@ -117,20 +120,14 @@ export class VolunteerController {
   // 10. Complete Onboarding
   @UseGuards(JwtAuthGuard)
   @Patch('me/onboarding')
-  async completeOnboarding(
-    @Request() req: any,
-    @Body() dto: OnboardingDto,
-  ) {
+  async completeOnboarding(@Request() req: any, @Body() dto: OnboardingDto) {
     return this.volunteerService.updateOnboarding(req.user.id, dto);
   }
 
   // 11. Ensure Profile Exists (OTP signups — no volunteer_profiles row yet)
   @UseGuards(JwtAuthGuard)
   @Post('me/profile')
-  async ensureProfile(
-    @Request() req: any,
-    @Body() dto: EnsureProfileDto,
-  ) {
+  async ensureProfile(@Request() req: any, @Body() dto: EnsureProfileDto) {
     return this.volunteerService.ensureProfile(req.user.id, dto.full_name);
   }
 }

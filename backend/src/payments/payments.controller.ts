@@ -42,9 +42,14 @@ export class PaymentsController {
   // via the x-razorpay-signature header inside the service, against the raw
   // request body (see main.ts's `rawBody: true`), not via a session token.
   @Post('payments/webhook')
-  async webhook(@Req() req: any, @Headers('x-razorpay-signature') signature?: string) {
+  async webhook(
+    @Req() req: any,
+    @Headers('x-razorpay-signature') signature?: string,
+  ) {
     if (!req.rawBody) {
-      throw new BadRequestException('Missing raw body for webhook signature verification');
+      throw new BadRequestException(
+        'Missing raw body for webhook signature verification',
+      );
     }
     return this.paymentsService.handleWebhook(req.rawBody, signature);
   }
@@ -63,7 +68,10 @@ export class PaymentsController {
 
   @Patch('payments/admin/events/:id/bill/mark-paid')
   @UseGuards(AdminGuard)
-  async markEventBillPaid(@Param('id') eventId: string, @Body(ValidationPipe) dto: MarkBillPaidDto) {
+  async markEventBillPaid(
+    @Param('id') eventId: string,
+    @Body(ValidationPipe) dto: MarkBillPaidDto,
+  ) {
     return this.paymentsService.markEventBillPaid(eventId, dto.paidReference);
   }
 }
