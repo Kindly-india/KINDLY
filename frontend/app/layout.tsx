@@ -31,11 +31,12 @@ export const metadata: Metadata = {
   keywords: ["volunteering", "community organizations", "NGO", "social impact", "community service", "Nashik", "KINDLY"],
   authors: [{ name: "KINDLY Team" }],
   icons: {
-    icon: [
-      { url: "/icon-light-32x32.png", media: "(prefers-color-scheme: light)" },
-      { url: "/icon-dark-32x32.png", media: "(prefers-color-scheme: dark)" },
-      { url: "/icon.svg", type: "image/svg+xml" },
-    ],
+    // Single theme-aware SVG (embeds both light/dark renders, switches via
+    // prefers-color-scheme internally) — one file instead of a PNG pair,
+    // since SVG favicon support is now standard across all major browsers.
+    icon: "/icon.svg",
+    // Raster PNG is non-negotiable here: iOS home-screen icons require a
+    // fixed-size bitmap, no SVG option exists for apple-touch-icon.
     apple: "/apple-icon.png",
   },
   openGraph: {
