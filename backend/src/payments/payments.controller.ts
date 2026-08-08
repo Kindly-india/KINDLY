@@ -71,7 +71,13 @@ export class PaymentsController {
   async markEventBillPaid(
     @Param('id') eventId: string,
     @Body(ValidationPipe) dto: MarkBillPaidDto,
+    @Request() req: any,
   ) {
-    return this.paymentsService.markEventBillPaid(eventId, dto.paidReference);
+    return this.paymentsService.markEventBillPaid(
+      eventId,
+      dto.paidReference,
+      req.user.id,
+      req.user.email ?? null,
+    );
   }
 }

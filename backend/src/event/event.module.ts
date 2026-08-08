@@ -6,9 +6,10 @@ import { AdminGuard } from '../auth/guards/admin.guard';
 import { CertificateModule } from '../certificate/certificate.module';
 import { EmailModule } from '../email/email.module';
 import { PaymentsModule } from '../payments/payments.module';
+import { AuditModule } from '../audit/audit.module';
 
 @Module({
-  imports: [CertificateModule, EmailModule, PaymentsModule],
+  imports: [CertificateModule, EmailModule, PaymentsModule, AuditModule],
   controllers: [EventController],
   providers: [EventService, JwtAuthGuard, AdminGuard],
 })

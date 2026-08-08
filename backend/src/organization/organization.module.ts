@@ -4,10 +4,11 @@ import { OrganizationService } from './organization.service';
 import { SupabaseModule } from '../supabase/supabase.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { EmailModule } from '../email/email.module';
+import { AuditModule } from '../audit/audit.module';
 import { AdminGuard } from '../auth/guards/admin.guard';
 
 @Module({
-  imports: [SupabaseModule, NotificationsModule, EmailModule],
+  imports: [SupabaseModule, NotificationsModule, EmailModule, AuditModule],
   controllers: [OrganizationController],
   providers: [OrganizationService, AdminGuard],
   exports: [OrganizationService],

@@ -10,6 +10,7 @@ import * as crypto from 'crypto';
 import { SupabaseService } from '../supabase/supabase.service';
 import { RazorpayService } from './razorpay.service';
 import { VerifyPaymentDto } from './dto/verify-payment.dto';
+import { AuditService } from '../audit/audit.service';
 
 @Injectable()
 export class PaymentsService {
@@ -18,6 +19,7 @@ export class PaymentsService {
   constructor(
     private supabaseService: SupabaseService,
     private razorpayService: RazorpayService,
+    private auditService: AuditService,
     private config: ConfigService,
   ) {}
 
@@ -617,7 +619,12 @@ export class PaymentsService {
     return { events: dashboard };
   }
 
-  async markEventBillPaid(eventId: string, paidReference?: string) {
+  async markEventBillPaid(
+    eventId: string,
+    paidReference: string | undefined,
+    actorId: string,
+    actorEmail: string | null,
+  ) {
     const supabase = this.supabaseService.getClient();
 
     const { data: event } = await supabase
@@ -674,6 +681,19 @@ export class PaymentsService {
       }
       throw error;
     }
+
+    await this.auditService.log(
+      actorId,
+      actorEmail,
+      'bill.marked_paid',
+      'event_bill',
+      eventId,
+      {
+        grossAmountPaise: live.grossAmountPaise,
+        orgAmountPaise: live.orgAmountPaise,
+        paidReference: paidReference ?? null,
+      },
+    );
 
     return {
       message: 'Bill marked as paid',

@@ -13,6 +13,8 @@ import { EmailModule } from './email/email.module';
 import { VolunteerContactModule } from './volunteer-contact/volunteer-contact.module';
 import { PostsModule } from './posts/posts.module';
 import { PaymentsModule } from './payments/payments.module';
+import { AuditModule } from './audit/audit.module';
+import { AdminModule } from './admin/admin.module';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { UserThrottlerGuard } from './common/user-throttler.guard';
 import { APP_GUARD } from '@nestjs/core/constants';
@@ -37,6 +39,8 @@ import { AppService } from './app.service';
     VolunteerContactModule,
     PostsModule,
     PaymentsModule,
+    AuditModule,
+    AdminModule,
     // Global catch-all limit. Keyed per-USER for authenticated requests (see
     // UserThrottlerGuard), so 100/min is generous headroom for normal SPA usage
     // (a page fires several API calls) while still stopping runaway loops. The

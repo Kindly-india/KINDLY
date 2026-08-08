@@ -11,10 +11,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // No dedicated "am I admin" endpoint yet — reuse an existing AdminGuard
-    // route purely as a gate check, same 401/403 redirect every admin page
-    // used individually before this shared layout existed.
-    api.getPendingOrgs()
+    api.getAdminMe()
       .catch((err: any) => {
         if (err?.status === 401 || err?.status === 403) {
           router.push("/")

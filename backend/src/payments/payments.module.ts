@@ -4,8 +4,10 @@ import { PaymentsService } from './payments.service';
 import { RazorpayService } from './razorpay.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AdminGuard } from '../auth/guards/admin.guard';
+import { AuditModule } from '../audit/audit.module';
 
 @Module({
+  imports: [AuditModule],
   controllers: [PaymentsController],
   providers: [PaymentsService, RazorpayService, JwtAuthGuard, AdminGuard],
   exports: [PaymentsService],

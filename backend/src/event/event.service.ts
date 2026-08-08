@@ -7,6 +7,7 @@ import {
 import { SupabaseService } from '../supabase/supabase.service';
 import { EmailService } from '../email/email.service';
 import { PaymentsService } from '../payments/payments.service';
+import { AuditService } from '../audit/audit.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { validateImageFile } from '../common/file-validation.util';
 import { removeFromStorage } from '../common/storage.util';
@@ -140,6 +141,7 @@ export class EventService {
     private supabaseService: SupabaseService,
     private emailService: EmailService,
     private paymentsService: PaymentsService,
+    private auditService: AuditService,
   ) {}
 
   async searchLocations(
@@ -1800,6 +1802,8 @@ export class EventService {
   async adminApproveEvent(
     eventId: string,
     updateData: Partial<CreateEventDto>,
+    actorId: string,
+    actorEmail: string | null,
   ) {
     const supabase = this.supabaseService.getClient();
 
@@ -1834,6 +1838,15 @@ export class EventService {
       .single();
 
     if (error) throw error;
+
+    await this.auditService.log(
+      actorId,
+      actorEmail,
+      'event.approved',
+      'event',
+      eventId,
+      { title: updatedEvent.title },
+    );
 
     return { message: 'Event approved and published!', event: updatedEvent };
   }

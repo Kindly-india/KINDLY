@@ -8,6 +8,7 @@ import {
 import { SupabaseService } from '../supabase/supabase.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { EmailService } from '../email/email.service';
+import { AuditService } from '../audit/audit.service';
 import { UpdateOrganizationProfileDto } from './dto/update-organization-profile.dto';
 import { AddReviewDto } from './dto/add-review.dto';
 import { validateImageFile } from '../common/file-validation.util';
@@ -105,6 +106,7 @@ export class OrganizationService {
     private readonly supabase: SupabaseService,
     private readonly notifications: NotificationsService,
     private readonly email: EmailService,
+    private readonly audit: AuditService,
   ) {}
 
   // ─── Admin approval ─────────────────────────────────────────────────────────
@@ -170,7 +172,12 @@ export class OrganizationService {
   // the org and drops an in-app notification inline — this replaces the old DB
   // trigger + webhook + shared secret entirely (the caller here is an
   // authenticated admin, so no webhook auth is needed).
-  async setApprovalStatus(orgId: string, status: 'approved' | 'rejected') {
+  async setApprovalStatus(
+    orgId: string,
+    status: 'approved' | 'rejected',
+    actorId: string,
+    actorEmail: string | null,
+  ) {
     const client = this.supabase.getClient();
 
     const { data: org, error: fetchError } = await client
@@ -208,6 +215,15 @@ export class OrganizationService {
 
       await client.auth.admin.deleteUser(org.user_id).catch(() => {});
 
+      await this.audit.log(
+        actorId,
+        actorEmail,
+        'organization.rejected',
+        'organization',
+        orgId,
+        { name: org.name, email: org.email },
+      );
+
       return {
         message: 'Organization rejected and removed',
         organization: { id: org.id, approval_status: 'rejected' },
@@ -233,6 +249,14 @@ export class OrganizationService {
         'org_approved',
         'Your organization has been approved! You can now log in with your email.',
         org.id,
+      ),
+      this.audit.log(
+        actorId,
+        actorEmail,
+        'organization.approved',
+        'organization',
+        orgId,
+        { name: org.name, email: org.email },
       ),
     ]);
 

@@ -1565,6 +1565,24 @@ export const api = {
 
   // --- ADMIN ROUTES ---
 
+  // Cheap "am I admin" gate check, used by the shared admin layout.
+  getAdminMe: async (): Promise<{ isAdmin: boolean }> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const response = await fetch(`${API_URL}/admin/me`, {
+      headers: { 'Authorization': `Bearer ${session.access_token}` },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const err = new Error(errorData.message || 'Failed to verify admin access') as Error & { status?: number };
+      err.status = response.status;
+      throw err;
+    }
+    return response.json();
+  },
+
   getPendingEvents: async () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error('Not authenticated');

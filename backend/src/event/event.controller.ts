@@ -55,8 +55,14 @@ export class EventController {
   async adminApproveEvent(
     @Param('id') eventId: string,
     @Body() updateData: any, // Using 'any' or 'Partial<CreateEventDto>' here since you're the admin overriding it
+    @Request() req: any,
   ) {
-    return this.eventService.adminApproveEvent(eventId, updateData);
+    return this.eventService.adminApproveEvent(
+      eventId,
+      updateData,
+      req.user.id,
+      req.user.email ?? null,
+    );
   }
 
   // ==========================================

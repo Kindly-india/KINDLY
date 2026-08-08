@@ -38,8 +38,17 @@ export class OrganizationController {
   // replaces the old DB trigger -> webhook -> shared-secret flow entirely.
   @UseGuards(AdminGuard)
   @Patch('admin/:id/approval')
-  async setOrgApproval(@Param('id') id: string, @Body() dto: SetApprovalDto) {
-    return this.organizationService.setApprovalStatus(id, dto.status);
+  async setOrgApproval(
+    @Param('id') id: string,
+    @Body() dto: SetApprovalDto,
+    @Request() req: any,
+  ) {
+    return this.organizationService.setApprovalStatus(
+      id,
+      dto.status,
+      req.user.id,
+      req.user.email ?? null,
+    );
   }
 
   // Uses OptionalAuthGuard (Supabase-validated) so req.user is always correct
