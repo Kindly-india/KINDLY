@@ -8,8 +8,10 @@ import { cn } from "@/lib/utils"
 const NAV_ITEMS = [
   { href: "/admin", label: "Overview" },
   { href: "/admin/approve-events", label: "Events" },
-  { href: "/admin/approve-orgs", label: "Orgs" },
+  { href: "/admin/approve-orgs", label: "Approvals" },
+  { href: "/admin/organizations", label: "Orgs" },
   { href: "/admin/payments", label: "Payments" },
+  { href: "/admin/audit-log", label: "Audit Log" },
 ]
 
 export function AdminHeader() {

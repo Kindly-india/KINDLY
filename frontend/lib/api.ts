@@ -189,6 +189,38 @@ export interface AdminPaymentsDashboardEvent {
   needsRefundAttention: number;
 }
 
+export interface AdminStats {
+  pendingOrgsCount: number;
+  pendingEventsCount: number;
+  approvedOrgsCount: number;
+  totalVolunteers: number;
+  totalEvents: number;
+  grossCollectedPaise: number;
+  refundAttentionCount: number;
+}
+
+export interface AdminOrganization {
+  id: string;
+  org_type: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  approval_status: string;
+  area_locality: string | null;
+  created_at: string;
+}
+
+export interface AdminAuditLogEntry {
+  id: string;
+  actor_id: string;
+  actor_email: string | null;
+  action: string;
+  target_type: string;
+  target_id: string | null;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+}
+
 export interface VolunteerCertificate {
   id: string;
   verification_id: string;
@@ -1579,6 +1611,73 @@ export const api = {
       const err = new Error(errorData.message || 'Failed to verify admin access') as Error & { status?: number };
       err.status = response.status;
       throw err;
+    }
+    return response.json();
+  },
+
+  getAdminStats: async (): Promise<AdminStats> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const response = await fetch(`${API_URL}/admin/stats`, {
+      headers: { 'Authorization': `Bearer ${session.access_token}` },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || 'Failed to load admin stats');
+    }
+    return response.json();
+  },
+
+  getAdminOrganizations: async (params: {
+    status?: string;
+    search?: string;
+    page?: number;
+    pageSize?: number;
+  } = {}): Promise<{ organizations: AdminOrganization[]; total: number; page: number; pageSize: number }> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const query = new URLSearchParams();
+    if (params.status) query.set('status', params.status);
+    if (params.search) query.set('search', params.search);
+    if (params.page) query.set('page', String(params.page));
+    if (params.pageSize) query.set('pageSize', String(params.pageSize));
+
+    const response = await fetch(`${API_URL}/admin/organizations?${query.toString()}`, {
+      headers: { 'Authorization': `Bearer ${session.access_token}` },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || 'Failed to load organizations');
+    }
+    return response.json();
+  },
+
+  getAdminAuditLog: async (params: {
+    action?: string;
+    targetType?: string;
+    page?: number;
+    pageSize?: number;
+  } = {}): Promise<{ entries: AdminAuditLogEntry[]; total: number; page: number; pageSize: number }> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const query = new URLSearchParams();
+    if (params.action) query.set('action', params.action);
+    if (params.targetType) query.set('targetType', params.targetType);
+    if (params.page) query.set('page', String(params.page));
+    if (params.pageSize) query.set('pageSize', String(params.pageSize));
+
+    const response = await fetch(`${API_URL}/admin/audit-log?${query.toString()}`, {
+      headers: { 'Authorization': `Bearer ${session.access_token}` },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || 'Failed to load audit log');
     }
     return response.json();
   },
