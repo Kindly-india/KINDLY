@@ -18,13 +18,13 @@ export default function PrivacyPage() {
         <div className="max-w-3xl mx-auto prose prose-lg prose-gray text-muted-foreground">
           <h2 className="text-2xl font-bold text-foreground mb-4">1. Introduction</h2>
           <p className="mb-8">
-            Welcome to KINDLY ("we," "our," or "us"). We are committed to protecting your personal information and your right to privacy. This Privacy Policy explains how we collect, use, and share your information when you use our website (kindly.co.in) and platform.
+            Welcome to KINDLY (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;). We are committed to protecting your personal information and your right to privacy. This Privacy Policy explains how we collect, use, and share your information when you use our website (kindly.co.in) and platform.
           </p>
 
           <h2 className="text-2xl font-bold text-foreground mb-4">2. Information We Collect</h2>
           <ul className="mb-8 space-y-2">
             <li><strong>Account Information:</strong> Name, email address, phone number, and profile picture when you register.</li>
-            <li><strong>Activity Data:</strong> Event registrations, check-ins, volunteer hours logged, and your "Reliability Score."</li>
+            <li><strong>Activity Data:</strong> Event registrations, check-ins, volunteer hours logged, and your &quot;Reliability Score.&quot;</li>
             <li><strong>Organization Data:</strong> Verification documents, registration numbers, and event details.</li>
             <li><strong>Automatically Collected Data:</strong> IP addresses and browser types collected via essential cookies for security.</li>
           </ul>
@@ -49,7 +49,7 @@ export default function PrivacyPage() {
 
           <h2 className="text-2xl font-bold text-foreground mb-4">5. Data Security & Your Rights</h2>
           <p>
-            Your data is securely stored using industry-standard encryption protocols. Under the Indian Digital Personal Data Protection (DPDP) Act, you have the right to access, correct, or request the deletion of your personal data at any time through your dashboard or by contacting us at hello@kindly.co.in.
+            Your data is securely stored using industry-standard encryption protocols. Under the Indian Digital Personal Data Protection (DPDP) Act, you have the right to access, correct, or request the deletion of your personal data at any time through your dashboard or by contacting us at team@kindly.co.in.
           </p>
         </div>
       </section>

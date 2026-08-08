@@ -31,7 +31,7 @@ const conductSections = [
   },
   {
     title: "7. Report, Don't Retaliate",
-    body: "If you witness misconduct — by a volunteer, organiser, or anyone else — report it to us at manasdhivare@gmail.com. Do not attempt to handle it publicly or take personal action. We investigate every report seriously and maintain confidentiality. We will not tolerate retaliation against people who report in good faith."
+    body: "If you witness misconduct — by a volunteer, organiser, or anyone else — report it to us at team@kindly.co.in. Do not attempt to handle it publicly or take personal action. We investigate every report seriously and maintain confidentiality. We will not tolerate retaliation against people who report in good faith."
   },
   {
     title: "8. Be Honest About Your Skills and Availability",
@@ -63,7 +63,7 @@ export default function CommunityPage() {
           </div>
           <h1 className="text-5xl font-bold text-foreground mb-4 tracking-tight">The Kindly Community</h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            A space for volunteers and organisers across India to connect, share, and keep each other accountable. Kindness is better when it's collective.
+            A space for volunteers and organisers across India to connect, share, and keep each other accountable. Kindness is better when it&apos;s collective.
           </p>
         </div>
       </section>
@@ -185,7 +185,7 @@ export default function CommunityPage() {
 
           <div className="mt-8 p-6 bg-card rounded-2xl border border-border">
             <p className="text-sm text-muted-foreground leading-relaxed">
-              This Code of Conduct applies to all Kindly-facilitated spaces — the platform, event venues, and any associated community channels. To report a violation or ask a question about these guidelines, email <a href="mailto:manasdhivare@gmail.com" className="text-foreground font-medium underline">manasdhivare@gmail.com</a>. Last updated: April 2026.
+              This Code of Conduct applies to all Kindly-facilitated spaces — the platform, event venues, and any associated community channels. To report a violation or ask a question about these guidelines, email <a href="mailto:team@kindly.co.in" className="text-foreground font-medium underline">team@kindly.co.in</a>. Last updated: April 2026.
             </p>
           </div>
         </div>

@@ -31,7 +31,7 @@ export class EmailService {
           );
           return;
         }
-        await new Promise(r => setTimeout(r, 500 * attempt));
+        await new Promise((r) => setTimeout(r, 500 * attempt));
       }
     }
   }
@@ -103,9 +103,17 @@ export class EmailService {
     eventDate: string,
     location: string,
   ): Promise<void> {
-    const ADMINS = ['manasdhivare@gmail.com', 'adityamohandhongade@gmail.com'];
+    const ADMINS = [
+      'manasdhivare@gmail.com',
+      'adityamohandhongade@gmail.com',
+      'team@kindly.co.in',
+    ];
     const formattedDate = eventDate
-      ? new Date(eventDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
+      ? new Date(eventDate).toLocaleDateString('en-IN', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+        })
       : 'Unknown date';
 
     const html = this.base(
@@ -142,7 +150,9 @@ export class EmailService {
     );
 
     await Promise.all(
-      ADMINS.map((to) => this.send(to, `[KINDLY OPS] Event Cancelled — ${eventTitle}`, html)),
+      ADMINS.map((to) =>
+        this.send(to, `[KINDLY OPS] Event Cancelled — ${eventTitle}`, html),
+      ),
     );
   }
 
@@ -254,7 +264,7 @@ export class EmailService {
          </ol>
        </div>
        <p style="margin:0;font-size:14px;color:#86868b;">
-         Questions? Reply to this email or reach us at <a href="mailto:manasdhivare@gmail.com" style="color:#80242a;">manasdhivare@gmail.com</a>.
+         Questions? Reply to this email or reach us at <a href="mailto:team@kindly.co.in" style="color:#80242a;">team@kindly.co.in</a>.
        </p>`,
     );
   }
@@ -404,7 +414,11 @@ export class EmailService {
     );
   }
 
-  private impactLoggedHtml(name: string, eventTitle: string, hours: number): string {
+  private impactLoggedHtml(
+    name: string,
+    eventTitle: string,
+    hours: number,
+  ): string {
     return this.base(
       `Impact logged — ${eventTitle}`,
       `<div style="display:inline-block;background:#f0fdf4;border-radius:100px;padding:6px 16px;margin-bottom:20px;">

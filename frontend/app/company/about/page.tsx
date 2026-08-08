@@ -77,7 +77,7 @@ export default function AboutPage() {
             <span className="italic font-serif text-muted-foreground">showing up.</span>
           </h1>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-            Kindly is a volunteering platform built for Indian cities. We connect people who want to help with organisations that need them — and we verify every step of the way. Not because we don't trust people. Because trust is what makes impact real.
+            Kindly is a volunteering platform built for Indian cities. We connect people who want to help with organisations that need them — and we verify every step of the way. Not because we don&apos;t trust people. Because trust is what makes impact real.
           </p>
         </div>
       </section>
@@ -176,11 +176,11 @@ export default function AboutPage() {
       <section className="py-24 px-6 text-center">
         <div className="max-w-2xl mx-auto">
           <h2 className="text-4xl font-bold text-foreground mb-4">Get in touch</h2>
-          <p className="text-muted-foreground mb-10 text-lg">We read every message. Whether you're a volunteer, an organisation, a journalist, or someone who just wants to say hello.</p>
+          <p className="text-muted-foreground mb-10 text-lg">We read every message. Whether you&apos;re a volunteer, an organisation, a journalist, or someone who just wants to say hello.</p>
           <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
-            <a href="mailto:manasdhivare@gmail.com" className="flex items-center gap-3 text-foreground font-medium hover:text-muted-foreground transition-colors">
+            <a href="mailto:team@kindly.co.in" className="flex items-center gap-3 text-foreground font-medium hover:text-muted-foreground transition-colors">
               <Mail className="w-5 h-5 text-muted-foreground" />
-              manasdhivare@gmail.com
+              team@kindly.co.in
             </a>
             <span className="text-muted-foreground hidden sm:block">|</span>
             <div className="flex items-center gap-3 text-foreground font-medium">

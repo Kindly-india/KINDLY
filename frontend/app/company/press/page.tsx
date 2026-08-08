@@ -84,7 +84,7 @@ export default function PressPage() {
                 Skip the generic forms. Email the founding team directly for quotes, interviews, or exclusive data.
               </p>
             </div>
-            <a href="mailto:manasdhivare@gmail.com" className="inline-block bg-card text-foreground font-medium px-8 py-3 rounded-full hover:bg-muted transition-colors self-start">
+            <a href="mailto:team@kindly.co.in" className="inline-block bg-card text-foreground font-medium px-8 py-3 rounded-full hover:bg-muted transition-colors self-start">
               Email Us
             </a>
           </div>

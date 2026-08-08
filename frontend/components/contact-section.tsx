@@ -81,9 +81,8 @@ export function ContactSection() {
               >
                 <InstagramIcon className="w-5 h-5" />
               </a>
-              {/* TODO: no LinkedIn URL exists anywhere in the codebase yet — swap in the real company page link */}
               <a
-                href="#"
+                href="https://in.linkedin.com/company/teamkindly"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="LinkedIn"
@@ -106,7 +105,7 @@ export function ContactSection() {
 
         {/* Bottom row — contact info + legal, no copyright line */}
         <div className="pt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[12px] text-white/50">
-          <span className="whitespace-nowrap">manasdhivare@gmail.com</span>
+          <span className="whitespace-nowrap">team@kindly.co.in</span>
           <span className="whitespace-nowrap">+91 7517018954</span>
           <span className="flex items-center gap-1 whitespace-nowrap"><MapPin className="w-3 h-3" /> Nashik, India</span>
           <span className="text-white/20">•</span>

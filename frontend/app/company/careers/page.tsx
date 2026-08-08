@@ -68,10 +68,10 @@ export default function CareersPage() {
         <div className="bg-muted rounded-3xl p-10 text-center">
           <h3 className="text-2xl font-bold text-foreground mb-4">How to apply</h3>
           <p className="text-muted-foreground mb-8 max-w-lg mx-auto">
-            We don't care about traditional resumes. If you want to claim one of these roles, send us an email. Show us your portfolio, link your Instagram, or just write a paragraph telling us why you get the vision.
+            We don&apos;t care about traditional resumes. If you want to claim one of these roles, send us an email. Show us your portfolio, link your Instagram, or just write a paragraph telling us why you get the vision.
           </p>
           <a 
-            href="mailto:manasdhivare@gmail.com" 
+            href="mailto:team@kindly.co.in" 
             className="inline-block bg-primary text-primary-foreground font-medium px-8 py-3 rounded-full hover:bg-primary transition-colors"
           >
             Email the Founders
