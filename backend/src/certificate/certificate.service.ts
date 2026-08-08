@@ -86,13 +86,7 @@ export class CertificateService {
     const supabase = this.supabaseService.getClient();
 
     // Check if admin
-    const { data: volProfile } = await supabase
-      .from('volunteer_profiles')
-      .select('is_admin')
-      .eq('user_id', userId)
-      .single();
-
-    const isAdmin = volProfile?.is_admin === true;
+    const isAdmin = await this.supabaseService.isAdmin(userId);
 
     // Check if org owner of this event
     let isOrgOwner = false;
@@ -333,14 +327,16 @@ export class CertificateService {
     if (error || !cert) throw new NotFoundException('Certificate not found');
 
     // Check ownership: volunteer who owns it
-    const { data: volProfile } = await supabase
-      .from('volunteer_profiles')
-      .select('id, is_admin')
-      .eq('user_id', requestingUserId)
-      .single();
+    const [{ data: volProfile }, isAdmin] = await Promise.all([
+      supabase
+        .from('volunteer_profiles')
+        .select('id')
+        .eq('user_id', requestingUserId)
+        .single(),
+      this.supabaseService.isAdmin(requestingUserId),
+    ]);
 
     const isOwner = volProfile?.id === cert.volunteer_id;
-    const isAdmin = volProfile?.is_admin === true;
 
     // Check if org owner of the event
     let isOrgOwner = false;
@@ -436,13 +432,7 @@ export class CertificateService {
     const supabase = this.supabaseService.getClient();
 
     // Allow org owner or admin
-    const { data: volProfile } = await supabase
-      .from('volunteer_profiles')
-      .select('is_admin')
-      .eq('user_id', userId)
-      .single();
-
-    const isAdmin = volProfile?.is_admin === true;
+    const isAdmin = await this.supabaseService.isAdmin(userId);
 
     if (!isAdmin) {
       const { data: orgProfile } = await supabase

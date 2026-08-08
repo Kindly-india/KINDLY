@@ -32,14 +32,8 @@ export class AdminGuard implements CanActivate {
       throw new UnauthorizedException('Invalid or expired token');
     }
 
-    // Step 2: check is_admin on volunteer_profiles
-    const { data: profile } = await supabase
-      .from('volunteer_profiles')
-      .select('is_admin')
-      .eq('user_id', user.id)
-      .maybeSingle();
-
-    if (!profile || !profile.is_admin) {
+    // Step 2: check admin status (admin_users table — see SupabaseService.isAdmin)
+    if (!(await this.supabaseService.isAdmin(user.id))) {
       throw new ForbiddenException('Admin access required');
     }
 

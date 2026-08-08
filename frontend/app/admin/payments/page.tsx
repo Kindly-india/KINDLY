@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import Link from "next/link"
 import {
   IndianRupee,
   Users,
@@ -63,7 +62,7 @@ export default function AdminPaymentsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted">
+      <div className="min-h-[60vh] flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
       </div>
     )
@@ -72,42 +71,15 @@ export default function AdminPaymentsPage() {
   const refundAttentionCount = events.reduce((sum, e) => sum + e.needsRefundAttention, 0)
 
   return (
-    <div className="min-h-screen bg-muted pb-20">
-      <header className="sticky top-0 z-20 bg-card border-b border-border">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <IndianRupee className="w-5 h-5 text-emerald-600" />
-            <div>
-              <h1 className="text-base font-bold text-foreground leading-tight">Paid Events</h1>
-              <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">
-                {events.length} paid events{refundAttentionCount > 0 ? ` · ${refundAttentionCount} refunds need attention` : ""}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <Link
-              href="/admin"
-              className="text-[12px] font-semibold text-muted-foreground hover:text-foreground transition-colors"
-            >
-              ← Admin home
-            </Link>
-            <Link
-              href="/admin/approve-events"
-              className="text-[12px] font-semibold text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Events →
-            </Link>
-            <Link
-              href="/admin/approve-orgs"
-              className="text-[12px] font-semibold text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Orgs →
-            </Link>
-          </div>
-        </div>
-      </header>
+    <div className="pb-20">
+      <div className="max-w-4xl mx-auto px-4 pt-6">
+        <h1 className="text-base font-bold text-foreground leading-tight">Paid Events</h1>
+        <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mt-0.5">
+          {events.length} paid events{refundAttentionCount > 0 ? ` · ${refundAttentionCount} refunds need attention` : ""}
+        </p>
+      </div>
 
-      <main className="max-w-4xl mx-auto px-4 pt-6 space-y-4">
+      <main className="max-w-4xl mx-auto px-4 pt-4 space-y-4">
         {events.length === 0 ? (
           <div className="text-center py-24 text-muted-foreground">
             <Wallet className="w-10 h-10 mx-auto opacity-20 mb-3" />

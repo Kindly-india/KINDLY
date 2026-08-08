@@ -23,4 +23,18 @@ export class SupabaseService {
   getClient(): SupabaseClient {
     return this.supabase;
   }
+
+  // Single source of truth for "is this user an admin", used by AdminGuard
+  // and every ad-hoc admin-or-owner check elsewhere (payments/certificate
+  // services).
+  async isAdmin(userId: string): Promise<boolean> {
+    const { data: adminRow } = await this.supabase
+      .from('admin_users')
+      .select('user_id')
+      .eq('user_id', userId)
+      .is('revoked_at', null)
+      .maybeSingle();
+
+    return !!adminRow;
+  }
 }

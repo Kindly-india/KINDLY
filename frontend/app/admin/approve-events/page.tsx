@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
-import Link from "next/link"
+import Image from "next/image"
 import {
   CheckCircle,
   Clock,
@@ -10,7 +10,6 @@ import {
   Users,
   Coffee,
   User as UserIcon,
-  ShieldCheck,
   AlertCircle,
   ImageIcon,
   Upload,
@@ -156,14 +155,13 @@ export default function AdminApprovalPage() {
   )
 
   return (
-    <div className="flex flex-col lg:flex-row h-screen bg-muted overflow-hidden">
-      
-      {/* MOBILE HEADER */}
-      <div className="lg:hidden bg-card p-4 border-b flex items-center justify-between sticky top-0 z-50">
-        <div className="flex items-center gap-2">
-            <ShieldCheck className="w-5 h-5 text-emerald-600" />
-            <span className="font-bold text-foreground">Concierge Desk</span>
-        </div>
+    <div className="flex flex-col lg:flex-row h-[calc(100vh-3rem)] md:h-[calc(100vh-3.5rem)] bg-muted overflow-hidden">
+
+      {/* MOBILE HEADER — toggles the pending-events sidebar; AdminHeader above
+          this already carries the "Admin" brand/nav, so this just needs the
+          page-local count + toggle. */}
+      <div className="lg:hidden bg-card p-4 border-b flex items-center justify-between sticky top-0 z-40">
+        <span className="font-bold text-foreground text-sm">{events.length} Awaiting Polish</span>
         <button onClick={() => setShowSidebar(!showSidebar)} className="p-2 bg-muted rounded-xl">
             {showSidebar ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </button>
@@ -171,36 +169,15 @@ export default function AdminApprovalPage() {
 
       {/* LEFT SIDEBAR: PENDING LIST */}
       <aside className={cn(
-        "w-full lg:w-80 border-r border-border bg-card flex flex-col transition-all duration-300 z-40",
+        "w-full lg:w-80 border-r border-border bg-card flex flex-col transition-all duration-300 z-30",
         "fixed inset-0 lg:relative lg:translate-x-0",
         showSidebar ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
       )}>
         <div className="p-6 border-b border-border hidden lg:block">
-          <div className="flex items-center gap-2 mb-1">
-            <ShieldCheck className="w-5 h-5 text-emerald-600" />
-            <h1 className="text-lg font-bold text-foreground">Concierge</h1>
-          </div>
-          <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">
+          <h1 className="text-lg font-bold text-foreground">Concierge</h1>
+          <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mt-1">
             {events.length} Awaiting Polish
           </p>
-          <Link
-            href="/admin"
-            className="inline-block mt-3 text-[12px] font-semibold text-blue-600 dark:text-blue-400 hover:underline"
-          >
-            ← Admin home
-          </Link>
-          <Link
-            href="/admin/approve-orgs"
-            className="inline-block mt-2 text-[12px] font-semibold text-blue-600 dark:text-blue-400 hover:underline"
-          >
-            Organization approvals →
-          </Link>
-          <Link
-            href="/admin/payments"
-            className="inline-block mt-2 text-[12px] font-semibold text-blue-600 dark:text-blue-400 hover:underline"
-          >
-            Paid events →
-          </Link>
         </div>
 
         <div className="flex-1 overflow-y-auto divide-y divide-border pt-20 lg:pt-0">
@@ -262,7 +239,14 @@ export default function AdminApprovalPage() {
                             className="group relative aspect-[16/10] md:aspect-[4/5] bg-muted rounded-3xl overflow-hidden border-2 border-dashed border-border hover:border-emerald-500 transition-all cursor-pointer shadow-sm"
                         >
                             {imagePreview ? (
-                                <img src={imagePreview} alt="Preview" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                <Image
+                                    src={imagePreview}
+                                    alt="Preview"
+                                    fill
+                                    sizes="(max-width: 768px) 100vw, 33vw"
+                                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                                    unoptimized={imagePreview.startsWith("data:")}
+                                />
                             ) : (
                                 <div className="flex flex-col items-center justify-center h-full">
                                     <ImageIcon className="w-8 h-8 text-muted-foreground" />

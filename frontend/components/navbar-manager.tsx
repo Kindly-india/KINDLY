@@ -61,7 +61,8 @@ export function NavbarManager() {
     pathname.startsWith("/legal") ||
     pathname.startsWith("/auth") ||
     pathname === "/onboarding" ||
-    pathname === "/org-signup"
+    pathname === "/org-signup" ||
+    pathname.startsWith("/admin")
 
 
   if (isStaticOrAuth) return null

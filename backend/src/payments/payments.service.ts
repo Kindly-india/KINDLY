@@ -518,21 +518,16 @@ export class PaymentsService {
 
     if (!event) throw new NotFoundException('Event not found');
 
-    const [{ data: orgProfile }, { data: volProfile }] = await Promise.all([
+    const [{ data: orgProfile }, isAdmin] = await Promise.all([
       supabase
         .from('organization_profiles')
         .select('id')
         .eq('user_id', userId)
         .maybeSingle(),
-      supabase
-        .from('volunteer_profiles')
-        .select('is_admin')
-        .eq('user_id', userId)
-        .maybeSingle(),
+      this.supabaseService.isAdmin(userId),
     ]);
 
     const isOwner = orgProfile?.id === event.organization_id;
-    const isAdmin = !!volProfile?.is_admin;
 
     if (!isOwner && !isAdmin)
       throw new ForbiddenException('Not authorized to view this bill');

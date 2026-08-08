@@ -2,9 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import Link from "next/link"
 import {
-  ShieldCheck,
   Building2,
   Mail,
   Phone,
@@ -18,6 +16,7 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 import { api } from "@/lib/api"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 
 interface PendingOrg {
   id: string
@@ -70,6 +69,7 @@ export default function AdminApproveOrgsPage() {
   const [orgs, setOrgs] = useState<PendingOrg[]>([])
   const [loading, setLoading] = useState(true)
   const [actingId, setActingId] = useState<string | null>(null)
+  const [rejectTarget, setRejectTarget] = useState<PendingOrg | null>(null)
 
   const fetchPending = async () => {
     try {
@@ -94,7 +94,6 @@ export default function AdminApproveOrgsPage() {
   }, [])
 
   const handleDecision = async (org: PendingOrg, status: "approved" | "rejected") => {
-    if (status === "rejected" && !confirm(`Reject and permanently delete "${org.name}"'s application? This frees their email to re-apply.`)) return
     try {
       setActingId(org.id)
       await api.setOrgApproval(org.id, status)
@@ -111,52 +110,30 @@ export default function AdminApproveOrgsPage() {
     }
   }
 
+  const handleRejectConfirm = async () => {
+    if (!rejectTarget) return
+    await handleDecision(rejectTarget, "rejected")
+    setRejectTarget(null)
+  }
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted">
+      <div className="min-h-[60vh] flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-muted pb-20">
-      {/* Header */}
-      <header className="sticky top-0 z-20 bg-card border-b border-border">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="w-5 h-5 text-emerald-600" />
-            <div>
-              <h1 className="text-base font-bold text-foreground leading-tight">Organization Approvals</h1>
-              <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">
-                {orgs.length} awaiting review
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <Link
-              href="/admin"
-              className="text-[12px] font-semibold text-muted-foreground hover:text-foreground transition-colors"
-            >
-              ← Admin home
-            </Link>
-            <Link
-              href="/admin/approve-events"
-              className="text-[12px] font-semibold text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Events →
-            </Link>
-            <Link
-              href="/admin/payments"
-              className="text-[12px] font-semibold text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Paid events →
-            </Link>
-          </div>
-        </div>
-      </header>
+    <div className="pb-20">
+      <div className="max-w-4xl mx-auto px-4 pt-6">
+        <h1 className="text-base font-bold text-foreground leading-tight">Organization Approvals</h1>
+        <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mt-0.5">
+          {orgs.length} awaiting review
+        </p>
+      </div>
 
-      <main className="max-w-4xl mx-auto px-4 pt-6 space-y-4">
+      <main className="max-w-4xl mx-auto px-4 pt-4 space-y-4">
         {orgs.length === 0 ? (
           <div className="text-center py-24 text-muted-foreground">
             <Check className="w-10 h-10 mx-auto opacity-20 mb-3" />
@@ -233,7 +210,7 @@ export default function AdminApproveOrgsPage() {
                   Approve
                 </button>
                 <button
-                  onClick={() => handleDecision(org, "rejected")}
+                  onClick={() => setRejectTarget(org)}
                   disabled={actingId === org.id}
                   className="h-10 px-4 flex items-center justify-center gap-2 bg-red-50 dark:bg-red-500/15 text-red-600 border border-red-200 dark:border-red-500/20 rounded-xl font-bold text-sm active:scale-[0.98] transition-all disabled:opacity-50"
                 >
@@ -245,6 +222,21 @@ export default function AdminApproveOrgsPage() {
           ))
         )}
       </main>
+
+      <ConfirmDialog
+        open={!!rejectTarget}
+        onOpenChange={(open) => !open && setRejectTarget(null)}
+        title="Reject application?"
+        description={
+          rejectTarget
+            ? `Reject and permanently delete "${rejectTarget.name}"'s application? This frees their email to re-apply.`
+            : ""
+        }
+        confirmLabel="Reject"
+        onConfirm={handleRejectConfirm}
+        loading={actingId === rejectTarget?.id}
+        destructive
+      />
     </div>
   )
 }
