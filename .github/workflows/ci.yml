@@ -1,0 +1,44 @@
+name: CI
+
+# Informational only — this does not gate or block Vercel/Render deploys.
+# It runs in parallel with the existing auto-deploy on push and just
+# reports a pass/fail check on the commit/PR in GitHub's UI.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  frontend-typecheck:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npx tsc --noEmit -p tsconfig.json
+
+  backend-typecheck:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      # tsconfig.build.json is the config `nest build` actually uses —
+      # excludes test/*.spec.ts, which need Jest's ambient types wired in
+      # separately (root tsconfig.json doesn't include them yet).
+      - run: npx tsc --noEmit -p tsconfig.build.json
