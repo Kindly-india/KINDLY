@@ -27,9 +27,6 @@ export default function VolunteerImpactPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
 
-  // ✅ Added for Navbar
-  const [profile, setProfile] = useState<any>(null)
-
   const [stats, setStats] = useState({
     verifiedHours: 0,
     pendingHours: 0,
@@ -55,15 +52,10 @@ useEffect(() => {
         }
 
         // 3. Proceed with your existing data fetching
-        // ✅ Fetch Profile & Registrations together
-        const [profileRes, res] = await Promise.all([
+        const [, res] = await Promise.all([
             api.getUserProfile().catch(() => null),
             api.getMyRegistrations()
         ]);
-
-        if (profileRes?.profile) {
-            setProfile(profileRes.profile)
-        }
 
         const events = res.events || [];
 
@@ -139,11 +131,6 @@ useEffect(() => {
 
     fetchData();
   }, [router]) // Added router as a dependency
-
-  // ✅ Profile Display Logic
-  const displayImage = profile?.avatar_url || profile?.logo_url
-  const displayName = profile?.full_name || profile?.name || "User"
-  const displayInitial = displayName ? displayName.charAt(0).toUpperCase() : "U"
 
   if (loading) return <div className="h-screen flex items-center justify-center bg-neutral-50 dark:bg-black"><Loader2 className="w-8 h-8 animate-spin text-emerald-600" /></div>
 

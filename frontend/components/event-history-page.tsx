@@ -1,8 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import Image from "next/image"
-import Link from "next/link"
 import {
   Search,
   ChevronRight,
@@ -32,10 +30,6 @@ export function EventHistoryPage() {
 
   const [searchQuery, setSearchQuery] = useState("")
   const [activeFilter, setActiveFilter] = useState<FilterType>("all")
-  const [menuOpen, setMenuOpen] = useState(false)
-
-  const [profile, setProfile] = useState<any>(null)
-  const [volunteerName, setVolunteerName] = useState("Volunteer")
 
   // cert_id keyed by event_id
   const [certMap, setCertMap] = useState<Record<string, string>>({})
@@ -58,18 +52,11 @@ export function EventHistoryPage() {
         // 3. Begin loading your existing data
         setLoading(true)
 
-        const [profileRes, response, certRes] = await Promise.all([
+        const [, response, certRes] = await Promise.all([
           api.getUserProfile(),
           api.getVolunteerRegistrations(),
           api.getMyCertificates().catch(() => ({ certificates: [] })),
         ])
-
-        if (profileRes?.profile) {
-          setProfile(profileRes.profile)
-          if (profileRes.profile.full_name) {
-            setVolunteerName(profileRes.profile.full_name)
-          }
-        }
 
         // Build a map of event_id -> certificate_id
         const map: Record<string, string> = {}
@@ -195,10 +182,6 @@ export function EventHistoryPage() {
       setDownloadingCertId(null)
     }
   }
-
-  const displayImage = profile?.avatar_url || profile?.logo_url
-  const displayName = profile?.full_name || profile?.name || "User"
-  const displayInitial = displayName ? displayName.charAt(0).toUpperCase() : "U"
 
   if (loading) {
     return (

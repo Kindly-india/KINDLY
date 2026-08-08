@@ -6,11 +6,10 @@ import Link from "next/link"
 import { motion } from "framer-motion"
 import {
    Loader2, Users, Clock, CalendarCheck,
-   Repeat, ArrowUpRight, ArrowDownRight, Download,
+   Repeat, ArrowUpRight, Download,
    Award, Filter, ArrowLeft, Check,
-   Calendar, BarChart3, Sparkles
+   BarChart3, Sparkles
 } from "lucide-react"
-import Image from "next/image"
 import {
    AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
    PieChart, Pie, Cell
@@ -196,9 +195,6 @@ function downloadAnalyticsCsv(data: ReturnType<typeof computeAnalytics>, rangeLa
 export default function OrgAnalyticsPage() {
    const [loading, setLoading] = useState(true)
 
-   // --- Navbar State (Preserved for desktop profile icon) ---
-   const [profile, setProfile] = useState<any>(null)
-
    // --- Raw fetched events (with registrations attached), unfiltered ---
    const [rawEvents, setRawEvents] = useState<any[]>([])
    const [dateRange, setDateRange] = useState<DateRange>('all')
@@ -214,13 +210,12 @@ export default function OrgAnalyticsPage() {
             setLoading(true);
 
             // 1. Fetch Events & Profile (Parallel)
-            const [eventsRes, profileRes] = await Promise.all([
+            const [eventsRes] = await Promise.all([
                api.getMyEvents(),
                api.getUserProfile()
             ]);
 
             const events = eventsRes.events || [];
-            setProfile(profileRes?.profile || null); // Set profile for Navbar
 
             // 2. Fetch Registrations for ALL events to get details
             const allData = await Promise.all(
@@ -260,11 +255,6 @@ export default function OrgAnalyticsPage() {
       document.addEventListener('mousedown', handleClickOutside)
       return () => document.removeEventListener('mousedown', handleClickOutside)
    }, [])
-
-   // Helper for displaying profile image/initials
-   const displayImage = profile?.logo_url || profile?.avatar_url
-   const displayName = profile?.name || profile?.full_name || "Org"
-   const displayInitial = displayName.charAt(0)
 
    if (loading) {
       return (

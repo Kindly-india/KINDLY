@@ -4,25 +4,10 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Home, Sparkles, Globe, User, History } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { useState, useEffect } from "react"
-import { api } from "@/lib/api"
 
 export function VolunteerMobileNav() {
   const pathname = usePathname()
-  const [profile, setProfile] = useState<any>(null)
   const isActive = (path: string) => pathname === path
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const res = await api.getUserProfile()
-        if (res?.profile) setProfile(res.profile)
-      } catch (e) {
-        console.log("No active session found")
-      }
-    }
-    fetchUser()
-  }, [])
 
   // Static self-profile alias so the link works on first paint — never a dead
   // href while the profile is still loading.

@@ -4,26 +4,11 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Calendar, Globe, BarChart3, User, LayoutDashboard } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { useState, useEffect } from "react"
-import { api } from "@/lib/api"
 
 export function OrgMobileNav() {
     const pathname = usePathname()
-    const [profile, setProfile] = useState<any>(null)
 
     const isActive = (path: string) => pathname === path
-
-    useEffect(() => {
-        const fetchUser = async () => {
-            try {
-                const res = await api.getUserProfile()
-                if (res?.profile) setProfile(res.profile)
-            } catch {
-                console.log("No active session found")
-            }
-        }
-        fetchUser()
-    }, [])
 
     // Static self-profile alias so the link works on first paint.
     const profileLink = "/organizations/me"

@@ -6,8 +6,6 @@ import { motion } from "framer-motion"
 import {
   Calendar,
   MapPin,
-  Users,
-  Clock,
   ChevronLeft,
   Heart,
   Sparkles,
@@ -18,7 +16,6 @@ import {
 } from "lucide-react"
 import { api } from "@/lib/api"
 import { cn } from "@/lib/utils"
-import Image from "next/image"
 import { ScrollReveal } from "@/components/ui/scroll-reveal"
 
 type EventTab = "pending" | "active" | "completed" | "cancelled"
@@ -41,9 +38,6 @@ interface Event {
 }
 
 export function OrgEventManagement() {
-  // --- Navbar State ---
-  const [profile, setProfile] = useState<any>(null)
-
   // --- Page State ---
   const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
@@ -58,13 +52,12 @@ export function OrgEventManagement() {
   const fetchData = async () => {
     try {
       setLoading(true)
-      const [eventsRes, profileRes] = await Promise.all([
+      const [eventsRes] = await Promise.all([
         api.getMyEvents(),
         api.getUserProfile()
       ])
 
       setEvents(eventsRes.events || [])
-      setProfile(profileRes?.profile || null)
 
     } catch (err: any) {
       setError(err.message || 'Failed to load data')
@@ -103,7 +96,7 @@ export function OrgEventManagement() {
 
   const formatTime = (timeString: string) => {
     if (!timeString) return ""
-    const [hours, minutes] = timeString.split(':')
+    const [hours] = timeString.split(':')
     const hour = parseInt(hours)
     const ampm = hour >= 12 ? 'PM' : 'AM'
     const displayHour = hour % 12 || 12
