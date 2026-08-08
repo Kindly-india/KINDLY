@@ -39,9 +39,9 @@ export function VolunteerContactModal({ onSaved, onClose }: Props) {
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/40 z-50" onClick={onClose} />
+      <div className="fixed inset-0 bg-black/40 z-[60]" onClick={onClose} />
 
-      <div className="fixed inset-x-0 bottom-0 md:inset-0 md:flex md:items-center md:justify-center z-50 pointer-events-none">
+      <div className="fixed inset-x-0 bottom-0 md:inset-0 md:flex md:items-center md:justify-center z-[60] pointer-events-none">
         <div className="pointer-events-auto w-full md:max-w-sm bg-card rounded-t-2xl md:rounded-2xl shadow-xl px-6 pt-5 pb-10 md:pb-6">
 
           <div className="flex items-center justify-end mb-5">

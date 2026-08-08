@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import Image from "next/image"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import {
@@ -718,7 +717,7 @@ export default function EventDetailsPage() {
       )}
 
       {/* --- MOBILE STICKY FOOTER --- */}
-      <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-xl border-t border-border shadow-[0_-8px_30px_rgba(0,0,0,0.12)] z-50 md:hidden">
+      <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-xl border-t border-border shadow-[0_-8px_30px_rgba(0,0,0,0.12)] z-[60] md:hidden">
         <div className="flex items-center justify-between px-6 py-4">
           <div className="flex flex-col">
             {!isFull && (

@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from "react"
 import dynamic from "next/dynamic"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import {
     ChevronLeft,
@@ -49,7 +48,6 @@ const categories = [
 ]
 
 export function CreateEventPage() {
-    const router = useRouter()
     const [step, setStep] = useState(1)
     const [isUrgent, setIsUrgent] = useState(false)
     const [showSuccess, setShowSuccess] = useState(false)
@@ -776,7 +774,7 @@ export function CreateEventPage() {
                                 The After
                                 <span className="text-xs text-muted-foreground font-normal ml-2">(Optional)</span>
                             </label>
-                            <p className="text-xs text-muted-foreground mb-3">What's the after-event hangout? Chai? Walk? Breakfast together? If blank, our team may suggest one.</p>
+                            <p className="text-xs text-muted-foreground mb-3">What&apos;s the after-event hangout? Chai? Walk? Breakfast together? If blank, our team may suggest one.</p>
                             <input
                                 type="text"
                                 placeholder="e.g., Grabbing breakfast at Roastery Coffee after!"
@@ -853,7 +851,7 @@ export function CreateEventPage() {
                                         />
                                     </div>
                                     <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-                                        You'll keep 92% of every ticket sold — KINDLY retains an 8% platform fee to cover payment processing and platform costs. Your payout is calculated automatically once the event is marked complete.
+                                        You&apos;ll keep 92% of every ticket sold — KINDLY retains an 8% platform fee to cover payment processing and platform costs. Your payout is calculated automatically once the event is marked complete.
                                     </p>
                                 </>
                             ) : (
@@ -924,7 +922,7 @@ export function CreateEventPage() {
               </div>
             </main>
 
-            <footer className="sticky bottom-0 z-40 bg-white/70 dark:bg-neutral-900/50 backdrop-blur-xl border-t border-black/5 dark:border-white/10">
+            <footer className="sticky bottom-0 z-[60] bg-white/70 dark:bg-neutral-900/50 backdrop-blur-xl border-t border-black/5 dark:border-white/10">
                 <div className="max-w-5xl mx-auto px-4 py-4 flex gap-3">
                     {step > 1 && (
                         <button

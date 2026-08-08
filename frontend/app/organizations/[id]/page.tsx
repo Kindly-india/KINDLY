@@ -82,7 +82,7 @@ function Reviews({ reviews }: { reviews: any[] }) {
         {reviews.slice(0, 3).map((review, idx) => (
           <div key={idx} className="bg-purple-50 dark:bg-purple-500/15 p-4 rounded-xl border border-purple-100 dark:border-purple-500/20 relative">
             <Quote className="w-8 h-8 text-purple-200 dark:text-purple-500/30 absolute top-2 right-2 rotate-180" />
-            <p className="text-foreground italic text-sm mb-3 relative z-10">"{review.comment}"</p>
+            <p className="text-foreground italic text-sm mb-3 relative z-10">&quot;{review.comment}&quot;</p>
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-full bg-card border border-purple-100 dark:border-purple-500/20 flex items-center justify-center font-bold text-xs text-purple-600 dark:text-purple-400">
                 {review.volunteer_name?.charAt(0)}
@@ -173,7 +173,7 @@ function OrgGallery({ orgId, isOwnProfile }: { orgId: string; isOwnProfile: bool
       {/* Lightbox overlay */}
       {lightboxUrl && (
         <div
-          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+          className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center p-4"
           onClick={() => setLightboxUrl(null)}
         >
           <button
@@ -496,7 +496,7 @@ export default function OrganizationProfile() {
                 <div className="absolute w-40 h-40 rounded-full bg-indigo-500/25 blur-3xl -top-8 -right-8 pointer-events-none" />
                 <Trophy className="w-24 h-24 absolute top-0 right-0 p-4 opacity-10" />
                 <h3 className="text-sm font-medium text-white/60 uppercase tracking-wide mb-1 relative">Total Impact</h3>
-                <div className="text-4xl font-bold mb-4 relative">{formatHoursTotal(profile.total_hours_generated)} Hrs</div>
+                <div className="text-4xl font-bold mb-4 relative">{formatHoursTotal(profile.total_hours_generated)} Man-Hours</div>
                 <div className="flex gap-4 relative">
                   <div><span className="text-xs text-white/60 block">Events</span><span className="font-semibold text-emerald-400">{profile.events_hosted || events.length} Hosted</span></div>
                   <div><span className="text-xs text-white/60 block">Volunteers</span><span className="font-semibold text-amber-400">{profile.volunteers_engaged || 0} Engaged</span></div>

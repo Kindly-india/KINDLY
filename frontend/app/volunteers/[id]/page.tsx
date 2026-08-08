@@ -6,7 +6,7 @@ import Link from "next/link"
 import {
   MapPin, Calendar, ChevronLeft, Loader2, Edit2,
   Sparkles, Trophy, Mail, Phone, UserPlus,
-  UserMinus, Download, Share2, Linkedin, Instagram, Globe,
+  UserMinus, Share2, Linkedin, Instagram, Globe,
   Home, Check, Quote, Building2,
   Image as ImageIcon, Plus, Trash2, LogOut, Lock, Clock, X,
   Camera, Images,
@@ -34,7 +34,7 @@ function Testimonials({ journey }: { journey: any[] }) {
         {reviews.slice(0, 3).map((review, idx) => (
           <div key={idx} className="bg-purple-50 dark:bg-purple-500/15 p-4 rounded-xl border border-purple-100 dark:border-purple-500/20 relative">
             <Quote className="w-8 h-8 text-purple-200 dark:text-purple-500/30 absolute top-2 right-2 rotate-180" />
-            <p className="text-foreground italic text-sm mb-3 relative z-10">"{review.endorsements.comment}"</p>
+            <p className="text-foreground italic text-sm mb-3 relative z-10">&quot;{review.endorsements.comment}&quot;</p>
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-full bg-card border border-purple-100 dark:border-purple-500/20 flex items-center justify-center overflow-hidden">
                 {review.organization_logo ? <img src={review.organization_logo} className="w-full h-full object-cover" /> : <Building2 className="w-4 h-4 text-muted-foreground" />}
@@ -63,7 +63,7 @@ function ActionGallery({ userId, isOwnProfile }: { userId: string, isOwnProfile:
       try {
         const res = await api.getVolunteerGallery(userId);
         setPhotos(res || []);
-      } catch (err) { }
+      } catch { }
     }
     if (userId) loadGallery();
   }, [userId])
@@ -75,7 +75,7 @@ function ActionGallery({ userId, isOwnProfile }: { userId: string, isOwnProfile:
       const file = e.target.files[0];
       const newPhoto = await api.uploadGalleryPhoto(file);
       setPhotos([newPhoto, ...photos]);
-    } catch (err) {
+    } catch {
       alert("Failed to upload photo");
     } finally {
       setUploading(false);
@@ -87,7 +87,7 @@ function ActionGallery({ userId, isOwnProfile }: { userId: string, isOwnProfile:
     try {
       await api.deleteGalleryPhoto(photoId);
       setPhotos(photos.filter(p => p.id !== photoId));
-    } catch (err) { alert("Delete failed"); }
+    } catch { alert("Delete failed"); }
   }
 
   if (!photos.length && !isOwnProfile) return null;
@@ -97,7 +97,7 @@ function ActionGallery({ userId, isOwnProfile }: { userId: string, isOwnProfile:
       {/* Lightbox overlay */}
       {lightboxUrl && (
         <div
-          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+          className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center p-4"
           onClick={() => setLightboxUrl(null)}
         >
           <button
@@ -364,7 +364,7 @@ function FollowListModal({ type, initialUsers, onClose, isOwnProfilePage, curren
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-full sm:max-w-sm bg-white/95 dark:bg-neutral-900/95 backdrop-blur-xl rounded-t-3xl sm:rounded-2xl shadow-2xl border-t sm:border border-black/5 dark:border-white/10 max-h-[72vh] flex flex-col overflow-hidden">
         {/* Handle pill */}
@@ -493,7 +493,7 @@ export default function VolunteerProfile() {
               if (p.phone) fetchedProfile.phone = p.phone;
               if (p.address) fetchedProfile.address = p.address;
             }
-          } catch (e) { }
+          } catch { }
         }
         setProfile(fetchedProfile)
         setActivityData(fetchedProfile.activity_graph || [])
@@ -586,7 +586,7 @@ export default function VolunteerProfile() {
           text: `Check out ${profile.full_name}'s impact on Kindly!`,
           url: window.location.href
         })
-      } catch (err) { }
+      } catch { }
     } else {
       navigator.clipboard.writeText(window.location.href)
       setCopied(true)
@@ -995,7 +995,7 @@ export default function VolunteerProfile() {
                             </div>
                             {item.endorsements?.comment && (
                               <div className="mt-3 bg-blue-50 dark:bg-blue-500/15 p-3 rounded-lg border border-blue-100 dark:border-blue-500/20">
-                                <p className="text-sm text-foreground italic">"{item.endorsements.comment}"</p>
+                                <p className="text-sm text-foreground italic">&quot;{item.endorsements.comment}&quot;</p>
                               </div>
                             )}
                           </div>

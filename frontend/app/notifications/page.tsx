@@ -179,7 +179,7 @@ function LikesListModal({
   }, [postId, providedPeople])
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center">
+    <div className="fixed inset-0 z-[60] flex items-end justify-center">
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 
@@ -507,7 +507,7 @@ export default function NotificationsPage() {
             <div className="w-16 h-16 rounded-full bg-gradient-to-br from-red-100 to-red-50 dark:from-red-500/20 dark:to-red-500/5 flex items-center justify-center mb-4">
               <Bell className="w-7 h-7 text-red-400" />
             </div>
-            <p className="text-[15px] font-bold text-foreground mb-1">Couldn't load notifications</p>
+            <p className="text-[15px] font-bold text-foreground mb-1">Couldn&apos;t load notifications</p>
             <p className="text-[13px] text-muted-foreground">Check your connection and try again.</p>
           </div>
         ) : notifications.length === 0 ? (
@@ -515,7 +515,7 @@ export default function NotificationsPage() {
             <div className="w-16 h-16 rounded-full bg-gradient-to-br from-neutral-200 to-neutral-100 dark:from-white/10 dark:to-white/[0.03] flex items-center justify-center mb-4">
               <Bell className="w-7 h-7 text-muted-foreground" />
             </div>
-            <p className="text-[15px] font-bold text-foreground mb-1">You're all caught up</p>
+            <p className="text-[15px] font-bold text-foreground mb-1">You&apos;re all caught up</p>
             <p className="text-[13px] text-muted-foreground">New activity will appear here.</p>
           </div>
         ) : (

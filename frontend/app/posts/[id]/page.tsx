@@ -408,7 +408,7 @@ export default function PostDetailPage() {
 
       {/* Error toast */}
       {toastMsg && (
-        <div className="fixed bottom-28 left-1/2 -translate-x-1/2 z-50 bg-primary text-primary-foreground text-[13px] px-4 py-2 rounded-full shadow-lg pointer-events-none whitespace-nowrap">
+        <div className="fixed bottom-28 left-1/2 -translate-x-1/2 z-[70] bg-primary text-primary-foreground text-[13px] px-4 py-2 rounded-full shadow-lg pointer-events-none whitespace-nowrap">
           {toastMsg}
         </div>
       )}

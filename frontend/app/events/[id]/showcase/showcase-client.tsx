@@ -157,7 +157,6 @@ export default function ShowcaseClient() {
   const [accessState, setAccessState] = useState<AccessState>('loading')
   const [event, setEvent] = useState<any>(null)
   const [orgProfile, setOrgProfile] = useState<any>(null)
-  const [myRegistration, setMyRegistration] = useState<any>(null)
 
   // Review State
   const [rating, setRating] = useState(0)
@@ -212,8 +211,6 @@ export default function ShowcaseClient() {
           setAccessState('public')
           return
         }
-
-        setMyRegistration(thisEventReg)
 
         // Step 6: Attended but event not yet completed by org → waiting state
         if (eventData.status !== 'completed') {
@@ -334,7 +331,7 @@ export default function ShowcaseClient() {
             <span className="text-sm text-muted-foreground">{orgName}</span>
           </div>
           <p className="text-sm text-muted-foreground leading-relaxed max-w-sm mx-auto">
-            You were there. The organization hasn't wrapped up the event report yet — your certificate and event photos will appear here once they do. Usually within 24 hours.
+            You were there. The organization hasn&apos;t wrapped up the event report yet — your certificate and event photos will appear here once they do. Usually within 24 hours.
           </p>
           <Link href="/history" className="inline-block text-xs text-muted-foreground hover:text-foreground transition-colors">
             Back to my events
@@ -378,7 +375,7 @@ export default function ShowcaseClient() {
       {/* Gallery Lightbox */}
       {lightboxUrl && (
         <div
-          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+          className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center p-4"
           onClick={() => setLightboxUrl(null)}
         >
           <button
