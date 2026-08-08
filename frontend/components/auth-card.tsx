@@ -129,9 +129,8 @@ function NameCapture({
 
 /**
  * Unified passwordless entry point (Luma-style): one card, one continue action,
- * used for both signup and login. Email OTP + verification + Passkey sign-in/
- * registration are wired to real Supabase calls. Google is still stubbed —
- * wire the remaining TODO(auth-provider) spot up when ready.
+ * used for both signup and login. Email OTP + verification, Passkey sign-in/
+ * registration, and Google OAuth are all wired to real Supabase calls.
  *
  * Phone/SMS OTP is intentionally not implemented yet (no SMS provider wired
  * up) — email is the only path for now, revisit when that's ready.
@@ -505,7 +504,7 @@ export function AuthCard() {
             href="/org-signup"
             className={`w-full ${FIELD_H} flex items-center justify-center gap-2 bg-muted hover:bg-border/60 text-foreground font-medium text-[13px] rounded-xl transition-colors`}
           >
-            <Building2 className="w-4 h-4" /> Continue as an Organization
+            <Building2 className="w-4 h-4" /> New Organization? Apply Here
           </Link>
         </div>
       </div>
