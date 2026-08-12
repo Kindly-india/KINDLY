@@ -202,7 +202,7 @@ const FilterContent = () => (
                             <Checkbox
                                 checked={selectedCauses.includes(cause.id)}
                                 onCheckedChange={() => toggleCause(cause.id)}
-                                className="w-5 h-5 lg:w-4 lg:h-4 rounded-[4px] border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                                className="w-5 h-5 lg:w-4 lg:h-4 rounded-[4px] border-border"
                             />
                             <cause.icon className={cn(cause.color, "w-4 h-4 lg:w-3.5 lg:h-3.5")} />
                             <span className="font-semibold text-foreground text-[13px] lg:text-[11px]">
@@ -281,7 +281,7 @@ const FilterContent = () => (
                     <Checkbox
                         checked={showFilledEvents}
                         onCheckedChange={(checked) => setShowFilledEvents(checked as boolean)}
-                        className="w-5 h-5 lg:w-4 lg:h-4 rounded-[4px] border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                        className="w-5 h-5 lg:w-4 lg:h-4 rounded-[4px] border-border"
                     />
                 </label>
             </div>
@@ -412,7 +412,7 @@ const FilterContent = () => (
                     an active-filter dot still shows while collapsed per filter-UX best practice). */}
                 <aside
                     className={cn(
-                        "hidden lg:flex lg:flex-col shrink-0 sticky top-16 h-[calc(100vh-64px)] border-r border-black/5 dark:border-white/5 bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl transition-[width] duration-300 ease-out overflow-hidden",
+                        "hidden lg:flex lg:flex-col shrink-0 sticky top-14 h-[calc(100vh-56px)] border-r border-black/5 dark:border-white/5 bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl transition-[width] duration-300 ease-out overflow-hidden",
                         sidebarCollapsed ? "w-14" : "w-70",
                     )}
                 >
@@ -428,7 +428,7 @@ const FilterContent = () => (
                         }}
                         className={cn(
                             "flex items-center shrink-0 cursor-pointer select-none hover:bg-black/5 dark:hover:bg-white/5 transition-colors",
-                            sidebarCollapsed ? "justify-center p-4" : "justify-between p-5",
+                            sidebarCollapsed ? "justify-center p-4" : "justify-between px-5 py-4",
                         )}
                         aria-expanded={!sidebarCollapsed}
                         aria-label={sidebarCollapsed ? "Show filters" : "Hide filters"}
@@ -488,7 +488,7 @@ const FilterContent = () => (
                         </div>
                     </div>
 
-                    <div className="sticky top-12 md:top-16 z-40 bg-white/70 dark:bg-black/60 backdrop-blur-xl border-b border-black/5 dark:border-white/10 shadow-sm">
+                    <div className="sticky top-12 md:top-14 z-40 bg-white/70 dark:bg-black/60 backdrop-blur-xl border-b border-black/5 dark:border-white/10 shadow-sm">
                         <div className="px-3 sm:px-6 py-2 md:py-3">
                             <div className="flex items-center justify-between gap-2 flex-wrap">
                                 {/* Left - Results & Filters */}
