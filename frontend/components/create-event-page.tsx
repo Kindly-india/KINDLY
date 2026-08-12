@@ -47,7 +47,14 @@ const categories = [
     { id: "donation_drives", name: "Donations & Drives", color: "bg-yellow-500", icon: "🎁" },
 ]
 
-export function CreateEventPage() {
+interface CreateEventPageProps {
+    // When set, this form is being used by an admin creating an event on
+    // behalf of the given org (picked from an org picker) rather than the
+    // normal self-service org flow — see frontend/app/admin/create-event.
+    adminOrg?: { id: string; name: string }
+}
+
+export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
     const [step, setStep] = useState(1)
     const [isUrgent, setIsUrgent] = useState(false)
     const [showSuccess, setShowSuccess] = useState(false)
@@ -251,7 +258,7 @@ export function CreateEventPage() {
 
             const deadlineISO = new Date(formData.registrationDeadline).toISOString();
 
-            await api.createEvent({
+            const payload = {
                 title: formData.title,
                 description: formData.description,
                 coverImageUrl: coverUrl,
@@ -271,11 +278,17 @@ export function CreateEventPage() {
                 latitude: formData.latitude,
                 longitude: formData.longitude,
                 ticketPrice: isPaidEvent && formData.ticketPriceRupees ? Math.round(formData.ticketPriceRupees * 100) : null,
-            });
+            };
+
+            if (adminOrg) {
+                await api.adminCreateEvent(adminOrg.id, payload);
+            } else {
+                await api.createEvent(payload);
+            }
 
             setShowSuccess(true);
         } catch (error: any) {
-            alert(error.message || 'Failed to submit event for approval');
+            alert(error.message || (adminOrg ? 'Failed to create event' : 'Failed to submit event for approval'));
         } finally {
             setIsSubmitting(false);
         }
@@ -390,23 +403,46 @@ export function CreateEventPage() {
                     <div className="w-20 h-20 md:w-24 md:h-24 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl shadow-emerald-500/20">
                         <CheckCircle className="w-10 h-10 md:w-12 md:h-12 text-white" />
                     </div>
-                    <h1 className="text-2xl md:text-4xl font-bold text-foreground mb-3">Event Submitted!</h1>
+                    <h1 className="text-2xl md:text-4xl font-bold text-foreground mb-3">
+                        {adminOrg ? "Event Published!" : "Event Submitted!"}
+                    </h1>
                     <p className="text-muted-foreground text-sm md:text-base mb-8">
-                        Your event has been submitted for review. Our team will verify the details and may suggest an exciting post-event activity to help volunteers connect before making it live!
+                        {adminOrg
+                            ? `The event is live for ${adminOrg.name} — no further approval needed.`
+                            : "Your event has been submitted for review. Our team will verify the details and may suggest an exciting post-event activity to help volunteers connect before making it live!"}
                     </p>
                     <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                        <Link
-                            href="/org-events"
-                            className="px-6 py-3 bg-[#ff6b6b] hover:bg-[#ee5a5a] text-white rounded-xl font-semibold hover:scale-105 transition-all"
-                        >
-                            View Pending Events
-                        </Link>
-                        <Link
-                            href="/org-home"
-                            className="px-6 py-3 bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl text-foreground rounded-xl font-semibold border border-black/5 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
-                        >
-                            Back to Home
-                        </Link>
+                        {adminOrg ? (
+                            <>
+                                <Link
+                                    href={`/admin/organizations/${adminOrg.id}`}
+                                    className="px-6 py-3 bg-[#ff6b6b] hover:bg-[#ee5a5a] text-white rounded-xl font-semibold hover:scale-105 transition-all"
+                                >
+                                    Back to Organization
+                                </Link>
+                                <Link
+                                    href="/admin/events"
+                                    className="px-6 py-3 bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl text-foreground rounded-xl font-semibold border border-black/5 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                                >
+                                    View All Events
+                                </Link>
+                            </>
+                        ) : (
+                            <>
+                                <Link
+                                    href="/org-events"
+                                    className="px-6 py-3 bg-[#ff6b6b] hover:bg-[#ee5a5a] text-white rounded-xl font-semibold hover:scale-105 transition-all"
+                                >
+                                    View Pending Events
+                                </Link>
+                                <Link
+                                    href="/org-home"
+                                    className="px-6 py-3 bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl text-foreground rounded-xl font-semibold border border-black/5 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                                >
+                                    Back to Home
+                                </Link>
+                            </>
+                        )}
                     </div>
                 </ScrollReveal>
             </div>
@@ -436,13 +472,15 @@ export function CreateEventPage() {
             <header className="sticky top-0 z-50 bg-white/70 dark:bg-neutral-900/50 backdrop-blur-xl border-b border-black/5 dark:border-white/10">
                 <div className="max-w-5xl mx-auto px-4 h-14 md:h-16 flex items-center justify-between">
                     <Link
-                        href="/org-events"
+                        href={adminOrg ? "/admin/create-event" : "/org-events"}
                         className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
                     >
                         <ChevronLeft className="w-5 h-5" />
-                        <span className="text-sm font-medium hidden sm:inline">Back to Events</span>
+                        <span className="text-sm font-medium hidden sm:inline">{adminOrg ? "Change Org" : "Back to Events"}</span>
                     </Link>
-                    <h1 className="text-base md:text-lg font-semibold text-foreground">Create Event</h1>
+                    <h1 className="text-base md:text-lg font-semibold text-foreground">
+                        {adminOrg ? `Create Event for ${adminOrg.name}` : "Create Event"}
+                    </h1>
                     <div className="w-20" />
                 </div>
             </header>
@@ -943,9 +981,9 @@ export function CreateEventPage() {
                         {isSubmitting ? (
                             <>
                                 <Loader2 className="w-4 h-4 animate-spin" />
-                                Submitting...
+                                {adminOrg ? "Publishing..." : "Submitting..."}
                             </>
-                        ) : step === 3 ? "Submit for Approval" : "Continue"}
+                        ) : step === 3 ? (adminOrg ? "Publish Event" : "Submit for Approval") : "Continue"}
                     </button>
                 </div>
             </footer>

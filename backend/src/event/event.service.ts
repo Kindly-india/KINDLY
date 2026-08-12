@@ -9,6 +9,7 @@ import { EmailService } from '../email/email.service';
 import { PaymentsService } from '../payments/payments.service';
 import { AuditService } from '../audit/audit.service';
 import { CreateEventDto } from './dto/create-event.dto';
+import { AdminCreateEventDto } from './dto/admin-create-event.dto';
 import { validateImageFile } from '../common/file-validation.util';
 import { removeFromStorage } from '../common/storage.util';
 import { eventHours } from '../common/hours.util';
@@ -1281,6 +1282,107 @@ export class EventService {
     if (eventError) throw eventError;
 
     return { message: 'Event created successfully', event };
+  }
+
+  // Admin creates an event directly on behalf of an org (picked by id, not
+  // resolved from the caller's own profile — the caller is an admin, not the
+  // org). Auto-published: an admin already carries approval authority, so
+  // there's no point routing this through the pending->approve round-trip a
+  // self-service org submission needs.
+  async adminCreateEvent(
+    dto: AdminCreateEventDto,
+    actorId: string,
+    actorEmail: string | null,
+  ) {
+    const supabase = this.supabaseService.getClient();
+
+    const { data: orgProfile, error: orgError } = await supabase
+      .from('organization_profiles')
+      .select('id, approval_status')
+      .eq('id', dto.organizationId)
+      .single();
+
+    if (orgError || !orgProfile) {
+      throw new NotFoundException('Organization not found');
+    }
+
+    if (orgProfile.approval_status !== 'approved') {
+      throw new ForbiddenException(
+        'This organization must be approved before creating events',
+      );
+    }
+
+    const eventDateTime = new Date(
+      `${dto.eventDate}T${dto.startTime}:00+05:30`,
+    );
+    const registrationDeadline = new Date(dto.registrationDeadline);
+    const oneHourBefore = new Date(eventDateTime.getTime() - 60 * 60 * 1000);
+
+    if (registrationDeadline < new Date()) {
+      throw new BadRequestException(
+        'Registration deadline cannot be in the past',
+      );
+    }
+    if (registrationDeadline >= eventDateTime) {
+      throw new BadRequestException(
+        'Registration deadline must be before event start time',
+      );
+    }
+    if (registrationDeadline > oneHourBefore) {
+      throw new BadRequestException(
+        'Registration deadline must be at least 1 hour before event start',
+      );
+    }
+
+    const coords =
+      (dto.latitude == null || dto.longitude == null) && dto.location
+        ? await geocodeLocation(dto.location)
+        : null;
+
+    const { data: event, error: eventError2 } = await supabase
+      .from('events')
+      .insert({
+        organization_id: orgProfile.id,
+        title: dto.title,
+        description: dto.description,
+        cover_image_url: dto.coverImageUrl,
+        cover_focal_x: dto.coverFocalX ?? 50,
+        cover_focal_y: dto.coverFocalY ?? 50,
+        category: dto.category,
+        is_urgent: dto.isUrgent,
+        event_date: dto.eventDate,
+        start_time: dto.startTime,
+        end_time: dto.endTime,
+        location: dto.location,
+        dress_code: dto.dressCode,
+        things_to_bring: dto.thingsToBring,
+        point_of_contact: dto.pointOfContact,
+        connect_plan: dto.connectPlan,
+        total_slots: dto.totalSlots ?? null,
+        registration_deadline: dto.registrationDeadline,
+        minimum_age: dto.minimumAge,
+        latitude: coords?.lat ?? dto.latitude ?? null,
+        longitude: coords?.lng ?? dto.longitude ?? null,
+        ticket_price: dto.ticketPrice ?? null,
+        status: 'published',
+      })
+      .select(
+        'id, organization_id, title, status, event_date, start_time, location, created_at',
+      )
+      .single();
+
+    if (eventError2) throw eventError2;
+
+    await this.auditService.log(
+      actorId,
+      actorEmail,
+      'event.admin_created',
+      'event',
+      event.id,
+      { organizationId: orgProfile.id, title: dto.title },
+    );
+
+    return { message: 'Event created and published', event };
   }
 
   async registerForEvent(userId: string, eventId: string) {

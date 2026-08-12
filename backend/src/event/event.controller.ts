@@ -16,6 +16,7 @@ import {
 import { EventService } from './event.service';
 import { CertificateService } from '../certificate/certificate.service';
 import { CreateEventDto } from './dto/create-event.dto';
+import { AdminCreateEventDto } from './dto/admin-create-event.dto';
 import { UpdateGalleryDto } from './dto/update-gallery.dto';
 import { BroadcastMessageDto } from './dto/broadcast-message.dto';
 import { SelfCheckInDto } from './dto/self-check-in.dto';
@@ -60,6 +61,20 @@ export class EventController {
     return this.eventService.adminApproveEvent(
       eventId,
       updateData,
+      req.user.id,
+      req.user.email ?? null,
+    );
+  }
+
+  // 3. Admin creates an event directly on behalf of an org (auto-published)
+  @Post('admin')
+  @UseGuards(AdminGuard)
+  async adminCreateEvent(
+    @Request() req: any,
+    @Body(ValidationPipe) dto: AdminCreateEventDto,
+  ) {
+    return this.eventService.adminCreateEvent(
+      dto,
       req.user.id,
       req.user.email ?? null,
     );

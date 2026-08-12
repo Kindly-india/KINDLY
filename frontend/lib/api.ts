@@ -1656,6 +1656,29 @@ export const api = {
     return response.json();
   },
 
+  // Admin creates an event directly on behalf of an org (auto-published).
+  adminCreateEvent: async (organizationId: string, data: CreateEventData) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const response = await fetch(`${API_URL}/events/admin`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ ...data, organizationId }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const err = new Error(errorData.message || 'Failed to create event') as Error & { status?: number };
+      err.status = response.status;
+      throw err;
+    }
+    return response.json();
+  },
+
   getAdminAuditLog: async (params: {
     action?: string;
     targetType?: string;
