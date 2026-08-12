@@ -46,6 +46,21 @@ export class AdminController {
     );
   }
 
+  @Get('events')
+  async getEvents(
+    @Query('status') status?: string,
+    @Query('search') search?: string,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+  ) {
+    return this.adminService.getEvents(
+      status,
+      search,
+      parsePage(page),
+      parsePageSize(pageSize),
+    );
+  }
+
   @Get('audit-log')
   async getAuditLog(
     @Query('action') action?: string,

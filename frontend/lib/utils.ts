@@ -61,6 +61,21 @@ export function formatHoursTotal(hours: number | null | undefined): string {
 }
 
 /**
+ * CSS object-position for a cover image given an optional stored focal point
+ * (0-100 percentages, from events.cover_focal_x/y). Falls back to dead-center
+ * — the crop every cover image rendered with before focal points existed —
+ * so events without a saved focal point are pixel-identical to today.
+ */
+export function coverObjectPosition(
+  focalX?: number | null,
+  focalY?: number | null
+): string {
+  const x = typeof focalX === "number" && Number.isFinite(focalX) ? Math.min(100, Math.max(0, focalX)) : 50
+  const y = typeof focalY === "number" && Number.isFinite(focalY) ? Math.min(100, Math.max(0, focalY)) : 50
+  return `${x}% ${y}%`
+}
+
+/**
  * Fetches a URL as a blob and triggers a browser download dialog.
  * Works on iOS Safari (unlike window.open which just opens a new tab).
  */

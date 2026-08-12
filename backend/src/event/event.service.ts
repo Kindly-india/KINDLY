@@ -265,6 +265,8 @@ export class EventService {
       title: dto.title,
       description: dto.description,
       cover_image_url: dto.coverImageUrl,
+      cover_focal_x: dto.coverFocalX ?? 50,
+      cover_focal_y: dto.coverFocalY ?? 50,
       category: dto.category,
       is_urgent: dto.isUrgent,
       event_date: dto.eventDate,
@@ -305,7 +307,7 @@ export class EventService {
       .update(updateData)
       .eq('id', eventId)
       .select(
-        'id, organization_id, title, description, cover_image_url, gallery_images, category, is_urgent, event_date, start_time, end_time, location, latitude, longitude, dress_code, things_to_bring, point_of_contact, connect_plan, total_slots, registered_count, registration_deadline, minimum_age, ticket_price, status, certificates_issued, updated_at, created_at',
+        'id, organization_id, title, description, cover_image_url, cover_focal_x, cover_focal_y, gallery_images, category, is_urgent, event_date, start_time, end_time, location, latitude, longitude, dress_code, things_to_bring, point_of_contact, connect_plan, total_slots, registered_count, registration_deadline, minimum_age, ticket_price, status, certificates_issued, updated_at, created_at',
       )
       .single();
 
@@ -332,6 +334,145 @@ export class EventService {
         await removeFromStorage(supabase, 'event-images', removedImages);
       }
     }
+
+    return {
+      message: 'Event updated successfully',
+      event: updatedEvent,
+    };
+  }
+
+  // Admin edits any event regardless of status (pending, published,
+  // cancelled, completed) — the org-facing updateEvent above only checks
+  // ownership, not status, but the frontend locks org editing to pending-only
+  // events. This is the intended way to edit a live/published event: same
+  // field mapping as updateEvent, minus the ownership lookup.
+  async adminUpdateEvent(
+    eventId: string,
+    dto: CreateEventDto,
+    actorId: string,
+    actorEmail: string | null,
+  ) {
+    const supabase = this.supabaseService.getClient();
+
+    const { data: event, error: eventError } = await supabase
+      .from('events')
+      .select('organization_id, cover_image_url, gallery_images, ticket_price')
+      .eq('id', eventId)
+      .single();
+
+    if (eventError || !event) {
+      throw new NotFoundException('Event not found');
+    }
+
+    const requestedTicketPrice = dto.ticketPrice ?? null;
+    if (requestedTicketPrice !== (event.ticket_price ?? null)) {
+      const { count: paidCount } = await supabase
+        .from('event_payments')
+        .select('id', { count: 'exact', head: true })
+        .eq('event_id', eventId)
+        .eq('status', 'paid');
+
+      if (paidCount && paidCount > 0) {
+        throw new BadRequestException(
+          'Ticket price cannot be changed once volunteers have paid for this event',
+        );
+      }
+    }
+
+    if (dto.eventDate && dto.startTime && dto.registrationDeadline) {
+      const eventDateTime = new Date(
+        `${dto.eventDate}T${dto.startTime}:00+05:30`,
+      );
+      const registrationDeadline = new Date(dto.registrationDeadline);
+      const oneHourBefore = new Date(eventDateTime.getTime() - 60 * 60 * 1000);
+
+      if (registrationDeadline >= eventDateTime) {
+        throw new BadRequestException(
+          'Registration deadline must be before event start time',
+        );
+      }
+      if (registrationDeadline > oneHourBefore) {
+        throw new BadRequestException(
+          'Registration deadline must be at least 1 hour before event start',
+        );
+      }
+    }
+
+    const updateData: any = {
+      title: dto.title,
+      description: dto.description,
+      cover_image_url: dto.coverImageUrl,
+      cover_focal_x: dto.coverFocalX ?? 50,
+      cover_focal_y: dto.coverFocalY ?? 50,
+      category: dto.category,
+      is_urgent: dto.isUrgent,
+      event_date: dto.eventDate,
+      start_time: dto.startTime,
+      end_time: dto.endTime,
+      location: dto.location,
+      dress_code: dto.dressCode,
+      things_to_bring: dto.thingsToBring,
+      point_of_contact: dto.pointOfContact,
+      connect_plan: dto.connectPlan,
+      total_slots: dto.totalSlots ?? null,
+      registration_deadline: dto.registrationDeadline,
+      minimum_age: dto.minimumAge,
+      ticket_price: requestedTicketPrice,
+      updated_at: new Date().toISOString(),
+    };
+
+    if ((dto as any).galleryImages) {
+      updateData.gallery_images = (dto as any).galleryImages;
+    }
+
+    if ((dto.latitude == null || dto.longitude == null) && dto.location) {
+      const coords = await geocodeLocation(dto.location);
+      updateData.latitude = coords?.lat ?? null;
+      updateData.longitude = coords?.lng ?? null;
+    } else {
+      updateData.latitude = dto.latitude ?? null;
+      updateData.longitude = dto.longitude ?? null;
+    }
+
+    const { data: updatedEvent, error: updateError } = await supabase
+      .from('events')
+      .update(updateData)
+      .eq('id', eventId)
+      .select(
+        'id, organization_id, title, description, cover_image_url, cover_focal_x, cover_focal_y, gallery_images, category, is_urgent, event_date, start_time, end_time, location, latitude, longitude, dress_code, things_to_bring, point_of_contact, connect_plan, total_slots, registered_count, registration_deadline, minimum_age, ticket_price, status, certificates_issued, updated_at, created_at',
+      )
+      .single();
+
+    if (updateError) throw updateError;
+
+    if (
+      dto.coverImageUrl &&
+      event.cover_image_url &&
+      event.cover_image_url !== dto.coverImageUrl
+    ) {
+      await removeFromStorage(supabase, 'event-images', [
+        event.cover_image_url,
+      ]);
+    }
+    if (updateData.gallery_images) {
+      const oldGallery: string[] = event.gallery_images ?? [];
+      const newGallery: string[] = updateData.gallery_images;
+      const removedImages = oldGallery.filter(
+        (url) => !newGallery.includes(url),
+      );
+      if (removedImages.length > 0) {
+        await removeFromStorage(supabase, 'event-images', removedImages);
+      }
+    }
+
+    await this.auditService.log(
+      actorId,
+      actorEmail,
+      'event.admin_edited',
+      'event',
+      eventId,
+      { title: dto.title },
+    );
 
     return {
       message: 'Event updated successfully',
@@ -442,7 +583,7 @@ export class EventService {
       .from('events')
       .select(
         `
-        id, title, description, category, cover_image_url, is_urgent,
+        id, title, description, category, cover_image_url, cover_focal_x, cover_focal_y, is_urgent,
         event_date, start_time, end_time, location,
         total_slots, registered_count, registration_deadline, connect_plan,
         organization_profiles ( name, org_type )
@@ -523,7 +664,7 @@ export class EventService {
       .from('events')
       .select(
         `
-        id, title, cover_image_url,
+        id, title, cover_image_url, cover_focal_x, cover_focal_y,
         event_date, start_time, end_time, location,
         organization_id,
         organization_profiles ( name, logo_url ),
@@ -553,6 +694,8 @@ export class EventService {
           id: ev.id,
           title: ev.title,
           cover_image_url: ev.cover_image_url ?? null,
+          cover_focal_x: ev.cover_focal_x ?? 50,
+          cover_focal_y: ev.cover_focal_y ?? 50,
           event_date: ev.event_date,
           location: ev.location,
           org_name: ev.organization_profiles?.name ?? null,
@@ -572,7 +715,7 @@ export class EventService {
       .from('events')
       .select(
         `
-        id, title, category, cover_image_url, is_urgent,
+        id, title, category, cover_image_url, cover_focal_x, cover_focal_y, is_urgent,
         event_date, start_time, end_time, location,
         total_slots, registered_count, registration_deadline, connect_plan,
         organization_profiles ( name, org_type )
@@ -619,6 +762,38 @@ export class EventService {
       if (orgProfile && event.organization_id !== orgProfile.id) {
         throw new ForbiddenException('You do not have access to this event');
       }
+    }
+
+    return { event };
+  }
+
+  // Admin fetch by id — no ownership/status filter, so pending/cancelled/
+  // completed events are visible too (unlike getEventById above, which
+  // 403s a competing org and otherwise trusts the caller has no restriction).
+  async adminGetEvent(eventId: string) {
+    const supabase = this.supabaseService.getClient();
+
+    const { data: event, error } = await supabase
+      .from('events')
+      .select(
+        `
+      id, organization_id, title, description, cover_image_url, cover_focal_x, cover_focal_y,
+      gallery_images, category, is_urgent, event_date, start_time, end_time, location,
+      latitude, longitude, dress_code, things_to_bring, point_of_contact, connect_plan,
+      total_slots, registered_count, registration_deadline, minimum_age, ticket_price,
+      status, certificates_issued, updated_at, created_at,
+      organization_profiles (
+        id,
+        name,
+        org_type
+      )
+    `,
+      )
+      .eq('id', eventId)
+      .single();
+
+    if (error || !event) {
+      throw new NotFoundException('Event not found');
     }
 
     return { event };
@@ -761,6 +936,48 @@ export class EventService {
     return { registrations };
   }
 
+  // Admin-wide roster — same query/shape as getEventRegistrations above,
+  // just without the org-ownership check (P2-21: admin has no way today to
+  // see "who registered for what" outside the Supabase dashboard).
+  async adminGetEventRegistrations(eventId: string) {
+    const supabase = this.supabaseService.getClient();
+
+    const { data: event, error: eventError } = await supabase
+      .from('events')
+      .select('id')
+      .eq('id', eventId)
+      .single();
+
+    if (eventError || !event) {
+      throw new NotFoundException('Event not found');
+    }
+
+    const { data: registrations, error: regError } = await supabase
+      .from('event_registrations')
+      .select(
+        `
+        id,
+        status,
+        registered_at,
+        checked_in_at,
+        volunteer_profiles (
+          id,
+          user_id,
+          full_name,
+          phone,
+          city
+        )
+      `,
+      )
+      .eq('event_id', eventId)
+      .order('registered_at', { ascending: false })
+      .limit(500);
+
+    if (regError) throw regError;
+
+    return { registrations };
+  }
+
   async getVolunteerRegistrations(userId: string) {
     const supabase = this.supabaseService.getClient();
 
@@ -791,6 +1008,8 @@ export class EventService {
           end_time,
           location,
           cover_image_url,
+          cover_focal_x,
+          cover_focal_y,
           total_slots,
           status,
           certificates_issued,
@@ -1254,6 +1473,8 @@ export class EventService {
         title: dto.title,
         description: dto.description,
         cover_image_url: dto.coverImageUrl,
+        cover_focal_x: dto.coverFocalX ?? 50,
+        cover_focal_y: dto.coverFocalY ?? 50,
         category: dto.category,
         is_urgent: dto.isUrgent,
         event_date: dto.eventDate,

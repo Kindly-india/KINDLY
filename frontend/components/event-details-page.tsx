@@ -24,7 +24,7 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { api } from "@/lib/api"
-import { cn } from "@/lib/utils"
+import { cn, coverObjectPosition } from "@/lib/utils"
 import { VolunteerContactModal } from "@/components/volunteer-contact-modal"
 import { EventCheckoutModal } from "@/components/event-checkout-modal"
 import { VerifiedBadge } from "@/components/verified-badge"
@@ -267,6 +267,7 @@ export default function EventDetailsPage() {
                   src={event.cover_image_url}
                   alt={event.title}
                   className="w-full h-full object-cover"
+                  style={{ objectPosition: coverObjectPosition(event.cover_focal_x, event.cover_focal_y) }}
                 />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-muted to-border flex items-center justify-center">

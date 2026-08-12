@@ -20,6 +20,7 @@ import { UpdateOrganizationProfileDto } from './dto/update-organization-profile.
 import { ChangeEmailDto } from './dto/change-email.dto';
 import { AddReviewDto } from './dto/add-review.dto';
 import { SetApprovalDto } from './dto/set-approval.dto';
+import { SetSuspensionDto } from '../common/dto/set-suspension.dto';
 
 @Controller('organizations')
 export class OrganizationController {
@@ -46,6 +47,24 @@ export class OrganizationController {
     return this.organizationService.setApprovalStatus(
       id,
       dto.status,
+      req.user.id,
+      req.user.email ?? null,
+    );
+  }
+
+  // Reversible suspend/reactivate for an already-approved org (P2-19) —
+  // distinct from the approve/reject flow above.
+  @UseGuards(AdminGuard)
+  @Patch('admin/:id/suspension')
+  async setOrgSuspension(
+    @Param('id') id: string,
+    @Body() dto: SetSuspensionDto,
+    @Request() req: any,
+  ) {
+    return this.organizationService.setSuspension(
+      id,
+      dto.suspended,
+      dto.reason,
       req.user.id,
       req.user.email ?? null,
     );

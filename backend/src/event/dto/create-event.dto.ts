@@ -8,6 +8,7 @@ import {
   IsUrl,
   IsNumber,
   Min,
+  Max,
   IsDateString,
   IsArray,
   MaxLength,
@@ -28,6 +29,22 @@ export class CreateEventDto {
   @IsOptional()
   @IsUrl()
   coverImageUrl?: string;
+
+  // Percentage (0-100) of the cover image to keep centered when it's cropped
+  // for a display frame narrower/taller than the source photo. Omit/undefined
+  // = dead-center (50/50), matching the crop every cover image already used
+  // before this field existed.
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(100)
+  coverFocalX?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(100)
+  coverFocalY?: number;
 
   @IsString()
   @IsIn([

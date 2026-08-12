@@ -5,6 +5,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
+import { AuditService } from '../audit/audit.service';
 import { UpdateVolunteerProfileDto } from './dto/update-volunteer-profile.dto';
 import { OnboardingDto } from './dto/onboarding.dto';
 import { validateImageFile } from '../common/file-validation.util';
@@ -17,7 +18,56 @@ import {
 
 @Injectable()
 export class VolunteerService {
-  constructor(private readonly supabase: SupabaseService) {}
+  constructor(
+    private readonly supabase: SupabaseService,
+    private readonly audit: AuditService,
+  ) {}
+
+  // Reversible cut-off for an active volunteer (P2-19) — flips the flag +
+  // logs it; JwtAuthGuard is what actually enforces it on every request.
+  async setSuspension(
+    volunteerId: string,
+    suspended: boolean,
+    reason: string | undefined,
+    actorId: string,
+    actorEmail: string | null,
+  ) {
+    const client = this.supabase.getClient();
+
+    const { data: vol, error: fetchError } = await client
+      .from('volunteer_profiles')
+      .select('id, full_name, email')
+      .eq('id', volunteerId)
+      .single();
+
+    if (fetchError || !vol)
+      throw new NotFoundException('Volunteer not found');
+
+    const { error: updateError } = await client
+      .from('volunteer_profiles')
+      .update({
+        suspended_at: suspended ? new Date().toISOString() : null,
+        suspended_reason: suspended ? (reason ?? null) : null,
+        suspended_by: suspended ? actorId : null,
+      })
+      .eq('id', volunteerId);
+
+    if (updateError) throw new BadRequestException(updateError.message);
+
+    await this.audit.log(
+      actorId,
+      actorEmail,
+      suspended ? 'volunteer.suspended' : 'volunteer.reactivated',
+      'volunteer',
+      volunteerId,
+      { name: vol.full_name, email: vol.email, reason: reason ?? null },
+    );
+
+    return {
+      message: suspended ? 'Volunteer suspended' : 'Volunteer reactivated',
+      volunteer: { id: vol.id, suspended },
+    };
+  }
 
   // Volunteers signed up via the OTP AuthCard have an auth user but no
   // volunteer_profiles row and no user_metadata.user_type. This backfills both,

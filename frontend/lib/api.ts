@@ -103,6 +103,11 @@ export interface CreateEventData {
   title: string;
   description: string;
   coverImageUrl?: string;
+  // Percentage (0-100) of the cover image to keep centered when it's cropped
+  // for a display frame narrower/taller than the source photo. Omit = 50/50
+  // (dead-center), the same crop every cover image used before this existed.
+  coverFocalX?: number;
+  coverFocalY?: number;
   category: string;
   isUrgent: boolean;
   eventDate: string;
@@ -210,6 +215,33 @@ export interface AdminOrganization {
   created_at: string;
 }
 
+export interface AdminEvent {
+  id: string;
+  title: string;
+  status: string;
+  category: string;
+  event_date: string;
+  start_time: string;
+  location: string;
+  registered_count: number;
+  total_slots: number | null;
+  organization_profiles: { id: string; name: string } | null;
+}
+
+export interface AdminEventRegistration {
+  id: string;
+  status: string;
+  registered_at: string;
+  checked_in_at: string | null;
+  volunteer_profiles: {
+    id: string;
+    user_id: string;
+    full_name: string;
+    phone: string | null;
+    city: string | null;
+  } | null;
+}
+
 export interface AdminAuditLogEntry {
   id: string;
   actor_id: string;
@@ -272,7 +304,7 @@ export const api = {
   // organizations are password-less and gated by admin approval, so this
   // blocks a still-pending org's email from silently self-provisioning a
   // brand-new (unapproved) account through the ordinary OTP flow.
-  checkOrgApplicationStatus: async (email: string): Promise<{ status: 'pending' | 'ok' }> => {
+  checkOrgApplicationStatus: async (email: string): Promise<{ status: 'pending' | 'suspended' | 'ok' }> => {
     const response = await fetch(`${API_URL}/auth/check-org-status`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -450,6 +482,8 @@ export const api = {
     id: string;
     title: string;
     cover_image_url: string | null;
+    cover_focal_x: number;
+    cover_focal_y: number;
     event_date: string;
     location: string;
     org_name: string | null;
@@ -1675,6 +1709,130 @@ export const api = {
       const err = new Error(errorData.message || 'Failed to create event') as Error & { status?: number };
       err.status = response.status;
       throw err;
+    }
+    return response.json();
+  },
+
+  getAdminEvents: async (params: {
+    status?: string;
+    search?: string;
+    page?: number;
+    pageSize?: number;
+  } = {}): Promise<{ events: AdminEvent[]; total: number; page: number; pageSize: number }> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const query = new URLSearchParams();
+    if (params.status) query.set('status', params.status);
+    if (params.search) query.set('search', params.search);
+    if (params.page) query.set('page', String(params.page));
+    if (params.pageSize) query.set('pageSize', String(params.pageSize));
+
+    const response = await fetch(`${API_URL}/admin/events?${query.toString()}`, {
+      headers: { 'Authorization': `Bearer ${session.access_token}` },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const err = new Error(errorData.message || 'Failed to load events') as Error & { status?: number };
+      err.status = response.status;
+      throw err;
+    }
+    return response.json();
+  },
+
+  adminGetEvent: async (eventId: string): Promise<{ event: any }> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const response = await fetch(`${API_URL}/events/admin/${eventId}`, {
+      headers: { 'Authorization': `Bearer ${session.access_token}` },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const err = new Error(errorData.message || 'Failed to load event') as Error & { status?: number };
+      err.status = response.status;
+      throw err;
+    }
+    return response.json();
+  },
+
+  adminUpdateEvent: async (eventId: string, data: CreateEventData) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const response = await fetch(`${API_URL}/events/admin/${eventId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const err = new Error(errorData.message || 'Failed to update event') as Error & { status?: number };
+      err.status = response.status;
+      throw err;
+    }
+    return response.json();
+  },
+
+  adminGetEventRegistrations: async (eventId: string): Promise<{ registrations: AdminEventRegistration[] }> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const response = await fetch(`${API_URL}/events/admin/${eventId}/registrations`, {
+      headers: { 'Authorization': `Bearer ${session.access_token}` },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const err = new Error(errorData.message || 'Failed to load registrations') as Error & { status?: number };
+      err.status = response.status;
+      throw err;
+    }
+    return response.json();
+  },
+
+  adminSetOrgSuspension: async (orgId: string, suspended: boolean, reason?: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const response = await fetch(`${API_URL}/organizations/admin/${orgId}/suspension`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ suspended, reason }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || 'Failed to update suspension');
+    }
+    return response.json();
+  },
+
+  adminSetVolunteerSuspension: async (volunteerId: string, suspended: boolean, reason?: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const response = await fetch(`${API_URL}/volunteers/admin/${volunteerId}/suspension`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ suspended, reason }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || 'Failed to update suspension');
     }
     return response.json();
   },

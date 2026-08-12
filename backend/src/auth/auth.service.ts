@@ -96,17 +96,38 @@ export class AuthService {
   // signup. This looks the email up against pending applications first so
   // the frontend can block the OTP send and show a "still under review"
   // message instead.
-  async checkOrgStatus(email: string): Promise<{ status: 'pending' | 'ok' }> {
+  //
+  // Also doubles as the pre-flight suspension check for BOTH org and
+  // volunteer accounts (same sign-in box, same identifier field, so one
+  // lookup here covers both) — an active session's real enforcement is
+  // JwtAuthGuard (every request), this is just the friendlier "don't even
+  // let them request an OTP" pre-check. Name kept as-is (matches the
+  // existing frontend/route contract) even though it now checks volunteers
+  // too.
+  async checkOrgStatus(
+    email: string,
+  ): Promise<{ status: 'pending' | 'suspended' | 'ok' }> {
     const supabase = this.supabaseService.getClient();
-    const { data } = await supabase
+    const { data: org } = await supabase
       .from('organization_profiles')
-      .select('approval_status')
+      .select('approval_status, suspended_at')
       .eq('email', email)
       .maybeSingle();
 
-    if (data?.approval_status === 'pending') {
-      return { status: 'pending' };
+    if (org) {
+      if (org.approval_status === 'pending') return { status: 'pending' };
+      if (org.suspended_at) return { status: 'suspended' };
+      return { status: 'ok' };
     }
+
+    const { data: vol } = await supabase
+      .from('volunteer_profiles')
+      .select('suspended_at')
+      .eq('email', email)
+      .maybeSingle();
+
+    if (vol?.suspended_at) return { status: 'suspended' };
+
     return { status: 'ok' };
   }
 

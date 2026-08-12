@@ -9,6 +9,7 @@ import {
     MapPin,
     Users,
     SlidersHorizontal,
+    ChevronLeft,
     Calendar,
     Leaf,
     GraduationCap,
@@ -90,6 +91,7 @@ export default function EventsDiscoveryPage() {
 
     const [sortBy, setSortBy] = useState("newest")
     const [isFilterOpen, setIsFilterOpen] = useState(false)
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
     const [visibleEvents, setVisibleEvents] = useState(10)
 
     const [completedEvents, setCompletedEvents] = useState<any[]>([])
@@ -403,22 +405,65 @@ const FilterContent = () => (
                 className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[380px] max-w-[200vw] bg-gradient-to-b from-indigo-200/20 dark:from-indigo-500/10 to-transparent blur-3xl pointer-events-none"
             />
             <div className="flex relative">
-                {/* Left Sidebar - Desktop Only */}
-                <aside className="hidden lg:block w-70 shrink-0 sticky top-16 h-[calc(100vh-64px)] overflow-y-auto border-r border-black/5 dark:border-white/5 bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl">
-                    <div className="p-5">
-                        <div className="flex items-center justify-between mb-5">
-                            <div className="flex items-center gap-2">
-                                <SlidersHorizontal className="w-4 h-4 text-[#ff6b6b]" />
-                                <h2 className="text-[14px] font-bold text-foreground">Filters</h2>
-                            </div>
-                            {hasActiveFilters && (
-                                <button onClick={clearAllFilters} className="text-[11px] text-[#ff6b6b] hover:underline font-medium">
-                                    Clear All
-                                </button>
+                {/* Left Sidebar - Desktop Only. Collapses to a slim icon rail — click the
+                    "Filters" label or its icon to toggle, no separate button (industry-standard
+                    rail pattern: Notion/Linear/VS Code all collapse to an icon-only strip rather
+                    than vanishing entirely, so there's always something to click back open, and
+                    an active-filter dot still shows while collapsed per filter-UX best practice). */}
+                <aside
+                    className={cn(
+                        "hidden lg:flex lg:flex-col shrink-0 sticky top-16 h-[calc(100vh-64px)] border-r border-black/5 dark:border-white/5 bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl transition-[width] duration-300 ease-out overflow-hidden",
+                        sidebarCollapsed ? "w-14" : "w-70",
+                    )}
+                >
+                    <div
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => setSidebarCollapsed((v) => !v)}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault()
+                                setSidebarCollapsed((v) => !v)
+                            }
+                        }}
+                        className={cn(
+                            "flex items-center shrink-0 cursor-pointer select-none hover:bg-black/5 dark:hover:bg-white/5 transition-colors",
+                            sidebarCollapsed ? "justify-center p-4" : "justify-between p-5",
+                        )}
+                        aria-expanded={!sidebarCollapsed}
+                        aria-label={sidebarCollapsed ? "Show filters" : "Hide filters"}
+                        title={sidebarCollapsed ? "Show filters" : "Hide filters"}
+                    >
+                        <span className="flex items-center gap-2 relative">
+                            <SlidersHorizontal className="w-4 h-4 text-[#ff6b6b] shrink-0" />
+                            {hasActiveFilters && sidebarCollapsed && (
+                                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#ff6b6b] ring-2 ring-white dark:ring-neutral-900" />
                             )}
-                        </div>
-                        <FilterContent />
+                            {!sidebarCollapsed && <h2 className="text-[14px] font-bold text-foreground">Filters</h2>}
+                        </span>
+                        {!sidebarCollapsed && (
+                            <div className="flex items-center gap-3">
+                                {hasActiveFilters && (
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            clearAllFilters()
+                                        }}
+                                        className="text-[11px] text-[#ff6b6b] hover:underline font-medium"
+                                    >
+                                        Clear All
+                                    </button>
+                                )}
+                                <ChevronLeft className="w-4 h-4 text-muted-foreground" />
+                            </div>
+                        )}
                     </div>
+
+                    {!sidebarCollapsed && (
+                        <div className="px-5 pb-5 flex-1 overflow-y-auto">
+                            <FilterContent />
+                        </div>
+                    )}
                 </aside>
 
                 {/* Right Content Area */}
@@ -601,16 +646,16 @@ const FilterContent = () => (
                                                     className="group flex flex-row md:flex-col h-auto md:h-full bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl rounded-2xl md:rounded-3xl overflow-hidden shadow-sm dark:shadow-2xl dark:shadow-black/50 hover:shadow-xl border border-black/5 dark:border-white/5 active:scale-[0.98] hover:-translate-y-0.5 transition-all duration-300 ease-out"
                                                 >
                                                     {/* IMAGE — thumbnail on mobile, hero on desktop */}
-                                                    <div className="relative shrink-0 w-[100px] md:w-full aspect-square md:aspect-[4/3] bg-muted p-2 md:p-0">
-                                                        <div className="w-full h-full rounded-[12px] md:rounded-none overflow-hidden relative">
+                                                    <div className="relative shrink-0 w-[100px] md:w-full aspect-square md:aspect-[4/3] bg-muted">
+                                                        <div className="absolute inset-2 md:inset-0 rounded-[12px] md:rounded-none overflow-hidden">
                                                             {event.cover_image_url ? (
                                                                 <img
                                                                     src={event.cover_image_url}
                                                                     alt={event.title}
-                                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                                                                    className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                                                                 />
                                                             ) : (
-                                                                <div className="w-full h-full bg-gradient-to-br from-muted to-muted flex items-center justify-center">
+                                                                <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-muted to-muted flex items-center justify-center">
                                                                     <Calendar className="w-6 h-6 md:w-12 md:h-12 text-muted-foreground" />
                                                                 </div>
                                                             )}
@@ -739,16 +784,16 @@ const FilterContent = () => (
                                                         className="group flex flex-row md:flex-col h-auto md:h-full bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl rounded-2xl md:rounded-3xl overflow-hidden border border-black/5 dark:border-white/5 shadow-sm dark:shadow-2xl dark:shadow-black/50 active:scale-[0.98] hover:-translate-y-0.5 transition-all duration-300 ease-out"
                                                     >
                                                         {/* IMAGE with dark overlay */}
-                                                        <div className="relative shrink-0 w-[100px] md:w-full aspect-square md:aspect-[4/3] bg-muted p-2 md:p-0">
-                                                            <div className="w-full h-full rounded-[12px] md:rounded-none overflow-hidden relative">
+                                                        <div className="relative shrink-0 w-[100px] md:w-full aspect-square md:aspect-[4/3] bg-muted">
+                                                            <div className="absolute inset-2 md:inset-0 rounded-[12px] md:rounded-none overflow-hidden">
                                                                 {ev.cover_image_url ? (
                                                                     <img
                                                                         src={ev.cover_image_url}
                                                                         alt={ev.title}
-                                                                        className="w-full h-full object-cover"
+                                                                        className="absolute inset-0 w-full h-full object-cover"
                                                                     />
                                                                 ) : (
-                                                                    <div className="w-full h-full bg-gradient-to-br from-muted to-muted" />
+                                                                    <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-muted to-muted" />
                                                                 )}
                                                                 {/* ~50% dark overlay */}
                                                                 <div className="absolute inset-0 bg-black/50" />

@@ -20,6 +20,8 @@ import { ChangeEmailDto } from './dto/change-email.dto';
 import { OnboardingDto } from './dto/onboarding.dto';
 import { EnsureProfileDto } from './dto/ensure-profile.dto';
 import { OptionalAuthGuard } from '../auth/guards/optional-auth.guard';
+import { AdminGuard } from '../auth/guards/admin.guard';
+import { SetSuspensionDto } from '../common/dto/set-suspension.dto';
 
 @Controller('volunteers')
 export class VolunteerController {
@@ -27,6 +29,23 @@ export class VolunteerController {
     private readonly volunteerService: VolunteerService,
     private readonly certificateService: CertificateService,
   ) {}
+
+  // Reversible suspend/reactivate for an active volunteer (P2-19).
+  @UseGuards(AdminGuard)
+  @Patch('admin/:id/suspension')
+  async setVolunteerSuspension(
+    @Param('id') id: string,
+    @Body() dto: SetSuspensionDto,
+    @Request() req: any,
+  ) {
+    return this.volunteerService.setSuspension(
+      id,
+      dto.suspended,
+      dto.reason,
+      req.user.id,
+      req.user.email ?? null,
+    );
+  }
 
   // 1. Get Own Profile (Private)
   @UseGuards(JwtAuthGuard)

@@ -266,6 +266,54 @@ export class OrganizationService {
     };
   }
 
+  // Reversible cut-off for an already-*approved* org (P2-19) — distinct from
+  // setApprovalStatus's reject branch above, which only ever targets a
+  // still-pending application and hard-deletes it. Suspension doesn't touch
+  // any row besides these three columns; JwtAuthGuard is what actually
+  // enforces it on every request, this just flips the flag + logs it.
+  async setSuspension(
+    orgId: string,
+    suspended: boolean,
+    reason: string | undefined,
+    actorId: string,
+    actorEmail: string | null,
+  ) {
+    const client = this.supabase.getClient();
+
+    const { data: org, error: fetchError } = await client
+      .from('organization_profiles')
+      .select('id, name, email')
+      .eq('id', orgId)
+      .single();
+
+    if (fetchError || !org) throw new NotFoundException('Organization not found');
+
+    const { error: updateError } = await client
+      .from('organization_profiles')
+      .update({
+        suspended_at: suspended ? new Date().toISOString() : null,
+        suspended_reason: suspended ? (reason ?? null) : null,
+        suspended_by: suspended ? actorId : null,
+      })
+      .eq('id', orgId);
+
+    if (updateError) throw new BadRequestException(updateError.message);
+
+    await this.audit.log(
+      actorId,
+      actorEmail,
+      suspended ? 'organization.suspended' : 'organization.reactivated',
+      'organization',
+      orgId,
+      { name: org.name, email: org.email, reason: reason ?? null },
+    );
+
+    return {
+      message: suspended ? 'Organization suspended' : 'Organization reactivated',
+      organization: { id: org.id, suspended },
+    };
+  }
+
   async getPublicProfile(orgId: string, viewerId?: string) {
     const client = this.supabase.getClient();
 

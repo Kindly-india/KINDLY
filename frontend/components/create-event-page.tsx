@@ -22,10 +22,11 @@ import {
     Loader2,
     IndianRupee
 } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { cn, coverObjectPosition } from "@/lib/utils"
 import { api } from "@/lib/api"
 import { toast } from "sonner"
 import { ScrollReveal } from "@/components/ui/scroll-reveal"
+import { CoverFocalPointPicker, type FocalPoint } from "@/components/cover-focal-point-picker"
 
 const LocationPickerMap = dynamic(
     () => import("./location-picker-map").then((m) => ({ default: m.LocationPickerMap })),
@@ -60,6 +61,7 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
     const [showSuccess, setShowSuccess] = useState(false)
     const [coverImage, setCoverImage] = useState<File | null>(null);
     const [coverImageUrl, setCoverImageUrl] = useState<string>('');
+    const [coverFocal, setCoverFocal] = useState<FocalPoint>({ x: 50, y: 50 });
     const [uploading, setUploading] = useState(false);
     const [gettingLocation, setGettingLocation] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -262,6 +264,8 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
                 title: formData.title,
                 description: formData.description,
                 coverImageUrl: coverUrl,
+                coverFocalX: coverFocal.x,
+                coverFocalY: coverFocal.y,
                 category: formData.category,
                 isUrgent,
                 eventDate: formData.eventDate,
@@ -303,7 +307,12 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
             <div className="bg-white/80 dark:bg-neutral-900/60 backdrop-blur-md rounded-xl p-4 shadow-sm border border-black/5 dark:border-white/10">
                 {coverImageUrl ? (
                     <div className="aspect-video rounded-lg mb-3 overflow-hidden">
-                        <img src={coverImageUrl} alt="Event cover" className="w-full h-full object-cover" />
+                        <img
+                            src={coverImageUrl}
+                            alt="Event cover"
+                            className="w-full h-full object-cover"
+                            style={{ objectPosition: coverObjectPosition(coverFocal.x, coverFocal.y) }}
+                        />
                     </div>
                 ) : (
                     <div className="aspect-video bg-gradient-to-br from-muted to-border rounded-lg mb-3 flex items-center justify-center">
@@ -548,6 +557,7 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
                                                 return;
                                             }
                                             setCoverImage(file);
+                                            setCoverFocal({ x: 50, y: 50 });
                                             const reader = new FileReader();
                                             reader.onloadend = () => {
                                                 setCoverImageUrl(reader.result as string);
@@ -560,7 +570,12 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
                                 />
                                 <label htmlFor="coverImage" className="cursor-pointer text-center w-full h-full flex flex-col items-center justify-center">
                                     {coverImageUrl ? (
-                                        <img src={coverImageUrl} alt="Cover preview" className="w-full h-full object-cover rounded-2xl" />
+                                        <img
+                                            src={coverImageUrl}
+                                            alt="Cover preview"
+                                            className="w-full h-full object-cover rounded-2xl"
+                                            style={{ objectPosition: coverObjectPosition(coverFocal.x, coverFocal.y) }}
+                                        />
                                     ) : (
                                         <>
                                             <div className="w-16 h-16 bg-card rounded-2xl shadow-md flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
@@ -574,6 +589,11 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
                                     )}
                                 </label>
                             </div>
+                            {coverImageUrl && (
+                                <div className="mt-4 p-4 bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl rounded-2xl border border-black/5 dark:border-white/10">
+                                    <CoverFocalPointPicker imageUrl={coverImageUrl} value={coverFocal} onChange={setCoverFocal} />
+                                </div>
+                            )}
                         </div>
 
                         <div>

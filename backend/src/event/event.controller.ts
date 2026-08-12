@@ -80,6 +80,34 @@ export class EventController {
     );
   }
 
+  // 4. Admin fetch/edit/roster for any event, regardless of status or org
+  @Get('admin/:id')
+  @UseGuards(AdminGuard)
+  async adminGetEvent(@Param('id') id: string) {
+    return this.eventService.adminGetEvent(id);
+  }
+
+  @Patch('admin/:id')
+  @UseGuards(AdminGuard)
+  async adminUpdateEvent(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body(ValidationPipe) dto: CreateEventDto,
+  ) {
+    return this.eventService.adminUpdateEvent(
+      id,
+      dto,
+      req.user.id,
+      req.user.email ?? null,
+    );
+  }
+
+  @Get('admin/:id/registrations')
+  @UseGuards(AdminGuard)
+  async adminGetEventRegistrations(@Param('id') id: string) {
+    return this.eventService.adminGetEventRegistrations(id);
+  }
+
   // ==========================================
   // LOCATION SEARCH (event creation/editing — org only)
   // ==========================================

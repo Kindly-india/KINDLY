@@ -199,6 +199,10 @@ export function AuthCard() {
         toast.error("Your organization application is still under review. We'll email you once it's approved.")
         return
       }
+      if (status === "suspended") {
+        toast.error("This account has been suspended. Contact support if you believe this is a mistake.")
+        return
+      }
 
       const { error } = await supabase.auth.signInWithOtp({
         email: identifier,

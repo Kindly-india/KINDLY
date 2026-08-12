@@ -104,6 +104,35 @@ export class AdminService {
     return { organizations: data ?? [], total: count ?? 0, page, pageSize };
   }
 
+  // Mirrors getOrganizations' offset-pagination shape, against events instead.
+  async getEvents(
+    status: string | undefined,
+    search: string | undefined,
+    page: number,
+    pageSize: number,
+  ) {
+    const client = this.supabase.getClient();
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+
+    let query = client
+      .from('events')
+      .select(
+        'id, title, status, category, event_date, start_time, location, registered_count, total_slots, organization_profiles ( id, name )',
+        { count: 'exact' },
+      )
+      .order('created_at', { ascending: false })
+      .range(from, to);
+
+    if (status) query = query.eq('status', status);
+    if (search) query = query.ilike('title', `%${search}%`);
+
+    const { data, count, error } = await query;
+    if (error) throw error;
+
+    return { events: data ?? [], total: count ?? 0, page, pageSize };
+  }
+
   async getAuditLog(
     action: string | undefined,
     targetType: string | undefined,

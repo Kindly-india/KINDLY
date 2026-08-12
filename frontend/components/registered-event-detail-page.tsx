@@ -31,7 +31,7 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { api, VolunteerCertificate } from "@/lib/api"
-import { cn, downloadFromUrl } from "@/lib/utils"
+import { cn, downloadFromUrl, coverObjectPosition } from "@/lib/utils"
 
 // Client-side Haversine distance (metres) — mirrors backend 200m geofence logic
 function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -396,6 +396,7 @@ export default function RegisteredEventDetailPage() {
                 src={event.cover_image_url || '/placeholder.svg'}
                 alt={event.title}
                 className="w-full h-full object-cover"
+                style={{ objectPosition: coverObjectPosition(event.cover_focal_x, event.cover_focal_y) }}
               />
               <div className="absolute top-4 left-4 right-4 flex justify-between items-center z-20">
                 <Link href="/home">

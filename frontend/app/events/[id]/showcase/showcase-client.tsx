@@ -9,7 +9,7 @@ import {
   Download, X, Award, Star, Sparkles, Share2
 } from "lucide-react"
 import { api, VolunteerCertificate, ShowcaseData } from "@/lib/api"
-import { downloadFromUrl, eventHours, formatHours } from "@/lib/utils"
+import { downloadFromUrl, eventHours, formatHours, coverObjectPosition } from "@/lib/utils"
 import { Card } from "@/components/ui/card"
 import { ScrollReveal } from "@/components/ui/scroll-reveal"
 
@@ -399,6 +399,7 @@ export default function ShowcaseClient() {
           src={event.cover_image_url || "/placeholder-event.jpg"}
           alt={event.title}
           className="absolute inset-0 w-full h-full object-cover"
+          style={{ objectPosition: coverObjectPosition(event.cover_focal_x, event.cover_focal_y) }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-black/10" />
         <ScrollReveal className="absolute bottom-0 left-0 w-full p-6 md:p-12">
