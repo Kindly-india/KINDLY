@@ -7,11 +7,7 @@ import { SentryExceptionFilter } from './filters/sentry-exception.filter';
 const compression = require('compression');
 
 async function bootstrap() {
-  const requiredEnvVars = [
-    'SUPABASE_URL',
-    'SUPABASE_SERVICE_ROLE_KEY',
-    'SENTRY_DSN',
-  ];
+  const requiredEnvVars = ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'];
   for (const key of requiredEnvVars) {
     if (!process.env[key]) {
       throw new Error(`Missing required environment variable: ${key}`);
