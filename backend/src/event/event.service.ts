@@ -818,6 +818,7 @@ export class EventService {
     `,
       )
       .eq('id', eventId)
+      .in('status', ['published', 'completed'])
       .single();
 
     if (error || !event) {
@@ -1105,6 +1106,79 @@ export class EventService {
     };
   }
 
+  // Admin equivalent of checkInVolunteer above — same rules (event must
+  // have started, event can't be cancelled/completed), minus the
+  // org-ownership check, so admin can check in on behalf of any org's
+  // event (support/dispute-resolution use case).
+  async adminCheckInVolunteer(
+    eventId: string,
+    registrationId: string,
+    actorId: string,
+    actorEmail: string | null,
+  ) {
+    const supabase = this.supabaseService.getClient();
+
+    const { data: event, error: eventError } = await supabase
+      .from('events')
+      .select('event_date, start_time, status')
+      .eq('id', eventId)
+      .single();
+
+    if (eventError || !event) {
+      throw new NotFoundException('Event not found');
+    }
+
+    const eventStart = new Date(
+      `${event.event_date}T${event.start_time}+05:30`,
+    );
+    if (new Date() < eventStart) {
+      throw new BadRequestException(
+        'Cannot check in volunteers before the event has started',
+      );
+    }
+
+    if (event.status === 'cancelled') {
+      throw new BadRequestException(
+        'Check-in is closed — this event was cancelled',
+      );
+    }
+
+    if (event.status === 'completed') {
+      throw new BadRequestException(
+        'Check-in is closed — the event has been completed',
+      );
+    }
+
+    const { data: registration, error: updateError } = await supabase
+      .from('event_registrations')
+      .update({
+        status: 'checked_in',
+        checked_in_at: new Date().toISOString(),
+      })
+      .eq('id', registrationId)
+      .eq('event_id', eventId)
+      .select(
+        'id, event_id, volunteer_id, status, registered_at, checked_in_at, payment_id',
+      )
+      .single();
+
+    if (updateError) throw updateError;
+
+    await this.auditService.log(
+      actorId,
+      actorEmail,
+      'event.admin_checked_in_volunteer',
+      'event_registration',
+      registrationId,
+      { eventId },
+    );
+
+    return {
+      message: 'Volunteer checked in successfully',
+      registration,
+    };
+  }
+
   async selfCheckIn(
     userId: string,
     data: { eventId: string; latitude: number; longitude: number },
@@ -1243,6 +1317,61 @@ export class EventService {
       .single();
 
     if (updateError) throw updateError;
+
+    return {
+      message: 'Check-in undone successfully',
+      registration,
+    };
+  }
+
+  // Admin equivalent of undoCheckIn above — minus the org-ownership check.
+  async adminUndoCheckIn(
+    eventId: string,
+    registrationId: string,
+    actorId: string,
+    actorEmail: string | null,
+  ) {
+    const supabase = this.supabaseService.getClient();
+
+    const { data: event, error: eventError } = await supabase
+      .from('events')
+      .select('status')
+      .eq('id', eventId)
+      .single();
+
+    if (eventError || !event) {
+      throw new NotFoundException('Event not found');
+    }
+
+    if (event.status === 'completed') {
+      throw new BadRequestException(
+        'Cannot undo check-in after the event has been completed',
+      );
+    }
+
+    const { data: registration, error: updateError } = await supabase
+      .from('event_registrations')
+      .update({
+        status: 'registered',
+        checked_in_at: null,
+      })
+      .eq('id', registrationId)
+      .eq('event_id', eventId)
+      .select(
+        'id, event_id, volunteer_id, status, registered_at, checked_in_at, payment_id',
+      )
+      .single();
+
+    if (updateError) throw updateError;
+
+    await this.auditService.log(
+      actorId,
+      actorEmail,
+      'event.admin_undid_check_in',
+      'event_registration',
+      registrationId,
+      { eventId },
+    );
 
     return {
       message: 'Check-in undone successfully',

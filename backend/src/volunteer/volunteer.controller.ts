@@ -21,6 +21,7 @@ import { OnboardingDto } from './dto/onboarding.dto';
 import { EnsureProfileDto } from './dto/ensure-profile.dto';
 import { OptionalAuthGuard } from '../auth/guards/optional-auth.guard';
 import { AdminGuard } from '../auth/guards/admin.guard';
+import { SuperAdminGuard } from '../auth/guards/super-admin.guard';
 import { SetSuspensionDto } from '../common/dto/set-suspension.dto';
 
 @Controller('volunteers')
@@ -29,6 +30,29 @@ export class VolunteerController {
     private readonly volunteerService: VolunteerService,
     private readonly certificateService: CertificateService,
   ) {}
+
+  // Admin detail view — full profile regardless of privacy setting.
+  @UseGuards(AdminGuard)
+  @Get('admin/:id')
+  async adminGetVolunteer(@Param('id') id: string) {
+    return this.volunteerService.adminGetVolunteer(id);
+  }
+
+  // Permanent delete — restricted to superadmin (P2-20), not any admin.
+  @UseGuards(AdminGuard, SuperAdminGuard)
+  @Delete('admin/:id')
+  async hardDeleteVolunteer(
+    @Param('id') id: string,
+    @Body() dto: { confirmName: string },
+    @Request() req: any,
+  ) {
+    return this.volunteerService.hardDeleteVolunteer(
+      id,
+      dto.confirmName,
+      req.user.id,
+      req.user.email ?? null,
+    );
+  }
 
   // Reversible suspend/reactivate for an active volunteer (P2-19).
   @UseGuards(AdminGuard)

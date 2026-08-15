@@ -45,6 +45,7 @@ export class AuthController {
     return this.authService.resetPassword(email);
   }
 
+  @Throttle({ short: { limit: 5, ttl: 3_600_000 } })
   @Post('update-password')
   async updatePassword(@Body(ValidationPipe) dto: UpdatePasswordDto) {
     return this.authService.updatePassword(dto.password, dto.hash);

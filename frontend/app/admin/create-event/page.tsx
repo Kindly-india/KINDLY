@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Search, Building2, Mail, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { api, AdminOrganization } from "@/lib/api"
@@ -11,11 +11,22 @@ const PAGE_SIZE = 20
 
 export default function AdminCreateEventPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const preselectOrgId = searchParams?.get("org") ?? null
   const [search, setSearch] = useState("")
   const [debouncedSearch, setDebouncedSearch] = useState("")
   const [orgs, setOrgs] = useState<AdminOrganization[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedOrg, setSelectedOrg] = useState<{ id: string; name: string } | null>(null)
+
+  // Deep-linked from an org's admin detail page (?org=<id>) — skip the
+  // picker step and go straight to the create-event form.
+  useEffect(() => {
+    if (!preselectOrgId) return
+    api.adminGetOrganization(preselectOrgId)
+      .then((res) => setSelectedOrg({ id: res.organization.id, name: res.organization.name }))
+      .catch(() => toast.error("Couldn't load that organization."))
+  }, [preselectOrgId])
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 300)

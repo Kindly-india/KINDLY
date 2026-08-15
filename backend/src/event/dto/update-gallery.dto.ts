@@ -1,7 +1,8 @@
-import { IsArray, IsString } from 'class-validator';
+import { IsArray, IsUrl, ArrayMaxSize } from 'class-validator';
 
 export class UpdateGalleryDto {
   @IsArray()
-  @IsString({ each: true })
+  @ArrayMaxSize(20)
+  @IsUrl({}, { each: true })
   galleryImages: string[];
 }

@@ -12,6 +12,22 @@ import chromium from '@sparticuz/chromium';
 import puppeteer, { Browser } from 'puppeteer-core';
 import { eventHours } from '../common/hours.util';
 
+// Certificates are rendered server-side by headless Chromium, which fetches
+// orgLogoUrl directly — restrict it to our own Supabase project so an org
+// profile can't be used to make the render process request an internal/
+// attacker-chosen URL (SSRF via logo_url).
+function safeLogoUrl(url: string | null | undefined): string | null {
+  if (!url) return null;
+  try {
+    const supabaseHost = new URL(
+      process.env.SUPABASE_URL || '',
+    ).hostname;
+    return new URL(url).hostname === supabaseHost ? url : null;
+  } catch {
+    return null;
+  }
+}
+
 function formatEventDate(dateStr: string): string {
   const months = [
     'January',
@@ -238,7 +254,7 @@ export class CertificateService {
           volunteerName: vol.full_name || 'Volunteer',
           eventTitle: event.title,
           orgName: org?.name || 'KINDLY Partner',
-          orgLogoUrl: org?.logo_url || null,
+          orgLogoUrl: safeLogoUrl(org?.logo_url),
           eventDate: formattedEventDate,
           hoursContributed: hours,
           verificationId,

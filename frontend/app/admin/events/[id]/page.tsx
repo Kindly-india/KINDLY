@@ -42,6 +42,7 @@ export default function AdminEventDetailPage() {
   const [registrations, setRegistrations] = useState<AdminEventRegistration[]>([])
   const [loading, setLoading] = useState(true)
   const [regsLoading, setRegsLoading] = useState(true)
+  const [checkInLoading, setCheckInLoading] = useState<string | null>(null)
 
   const fetchEvent = useCallback(async () => {
     try {
@@ -77,6 +78,29 @@ export default function AdminEventDetailPage() {
       fetchRegistrations()
     }
   }, [eventId, fetchEvent, fetchRegistrations])
+
+  const eventStarted = event ? new Date(`${event.event_date}T${event.start_time}`) <= new Date() : false
+  const checkInClosed = event?.status === "cancelled" || event?.status === "completed"
+
+  const handleCheckIn = async (registrationId: string, currentStatus: string) => {
+    if (currentStatus !== "checked_in" && !eventStarted) {
+      toast.error("You cannot check in volunteers before the event start time.")
+      return
+    }
+    try {
+      setCheckInLoading(registrationId)
+      if (currentStatus === "checked_in") {
+        await api.adminUndoCheckIn(eventId, registrationId)
+      } else {
+        await api.adminCheckInVolunteer(eventId, registrationId)
+      }
+      await fetchRegistrations()
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update check-in status")
+    } finally {
+      setCheckInLoading(null)
+    }
+  }
 
   if (loading) {
     return (
@@ -150,6 +174,12 @@ export default function AdminEventDetailPage() {
           Registrations ({registrations.length})
         </h2>
 
+        {!eventStarted && !checkInClosed && registrations.length > 0 && (
+          <div className="mb-2 bg-amber-50 dark:bg-amber-500/15 text-amber-800 text-xs px-4 py-2 rounded-lg border border-amber-200 text-center">
+            Check-in will be enabled once the event starts ({event.start_time}).
+          </div>
+        )}
+
         {regsLoading ? (
           <div className="flex items-center justify-center py-10">
             <Loader2 className="w-5 h-5 animate-spin text-emerald-600" />
@@ -168,6 +198,7 @@ export default function AdminEventDetailPage() {
                     <th className="px-4 py-2 font-bold">Status</th>
                     <th className="px-4 py-2 font-bold">Registered</th>
                     <th className="px-4 py-2 font-bold">Checked In</th>
+                    <th className="px-4 py-2 font-bold">Action</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -185,6 +216,22 @@ export default function AdminEventDetailPage() {
                       </td>
                       <td className="px-4 py-2.5 text-muted-foreground whitespace-nowrap">{new Date(reg.registered_at).toLocaleDateString()}</td>
                       <td className="px-4 py-2.5 text-muted-foreground whitespace-nowrap">{reg.checked_in_at ? new Date(reg.checked_in_at).toLocaleDateString() : "—"}</td>
+                      <td className="px-4 py-2.5">
+                        {(reg.status === "checked_in" || reg.status === "registered") && !checkInClosed && (
+                          <button
+                            onClick={() => handleCheckIn(reg.id, reg.status)}
+                            disabled={checkInLoading === reg.id || (!eventStarted && reg.status !== "checked_in")}
+                            className={cn(
+                              "px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap",
+                              reg.status === "checked_in"
+                                ? "bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700"
+                                : "bg-muted text-muted-foreground hover:bg-border"
+                            )}
+                          >
+                            {checkInLoading === reg.id ? "Loading…" : reg.status === "checked_in" ? "Checked In" : "Check In"}
+                          </button>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

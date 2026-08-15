@@ -69,6 +69,111 @@ export class VolunteerService {
     };
   }
 
+  // Admin detail view — full profile regardless of privacy setting or
+  // follow status (unlike getProfileForViewer, which is privacy-gated),
+  // plus suspension state, which no other endpoint exposes.
+  async adminGetVolunteer(volunteerId: string) {
+    const client = this.supabase.getClient();
+
+    const { data: profile, error } = await client
+      .from('volunteer_profiles')
+      .select(
+        'id, user_id, full_name, avatar_url, cover_url, headline, bio, city, address, email, phone, linkedin, instagram, website, skills, total_hours, is_verified, is_private, created_at, suspended_at, suspended_reason',
+      )
+      .eq('id', volunteerId)
+      .single();
+
+    if (error || !profile) throw new NotFoundException('Volunteer not found');
+
+    return { volunteer: profile };
+  }
+
+  // Permanent delete (P1-16/P2-20) — restricted to superadmin via
+  // SuperAdminGuard at the route. Unlike the org side, this cascade doesn't
+  // threaten unrelated third parties — everything it touches (certificates,
+  // registrations, payments, reviews they wrote, their own posts and the
+  // comments/likes on those posts) is the volunteer's own account data, the
+  // expected scope of "delete this account." So no certificate/payment
+  // block here, just the typed-name confirmation.
+  async hardDeleteVolunteer(
+    volunteerId: string,
+    confirmName: string,
+    actorId: string,
+    actorEmail: string | null,
+  ) {
+    const client = this.supabase.getClient();
+
+    const { data: vol, error: fetchError } = await client
+      .from('volunteer_profiles')
+      .select('id, user_id, full_name, avatar_url, cover_url')
+      .eq('id', volunteerId)
+      .single();
+
+    if (fetchError || !vol) throw new NotFoundException('Volunteer not found');
+
+    if (confirmName !== vol.full_name) {
+      throw new BadRequestException(
+        'Typed name does not match the volunteer name',
+      );
+    }
+
+    // volunteer_gallery isn't FK-linked to volunteer_profiles (confirmed via
+    // live schema check) — its rows and files need explicit cleanup, the
+    // row delete below won't cascade to them.
+    const [{ data: galleryPhotos }, { data: posts }] = await Promise.all([
+      client
+        .from('volunteer_gallery')
+        .select('id, image_url')
+        .eq('user_id', vol.user_id),
+      client.from('posts').select('photo_urls').eq('volunteer_id', vol.id),
+    ]);
+
+    await Promise.all([
+      removeFromStorage(client, 'profile-images', [
+        vol.avatar_url,
+        vol.cover_url,
+      ]),
+      removeFromStorage(
+        client,
+        'gallery_images',
+        (galleryPhotos ?? []).map((p) => p.image_url),
+      ),
+      removeFromStorage(
+        client,
+        'post-photos',
+        (posts ?? []).flatMap((p) => p.photo_urls ?? []),
+      ),
+    ]);
+
+    await client
+      .from('volunteer_gallery')
+      .delete()
+      .eq('user_id', vol.user_id);
+
+    // The row delete cascades certificates, event_registrations,
+    // event_payments, organization_reviews, posts (+ their comments/likes),
+    // and volunteer_endorsements — all the volunteer's own data.
+    const { error: deleteError } = await client
+      .from('volunteer_profiles')
+      .delete()
+      .eq('id', volunteerId);
+
+    if (deleteError) throw new BadRequestException(deleteError.message);
+
+    await client.auth.admin.deleteUser(vol.user_id).catch(() => {});
+
+    await this.audit.log(
+      actorId,
+      actorEmail,
+      'volunteer.deleted',
+      'volunteer',
+      volunteerId,
+      { name: vol.full_name },
+    );
+
+    return { message: 'Volunteer permanently deleted' };
+  }
+
   // Volunteers signed up via the OTP AuthCard have an auth user but no
   // volunteer_profiles row and no user_metadata.user_type. This backfills both,
   // idempotently, right after the user types their name — everything downstream

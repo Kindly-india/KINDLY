@@ -16,6 +16,7 @@ import { OrganizationService } from './organization.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { OptionalAuthGuard } from '../auth/guards/optional-auth.guard';
 import { AdminGuard } from '../auth/guards/admin.guard';
+import { SuperAdminGuard } from '../auth/guards/super-admin.guard';
 import { UpdateOrganizationProfileDto } from './dto/update-organization-profile.dto';
 import { ChangeEmailDto } from './dto/change-email.dto';
 import { AddReviewDto } from './dto/add-review.dto';
@@ -47,6 +48,29 @@ export class OrganizationController {
     return this.organizationService.setApprovalStatus(
       id,
       dto.status,
+      req.user.id,
+      req.user.email ?? null,
+    );
+  }
+
+  // Admin detail view — always private/KYC fields, regardless of viewer.
+  @UseGuards(AdminGuard)
+  @Get('admin/:id')
+  async adminGetOrganization(@Param('id') id: string) {
+    return this.organizationService.adminGetOrganization(id);
+  }
+
+  // Permanent delete — restricted to superadmin (P2-20), not any admin.
+  @UseGuards(AdminGuard, SuperAdminGuard)
+  @Delete('admin/:id')
+  async hardDeleteOrganization(
+    @Param('id') id: string,
+    @Body() dto: { confirmName: string },
+    @Request() req: any,
+  ) {
+    return this.organizationService.hardDeleteOrganization(
+      id,
+      dto.confirmName,
       req.user.id,
       req.user.email ?? null,
     );

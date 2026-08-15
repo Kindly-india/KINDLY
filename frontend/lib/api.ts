@@ -215,6 +215,57 @@ export interface AdminOrganization {
   created_at: string;
 }
 
+export interface AdminOrganizationDetail extends AdminOrganization {
+  user_id: string;
+  registration_type: string | null;
+  representative_name: string | null;
+  designation: string | null;
+  website: string | null;
+  parent_institution: string | null;
+  coordinator_name: string | null;
+  intent_description: string | null;
+  logo_url: string | null;
+  cover_url: string | null;
+  tagline: string | null;
+  mission_statement: string | null;
+  years_active: number | null;
+  is_verified: boolean;
+  registration_number: string | null;
+  pan_card_url: string | null;
+  registration_certificate_url: string | null;
+  proof_document_url: string | null;
+  signature_url: string | null;
+  suspended_at: string | null;
+  suspended_reason: string | null;
+}
+
+export interface AdminVolunteer {
+  id: string;
+  full_name: string;
+  email: string | null;
+  phone: string | null;
+  city: string | null;
+  total_hours: number;
+  is_verified: boolean;
+  suspended_at: string | null;
+  created_at: string;
+}
+
+export interface AdminVolunteerDetail extends AdminVolunteer {
+  user_id: string;
+  avatar_url: string | null;
+  cover_url: string | null;
+  headline: string | null;
+  bio: string | null;
+  address: string | null;
+  linkedin: string | null;
+  instagram: string | null;
+  website: string | null;
+  skills: string[] | null;
+  is_private: boolean;
+  suspended_reason: string | null;
+}
+
 export interface AdminEvent {
   id: string;
   title: string;
@@ -1632,7 +1683,7 @@ export const api = {
   // --- ADMIN ROUTES ---
 
   // Cheap "am I admin" gate check, used by the shared admin layout.
-  getAdminMe: async (): Promise<{ isAdmin: boolean }> => {
+  getAdminMe: async (): Promise<{ isAdmin: boolean; isSuperAdmin: boolean }> => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error('Not authenticated');
 
@@ -1797,6 +1848,38 @@ export const api = {
     return response.json();
   },
 
+  adminCheckInVolunteer: async (eventId: string, registrationId: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const response = await fetch(`${API_URL}/events/admin/${eventId}/registrations/${registrationId}/check-in`, {
+      method: 'PATCH',
+      headers: { 'Authorization': `Bearer ${session.access_token}` },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || 'Failed to check in volunteer');
+    }
+    return response.json();
+  },
+
+  adminUndoCheckIn: async (eventId: string, registrationId: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const response = await fetch(`${API_URL}/events/admin/${eventId}/registrations/${registrationId}/undo-check-in`, {
+      method: 'PATCH',
+      headers: { 'Authorization': `Bearer ${session.access_token}` },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || 'Failed to undo check-in');
+    }
+    return response.json();
+  },
+
   adminSetOrgSuspension: async (orgId: string, suspended: boolean, reason?: string) => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error('Not authenticated');
@@ -1833,6 +1916,108 @@ export const api = {
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(errorData.message || 'Failed to update suspension');
+    }
+    return response.json();
+  },
+
+  adminGetOrganization: async (orgId: string): Promise<{ organization: AdminOrganizationDetail }> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const response = await fetch(`${API_URL}/organizations/admin/${orgId}`, {
+      headers: { 'Authorization': `Bearer ${session.access_token}` },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const err = new Error(errorData.message || 'Failed to load organization') as Error & { status?: number };
+      err.status = response.status;
+      throw err;
+    }
+    return response.json();
+  },
+
+  adminGetVolunteer: async (volunteerId: string): Promise<{ volunteer: AdminVolunteerDetail }> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const response = await fetch(`${API_URL}/volunteers/admin/${volunteerId}`, {
+      headers: { 'Authorization': `Bearer ${session.access_token}` },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const err = new Error(errorData.message || 'Failed to load volunteer') as Error & { status?: number };
+      err.status = response.status;
+      throw err;
+    }
+    return response.json();
+  },
+
+  adminDeleteOrganization: async (orgId: string, confirmName: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const response = await fetch(`${API_URL}/organizations/admin/${orgId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ confirmName }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || 'Failed to delete organization');
+    }
+    return response.json();
+  },
+
+  adminDeleteVolunteer: async (volunteerId: string, confirmName: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const response = await fetch(`${API_URL}/volunteers/admin/${volunteerId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ confirmName }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || 'Failed to delete volunteer');
+    }
+    return response.json();
+  },
+
+  getAdminVolunteers: async (params: {
+    status?: string;
+    search?: string;
+    page?: number;
+    pageSize?: number;
+  } = {}): Promise<{ volunteers: AdminVolunteer[]; total: number; page: number; pageSize: number }> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const query = new URLSearchParams();
+    if (params.status) query.set('status', params.status);
+    if (params.search) query.set('search', params.search);
+    if (params.page) query.set('page', String(params.page));
+    if (params.pageSize) query.set('pageSize', String(params.pageSize));
+
+    const response = await fetch(`${API_URL}/admin/volunteers?${query.toString()}`, {
+      headers: { 'Authorization': `Bearer ${session.access_token}` },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const err = new Error(errorData.message || 'Failed to load volunteers') as Error & { status?: number };
+      err.status = response.status;
+      throw err;
     }
     return response.json();
   },

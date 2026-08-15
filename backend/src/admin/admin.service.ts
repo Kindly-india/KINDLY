@@ -104,6 +104,38 @@ export class AdminService {
     return { organizations: data ?? [], total: count ?? 0, page, pageSize };
   }
 
+  // Mirrors getOrganizations' offset-pagination shape, against volunteers.
+  // 'status' filters on suspension state ('active' | 'suspended') since
+  // volunteers have no approval_status equivalent.
+  async getVolunteers(
+    status: string | undefined,
+    search: string | undefined,
+    page: number,
+    pageSize: number,
+  ) {
+    const client = this.supabase.getClient();
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+
+    let query = client
+      .from('volunteer_profiles')
+      .select(
+        'id, full_name, email, phone, city, total_hours, is_verified, suspended_at, created_at',
+        { count: 'exact' },
+      )
+      .order('created_at', { ascending: false })
+      .range(from, to);
+
+    if (status === 'suspended') query = query.not('suspended_at', 'is', null);
+    if (status === 'active') query = query.is('suspended_at', null);
+    if (search) query = query.ilike('full_name', `%${search}%`);
+
+    const { data, count, error } = await query;
+    if (error) throw error;
+
+    return { volunteers: data ?? [], total: count ?? 0, page, pageSize };
+  }
+
   // Mirrors getOrganizations' offset-pagination shape, against events instead.
   async getEvents(
     status: string | undefined,

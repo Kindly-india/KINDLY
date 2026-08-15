@@ -1,6 +1,19 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Resend } from 'resend';
 
+// User-controlled text (names, event titles/locations, org names) is
+// interpolated into these HTML email templates — escape it so a malicious
+// display name/event title can't inject markup/links into an email sent
+// from KINDLY's verified domain. Same approach as certificate.template.ts.
+function escapeHtml(str: string): string {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 @Injectable()
 export class EmailService {
   private readonly resend: Resend | null;
@@ -117,7 +130,7 @@ export class EmailService {
       : 'Unknown date';
 
     const html = this.base(
-      `[KINDLY OPS] Event Cancelled — ${eventTitle}`,
+      `[KINDLY OPS] Event Cancelled — ${escapeHtml(eventTitle)}`,
       `<div style="display:inline-block;background:#fff1f2;border-radius:100px;padding:6px 16px;margin-bottom:20px;">
          <span style="font-size:13px;font-weight:600;color:#e11d48;">⚠ Cancellation Alert</span>
        </div>
@@ -127,21 +140,21 @@ export class EmailService {
        </p>
        <div style="border:1px solid #fecdd3;border-radius:12px;overflow:hidden;margin-bottom:28px;">
          <div style="background:#e11d48;padding:16px 20px;">
-           <p style="margin:0;font-size:16px;font-weight:700;color:#ffffff;">${eventTitle}</p>
+           <p style="margin:0;font-size:16px;font-weight:700;color:#ffffff;">${escapeHtml(eventTitle)}</p>
          </div>
          <div style="padding:16px 20px;background:#fff1f2;">
            <table cellpadding="0" cellspacing="0">
              <tr>
                <td style="padding:4px 0;font-size:13px;color:#86868b;padding-right:16px;white-space:nowrap;">Organisation</td>
-               <td style="padding:4px 0;font-size:13px;font-weight:600;color:#1d1d1f;">${orgName}</td>
+               <td style="padding:4px 0;font-size:13px;font-weight:600;color:#1d1d1f;">${escapeHtml(orgName)}</td>
              </tr>
              <tr>
                <td style="padding:4px 0;font-size:13px;color:#86868b;padding-right:16px;white-space:nowrap;">Was scheduled</td>
-               <td style="padding:4px 0;font-size:13px;font-weight:600;color:#1d1d1f;">${formattedDate}</td>
+               <td style="padding:4px 0;font-size:13px;font-weight:600;color:#1d1d1f;">${escapeHtml(formattedDate)}</td>
              </tr>
              <tr>
                <td style="padding:4px 0;font-size:13px;color:#86868b;padding-right:16px;white-space:nowrap;">Location</td>
-               <td style="padding:4px 0;font-size:13px;font-weight:600;color:#1d1d1f;">${location}</td>
+               <td style="padding:4px 0;font-size:13px;font-weight:600;color:#1d1d1f;">${escapeHtml(location)}</td>
              </tr>
            </table>
          </div>
@@ -228,7 +241,7 @@ export class EmailService {
   private volunteerWelcomeHtml(name: string): string {
     return this.base(
       'Welcome to KINDLY',
-      `<h1 style="margin:0 0 8px;font-size:26px;font-weight:700;color:#1d1d1f;letter-spacing:-0.5px;">Welcome, ${name}.</h1>
+      `<h1 style="margin:0 0 8px;font-size:26px;font-weight:700;color:#1d1d1f;letter-spacing:-0.5px;">Welcome, ${escapeHtml(name)}.</h1>
        <p style="margin:0 0 24px;font-size:16px;color:#86868b;line-height:1.6;">
          Your KINDLY account is ready. Start discovering volunteer events near you and build your impact resume.
        </p>
@@ -253,7 +266,7 @@ export class EmailService {
       'Application Received — KINDLY',
       `<h1 style="margin:0 0 8px;font-size:26px;font-weight:700;color:#1d1d1f;letter-spacing:-0.5px;">Application received.</h1>
        <p style="margin:0 0 24px;font-size:16px;color:#86868b;line-height:1.6;">
-         Thanks, <strong style="color:#1d1d1f;">${name}</strong>. We've received your organisation's application and will review your documents within 24–48 hours.
+         Thanks, <strong style="color:#1d1d1f;">${escapeHtml(name)}</strong>. We've received your organisation's application and will review your documents within 24–48 hours.
        </p>
        <div style="background:#f5f5f7;border-radius:12px;padding:20px 24px;margin-bottom:28px;">
          <p style="margin:0 0 6px;font-size:13px;font-weight:600;color:#1d1d1f;">What happens next</p>
@@ -275,7 +288,7 @@ export class EmailService {
       `<div style="display:inline-block;background:#f0fdf4;border-radius:100px;padding:6px 16px;margin-bottom:20px;">
          <span style="font-size:13px;font-weight:600;color:#16a34a;">✓ Application approved</span>
        </div>
-       <h1 style="margin:0 0 8px;font-size:26px;font-weight:700;color:#1d1d1f;letter-spacing:-0.5px;">You're in, ${name}.</h1>
+       <h1 style="margin:0 0 8px;font-size:26px;font-weight:700;color:#1d1d1f;letter-spacing:-0.5px;">You're in, ${escapeHtml(name)}.</h1>
        <p style="margin:0 0 24px;font-size:16px;color:#86868b;line-height:1.6;">
          Your organisation has been approved. No password to set, no email link to click — just head back to KINDLY, enter the same email you applied with, and we'll send you a one-time code to sign in.
        </p>
@@ -293,27 +306,27 @@ export class EmailService {
     eventLocation: string,
   ): string {
     return this.base(
-      `You're in — ${eventTitle}`,
+      `You're in — ${escapeHtml(eventTitle)}`,
       `<div style="display:inline-block;background:#f0fdf4;border-radius:100px;padding:6px 16px;margin-bottom:20px;">
          <span style="font-size:13px;font-weight:600;color:#16a34a;">✓ Registration confirmed</span>
        </div>
-       <h1 style="margin:0 0 8px;font-size:24px;font-weight:700;color:#1d1d1f;letter-spacing:-0.5px;">You're in, ${name}!</h1>
+       <h1 style="margin:0 0 8px;font-size:24px;font-weight:700;color:#1d1d1f;letter-spacing:-0.5px;">You're in, ${escapeHtml(name)}!</h1>
        <p style="margin:0 0 24px;font-size:15px;color:#86868b;line-height:1.6;">
          Your spot is reserved. See you there!
        </p>
        <div style="border:1px solid #e8e8ed;border-radius:12px;overflow:hidden;margin-bottom:28px;">
          <div style="background:#80242a;padding:16px 20px;">
-           <p style="margin:0;font-size:16px;font-weight:700;color:#ffffff;line-height:1.4;">${eventTitle}</p>
+           <p style="margin:0;font-size:16px;font-weight:700;color:#ffffff;line-height:1.4;">${escapeHtml(eventTitle)}</p>
          </div>
          <div style="padding:16px 20px;background:#ffffff;">
            <table cellpadding="0" cellspacing="0">
              <tr>
                <td style="padding:4px 0;font-size:13px;color:#86868b;padding-right:16px;white-space:nowrap;">Date</td>
-               <td style="padding:4px 0;font-size:13px;font-weight:600;color:#1d1d1f;">${eventDate}</td>
+               <td style="padding:4px 0;font-size:13px;font-weight:600;color:#1d1d1f;">${escapeHtml(eventDate)}</td>
              </tr>
              <tr>
                <td style="padding:4px 0;font-size:13px;color:#86868b;padding-right:16px;white-space:nowrap;">Location</td>
-               <td style="padding:4px 0;font-size:13px;font-weight:600;color:#1d1d1f;">${eventLocation}</td>
+               <td style="padding:4px 0;font-size:13px;font-weight:600;color:#1d1d1f;">${escapeHtml(eventLocation)}</td>
              </tr>
            </table>
          </div>
@@ -332,27 +345,27 @@ export class EmailService {
     eventLocation: string,
   ): string {
     return this.base(
-      `${eventTitle} — Cancelled`,
+      `${escapeHtml(eventTitle)} — Cancelled`,
       `<div style="display:inline-block;background:#fff1f2;border-radius:100px;padding:6px 16px;margin-bottom:20px;">
          <span style="font-size:13px;font-weight:600;color:#e11d48;">⚠ Event cancelled</span>
        </div>
-       <h1 style="margin:0 0 8px;font-size:24px;font-weight:700;color:#1d1d1f;letter-spacing:-0.5px;">We're sorry, ${name}.</h1>
+       <h1 style="margin:0 0 8px;font-size:24px;font-weight:700;color:#1d1d1f;letter-spacing:-0.5px;">We're sorry, ${escapeHtml(name)}.</h1>
        <p style="margin:0 0 24px;font-size:15px;color:#86868b;line-height:1.6;">
          The event you were registered for has been cancelled by the organiser. No action is needed on your part — your spot has been released.
        </p>
        <div style="border:1px solid #fecdd3;border-radius:12px;overflow:hidden;margin-bottom:28px;">
          <div style="background:#e11d48;padding:16px 20px;">
-           <p style="margin:0;font-size:16px;font-weight:700;color:#ffffff;line-height:1.4;">${eventTitle}</p>
+           <p style="margin:0;font-size:16px;font-weight:700;color:#ffffff;line-height:1.4;">${escapeHtml(eventTitle)}</p>
          </div>
          <div style="padding:16px 20px;background:#fff1f2;">
            <table cellpadding="0" cellspacing="0">
              <tr>
                <td style="padding:4px 0;font-size:13px;color:#86868b;padding-right:16px;white-space:nowrap;">Was scheduled</td>
-               <td style="padding:4px 0;font-size:13px;font-weight:600;color:#1d1d1f;">${eventDate}</td>
+               <td style="padding:4px 0;font-size:13px;font-weight:600;color:#1d1d1f;">${escapeHtml(eventDate)}</td>
              </tr>
              <tr>
                <td style="padding:4px 0;font-size:13px;color:#86868b;padding-right:16px;white-space:nowrap;">Location</td>
-               <td style="padding:4px 0;font-size:13px;font-weight:600;color:#1d1d1f;">${eventLocation}</td>
+               <td style="padding:4px 0;font-size:13px;font-weight:600;color:#1d1d1f;">${escapeHtml(eventLocation)}</td>
              </tr>
            </table>
          </div>
@@ -374,27 +387,27 @@ export class EmailService {
     eventLocation: string,
   ): string {
     return this.base(
-      `Reminder — ${eventTitle} is tomorrow`,
+      `Reminder — ${escapeHtml(eventTitle)} is tomorrow`,
       `<div style="display:inline-block;background:#fef3c7;border-radius:100px;padding:6px 16px;margin-bottom:20px;">
          <span style="font-size:13px;font-weight:600;color:#d97706;">⏰ Tomorrow</span>
        </div>
-       <h1 style="margin:0 0 8px;font-size:24px;font-weight:700;color:#1d1d1f;letter-spacing:-0.5px;">See you tomorrow, ${name}!</h1>
+       <h1 style="margin:0 0 8px;font-size:24px;font-weight:700;color:#1d1d1f;letter-spacing:-0.5px;">See you tomorrow, ${escapeHtml(name)}!</h1>
        <p style="margin:0 0 24px;font-size:15px;color:#86868b;line-height:1.6;">
          This is a friendly reminder that you're volunteering tomorrow. Make sure you're ready!
        </p>
        <div style="border:1px solid #e8e8ed;border-radius:12px;overflow:hidden;margin-bottom:28px;">
          <div style="background:#d97706;padding:16px 20px;">
-           <p style="margin:0;font-size:16px;font-weight:700;color:#ffffff;line-height:1.4;">${eventTitle}</p>
+           <p style="margin:0;font-size:16px;font-weight:700;color:#ffffff;line-height:1.4;">${escapeHtml(eventTitle)}</p>
          </div>
          <div style="padding:16px 20px;background:#ffffff;">
            <table cellpadding="0" cellspacing="0">
              <tr>
                <td style="padding:4px 0;font-size:13px;color:#86868b;padding-right:16px;white-space:nowrap;">Date</td>
-               <td style="padding:4px 0;font-size:13px;font-weight:600;color:#1d1d1f;">${eventDate}</td>
+               <td style="padding:4px 0;font-size:13px;font-weight:600;color:#1d1d1f;">${escapeHtml(eventDate)}</td>
              </tr>
              <tr>
                <td style="padding:4px 0;font-size:13px;color:#86868b;padding-right:16px;white-space:nowrap;">Location</td>
-               <td style="padding:4px 0;font-size:13px;font-weight:600;color:#1d1d1f;">${eventLocation}</td>
+               <td style="padding:4px 0;font-size:13px;font-weight:600;color:#1d1d1f;">${escapeHtml(eventLocation)}</td>
              </tr>
            </table>
          </div>
@@ -420,17 +433,17 @@ export class EmailService {
     hours: number,
   ): string {
     return this.base(
-      `Impact logged — ${eventTitle}`,
+      `Impact logged — ${escapeHtml(eventTitle)}`,
       `<div style="display:inline-block;background:#f0fdf4;border-radius:100px;padding:6px 16px;margin-bottom:20px;">
          <span style="font-size:13px;font-weight:600;color:#16a34a;">✓ Hours verified</span>
        </div>
-       <h1 style="margin:0 0 8px;font-size:24px;font-weight:700;color:#1d1d1f;letter-spacing:-0.5px;">Great work, ${name}!</h1>
+       <h1 style="margin:0 0 8px;font-size:24px;font-weight:700;color:#1d1d1f;letter-spacing:-0.5px;">Great work, ${escapeHtml(name)}!</h1>
        <p style="margin:0 0 24px;font-size:15px;color:#86868b;line-height:1.6;">
          Your attendance has been confirmed and your hours are now part of your official KINDLY impact record.
        </p>
        <div style="border:1px solid #bbf7d0;border-radius:12px;overflow:hidden;margin-bottom:28px;">
          <div style="background:#16a34a;padding:16px 20px;">
-           <p style="margin:0;font-size:16px;font-weight:700;color:#ffffff;line-height:1.4;">${eventTitle}</p>
+           <p style="margin:0;font-size:16px;font-weight:700;color:#ffffff;line-height:1.4;">${escapeHtml(eventTitle)}</p>
          </div>
          <div style="padding:20px;background:#f0fdf4;text-align:center;">
            <p style="margin:0 0 4px;font-size:40px;font-weight:700;color:#16a34a;line-height:1;">${hours}</p>

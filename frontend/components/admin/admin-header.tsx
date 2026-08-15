@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { href: "/admin/approve-events", label: "Pending Events" },
   { href: "/admin/approve-orgs", label: "Approvals" },
   { href: "/admin/organizations", label: "Orgs" },
+  { href: "/admin/volunteers", label: "Volunteers" },
   { href: "/admin/events", label: "Events" },
   { href: "/admin/create-event", label: "Create Event" },
   { href: "/admin/payments", label: "Payments" },

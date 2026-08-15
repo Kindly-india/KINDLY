@@ -108,6 +108,36 @@ export class EventController {
     return this.eventService.adminGetEventRegistrations(id);
   }
 
+  @Patch('admin/:id/registrations/:registrationId/check-in')
+  @UseGuards(AdminGuard)
+  async adminCheckInVolunteer(
+    @Request() req: any,
+    @Param('id') eventId: string,
+    @Param('registrationId') registrationId: string,
+  ) {
+    return this.eventService.adminCheckInVolunteer(
+      eventId,
+      registrationId,
+      req.user.id,
+      req.user.email ?? null,
+    );
+  }
+
+  @Patch('admin/:id/registrations/:registrationId/undo-check-in')
+  @UseGuards(AdminGuard)
+  async adminUndoCheckIn(
+    @Request() req: any,
+    @Param('id') eventId: string,
+    @Param('registrationId') registrationId: string,
+  ) {
+    return this.eventService.adminUndoCheckIn(
+      eventId,
+      registrationId,
+      req.user.id,
+      req.user.email ?? null,
+    );
+  }
+
   // ==========================================
   // LOCATION SEARCH (event creation/editing — org only)
   // ==========================================

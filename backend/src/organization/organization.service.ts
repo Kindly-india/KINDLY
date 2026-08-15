@@ -314,6 +314,159 @@ export class OrganizationService {
     };
   }
 
+  // Admin detail view — always returns the private/KYC field set regardless
+  // of viewer (the only existing detail endpoint, getPublicProfile below,
+  // only grants private fields to the org's own owner). Includes suspension
+  // state, which no other endpoint exposes.
+  async adminGetOrganization(orgId: string) {
+    const client = this.supabase.getClient();
+
+    const { data, error } = await client
+      .from('organization_profiles')
+      .select(PRIVATE_ORG_FIELDS + ', suspended_at, suspended_reason')
+      .eq('id', orgId)
+      .single();
+
+    if (error || !data) throw new NotFoundException('Organization not found');
+
+    const profile = data as unknown as OrgProfilePrivate & {
+      suspended_at: string | null;
+      suspended_reason: string | null;
+    };
+
+    const [registrationCertificateUrl, panCardUrl, proofDocumentUrl] =
+      await Promise.all([
+        this.signOrgDoc(client, profile.registration_certificate_url),
+        this.signOrgDoc(client, profile.pan_card_url),
+        this.signOrgDoc(client, profile.proof_document_url),
+      ]);
+
+    return {
+      organization: {
+        ...profile,
+        registration_certificate_url: registrationCertificateUrl,
+        pan_card_url: panCardUrl,
+        proof_document_url: proofDocumentUrl,
+      },
+    };
+  }
+
+  // Permanent delete (P1-16/P2-20) — restricted to superadmin via
+  // SuperAdminGuard at the route. FK investigation (2026-08-12, live
+  // production schema) confirmed organization_profiles -> events -> {
+  // certificates, event_registrations, event_payments, posts, ... } all
+  // CASCADE at the DB level, unconditionally, the moment the org row is
+  // deleted — no application-level ordering can prevent that. So instead of
+  // trying to out-maneuver the cascade, this blocks the delete outright if
+  // the org has anything a cascade would be unsafe to destroy: any
+  // certificate ever issued for one of its events (a volunteer's earned,
+  // real credential) or any payment record (real money). Only orgs with no
+  // such history can be hard-deleted; anything else must be suspended
+  // instead (reversible, doesn't touch volunteer/financial records).
+  async hardDeleteOrganization(
+    orgId: string,
+    confirmName: string,
+    actorId: string,
+    actorEmail: string | null,
+  ) {
+    const client = this.supabase.getClient();
+
+    const { data: org, error: fetchError } = await client
+      .from('organization_profiles')
+      .select(
+        'id, user_id, name, logo_url, cover_url, signature_url, registration_certificate_url, pan_card_url, proof_document_url',
+      )
+      .eq('id', orgId)
+      .single();
+
+    if (fetchError || !org) throw new NotFoundException('Organization not found');
+
+    if (confirmName !== org.name) {
+      throw new BadRequestException(
+        'Typed name does not match the organization name',
+      );
+    }
+
+    const { data: events } = await client
+      .from('events')
+      .select('id, cover_image_url, gallery_images')
+      .eq('organization_id', orgId);
+
+    const eventIds = (events ?? []).map((e) => e.id);
+
+    if (eventIds.length > 0) {
+      const [{ count: certCount }, { count: paymentCount }] =
+        await Promise.all([
+          client
+            .from('certificates')
+            .select('id', { count: 'exact', head: true })
+            .in('event_id', eventIds),
+          client
+            .from('event_payments')
+            .select('id', { count: 'exact', head: true })
+            .in('event_id', eventIds),
+        ]);
+
+      if ((certCount ?? 0) > 0 || (paymentCount ?? 0) > 0) {
+        throw new BadRequestException(
+          `This organization has ${certCount ?? 0} certificate(s) issued and ${paymentCount ?? 0} payment record(s) tied to its events — permanently deleting it would destroy those volunteers' real records. Suspend the organization instead.`,
+        );
+      }
+    }
+
+    // Storage cleanup — FK CASCADE only removes DB rows, never Storage
+    // objects, so this must happen before/alongside the row delete.
+    const { data: galleryPhotos } = await client
+      .from('org_gallery')
+      .select('image_url')
+      .eq('org_id', orgId);
+
+    await Promise.all([
+      removeFromStorage(client, 'profile-images', [
+        org.logo_url,
+        org.cover_url,
+      ]),
+      removeFromStorage(client, 'org-signatures', [org.signature_url]),
+      removeFromStorage(client, OrganizationService.ORG_DOCS_BUCKET, [
+        org.registration_certificate_url,
+        org.pan_card_url,
+        org.proof_document_url,
+      ]),
+      removeFromStorage(
+        client,
+        'gallery_images',
+        (galleryPhotos ?? []).map((p) => p.image_url),
+      ),
+      removeFromStorage(client, 'event-images', [
+        ...(events ?? []).map((e) => e.cover_image_url),
+        ...(events ?? []).flatMap((e) => e.gallery_images ?? []),
+      ]),
+    ]);
+
+    // The row delete cascades everything else (events, registrations,
+    // bills, broadcasts, gallery rows, reviews, endorsements) at the DB
+    // level — safe now that the certificate/payment check above passed.
+    const { error: deleteError } = await client
+      .from('organization_profiles')
+      .delete()
+      .eq('id', orgId);
+
+    if (deleteError) throw new BadRequestException(deleteError.message);
+
+    await client.auth.admin.deleteUser(org.user_id).catch(() => {});
+
+    await this.audit.log(
+      actorId,
+      actorEmail,
+      'organization.deleted',
+      'organization',
+      orgId,
+      { name: org.name, eventCount: eventIds.length },
+    );
+
+    return { message: 'Organization permanently deleted' };
+  }
+
   async getPublicProfile(orgId: string, viewerId?: string) {
     const client = this.supabase.getClient();
 

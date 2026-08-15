@@ -7,10 +7,24 @@ export const runtime = 'edge'
 const W = 1200
 const H = 630
 
+// Only rasterize images from our own Supabase project — prevents SSRF abuse
+// via an attacker-controlled `img` param (same pattern as /api/og-image).
+const ALLOWED_HOSTNAME = 'ktdhcxgfbtbrszayrwuj.supabase.co'
+
+function safeImageUrl(raw: string): string {
+  if (!raw) return ''
+  try {
+    const parsed = new URL(raw)
+    return parsed.hostname === ALLOWED_HOSTNAME ? raw : ''
+  } catch {
+    return ''
+  }
+}
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const title = searchParams.get('title') || 'KINDLY Event'
-  const img   = searchParams.get('img')   || ''
+  const img   = safeImageUrl(searchParams.get('img') || '')
   const org   = searchParams.get('org')   || ''
   const date  = searchParams.get('date')  || ''
   const loc   = searchParams.get('loc')   || ''
