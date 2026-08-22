@@ -334,6 +334,28 @@ export interface EventCertificate {
 
 export const api = {
   // Organization signup
+  // Uploads a KYC document during org signup, before the applicant has an
+  // account — routes through the backend (service-role write) instead of
+  // Storage directly, so the returned path is one the backend can verify at
+  // signup time. Returns the storage path, not a URL (bucket is private).
+  uploadOrgDocument: async (file: File, orgType: string): Promise<{ path: string }> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('orgType', orgType);
+
+    const response = await fetch(`${API_URL}/auth/signup/organization/documents`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || 'Upload failed');
+    }
+
+    return response.json();
+  },
+
   signupOrganization: async (data: OrganizationSignupData) => {
     const response = await fetch(`${API_URL}/auth/signup/organization`, {
       method: 'POST',

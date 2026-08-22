@@ -25,7 +25,6 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { api } from "@/lib/api"
-import { supabase } from "@/lib/supabase"
 import { toast } from "sonner"
 
 type OrgType = "registered" | "supported" | "informal" | "individual" | null
@@ -171,19 +170,14 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
     setUploading(true);
 
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-      const filePath = `${selectedOrg}/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('organization-documents')
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
+      // Uploads through the backend (not Storage directly) — the backend
+      // generates the path and validates the file server-side, and verifies
+      // this exact path again at signup submission time.
+      const { path } = await api.uploadOrgDocument(file, selectedOrg as string);
 
       // Store the object PATH, not a public URL — the bucket is private and the
       // backend hands admins a signed URL from this path during review.
-      setUploadedFiles(prev => ({ ...prev, [fileType]: filePath }));
+      setUploadedFiles(prev => ({ ...prev, [fileType]: path }));
       toast.success('File uploaded');
     } catch (error: any) {
       toast.error(error.message || 'Upload failed');

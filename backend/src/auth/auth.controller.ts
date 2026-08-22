@@ -5,17 +5,35 @@ import {
   ValidationPipe,
   BadRequestException,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
   Request,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthService } from './auth.service';
 import { OrganizationSignupDto } from './dto/organization-signup.dto';
 import { UpdatePasswordDto } from './dto/update-password.dto';
+import { UploadOrgDocumentDto } from './dto/upload-org-document.dto';
 import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
+
+  // Unauthenticated by necessity — the org signup wizard uploads KYC
+  // documents before the applicant's account exists (see AuthService.
+  // uploadOrgDocument). Throttled the same as the signup endpoint itself
+  // since it's reachable by anyone.
+  @Throttle({ short: { limit: 10, ttl: 3_600_000 } })
+  @Post('signup/organization/documents')
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 5 * 1024 * 1024 } }))
+  async uploadOrgDocument(
+    @UploadedFile() file: Express.Multer.File,
+    @Body(ValidationPipe) dto: UploadOrgDocumentDto,
+  ) {
+    return this.authService.uploadOrgDocument(file, dto.orgType);
+  }
 
   @Throttle({ short: { limit: 10, ttl: 3_600_000 } })
   @Post('signup/organization')

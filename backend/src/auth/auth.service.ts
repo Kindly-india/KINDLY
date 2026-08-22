@@ -3,9 +3,11 @@ import {
   ConflictException,
   BadRequestException,
 } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import { SupabaseService } from '../supabase/supabase.service';
 import { EmailService } from '../email/email.service';
 import { OrganizationSignupDto } from './dto/organization-signup.dto';
+import { validateKycDocumentFile } from '../common/file-validation.util';
 
 @Injectable()
 export class AuthService {
@@ -14,8 +16,72 @@ export class AuthService {
     private emailService: EmailService,
   ) {}
 
+  // Uploads a KYC document (registration cert / PAN / proof doc) for the org
+  // signup wizard, before the applicant's account exists — so this runs on
+  // the service-role client rather than requiring a session. The path is
+  // generated here (org type + random UUID + verified extension) and never
+  // taken from the client. `signupOrganization` below re-verifies the
+  // submitted path was actually produced by this method before trusting it,
+  // so the two together close both the upload-side hole (anyone could write
+  // arbitrary files) and the DTO-trust hole (a client could claim any path
+  // string, including another org's real document — see PROJECT_REVIEW.md's
+  // P0-8) rather than just the first one.
+  async uploadOrgDocument(file: Express.Multer.File, orgType: string) {
+    const ext = validateKycDocumentFile(file);
+    const path = `${orgType}/${randomUUID()}.${ext}`;
+
+    const { error } = await this.supabaseService
+      .getClient()
+      .storage.from('organization-documents')
+      .upload(path, file.buffer, { contentType: file.mimetype });
+
+    if (error) throw new BadRequestException(`Upload failed: ${error.message}`);
+
+    return { path };
+  }
+
+  // Confirms a client-submitted document path is one this service actually
+  // generated and wrote (see uploadOrgDocument above) — checked by shape
+  // (org type + UUID + known extension) and by the object genuinely existing
+  // in storage, not just trusted as a string. Without this, a signup request
+  // built by hand (not through the wizard) could name any path at all.
+  private async verifyUploadedDocumentPath(
+    orgType: string,
+    path: string,
+  ): Promise<boolean> {
+    const pattern = new RegExp(
+      `^${orgType}/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\.(pdf|jpg|png)$`,
+      'i',
+    );
+    if (!pattern.test(path)) return false;
+
+    const fileName = path.slice(orgType.length + 1);
+    const { data, error } = await this.supabaseService
+      .getClient()
+      .storage.from('organization-documents')
+      .list(orgType, { search: fileName });
+
+    return !error && !!data?.some((f) => f.name === fileName);
+  }
+
   async signupOrganization(dto: OrganizationSignupDto) {
     const supabase = this.supabaseService.getClient();
+
+    // 0. Any submitted KYC document path must be one this service actually
+    // issued and wrote via uploadOrgDocument — rejects a hand-crafted signup
+    // request naming an arbitrary or another org's real path before any
+    // write happens (fixes P0-8).
+    for (const [field, path] of [
+      ['registrationCertificateUrl', dto.registrationCertificateUrl],
+      ['panCardUrl', dto.panCardUrl],
+      ['proofDocumentUrl', dto.proofDocumentUrl],
+    ] as const) {
+      if (path && !(await this.verifyUploadedDocumentPath(dto.orgType, path))) {
+        throw new BadRequestException(
+          `${field} does not match an uploaded document`,
+        );
+      }
+    }
 
     // 1. Create the auth user via the admin API — no password. Organizations
     // are password-less: they apply here, an admin approves the application
