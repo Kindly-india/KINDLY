@@ -253,41 +253,51 @@ export class AuthService {
   async updatePassword(password: string, hash: string) {
     const supabase = this.supabaseService.getClient();
 
-    // 1. Extract the secure tokens from the frontend URL hash
-    // The hash looks like #access_token=123&refresh_token=456
+    // Extract the access token from the frontend URL hash
+    // (looks like #access_token=123&refresh_token=456&type=recovery)
     const params = new URLSearchParams(hash.replace('#', ''));
     const accessToken = params.get('access_token');
-    const refreshToken = params.get('refresh_token');
 
-    if (!accessToken || !refreshToken) {
+    if (!accessToken) {
       throw new BadRequestException(
         'Invalid or expired reset link. Please request a new one.',
       );
     }
 
-    // 2. Temporarily set the session using those tokens
-    const { error: sessionError } = await supabase.auth.setSession({
-      access_token: accessToken,
-      refresh_token: refreshToken,
-    });
+    // Verify the token identifies a real user without ever loading a session
+    // onto the shared singleton client (see P0-7 in PROJECT_REVIEW.md — the
+    // old setSession()/updateUser()/signOut() sequence could act on a
+    // *different* concurrent request's session, since the client is shared
+    // process-wide and each call independently locks/unlocks). getUser() is
+    // a stateless network check — the same pattern JwtAuthGuard already uses
+    // for every authenticated request.
+    const {
+      data: { user },
+      error: verifyError,
+    } = await supabase.auth.getUser(accessToken);
 
-    if (sessionError) {
+    if (verifyError || !user) {
       throw new BadRequestException(
         'Session expired. Please request a new reset link.',
       );
     }
 
-    // 3. Update the user's password securely
-    const { error: updateError } = await supabase.auth.updateUser({
-      password: password,
-    });
+    // Both admin calls below are bearer-authenticated against Supabase
+    // directly, not tied to any client-side session, so nothing here can
+    // race with a concurrent request the way the old sequence could.
+    const { error: updateError } = await supabase.auth.admin.updateUserById(
+      user.id,
+      { password },
+    );
 
     if (updateError) {
       throw new BadRequestException(updateError.message);
     }
 
-    // 4. Force a sign out so they have to log in normally with the new password
-    await supabase.auth.signOut();
+    // Revoke every session for this user (not just this token) so the reset
+    // link can't be reused and any existing login doesn't silently keep
+    // working on what might be a compromised account.
+    await supabase.auth.admin.signOut(accessToken, 'global');
 
     return { message: 'Password updated successfully' };
   }
