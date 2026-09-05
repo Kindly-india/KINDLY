@@ -20,9 +20,10 @@ import {
     Navigation,
     Search,
     Loader2,
-    IndianRupee
+    IndianRupee,
+    AlertCircle
 } from "lucide-react"
-import { cn, coverObjectPosition } from "@/lib/utils"
+import { cn, coverObjectPosition, MAX_UPLOAD_BYTES, MAX_UPLOAD_MB } from "@/lib/utils"
 import { api } from "@/lib/api"
 import { toast } from "sonner"
 import { ScrollReveal } from "@/components/ui/scroll-reveal"
@@ -47,6 +48,23 @@ const categories = [
     { id: "mental_wellness", name: "Mental Health & Wellness", color: "bg-indigo-500", icon: "🧠" },
     { id: "donation_drives", name: "Donations & Drives", color: "bg-yellow-500", icon: "🎁" },
 ]
+
+const STEP_LABELS: Record<number, string> = { 1: "Details", 2: "Schedule", 3: "Logistics" }
+
+/** Red asterisk marking a field the form won't submit without. */
+function Req() {
+    return <span className="text-[#ff6b6b] ml-0.5" aria-hidden="true">*</span>
+}
+
+function FieldError({ msg }: { msg?: string }) {
+    if (!msg) return null
+    return (
+        <p role="alert" className="flex items-start gap-1.5 text-xs text-[#ff6b6b] mt-1.5">
+            <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-px" />
+            {msg}
+        </p>
+    )
+}
 
 interface CreateEventPageProps {
     // When set, this form is being used by an admin creating an event on
@@ -97,6 +115,85 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
         ticketPriceRupees: undefined as number | undefined,
     });
 
+    const [errors, setErrors] = useState<Record<string, string>>({});
+
+    // Every field edit clears that field's error, so a message never lingers
+    // after the user has already fixed what it was complaining about.
+    const update = <K extends keyof typeof formData>(field: K, value: (typeof formData)[K]) => {
+        setFormData(prev => ({ ...prev, [field]: value }))
+        setErrors(prev => (prev[field] ? { ...prev, [field]: '' } : prev))
+    }
+
+    const validateStep = (s: number): Record<string, string> => {
+        const e: Record<string, string> = {}
+
+        if (s === 1) {
+            if (!formData.title.trim()) e.title = 'Give your event a name.'
+            if (!formData.category) e.category = 'Pick the category that fits best.'
+            if (!formData.description.trim()) e.description = 'Tell volunteers why this event matters.'
+        }
+
+        if (s === 2) {
+            if (!formData.eventDate) e.eventDate = 'Pick the date this event happens.'
+            if (!formData.startTime) e.startTime = 'Set a start time.'
+            if (!formData.endTime) e.endTime = 'Set an end time.'
+            if (formData.eventDate && formData.startTime && formData.endTime) {
+                const start = new Date(`${formData.eventDate}T${formData.startTime}`)
+                const end = new Date(`${formData.eventDate}T${formData.endTime}`)
+                if (end <= start) e.endTime = 'End time must be after the start time.'
+            }
+            if (!formData.location.trim()) e.location = 'Add the venue or address volunteers should go to.'
+        }
+
+        if (s === 3) {
+            if (!formData.pointOfContact.trim()) {
+                e.pointOfContact = 'Volunteers need a name to ask for when they arrive.'
+            }
+            if (limitVolunteers && (!formData.totalSlots || formData.totalSlots < 1)) {
+                e.totalSlots = 'Enter how many volunteers you can take, or turn the limit off.'
+            }
+            if (isPaidEvent && (!formData.ticketPriceRupees || formData.ticketPriceRupees < 1)) {
+                e.ticketPriceRupees = 'Enter a price of ₹1 or more, or turn Paid Event off.'
+            }
+            if (!formData.registrationDeadline) {
+                e.registrationDeadline = 'Set the last moment volunteers can sign up.'
+            } else {
+                const deadline = new Date(formData.registrationDeadline)
+                if (deadline < new Date()) {
+                    e.registrationDeadline = 'This deadline is already in the past.'
+                } else if (formData.eventDate && formData.startTime) {
+                    const start = new Date(`${formData.eventDate}T${formData.startTime}`)
+                    if (deadline > new Date(start.getTime() - 60 * 60 * 1000)) {
+                        e.registrationDeadline = 'Must be at least 1 hour before the event starts.'
+                    }
+                }
+            }
+        }
+
+        return e
+    }
+
+    // Moves the user to the thing that's wrong instead of just naming it.
+    const revealField = (field: string) => {
+        requestAnimationFrame(() => {
+            const container = document.querySelector<HTMLElement>(`[data-field="${field}"]`)
+            if (!container) return
+            container.scrollIntoView({ block: 'center', behavior: 'smooth' })
+            container.querySelector<HTMLElement>('input, textarea, button')?.focus({ preventScroll: true })
+        })
+    }
+
+    const handleContinue = () => {
+        const stepErrors = validateStep(step)
+        if (Object.keys(stepErrors).length > 0) {
+            setErrors(stepErrors)
+            revealField(Object.keys(stepErrors)[0])
+            return
+        }
+        setErrors({})
+        setStep(step + 1)
+    }
+
     const handleGetCurrentLocation = () => {
         if (!navigator.geolocation) {
             toast.error("Geolocation is not supported by your browser")
@@ -110,6 +207,7 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
                     const { label } = await api.reverseGeocodeLocation(latitude, longitude)
                     const address = label || `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`
                     setFormData(prev => ({ ...prev, location: address, latitude, longitude }))
+                    setErrors(prev => (prev.location ? { ...prev, location: '' } : prev))
                     mapCenterRef.current = { lng: longitude, lat: latitude }
                 } catch {
                     setFormData(prev => ({ ...prev, location: `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`, latitude, longitude }))
@@ -125,7 +223,7 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
     }
 
     const handleSearchChange = (value: string) => {
-        setFormData(prev => ({ ...prev, location: value }))
+        update('location', value)
         clearTimeout(searchDebounceRef.current)
         if (value.length < 2) {
             setSuggestions([])
@@ -151,6 +249,7 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
     const handleSelectSuggestion = (suggestion: { label: string; lat: number; lng: number }) => {
         const { label, lat, lng } = suggestion
         setFormData(prev => ({ ...prev, location: label, latitude: lat, longitude: lng }))
+        setErrors(prev => (prev.location ? { ...prev, location: '' } : prev))
         mapCenterRef.current = { lng, lat }
         setSuggestions([])
         setShowSuggestions(false)
@@ -190,60 +289,24 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
 
     const handlePublish = async () => {
         if (isSubmitting) return;
+
+        // Re-check every step, not just the one on screen — a field can be
+        // emptied after it was validated. Land the user on the earliest step
+        // that's wrong, with the offending field focused.
+        for (const s of [1, 2, 3]) {
+            const stepErrors = validateStep(s);
+            if (Object.keys(stepErrors).length > 0) {
+                setStep(s);
+                setErrors(stepErrors);
+                toast.error(`Something needs fixing in ${STEP_LABELS[s]}`);
+                revealField(Object.keys(stepErrors)[0]);
+                return;
+            }
+        }
+
         try {
             setIsSubmitting(true);
-            // Validate required fields
-            if (!formData.title || !formData.description || !formData.category) {
-                alert('Please fill in all required fields in Step 1');
-                return;
-            }
-
-            if (!formData.eventDate || !formData.startTime || !formData.endTime || !formData.location) {
-                alert('Please complete schedule and location details in Step 2');
-                return;
-            }
-
-            // New validation for Contact
-            if (!formData.pointOfContact) {
-                alert('Please provide a Point of Contact in Step 3');
-                return;
-            }
-
-            if (limitVolunteers && (!formData.totalSlots || formData.totalSlots < 1)) {
-                alert('Please set a valid volunteer slot count, or turn off the limit');
-                return;
-            }
-
-            if (!formData.registrationDeadline) {
-                alert('Please set a registration deadline');
-                return;
-            }
-
-            if (isPaidEvent && (!formData.ticketPriceRupees || formData.ticketPriceRupees < 1)) {
-                alert('Please set a valid ticket price, or turn off "Paid Event"');
-                return;
-            }
-
-            const eventStartDateTime = new Date(`${formData.eventDate}T${formData.startTime}`);
-            const eventEndDateTime = new Date(`${formData.eventDate}T${formData.endTime}`);
-            const regDeadline = new Date(formData.registrationDeadline);
-            
-            if (eventEndDateTime <= eventStartDateTime) {
-                alert('Event end time must be after start time');
-                return;
-            }
-
-            if (regDeadline < new Date()) {
-                alert('Registration deadline cannot be in the past');
-                return;
-            }
-
-            const oneHourBeforeStart = new Date(eventStartDateTime.getTime() - 60 * 60 * 1000);
-            
-            if (regDeadline > oneHourBeforeStart) {
-                alert('Registration deadline must be at least 1 hour before the event starts.');
-                return;
-            }
+            setErrors({});
 
             let coverUrl = coverImageUrl;
             if (coverImage) {
@@ -251,7 +314,7 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
                 try {
                     coverUrl = await api.uploadEventImage(coverImage);
                 } catch (error: any) {
-                    alert(error.message || 'Failed to upload image');
+                    toast.error(error.message || 'Failed to upload image');
                     setUploading(false);
                     return;
                 }
@@ -292,7 +355,7 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
 
             setShowSuccess(true);
         } catch (error: any) {
-            alert(error.message || (adminOrg ? 'Failed to create event' : 'Failed to submit event for approval'));
+            toast.error(error.message || (adminOrg ? 'Failed to create event' : 'Failed to submit event for approval'));
         } finally {
             setIsSubmitting(false);
         }
@@ -538,6 +601,9 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
             </div>
 
             <main className="relative max-w-5xl mx-auto px-4 py-6 md:py-10">
+              <p className="text-xs text-muted-foreground mb-5 md:mb-6">
+                Fields marked <Req /> are required.
+              </p>
               <div className="md:grid md:grid-cols-5 md:gap-8">
                 <div className="md:col-span-3">
                 {step === 1 && (
@@ -552,8 +618,8 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
                                     onChange={(e) => {
                                         const file = e.target.files?.[0];
                                         if (file) {
-                                            if (file.size > 2 * 1024 * 1024) { 
-                                                alert("File size exceeds 2MB limit. Please upload a smaller image.");
+                                            if (file.size > MAX_UPLOAD_BYTES) {
+                                                toast.error(`Image is too large. Please upload a file under ${MAX_UPLOAD_MB}MB.`);
                                                 return;
                                             }
                                             setCoverImage(file);
@@ -584,7 +650,7 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
                                             <p className="text-foreground font-medium">
                                                 {uploading ? 'Uploading...' : 'Click to upload cover image'}
                                             </p>
-                                            <p className="text-xs text-muted-foreground mt-1">16:9 ratio recommended • PNG, JPG up to 2MB</p>
+                                            <p className="text-xs text-muted-foreground mt-1">16:9 ratio recommended • PNG, JPG up to {MAX_UPLOAD_MB}MB</p>
                                         </>
                                     )}
                                 </label>
@@ -596,24 +662,34 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
                             )}
                         </div>
 
-                        <div>
-                            <label className="block text-sm font-semibold text-foreground mb-3">Event Title</label>
+                        <div data-field="title">
+                            <label className="block text-sm font-semibold text-foreground mb-3">Event Title<Req /></label>
                             <input
                                 type="text"
                                 placeholder="Give your event a catchy name"
                                 value={formData.title}
-                                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                                className="w-full h-12 md:h-14 px-4 bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl rounded-xl border border-black/5 dark:border-white/10 text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-[#ff6b6b] focus:border-transparent transition-all text-sm md:text-base"
+                                onChange={(e) => update('title', e.target.value)}
+                                aria-invalid={!!errors.title}
+                                className={cn(
+                                    "w-full h-12 md:h-14 px-4 bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl rounded-xl border text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-[#ff6b6b] focus:border-transparent transition-all text-sm md:text-base",
+                                    errors.title ? "border-[#ff6b6b]" : "border-black/5 dark:border-white/10"
+                                )}
                             />
+                            <FieldError msg={errors.title} />
                         </div>
 
-                        <div>
-                            <label className="block text-sm font-semibold text-foreground mb-3">Category</label>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        <div data-field="category">
+                            <label className="block text-sm font-semibold text-foreground mb-3">Category<Req /></label>
+                            <div className={cn(
+                                "grid grid-cols-2 sm:grid-cols-3 gap-3",
+                                errors.category && "ring-2 ring-[#ff6b6b] rounded-xl p-2 -m-2"
+                            )}>
                                 {categories.map((cat) => (
                                     <button
                                         key={cat.id}
-                                        onClick={() => setFormData({ ...formData, category: cat.id })}
+                                        type="button"
+                                        onClick={() => update('category', cat.id)}
+                                        aria-pressed={formData.category === cat.id}
                                         className={cn(
                                             "p-4 rounded-xl border-2 transition-all text-left hover:scale-[1.02] active:scale-[0.98]",
                                             formData.category === cat.id
@@ -626,6 +702,7 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
                                     </button>
                                 ))}
                             </div>
+                            <FieldError msg={errors.category} />
                         </div>
 
                         <div className="flex items-center justify-between p-4 bg-gradient-to-r from-amber-50 dark:from-amber-500/10 to-orange-50 dark:to-orange-500/10 rounded-xl border border-amber-200 dark:border-amber-500/20">
@@ -639,6 +716,10 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
                                 </div>
                             </div>
                             <button
+                                type="button"
+                                role="switch"
+                                aria-checked={isUrgent}
+                                aria-label="Mark as urgent"
                                 onClick={() => setIsUrgent(!isUrgent)}
                                 className={cn(
                                     "w-12 h-7 rounded-full transition-all relative",
@@ -654,16 +735,21 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
                             </button>
                         </div>
 
-                        <div>
-                            <label className="block text-sm font-semibold text-foreground mb-1">The Cause (Description)</label>
+                        <div data-field="description">
+                            <label className="block text-sm font-semibold text-foreground mb-1">The Cause (Description)<Req /></label>
                             <p className="text-xs text-muted-foreground mb-3">Why are you doing this? What impact will volunteers have?</p>
                             <textarea
                                 placeholder="Share the story behind this event..."
                                 rows={5}
                                 value={formData.description}
-                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                className="w-full px-4 py-3 bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl rounded-xl border border-black/5 dark:border-white/10 text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-[#ff6b6b] focus:border-transparent transition-all resize-none text-sm md:text-base"
+                                onChange={(e) => update('description', e.target.value)}
+                                aria-invalid={!!errors.description}
+                                className={cn(
+                                    "w-full px-4 py-3 bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl rounded-xl border text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-[#ff6b6b] focus:border-transparent transition-all resize-none text-sm md:text-base",
+                                    errors.description ? "border-[#ff6b6b]" : "border-black/5 dark:border-white/10"
+                                )}
                             />
+                            <FieldError msg={errors.description} />
                         </div>
                     </ScrollReveal>
                 )}
@@ -671,49 +757,64 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
                 {step === 2 && (
                     <ScrollReveal className="space-y-6 md:space-y-8">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
+                            <div data-field="eventDate">
                                 <label className="block text-sm font-semibold text-foreground mb-3">
                                     <Calendar className="w-4 h-4 inline mr-2 text-[#ff6b6b]" />
-                                    Event Date
+                                    Event Date<Req />
                                 </label>
                                 <input
                                     type="date"
                                     value={formData.eventDate}
-                                    onChange={(e) => setFormData({ ...formData, eventDate: e.target.value })}
-                                    className="w-full h-12 md:h-14 px-4 bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl rounded-xl border border-black/5 dark:border-white/10 text-foreground focus:ring-2 focus:ring-[#ff6b6b] focus:border-transparent transition-all text-sm md:text-base"
+                                    onChange={(e) => update('eventDate', e.target.value)}
+                                    aria-invalid={!!errors.eventDate}
+                                    className={cn(
+                                        "w-full h-12 md:h-14 px-4 bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl rounded-xl border text-foreground focus:ring-2 focus:ring-[#ff6b6b] focus:border-transparent transition-all text-sm md:text-base",
+                                        errors.eventDate ? "border-[#ff6b6b]" : "border-black/5 dark:border-white/10"
+                                    )}
                                 />
+                                <FieldError msg={errors.eventDate} />
                             </div>
-                            <div>
+                            <div data-field="startTime">
                                 <label className="block text-sm font-semibold text-foreground mb-3">
                                     <Clock className="w-4 h-4 inline mr-2 text-[#ff6b6b]" />
-                                    Start Time
+                                    Start Time<Req />
                                 </label>
                                 <input
                                     type="time"
                                     value={formData.startTime}
-                                    onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
-                                    className="w-full h-12 md:h-14 px-4 bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl rounded-xl border border-black/5 dark:border-white/10 text-foreground focus:ring-2 focus:ring-[#ff6b6b] focus:border-transparent transition-all text-sm md:text-base"
+                                    onChange={(e) => update('startTime', e.target.value)}
+                                    aria-invalid={!!errors.startTime}
+                                    className={cn(
+                                        "w-full h-12 md:h-14 px-4 bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl rounded-xl border text-foreground focus:ring-2 focus:ring-[#ff6b6b] focus:border-transparent transition-all text-sm md:text-base",
+                                        errors.startTime ? "border-[#ff6b6b]" : "border-black/5 dark:border-white/10"
+                                    )}
                                 />
+                                <FieldError msg={errors.startTime} />
                             </div>
                         </div>
 
-                        <div>
+                        <div data-field="endTime">
                             <label className="block text-sm font-semibold text-foreground mb-3">
                                 <Clock className="w-4 h-4 inline mr-2 text-[#ff6b6b]" />
-                                End Time
+                                End Time<Req />
                             </label>
                             <input
                                 type="time"
                                 value={formData.endTime}
-                                onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
-                                className="w-full h-12 md:h-14 px-4 bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl rounded-xl border border-black/5 dark:border-white/10 text-foreground focus:ring-2 focus:ring-[#ff6b6b] focus:border-transparent transition-all text-sm md:text-base"
+                                onChange={(e) => update('endTime', e.target.value)}
+                                aria-invalid={!!errors.endTime}
+                                className={cn(
+                                    "w-full h-12 md:h-14 px-4 bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl rounded-xl border text-foreground focus:ring-2 focus:ring-[#ff6b6b] focus:border-transparent transition-all text-sm md:text-base",
+                                    errors.endTime ? "border-[#ff6b6b]" : "border-black/5 dark:border-white/10"
+                                )}
                             />
+                            <FieldError msg={errors.endTime} />
                         </div>
 
-                        <div>
+                        <div data-field="location">
                             <label className="block text-sm font-semibold text-foreground mb-3">
                                 <MapPin className="w-4 h-4 inline mr-2 text-[#ff6b6b]" />
-                                Exact Location
+                                Exact Location<Req />
                             </label>
                             
                             <div ref={searchContainerRef} className="relative mb-3">
@@ -729,10 +830,15 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
                                             value={formData.location}
                                             onChange={(e) => handleSearchChange(e.target.value)}
                                             onKeyDown={handleSearchKeyDown}
-                                            className="w-full h-12 px-4 pl-10 bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl rounded-xl border border-black/5 dark:border-white/10 text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-[#ff6b6b] focus:border-transparent transition-all text-sm"
+                                            aria-invalid={!!errors.location}
+                                            className={cn(
+                                                "w-full h-12 px-4 pl-10 bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl rounded-xl border text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-[#ff6b6b] focus:border-transparent transition-all text-sm",
+                                                errors.location ? "border-[#ff6b6b]" : "border-black/5 dark:border-white/10"
+                                            )}
                                         />
                                     </div>
                                     <button
+                                        type="button"
                                         onClick={handleGetCurrentLocation}
                                         disabled={gettingLocation}
                                         className="h-12 px-4 bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl border border-black/5 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/10 rounded-xl flex items-center gap-2 transition-colors disabled:opacity-50"
@@ -776,6 +882,7 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
                                     mapCenterRef.current = { lng, lat }
                                 }}
                             />
+                            <FieldError msg={errors.location} />
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -788,7 +895,7 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
                                     type="text"
                                     placeholder="e.g., Comfortable clothes"
                                     value={formData.dressCode}
-                                    onChange={(e) => setFormData({ ...formData, dressCode: e.target.value })}
+                                    onChange={(e) => update('dressCode', e.target.value)}
                                     className="w-full h-12 md:h-14 px-4 bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl rounded-xl border border-black/5 dark:border-white/10 text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-[#ff6b6b] focus:border-transparent transition-all text-sm md:text-base"
                                 />
                             </div>
@@ -801,7 +908,7 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
                                     type="text"
                                     placeholder="e.g., Water bottle, gloves"
                                     value={formData.thingsToBring}
-                                    onChange={(e) => setFormData({ ...formData, thingsToBring: e.target.value })}
+                                    onChange={(e) => update('thingsToBring', e.target.value)}
                                     className="w-full h-12 md:h-14 px-4 bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl rounded-xl border border-black/5 dark:border-white/10 text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-[#ff6b6b] focus:border-transparent transition-all text-sm md:text-base"
                                 />
                             </div>
@@ -813,18 +920,23 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
                     <ScrollReveal className="space-y-6 md:space-y-8">
 
                         {/* --- THE NEW CLUB FIELDS YOU WERE MISSING! --- */}
-                        <div>
+                        <div data-field="pointOfContact">
                             <label className="block text-sm font-semibold text-foreground mb-1">
-                                Point of Contact
+                                Point of Contact<Req />
                             </label>
                             <p className="text-xs text-muted-foreground mb-3">Who should volunteers look for or call when they arrive?</p>
                             <input
                                 type="text"
                                 placeholder="e.g., Rahul Verma (9876543210)"
                                 value={formData.pointOfContact}
-                                onChange={(e) => setFormData({ ...formData, pointOfContact: e.target.value })}
-                                className="w-full h-12 md:h-14 px-4 bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl rounded-xl border border-black/5 dark:border-white/10 text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-[#ff6b6b] focus:border-transparent transition-all text-sm md:text-base"
+                                onChange={(e) => update('pointOfContact', e.target.value)}
+                                aria-invalid={!!errors.pointOfContact}
+                                className={cn(
+                                    "w-full h-12 md:h-14 px-4 bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl rounded-xl border text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-[#ff6b6b] focus:border-transparent transition-all text-sm md:text-base",
+                                    errors.pointOfContact ? "border-[#ff6b6b]" : "border-black/5 dark:border-white/10"
+                                )}
                             />
+                            <FieldError msg={errors.pointOfContact} />
                         </div>
 
                         <div>
@@ -837,7 +949,7 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
                                 type="text"
                                 placeholder="e.g., Grabbing breakfast at Roastery Coffee after!"
                                 value={formData.connectPlan}
-                                onChange={(e) => setFormData({ ...formData, connectPlan: e.target.value })}
+                                onChange={(e) => update('connectPlan', e.target.value)}
                                 className="w-full h-12 md:h-14 px-4 bg-emerald-50/50 dark:bg-emerald-500/[0.07] backdrop-blur-xl rounded-xl text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all text-sm md:text-base border border-emerald-200 dark:border-emerald-500/20"
                             />
                         </div>
@@ -845,7 +957,7 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
                         <hr className="border-black/5 dark:border-white/10 my-6" />
                         {/* --------------------------------------------- */}
 
-                        <div>
+                        <div data-field="totalSlots">
                             <div className="flex items-center justify-between mb-3">
                                 <label className="text-sm font-semibold text-foreground flex items-center gap-2">
                                     <Users className="w-4 h-4 text-[#ff6b6b]" />
@@ -860,17 +972,24 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
                                 </button>
                             </div>
                             {limitVolunteers ? (
-                                <input
-                                    type="number"
-                                    min="1"
-                                    placeholder="e.g. 50"
-                                    value={formData.totalSlots || ''}
-                                    onKeyDown={(e) => {
-                                        if (e.key === '-' || e.key === 'e' || e.key === '.') e.preventDefault();
-                                    }}
-                                    onChange={(e) => setFormData({ ...formData, totalSlots: parseInt(e.target.value) || 0 as any })}
-                                    className="w-full h-12 md:h-14 px-4 bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl rounded-xl border border-black/5 dark:border-white/10 text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-[#ff6b6b] focus:border-transparent transition-all text-sm md:text-base"
-                                />
+                                <>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        placeholder="e.g. 50"
+                                        value={formData.totalSlots || ''}
+                                        onKeyDown={(e) => {
+                                            if (e.key === '-' || e.key === 'e' || e.key === '.') e.preventDefault();
+                                        }}
+                                        onChange={(e) => update('totalSlots', parseInt(e.target.value) || 0)}
+                                        aria-invalid={!!errors.totalSlots}
+                                        className={cn(
+                                            "w-full h-12 md:h-14 px-4 bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl rounded-xl border text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-[#ff6b6b] focus:border-transparent transition-all text-sm md:text-base",
+                                            errors.totalSlots ? "border-[#ff6b6b]" : "border-black/5 dark:border-white/10"
+                                        )}
+                                    />
+                                    <FieldError msg={errors.totalSlots} />
+                                </>
                             ) : (
                                 <p className="text-sm text-muted-foreground bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl rounded-xl border border-black/5 dark:border-white/10 px-4 py-3">
                                     Unlimited — anyone can register
@@ -878,7 +997,7 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
                             )}
                         </div>
 
-                        <div>
+                        <div data-field="ticketPriceRupees">
                             <div className="flex items-center justify-between mb-3">
                                 <label className="text-sm font-semibold text-foreground flex items-center gap-2">
                                     <IndianRupee className="w-4 h-4 text-[#ff6b6b]" />
@@ -904,10 +1023,15 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
                                             onKeyDown={(e) => {
                                                 if (e.key === '-' || e.key === 'e') e.preventDefault();
                                             }}
-                                            onChange={(e) => setFormData({ ...formData, ticketPriceRupees: e.target.value ? parseFloat(e.target.value) : undefined })}
-                                            className="w-full h-12 md:h-14 pl-8 pr-4 bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl rounded-xl border border-black/5 dark:border-white/10 text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-[#ff6b6b] focus:border-transparent transition-all text-sm md:text-base"
+                                            onChange={(e) => update('ticketPriceRupees', e.target.value ? parseFloat(e.target.value) : undefined)}
+                                            aria-invalid={!!errors.ticketPriceRupees}
+                                            className={cn(
+                                                "w-full h-12 md:h-14 pl-8 pr-4 bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl rounded-xl border text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-[#ff6b6b] focus:border-transparent transition-all text-sm md:text-base",
+                                                errors.ticketPriceRupees ? "border-[#ff6b6b]" : "border-black/5 dark:border-white/10"
+                                            )}
                                         />
                                     </div>
+                                    <FieldError msg={errors.ticketPriceRupees} />
                                     <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
                                         You&apos;ll keep 92% of every ticket sold — KINDLY retains an 8% platform fee to cover payment processing and platform costs. Your payout is calculated automatically once the event is marked complete.
                                     </p>
@@ -919,15 +1043,16 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
                             )}
                         </div>
 
-                        <div>
+                        <div data-field="registrationDeadline">
                             <label className="block text-sm font-semibold text-foreground mb-3">
                                 <Clock className="w-4 h-4 inline mr-2 text-[#ff6b6b]" />
-                                Registration Deadline
+                                Registration Deadline<Req />
                             </label>
                             <input
                                 type="datetime-local"
                                 value={formData.registrationDeadline}
-                                onChange={(e) => setFormData({ ...formData, registrationDeadline: e.target.value })}
+                                onChange={(e) => update('registrationDeadline', e.target.value)}
+                                aria-invalid={!!errors.registrationDeadline}
                                 min={(() => {
                                     const d = new Date(Date.now() + 60 * 60 * 1000);
                                     const pad = (n: number) => String(n).padStart(2, '0');
@@ -939,8 +1064,12 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
                                     const pad = (n: number) => String(n).padStart(2, '0');
                                     return `${m.getFullYear()}-${pad(m.getMonth()+1)}-${pad(m.getDate())}T${pad(m.getHours())}:${pad(m.getMinutes())}`;
                                 })() : undefined}
-                                className="w-full h-12 md:h-14 px-4 bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl rounded-xl border border-black/5 dark:border-white/10 text-foreground focus:ring-2 focus:ring-[#ff6b6b] focus:border-transparent transition-all text-sm md:text-base"
+                                className={cn(
+                                    "w-full h-12 md:h-14 px-4 bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl rounded-xl border text-foreground focus:ring-2 focus:ring-[#ff6b6b] focus:border-transparent transition-all text-sm md:text-base",
+                                    errors.registrationDeadline ? "border-[#ff6b6b]" : "border-black/5 dark:border-white/10"
+                                )}
                             />
+                            <FieldError msg={errors.registrationDeadline} />
                             <p className="text-xs text-muted-foreground mt-2">
                                 Must be at least 1 hour before event start time
                             </p>
@@ -959,7 +1088,7 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
                                 onKeyDown={(e) => {
                                     if (e.key === '-' || e.key === 'e' || e.key === '.') e.preventDefault();
                                 }}
-                                onChange={(e) => setFormData({ ...formData, minimumAge: parseInt(e.target.value) || undefined })}
+                                onChange={(e) => update('minimumAge', parseInt(e.target.value) || undefined)}
                                 className="w-full h-12 md:h-14 px-4 bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl rounded-xl border border-black/5 dark:border-white/10 text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-[#ff6b6b] focus:border-transparent transition-all text-sm md:text-base"
                             />
                         </div>
@@ -984,6 +1113,7 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
                 <div className="max-w-5xl mx-auto px-4 py-4 flex gap-3">
                     {step > 1 && (
                         <button
+                            type="button"
                             onClick={() => setStep(step - 1)}
                             className="flex-1 md:flex-none md:px-8 h-12 md:h-14 bg-black/5 dark:bg-white/10 text-foreground rounded-xl font-semibold hover:bg-black/10 dark:hover:bg-white/15 transition-colors text-sm md:text-base"
                         >
@@ -991,8 +1121,9 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
                         </button>
                     )}
                     <button
+                        type="button"
                         onClick={() => {
-                            if (step < 3) setStep(step + 1)
+                            if (step < 3) handleContinue()
                             else handlePublish()
                         }}
                         disabled={isSubmitting}
