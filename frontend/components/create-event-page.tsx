@@ -62,6 +62,42 @@ function istDateTime(date: string, time: string): Date {
     return new Date(`${date}T${time}:00+05:30`)
 }
 
+/** A `datetime-local` value ("2026-09-10T14:30") read as India time, not the browser's. */
+function istFromLocalInput(value: string): Date {
+    return new Date(`${value}:00+05:30`)
+}
+
+/** Today in India, as the `YYYY-MM-DD` a date input wants for `min`. */
+function todayInIndia(): string {
+    return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })
+}
+
+/** A Date rendered as the `YYYY-MM-DDTHH:MM` a datetime-local input wants, in India time. */
+function toIndiaLocalInput(d: Date): string {
+    const date = d.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })
+    const time = d.toLocaleTimeString('en-GB', {
+        timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: false,
+    })
+    return `${date}T${time}`
+}
+
+// Mirrors the @MaxLength values on CreateEventDto — a mismatch here means the
+// user only finds out the limit after the server rejects a finished form.
+const LIMITS = {
+    title: 100,
+    description: 5000,
+    location: 300,
+    pointOfContact: 150,
+    connectPlan: 3000,
+    dressCode: 100,
+    thingsToBring: 500,
+} as const
+
+// Mirror the @Max bounds on CreateEventDto.
+const MAX_SLOTS = 100000
+const MAX_TICKET_RUPEES = 100000
+const MAX_MIN_AGE = 100
+
 /** Red asterisk marking a field the form won't submit without. */
 function Req() {
     return <span className="text-[#ff6b6b] ml-0.5" aria-hidden="true">*</span>
@@ -158,6 +194,7 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
 
         if (s === 2) {
             if (!formData.eventDate) e.eventDate = 'Pick the date this event happens.'
+            else if (formData.eventDate < todayInIndia()) e.eventDate = 'This date has already passed.'
             if (!formData.startTime) e.startTime = 'Set a start time.'
             if (!formData.endTime) e.endTime = 'Set an end time.'
             if (formData.startTime && formData.endTime) {
@@ -174,20 +211,31 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
             if (!formData.pointOfContact.trim()) {
                 e.pointOfContact = 'Volunteers need a name to ask for when they arrive.'
             }
-            if (limitVolunteers && (!formData.totalSlots || formData.totalSlots < 1)) {
-                e.totalSlots = 'Enter how many volunteers you can take, or turn the limit off.'
+            if (limitVolunteers) {
+                if (!formData.totalSlots || formData.totalSlots < 1) {
+                    e.totalSlots = 'Enter how many volunteers you can take, or turn the limit off.'
+                } else if (formData.totalSlots > MAX_SLOTS) {
+                    e.totalSlots = `That's more than ${MAX_SLOTS.toLocaleString('en-IN')} volunteers — check the number.`
+                }
             }
-            if (isPaidEvent && (!formData.ticketPriceRupees || formData.ticketPriceRupees < 1)) {
-                e.ticketPriceRupees = 'Enter a price of ₹1 or more, or turn Paid Event off.'
+            if (isPaidEvent) {
+                if (!formData.ticketPriceRupees || formData.ticketPriceRupees < 1) {
+                    e.ticketPriceRupees = 'Enter a price of ₹1 or more, or turn Paid Event off.'
+                } else if (formData.ticketPriceRupees > MAX_TICKET_RUPEES) {
+                    e.ticketPriceRupees = `Ticket price can't be above ₹${MAX_TICKET_RUPEES.toLocaleString('en-IN')}.`
+                }
+            }
+            if (formData.minimumAge !== undefined && (formData.minimumAge < 1 || formData.minimumAge > MAX_MIN_AGE)) {
+                e.minimumAge = `Minimum age should be between 1 and ${MAX_MIN_AGE}.`
             }
             if (!formData.registrationDeadline) {
                 e.registrationDeadline = 'Set the last moment volunteers can sign up.'
             } else {
-                const deadline = new Date(formData.registrationDeadline)
+                const deadline = istFromLocalInput(formData.registrationDeadline)
                 if (deadline < new Date()) {
                     e.registrationDeadline = 'This deadline is already in the past.'
                 } else if (formData.eventDate && formData.startTime) {
-                    const start = new Date(`${formData.eventDate}T${formData.startTime}`)
+                    const start = istDateTime(formData.eventDate, formData.startTime)
                     if (deadline > new Date(start.getTime() - 60 * 60 * 1000)) {
                         e.registrationDeadline = 'Must be at least 1 hour before the event starts.'
                     }
@@ -436,7 +484,7 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
             setIsSubmitting(true);
             setErrors({});
 
-            const deadlineISO = new Date(formData.registrationDeadline).toISOString();
+            const deadlineISO = istFromLocalInput(formData.registrationDeadline).toISOString();
 
             const payload = {
                 title: formData.title,
@@ -826,13 +874,22 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
                                 placeholder="Give your event a catchy name"
                                 value={formData.title}
                                 onChange={(e) => update('title', e.target.value)}
+                                maxLength={LIMITS.title}
                                 aria-invalid={!!errors.title}
                                 className={cn(
                                     "w-full h-12 md:h-14 px-4 bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl rounded-xl border text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-[#ff6b6b] focus:border-transparent transition-all text-sm md:text-base",
                                     errors.title ? "border-[#ff6b6b]" : "border-black/5 dark:border-white/10"
                                 )}
                             />
-                            <FieldError msg={errors.title} />
+                            <div className="flex justify-between items-start gap-3">
+                                <FieldError msg={errors.title} />
+                                <p className={cn(
+                                    "text-xs mt-1.5 ml-auto shrink-0 tabular-nums",
+                                    formData.title.length >= LIMITS.title ? "text-[#ff6b6b] font-semibold" : "text-muted-foreground"
+                                )}>
+                                    {formData.title.length}/{LIMITS.title}
+                                </p>
+                            </div>
                         </div>
 
                         <div data-field="category">
@@ -900,13 +957,22 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
                                 rows={5}
                                 value={formData.description}
                                 onChange={(e) => update('description', e.target.value)}
+                                maxLength={LIMITS.description}
                                 aria-invalid={!!errors.description}
                                 className={cn(
                                     "w-full px-4 py-3 bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl rounded-xl border text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-[#ff6b6b] focus:border-transparent transition-all resize-none text-sm md:text-base",
                                     errors.description ? "border-[#ff6b6b]" : "border-black/5 dark:border-white/10"
                                 )}
                             />
-                            <FieldError msg={errors.description} />
+                            <div className="flex justify-between items-start gap-3">
+                                <FieldError msg={errors.description} />
+                                <p className={cn(
+                                    "text-xs mt-1.5 ml-auto shrink-0 tabular-nums",
+                                    formData.description.length >= LIMITS.description ? "text-[#ff6b6b] font-semibold" : "text-muted-foreground"
+                                )}>
+                                    {formData.description.length}/{LIMITS.description}
+                                </p>
+                            </div>
                         </div>
                     </ScrollReveal>
                 )}
@@ -923,6 +989,7 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
                                     type="date"
                                     value={formData.eventDate}
                                     onChange={(e) => update('eventDate', e.target.value)}
+                                    min={todayInIndia()}
                                     aria-invalid={!!errors.eventDate}
                                     className={cn(
                                         "w-full h-12 md:h-14 px-4 bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl rounded-xl border text-foreground focus:ring-2 focus:ring-[#ff6b6b] focus:border-transparent transition-all text-sm md:text-base",
@@ -993,6 +1060,7 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
                                             value={formData.location}
                                             onChange={(e) => handleSearchChange(e.target.value)}
                                             onKeyDown={handleSearchKeyDown}
+                                            maxLength={LIMITS.location}
                                             aria-invalid={!!errors.location}
                                             className={cn(
                                                 "w-full h-12 px-4 pl-10 bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl rounded-xl border text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-[#ff6b6b] focus:border-transparent transition-all text-sm",
@@ -1059,6 +1127,7 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
                                     placeholder="e.g., Comfortable clothes"
                                     value={formData.dressCode}
                                     onChange={(e) => update('dressCode', e.target.value)}
+                                maxLength={LIMITS.dressCode}
                                     className="w-full h-12 md:h-14 px-4 bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl rounded-xl border border-black/5 dark:border-white/10 text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-[#ff6b6b] focus:border-transparent transition-all text-sm md:text-base"
                                 />
                             </div>
@@ -1072,6 +1141,7 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
                                     placeholder="e.g., Water bottle, gloves"
                                     value={formData.thingsToBring}
                                     onChange={(e) => update('thingsToBring', e.target.value)}
+                                    maxLength={LIMITS.thingsToBring}
                                     className="w-full h-12 md:h-14 px-4 bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl rounded-xl border border-black/5 dark:border-white/10 text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-[#ff6b6b] focus:border-transparent transition-all text-sm md:text-base"
                                 />
                             </div>
@@ -1093,6 +1163,7 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
                                 placeholder="e.g., Rahul Verma (9876543210)"
                                 value={formData.pointOfContact}
                                 onChange={(e) => update('pointOfContact', e.target.value)}
+                                maxLength={LIMITS.pointOfContact}
                                 aria-invalid={!!errors.pointOfContact}
                                 className={cn(
                                     "w-full h-12 md:h-14 px-4 bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl rounded-xl border text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-[#ff6b6b] focus:border-transparent transition-all text-sm md:text-base",
@@ -1113,6 +1184,7 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
                                 placeholder="e.g., Grabbing breakfast at Roastery Coffee after!"
                                 value={formData.connectPlan}
                                 onChange={(e) => update('connectPlan', e.target.value)}
+                                maxLength={LIMITS.connectPlan}
                                 className="w-full h-12 md:h-14 px-4 bg-emerald-50/50 dark:bg-emerald-500/[0.07] backdrop-blur-xl rounded-xl text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all text-sm md:text-base border border-emerald-200 dark:border-emerald-500/20"
                             />
                         </div>
@@ -1139,6 +1211,7 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
                                     <input
                                         type="number"
                                         min="1"
+                                        max={MAX_SLOTS}
                                         placeholder="e.g. 50"
                                         value={formData.totalSlots || ''}
                                         onKeyDown={(e) => {
@@ -1181,6 +1254,7 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
                                         <input
                                             type="number"
                                             min="1"
+                                            max={MAX_TICKET_RUPEES}
                                             placeholder="e.g. 100"
                                             value={formData.ticketPriceRupees ?? ''}
                                             onKeyDown={(e) => {
@@ -1216,17 +1290,10 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
                                 value={formData.registrationDeadline}
                                 onChange={(e) => update('registrationDeadline', e.target.value)}
                                 aria-invalid={!!errors.registrationDeadline}
-                                min={(() => {
-                                    const d = new Date(Date.now() + 60 * 60 * 1000);
-                                    const pad = (n: number) => String(n).padStart(2, '0');
-                                    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-                                })()}
-                                max={formData.eventDate && formData.startTime ? (() => {
-                                    const start = new Date(`${formData.eventDate}T${formData.startTime}`);
-                                    const m = new Date(start.getTime() - 60 * 60 * 1000);
-                                    const pad = (n: number) => String(n).padStart(2, '0');
-                                    return `${m.getFullYear()}-${pad(m.getMonth()+1)}-${pad(m.getDate())}T${pad(m.getHours())}:${pad(m.getMinutes())}`;
-                                })() : undefined}
+                                min={toIndiaLocalInput(new Date(Date.now() + 60 * 60 * 1000))}
+                                max={formData.eventDate && formData.startTime
+                                    ? toIndiaLocalInput(new Date(istDateTime(formData.eventDate, formData.startTime).getTime() - 60 * 60 * 1000))
+                                    : undefined}
                                 className={cn(
                                     "w-full h-12 md:h-14 px-4 bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl rounded-xl border text-foreground focus:ring-2 focus:ring-[#ff6b6b] focus:border-transparent transition-all text-sm md:text-base",
                                     errors.registrationDeadline ? "border-[#ff6b6b]" : "border-black/5 dark:border-white/10"
@@ -1238,7 +1305,7 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
                             </p>
                         </div>
 
-                        <div>
+                        <div data-field="minimumAge">
                             <label className="block text-sm font-semibold text-foreground mb-3">
                                 Minimum Age
                                 <span className="text-xs text-muted-foreground font-normal ml-2">(Optional)</span>
@@ -1246,14 +1313,20 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
                             <input
                                 type="number"
                                 min="1"
+                                max={MAX_MIN_AGE}
                                 placeholder="18"
                                 value={formData.minimumAge || ''}
                                 onKeyDown={(e) => {
                                     if (e.key === '-' || e.key === 'e' || e.key === '.') e.preventDefault();
                                 }}
                                 onChange={(e) => update('minimumAge', parseInt(e.target.value) || undefined)}
-                                className="w-full h-12 md:h-14 px-4 bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl rounded-xl border border-black/5 dark:border-white/10 text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-[#ff6b6b] focus:border-transparent transition-all text-sm md:text-base"
+                                aria-invalid={!!errors.minimumAge}
+                                className={cn(
+                                    "w-full h-12 md:h-14 px-4 bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl rounded-xl border text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-[#ff6b6b] focus:border-transparent transition-all text-sm md:text-base",
+                                    errors.minimumAge ? "border-[#ff6b6b]" : "border-black/5 dark:border-white/10"
+                                )}
                             />
+                            <FieldError msg={errors.minimumAge} />
                         </div>
 
                         {/* Preview also inline on mobile — the sidebar version below is desktop-only */}

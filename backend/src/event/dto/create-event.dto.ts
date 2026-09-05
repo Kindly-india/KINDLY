@@ -109,6 +109,7 @@ export class CreateEventDto {
   @IsOptional()
   @IsInt()
   @Min(1)
+  @Max(100000)
   totalSlots?: number | null;
 
   @IsDateString()
@@ -118,6 +119,7 @@ export class CreateEventDto {
   @IsOptional()
   @IsInt()
   @Min(1)
+  @Max(100)
   minimumAge?: number;
 
   @IsOptional()
@@ -141,5 +143,6 @@ export class CreateEventDto {
   @IsOptional()
   @IsInt()
   @Min(100)
+  @Max(10_000_000) // ₹1,00,000 — a volunteering ticket above this is a typo
   ticketPrice?: number | null;
 }
