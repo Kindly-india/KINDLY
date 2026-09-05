@@ -92,6 +92,7 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
     const searchContainerRef = useRef<HTMLDivElement>(null)
     const searchDebounceRef = useRef<ReturnType<typeof setTimeout>>()
     const mapCenterRef = useRef({ lng: 73.7898, lat: 19.9975 })
+    const skipScrollTopRef = useRef(false)
 
     const [formData, setFormData] = useState({
         title: '',
@@ -294,6 +295,19 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
         return () => document.removeEventListener('mousedown', handleClickOutside)
     }, [])
 
+    // A step change swaps the whole form body, so it has to read like a new
+    // page: start at the top instead of inheriting the previous step's scroll
+    // position, which drops the user into the middle of fields they never saw.
+    // ...unless we're jumping back to a step specifically to show a bad field,
+    // in which case revealField owns the scroll position.
+    useEffect(() => {
+        if (skipScrollTopRef.current) {
+            skipScrollTopRef.current = false
+            return
+        }
+        window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior })
+    }, [step, showSuccess])
+
     useEffect(() => {
         try {
             const raw = localStorage.getItem(draftKey)
@@ -352,6 +366,10 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
         for (const s of [1, 2, 3]) {
             const stepErrors = validateStep(s);
             if (Object.keys(stepErrors).length > 0) {
+                // Only arm the flag on a real step change — setStep to the step
+                // we're already on fires no effect, and the flag would then eat
+                // the scroll-to-top of whatever navigation came next.
+                if (s !== step) skipScrollTopRef.current = true;
                 setStep(s);
                 setErrors(stepErrors);
                 toast.error(`Something needs fixing in ${STEP_LABELS[s]}`);
