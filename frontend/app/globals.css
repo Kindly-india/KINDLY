@@ -127,6 +127,13 @@ h1, h2, h3, h4, h5, h6 {
     background-color: var(--background);
     color: var(--foreground);
   }
+  /* Suppresses the iOS/Android long-press "Save Image" sheet and drag-to-save.
+     A deterrent only — the file is still reachable at its storage URL. */
+  img {
+    -webkit-touch-callout: none;
+    -webkit-user-drag: none;
+    user-select: none;
+  }
 }
 
 @layer utilities {

@@ -7,6 +7,7 @@ import { NavbarManager } from "@/components/navbar-manager"
 import { Toaster } from "sonner"
 import { ThemeProvider } from "@/components/theme-provider"
 import { PostAuthSplashBridge } from "@/components/post-auth-splash-bridge"
+import { ImageProtection } from "@/components/image-protection"
 
 
 const inter = Inter({
@@ -85,6 +86,7 @@ export default function RootLayout({
           <NavbarManager />
           <Toaster position="top-center" richColors theme="system" />
           <PostAuthSplashBridge />
+          <ImageProtection />
 
           {/* pb-24 ensures space for the bottom navbars on mobile */}
           <main className="flex-1 w-full pb-20 md:pb-0">
