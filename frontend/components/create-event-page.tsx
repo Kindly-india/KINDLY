@@ -139,6 +139,9 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
     const searchDebounceRef = useRef<ReturnType<typeof setTimeout>>()
     const mapCenterRef = useRef({ lng: 73.7898, lat: 19.9975 })
     const skipScrollTopRef = useRef(false)
+    // State updates are async, so two fast clicks can both read isSubmitting as
+    // false and fire two creates. A ref flips synchronously on the first one.
+    const submittingRef = useRef(false)
 
     const [formData, setFormData] = useState({
         title: '',
@@ -450,7 +453,7 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
     }
 
     const handlePublish = async () => {
-        if (isSubmitting) return;
+        if (submittingRef.current || isSubmitting) return;
 
         if (uploading) {
             toast.error('Your cover photo is still uploading — one moment.');
@@ -476,6 +479,7 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
         }
 
         try {
+            submittingRef.current = true;
             setIsSubmitting(true);
             setErrors({});
 
@@ -516,6 +520,7 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
         } catch (error: any) {
             toast.error(error.message || (adminOrg ? 'Failed to create event' : 'Failed to submit event for approval'));
         } finally {
+            submittingRef.current = false;
             setIsSubmitting(false);
         }
     };
