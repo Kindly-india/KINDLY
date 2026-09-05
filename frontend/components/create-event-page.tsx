@@ -23,7 +23,7 @@ import {
     IndianRupee,
     AlertCircle
 } from "lucide-react"
-import { cn, coverObjectPosition, MAX_UPLOAD_BYTES, MAX_UPLOAD_MB } from "@/lib/utils"
+import { cn, coverObjectPosition, eventHours, formatHours, MAX_UPLOAD_BYTES, MAX_UPLOAD_MB } from "@/lib/utils"
 import { api } from "@/lib/api"
 import { toast } from "sonner"
 import { ScrollReveal } from "@/components/ui/scroll-reveal"
@@ -50,6 +50,16 @@ const categories = [
 ]
 
 const STEP_LABELS: Record<number, string> = { 1: "Details", 2: "Schedule", 3: "Logistics" }
+
+// An end time earlier than the start means the event runs past midnight —
+// eventHours() already wraps it. Cap the wrap so a typo (or a deliberate
+// 14:00→13:00) can't book itself 23 hours of volunteer impact.
+export const MAX_OVERNIGHT_HOURS = 12
+
+/** Parses a date+time as India time, matching the backend's hardcoded +05:30. */
+function istDateTime(date: string, time: string): Date {
+    return new Date(`${date}T${time}:00+05:30`)
+}
 
 /** Red asterisk marking a field the form won't submit without. */
 function Req() {
@@ -145,10 +155,12 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
             if (!formData.eventDate) e.eventDate = 'Pick the date this event happens.'
             if (!formData.startTime) e.startTime = 'Set a start time.'
             if (!formData.endTime) e.endTime = 'Set an end time.'
-            if (formData.eventDate && formData.startTime && formData.endTime) {
-                const start = new Date(`${formData.eventDate}T${formData.startTime}`)
-                const end = new Date(`${formData.eventDate}T${formData.endTime}`)
-                if (end <= start) e.endTime = 'End time must be after the start time.'
+            if (formData.startTime && formData.endTime) {
+                if (formData.startTime === formData.endTime) {
+                    e.endTime = 'Start and end time can’t be the same.'
+                } else if (formData.endTime < formData.startTime && eventHours(formData.startTime, formData.endTime) > MAX_OVERNIGHT_HOURS) {
+                    e.endTime = `An event running past midnight can be at most ${MAX_OVERNIGHT_HOURS} hours. Check the start and end times.`
+                }
             }
             if (!formData.location.trim()) e.location = 'Add the venue or address volunteers should go to.'
         }
@@ -911,6 +923,12 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
                                 )}
                             />
                             <FieldError msg={errors.endTime} />
+                            {formData.startTime && formData.endTime && formData.startTime !== formData.endTime && (
+                                <p className="text-xs text-muted-foreground mt-2">
+                                    Duration: <span className="font-semibold text-foreground">{formatHours(eventHours(formData.startTime, formData.endTime))}</span>
+                                    {formData.endTime < formData.startTime && ' — ends the next day'}
+                                </p>
+                            )}
                         </div>
 
                         <div data-field="location">
