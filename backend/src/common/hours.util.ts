@@ -7,6 +7,12 @@
 // update_volunteer_hours_on_checkin trigger (see
 // backend/migrations/fractional_volunteer_hours.sql), which maintains the
 // authoritative per-volunteer total in volunteer_profiles.total_hours.
+// An end time before the start means the event runs past midnight, which
+// eventHours() wraps. Cap that wrap: without a bound, "14:00 to 13:00" scores
+// itself 23 hours of volunteer impact. Every realistic overnight shift
+// (9pm-1am, 10pm-6am, 8pm-8am) fits inside this.
+export const MAX_OVERNIGHT_HOURS = 12;
+
 export function eventHours(
   startTime?: string | null,
   endTime?: string | null,

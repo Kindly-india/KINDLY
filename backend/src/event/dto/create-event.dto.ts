@@ -13,6 +13,7 @@ import {
   IsArray,
   MaxLength,
   ArrayMaxSize,
+  Matches,
 } from 'class-validator';
 
 export class CreateEventDto {
@@ -66,20 +67,23 @@ export class CreateEventDto {
   @IsBoolean()
   isUrgent: boolean;
 
+  // Shape-checked, not just length-checked: an unparseable value here becomes
+  // an Invalid Date in the service, and every NaN comparison is false — which
+  // would let the registration-deadline guards pass instead of fire.
   @IsString()
   @IsNotEmpty()
-  @MaxLength(10)
-  eventDate: string; // Format: YYYY-MM-DD
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: 'eventDate must be YYYY-MM-DD' })
+  eventDate: string;
 
   @IsString()
   @IsNotEmpty()
-  @MaxLength(5)
-  startTime: string; // Format: HH:MM
+  @Matches(/^([01]\d|2[0-3]):[0-5]\d$/, { message: 'startTime must be HH:MM' })
+  startTime: string;
 
   @IsString()
   @IsNotEmpty()
-  @MaxLength(5)
-  endTime: string; // Format: HH:MM
+  @Matches(/^([01]\d|2[0-3]):[0-5]\d$/, { message: 'endTime must be HH:MM' })
+  endTime: string;
 
   @IsString()
   @IsNotEmpty()

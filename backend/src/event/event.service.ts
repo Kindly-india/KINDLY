@@ -12,7 +12,7 @@ import { CreateEventDto } from './dto/create-event.dto';
 import { AdminCreateEventDto } from './dto/admin-create-event.dto';
 import { validateImageFile } from '../common/file-validation.util';
 import { removeFromStorage } from '../common/storage.util';
-import { eventHours } from '../common/hours.util';
+import { eventHours, MAX_OVERNIGHT_HOURS } from '../common/hours.util';
 
 const GEOLOCK_RADIUS_METERS = 200;
 
@@ -240,6 +240,8 @@ export class EventService {
       }
     }
 
+    this.assertDurationIsValid(dto.startTime, dto.endTime);
+
     // 3. Validate Deadlines (Only if dates are provided)
     if (dto.eventDate && dto.startTime && dto.registrationDeadline) {
       const eventDateTime = new Date(
@@ -378,6 +380,8 @@ export class EventService {
         );
       }
     }
+
+    this.assertDurationIsValid(dto.startTime, dto.endTime);
 
     if (dto.eventDate && dto.startTime && dto.registrationDeadline) {
       const eventDateTime = new Date(
@@ -1546,6 +1550,69 @@ export class EventService {
   // The former autoCompleteEvents() method and its /events/auto-complete route
   // were removed along with the external cron.
 
+  // Schedule rules shared by the org and admin create paths.
+  //
+  // The NaN guards are load-bearing, not defensive noise: an unparseable date
+  // yields an Invalid Date, and every comparison against NaN is false, so the
+  // three deadline checks below would silently pass rather than fire. The DTO's
+  // @Matches should make that unreachable — this is the second lock.
+  // The duration half of the schedule rules, on its own because the edit paths
+  // validate deadlines only when the date fields are supplied — the duration
+  // still has to be bounded whenever times change, or the create-time cap is
+  // simply bypassable by creating a valid event and then editing it.
+  private assertDurationIsValid(startTime?: string, endTime?: string) {
+    if (!startTime || !endTime) return;
+
+    const duration = eventHours(startTime, endTime);
+    if (duration <= 0) {
+      throw new BadRequestException(
+        'Event start and end time cannot be the same',
+      );
+    }
+    if (endTime < startTime && duration > MAX_OVERNIGHT_HOURS) {
+      throw new BadRequestException(
+        `An event running past midnight can be at most ${MAX_OVERNIGHT_HOURS} hours`,
+      );
+    }
+  }
+
+  private assertScheduleIsValid(dto: {
+    eventDate: string;
+    startTime: string;
+    endTime: string;
+    registrationDeadline: string;
+  }) {
+    const eventDateTime = new Date(
+      `${dto.eventDate}T${dto.startTime}:00+05:30`,
+    );
+    const registrationDeadline = new Date(dto.registrationDeadline);
+
+    if (Number.isNaN(eventDateTime.getTime())) {
+      throw new BadRequestException('Event date or start time is not valid');
+    }
+    if (Number.isNaN(registrationDeadline.getTime())) {
+      throw new BadRequestException('Registration deadline is not valid');
+    }
+
+    this.assertDurationIsValid(dto.startTime, dto.endTime);
+
+    if (registrationDeadline < new Date()) {
+      throw new BadRequestException(
+        'Registration deadline cannot be in the past',
+      );
+    }
+    if (registrationDeadline >= eventDateTime) {
+      throw new BadRequestException(
+        'Registration deadline must be before event start time',
+      );
+    }
+    if (registrationDeadline > new Date(eventDateTime.getTime() - 60 * 60 * 1000)) {
+      throw new BadRequestException(
+        'Registration deadline must be at least 1 hour before event start',
+      );
+    }
+  }
+
   async createEvent(userId: string, dto: CreateEventDto) {
     const supabase = this.supabaseService.getClient();
 
@@ -1565,30 +1632,7 @@ export class EventService {
       );
     }
 
-    const eventDateTime = new Date(
-      `${dto.eventDate}T${dto.startTime}:00+05:30`,
-    );
-    const registrationDeadline = new Date(dto.registrationDeadline);
-
-    const oneHourBefore = new Date(eventDateTime.getTime() - 60 * 60 * 1000);
-
-    if (registrationDeadline < new Date()) {
-      throw new BadRequestException(
-        'Registration deadline cannot be in the past',
-      );
-    }
-
-    if (registrationDeadline >= eventDateTime) {
-      throw new BadRequestException(
-        'Registration deadline must be before event start time',
-      );
-    }
-
-    if (registrationDeadline > oneHourBefore) {
-      throw new BadRequestException(
-        'Registration deadline must be at least 1 hour before event start',
-      );
-    }
+    this.assertScheduleIsValid(dto);
 
     const coords =
       (dto.latitude == null || dto.longitude == null) && dto.location
@@ -1662,27 +1706,7 @@ export class EventService {
       );
     }
 
-    const eventDateTime = new Date(
-      `${dto.eventDate}T${dto.startTime}:00+05:30`,
-    );
-    const registrationDeadline = new Date(dto.registrationDeadline);
-    const oneHourBefore = new Date(eventDateTime.getTime() - 60 * 60 * 1000);
-
-    if (registrationDeadline < new Date()) {
-      throw new BadRequestException(
-        'Registration deadline cannot be in the past',
-      );
-    }
-    if (registrationDeadline >= eventDateTime) {
-      throw new BadRequestException(
-        'Registration deadline must be before event start time',
-      );
-    }
-    if (registrationDeadline > oneHourBefore) {
-      throw new BadRequestException(
-        'Registration deadline must be at least 1 hour before event start',
-      );
-    }
+    this.assertScheduleIsValid(dto);
 
     const coords =
       (dto.latitude == null || dto.longitude == null) && dto.location

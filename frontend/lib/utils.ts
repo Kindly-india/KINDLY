@@ -7,6 +7,11 @@ export function cn(...inputs: ClassValue[]) {
 
 // Keep in sync with MAX_FILE_SIZE_MB in backend/src/common/file-validation.util.ts,
 // and with the per-bucket size limit configured in Supabase Storage.
+// Keep in sync with MAX_OVERNIGHT_HOURS in backend/src/common/hours.util.ts.
+// An end time before the start means the event runs past midnight (eventHours
+// wraps it); this bounds the wrap so a typo can't claim 23 hours of impact.
+export const MAX_OVERNIGHT_HOURS = 12
+
 export const MAX_UPLOAD_MB = 25
 export const MAX_UPLOAD_BYTES = MAX_UPLOAD_MB * 1024 * 1024
 

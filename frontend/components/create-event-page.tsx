@@ -24,7 +24,7 @@ import {
     AlertCircle,
     X
 } from "lucide-react"
-import { cn, coverObjectPosition, eventHours, formatHours, MAX_UPLOAD_BYTES, MAX_UPLOAD_MB } from "@/lib/utils"
+import { cn, coverObjectPosition, eventHours, formatHours, MAX_OVERNIGHT_HOURS, MAX_UPLOAD_BYTES, MAX_UPLOAD_MB } from "@/lib/utils"
 import { api } from "@/lib/api"
 import { toast } from "sonner"
 import { ScrollReveal } from "@/components/ui/scroll-reveal"
@@ -51,11 +51,6 @@ const categories = [
 ]
 
 const STEP_LABELS: Record<number, string> = { 1: "Details", 2: "Schedule", 3: "Logistics" }
-
-// An end time earlier than the start means the event runs past midnight —
-// eventHours() already wraps it. Cap the wrap so a typo (or a deliberate
-// 14:00→13:00) can't book itself 23 hours of volunteer impact.
-export const MAX_OVERNIGHT_HOURS = 12
 
 /** Parses a date+time as India time, matching the backend's hardcoded +05:30. */
 function istDateTime(date: string, time: string): Date {

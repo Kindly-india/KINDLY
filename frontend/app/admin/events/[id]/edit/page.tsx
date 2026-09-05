@@ -17,7 +17,7 @@ import {
   Navigation,
 } from "lucide-react"
 import { api } from "@/lib/api"
-import { coverObjectPosition, MAX_UPLOAD_BYTES, MAX_UPLOAD_MB } from "@/lib/utils"
+import { coverObjectPosition, eventHours, MAX_OVERNIGHT_HOURS, MAX_UPLOAD_BYTES, MAX_UPLOAD_MB } from "@/lib/utils"
 import { CoverFocalPointPicker, type FocalPoint } from "@/components/cover-focal-point-picker"
 
 // Matches CreateEventDto's @IsIn(...) enum on the backend — the org-facing
@@ -180,11 +180,20 @@ export default function AdminEditEventPage() {
       }
 
       const eventStartDateTime = new Date(`${formData.eventDate}T${formData.startTime}`)
-      const eventEndDateTime = new Date(`${formData.eventDate}T${formData.endTime}`)
       const deadlineDateTime = new Date(formData.registrationDeadline)
 
-      if (eventEndDateTime <= eventStartDateTime) {
-        throw new Error("Event End Time must be after Start Time.")
+      // An end before the start is an overnight event — allowed, but capped,
+      // matching the backend and the create wizard.
+      if (formData.startTime === formData.endTime) {
+        throw new Error("Start and end time can't be the same.")
+      }
+      if (
+        formData.endTime < formData.startTime &&
+        eventHours(formData.startTime, formData.endTime) > MAX_OVERNIGHT_HOURS
+      ) {
+        throw new Error(
+          `An event running past midnight can be at most ${MAX_OVERNIGHT_HOURS} hours. Check the start and end times.`
+        )
       }
 
       const oneHourBeforeStart = new Date(eventStartDateTime.getTime() - 60 * 60 * 1000)

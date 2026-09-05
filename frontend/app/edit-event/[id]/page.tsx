@@ -18,7 +18,7 @@ import {
   Lock // Added Lock icon for the "Option C" error state
 } from "lucide-react"
 import { api } from "@/lib/api"
-import { coverObjectPosition, MAX_UPLOAD_BYTES, MAX_UPLOAD_MB } from "@/lib/utils"
+import { coverObjectPosition, eventHours, MAX_OVERNIGHT_HOURS, MAX_UPLOAD_BYTES, MAX_UPLOAD_MB } from "@/lib/utils"
 import { CoverFocalPointPicker, type FocalPoint } from "@/components/cover-focal-point-picker"
 
 const categories = [
@@ -199,12 +199,20 @@ export default function EditEventPage() {
       }
 
       const eventStartDateTime = new Date(`${formData.eventDate}T${formData.startTime}`);
-      const eventEndDateTime = new Date(`${formData.eventDate}T${formData.endTime}`);
       const deadlineDateTime = new Date(formData.registrationDeadline);
 
-      // 1. Check if End Time is before Start Time
-      if (eventEndDateTime <= eventStartDateTime) {
-        throw new Error("Event End Time must be after Start Time.");
+      // 1. Duration: an end before the start is an overnight event, which is
+      // allowed but capped — same rule the backend and the create wizard use.
+      if (formData.startTime === formData.endTime) {
+        throw new Error("Start and end time can't be the same.");
+      }
+      if (
+        formData.endTime < formData.startTime &&
+        eventHours(formData.startTime, formData.endTime) > MAX_OVERNIGHT_HOURS
+      ) {
+        throw new Error(
+          `An event running past midnight can be at most ${MAX_OVERNIGHT_HOURS} hours. Check the start and end times.`
+        );
       }
 
       // 2. Check if Registration Deadline is AFTER Event Start
