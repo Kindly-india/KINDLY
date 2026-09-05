@@ -577,14 +577,28 @@ export class OrganizationService {
 
     const { data: events, error } = await client
       .from('events')
-      .select('id, title, status, event_date, location, registered_count')
+      .select(
+        'id, title, status, event_date, location, registered_count, event_registrations ( status )',
+      )
       .eq('organization_id', finalId)
       .in('status', ['published', 'completed'])
       .order('event_date', { ascending: false });
 
     if (error) return { events: [] };
 
-    return { events };
+    const eventsWithCounts = (events || []).map((event: any) => {
+      const registrations = event.event_registrations || [];
+
+      return {
+        ...event,
+        checked_in_count: registrations.filter(
+          (r: any) => r.status === 'checked_in' || r.status === 'completed',
+        ).length,
+        event_registrations: undefined,
+      };
+    });
+
+    return { events: eventsWithCounts };
   }
 
   async getOrgReviews(orgId: string) {
