@@ -98,6 +98,19 @@ function Req() {
     return <span className="text-[#ff6b6b] ml-0.5" aria-hidden="true">*</span>
 }
 
+/** Silent until the limit is actually in play — a "0/5000" at rest is noise. */
+function CharCount({ value, limit }: { value: string; limit: number }) {
+    if (value.length < limit * 0.8) return null
+    return (
+        <p className={cn(
+            "text-xs mt-1.5 ml-auto shrink-0 tabular-nums",
+            value.length >= limit ? "text-[#ff6b6b] font-semibold" : "text-muted-foreground"
+        )}>
+            {value.length}/{limit}
+        </p>
+    )
+}
+
 function FieldError({ msg }: { msg?: string }) {
     if (!msg) return null
     return (
@@ -179,6 +192,13 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
     const update = <K extends keyof typeof formData>(field: K, value: (typeof formData)[K]) => {
         setFormData(prev => ({ ...prev, [field]: value }))
         setErrors(prev => (prev[field] ? { ...prev, [field]: '' } : prev))
+        // Typing is an answer to the resume prompt: they've chosen to start
+        // fresh. Leaving the banner up would also keep autosave paused, so the
+        // work they're doing right now would never be saved.
+        if (pendingDraft) {
+            discardDraft()
+            setPendingDraft(null)
+        }
     }
 
     const validateStep = (s: number): Record<string, string> => {
@@ -584,23 +604,13 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
                     )}
                 </div>
 
-                <div>
-                    <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
-                        <span className="flex items-center gap-1">
-                            <Users className="w-3.5 h-3.5" />
-                            {limitVolunteers && formData.totalSlots > 0
-                                ? `0/${formData.totalSlots} Registered`
-                                : '0 Registered'}
-                        </span>
-                        {limitVolunteers && formData.totalSlots > 0
-                            ? <span className="font-semibold text-emerald-600 dark:text-emerald-400">0%</span>
-                            : <span className="font-semibold text-emerald-600 dark:text-emerald-400">Unlimited</span>}
-                    </div>
-                    {limitVolunteers && formData.totalSlots > 0 && (
-                        <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                            <div className="h-full bg-gradient-to-r from-emerald-400 to-teal-500 rounded-full" style={{ width: '0%' }} />
-                        </div>
-                    )}
+                {/* Capacity, not sign-ups: a "0 Registered" line on an event that
+                    doesn't exist yet reads as failure rather than as a preview. */}
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <Users className="w-3.5 h-3.5" />
+                    {limitVolunteers && formData.totalSlots > 0
+                        ? `${formData.totalSlots} spots`
+                        : 'Open to everyone'}
                 </div>
 
                 {isUrgent && (
@@ -699,7 +709,10 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
                     key={i}
                     animate={{ y: [0, -10, 0] }}
                     transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay }}
-                    className={cn("fixed w-10 h-10 md:w-12 md:h-12 bg-white/70 dark:bg-neutral-900/50 backdrop-blur-xl border border-black/5 dark:border-white/10 rounded-2xl shadow-lg shadow-neutral-200/40 dark:shadow-black/40 flex items-center justify-center z-10 opacity-60", pos)}
+                    // Decoration only: hidden on narrow screens, where these sat
+                    // on top of the location input and the map controls, and
+                    // never able to swallow a tap meant for a field underneath.
+                    className={cn("pointer-events-none hidden lg:flex fixed w-10 h-10 md:w-12 md:h-12 bg-white/70 dark:bg-neutral-900/50 backdrop-blur-xl border border-black/5 dark:border-white/10 rounded-2xl shadow-lg shadow-neutral-200/40 dark:shadow-black/40 items-center justify-center z-10 opacity-60", pos)}
                 >
                     <Icon className={cn("w-5 h-5", color)} />
                 </motion.div>
@@ -883,12 +896,7 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
                             />
                             <div className="flex justify-between items-start gap-3">
                                 <FieldError msg={errors.title} />
-                                <p className={cn(
-                                    "text-xs mt-1.5 ml-auto shrink-0 tabular-nums",
-                                    formData.title.length >= LIMITS.title ? "text-[#ff6b6b] font-semibold" : "text-muted-foreground"
-                                )}>
-                                    {formData.title.length}/{LIMITS.title}
-                                </p>
+                                <CharCount value={formData.title} limit={LIMITS.title} />
                             </div>
                         </div>
 
@@ -966,12 +974,7 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
                             />
                             <div className="flex justify-between items-start gap-3">
                                 <FieldError msg={errors.description} />
-                                <p className={cn(
-                                    "text-xs mt-1.5 ml-auto shrink-0 tabular-nums",
-                                    formData.description.length >= LIMITS.description ? "text-[#ff6b6b] font-semibold" : "text-muted-foreground"
-                                )}>
-                                    {formData.description.length}/{LIMITS.description}
-                                </p>
+                                <CharCount value={formData.description} limit={LIMITS.description} />
                             </div>
                         </div>
                     </ScrollReveal>
