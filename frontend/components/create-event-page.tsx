@@ -117,6 +117,13 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
 
     const [errors, setErrors] = useState<Record<string, string>>({});
 
+    // Autosaved draft. Keyed per-org so an admin filling one org's form can't
+    // resurface it while creating for another. The cover photo is deliberately
+    // excluded — it lives as a File/data-URL and would blow the storage quota.
+    const draftKey = `kindly:create-event-draft${adminOrg ? `:admin:${adminOrg.id}` : ''}`
+    const [pendingDraft, setPendingDraft] = useState<{ savedAt: number; data: any } | null>(null);
+    const [draftChecked, setDraftChecked] = useState(false);
+
     // Every field edit clears that field's error, so a message never lingers
     // after the user has already fixed what it was complaining about.
     const update = <K extends keyof typeof formData>(field: K, value: (typeof formData)[K]) => {
@@ -287,6 +294,55 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
         return () => document.removeEventListener('mousedown', handleClickOutside)
     }, [])
 
+    useEffect(() => {
+        try {
+            const raw = localStorage.getItem(draftKey)
+            const parsed = raw ? JSON.parse(raw) : null
+            if (parsed?.v === 1 && parsed.data) {
+                setPendingDraft({ savedAt: parsed.savedAt, data: parsed.data })
+            }
+        } catch { /* private mode / corrupt entry — just start fresh */ }
+        setDraftChecked(true)
+    }, [draftKey])
+
+    // Only ever persist a form the user has actually put something into, and
+    // never while the resume prompt is up — that would overwrite the very
+    // draft being offered with the empty form sitting behind it.
+    const hasContent =
+        Object.values(formData).some(v => v !== '' && v !== undefined && v !== 0) ||
+        isUrgent || limitVolunteers || isPaidEvent
+
+    useEffect(() => {
+        if (!draftChecked || pendingDraft || showSuccess || !hasContent) return
+        try {
+            localStorage.setItem(draftKey, JSON.stringify({
+                v: 1,
+                savedAt: Date.now(),
+                data: { formData, isUrgent, limitVolunteers, isPaidEvent, coverFocal, step },
+            }))
+        } catch { /* quota/private mode — autosave is best-effort */ }
+    }, [formData, isUrgent, limitVolunteers, isPaidEvent, coverFocal, step, draftChecked, pendingDraft, showSuccess, hasContent, draftKey])
+
+    const discardDraft = () => {
+        try { localStorage.removeItem(draftKey) } catch { /* nothing to clean up */ }
+    }
+
+    const resumeDraft = () => {
+        if (!pendingDraft) return
+        const d = pendingDraft.data
+        setFormData(prev => ({ ...prev, ...d.formData }))
+        setIsUrgent(!!d.isUrgent)
+        setLimitVolunteers(!!d.limitVolunteers)
+        setIsPaidEvent(!!d.isPaidEvent)
+        if (d.coverFocal) setCoverFocal(d.coverFocal)
+        if (d.formData?.latitude != null && d.formData?.longitude != null) {
+            mapCenterRef.current = { lng: d.formData.longitude, lat: d.formData.latitude }
+        }
+        setStep(d.step ?? 1)
+        setPendingDraft(null)
+        toast.success('Draft restored')
+    }
+
     const handlePublish = async () => {
         if (isSubmitting) return;
 
@@ -353,6 +409,7 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
                 await api.createEvent(payload);
             }
 
+            discardDraft();
             setShowSuccess(true);
         } catch (error: any) {
             toast.error(error.message || (adminOrg ? 'Failed to create event' : 'Failed to submit event for approval'));
@@ -601,6 +658,33 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
             </div>
 
             <main className="relative max-w-5xl mx-auto px-4 py-6 md:py-10">
+              {pendingDraft && (
+                <div className="mb-5 md:mb-6 p-4 rounded-2xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 flex flex-col sm:flex-row sm:items-center gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground">You have an unfinished event</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Saved {new Date(pendingDraft.savedAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })} · the cover photo isn&apos;t part of a draft
+                    </p>
+                  </div>
+                  <div className="flex gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={resumeDraft}
+                      className="px-4 h-10 rounded-xl bg-[#ff6b6b] hover:bg-[#ee5a5a] text-white text-sm font-semibold transition-colors"
+                    >
+                      Resume
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { discardDraft(); setPendingDraft(null) }}
+                      className="px-4 h-10 rounded-xl bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-foreground text-sm font-semibold transition-colors"
+                    >
+                      Start fresh
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <p className="text-xs text-muted-foreground mb-5 md:mb-6">
                 Fields marked <Req /> are required.
               </p>
