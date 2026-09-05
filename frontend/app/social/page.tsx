@@ -14,7 +14,6 @@ import {
   ImageIcon,
   ChevronRight,
   Calendar,
-  Users,
   Clock,
   Building2,
 } from "lucide-react"
@@ -131,9 +130,6 @@ function EventsTab() {
 
               {/* Stat pills — top-right, same position as the multi-photo chevron in community */}
               <div className="absolute top-1.5 right-1.5 flex flex-col gap-1 items-end">
-                <span className="flex items-center gap-0.5 bg-black/50 backdrop-blur-sm rounded-sm px-1.5 py-0.5 text-white text-[9px] font-semibold leading-none">
-                  <Users className="w-2.5 h-2.5 mr-0.5" />{ev.attendee_count}
-                </span>
                 {ev.total_hours > 0 && (
                   <span className="flex items-center gap-0.5 bg-emerald-600/80 backdrop-blur-sm rounded-sm px-1.5 py-0.5 text-white text-[9px] font-semibold leading-none">
                     <Clock className="w-2.5 h-2.5 mr-0.5" />{formatHoursTotal(ev.total_hours)}h
