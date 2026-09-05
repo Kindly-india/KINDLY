@@ -21,7 +21,8 @@ import {
     Search,
     Loader2,
     IndianRupee,
-    AlertCircle
+    AlertCircle,
+    X
 } from "lucide-react"
 import { cn, coverObjectPosition, eventHours, formatHours, MAX_UPLOAD_BYTES, MAX_UPLOAD_MB } from "@/lib/utils"
 import { api } from "@/lib/api"
@@ -87,8 +88,12 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
     const [step, setStep] = useState(1)
     const [isUrgent, setIsUrgent] = useState(false)
     const [showSuccess, setShowSuccess] = useState(false)
-    const [coverImage, setCoverImage] = useState<File | null>(null);
-    const [coverImageUrl, setCoverImageUrl] = useState<string>('');
+    // Local object-URL for preview vs. the uploaded remote URL are separate
+    // concerns: the preview must never be a base64 data-URL (a 25MB photo
+    // becomes a ~33MB string held in state and in the DOM).
+    const [coverPreview, setCoverPreview] = useState<string>('');
+    const [coverUploadedUrl, setCoverUploadedUrl] = useState<string>('');
+    const coverInputRef = useRef<HTMLInputElement>(null);
     const [coverFocal, setCoverFocal] = useState<FocalPoint>({ x: 50, y: 50 });
     const [uploading, setUploading] = useState(false);
     const [gettingLocation, setGettingLocation] = useState(false);
@@ -349,6 +354,38 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
         } catch { /* quota/private mode — autosave is best-effort */ }
     }, [formData, isUrgent, limitVolunteers, isPaidEvent, coverFocal, step, draftChecked, pendingDraft, showSuccess, hasContent, draftKey])
 
+    // Object URLs leak until revoked.
+    useEffect(() => () => { if (coverPreview) URL.revokeObjectURL(coverPreview) }, [coverPreview])
+
+    const clearCover = () => {
+        setCoverPreview('')
+        setCoverUploadedUrl('')
+        setCoverFocal({ x: 50, y: 50 })
+        // Without this, re-picking the same file fires no change event.
+        if (coverInputRef.current) coverInputRef.current.value = ''
+    }
+
+    // Uploading as soon as the photo is picked means the wait happens while the
+    // org is still filling in Steps 2-3, instead of stalling the Submit click.
+    const handleCoverSelect = async (file: File) => {
+        if (file.size > MAX_UPLOAD_BYTES) {
+            toast.error(`Image is too large. Please pick a file under ${MAX_UPLOAD_MB}MB.`)
+            return
+        }
+        setCoverPreview(URL.createObjectURL(file))
+        setCoverUploadedUrl('')
+        setCoverFocal({ x: 50, y: 50 })
+        setUploading(true)
+        try {
+            setCoverUploadedUrl(await api.uploadEventImage(file))
+        } catch (err: any) {
+            toast.error(err.message || 'Could not upload that image. Please try again.')
+            clearCover()
+        } finally {
+            setUploading(false)
+        }
+    }
+
     const discardDraft = () => {
         try { localStorage.removeItem(draftKey) } catch { /* nothing to clean up */ }
     }
@@ -372,6 +409,11 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
     const handlePublish = async () => {
         if (isSubmitting) return;
 
+        if (uploading) {
+            toast.error('Your cover photo is still uploading — one moment.');
+            return;
+        }
+
         // Re-check every step, not just the one on screen — a field can be
         // emptied after it was validated. Land the user on the earliest step
         // that's wrong, with the offending field focused.
@@ -394,25 +436,12 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
             setIsSubmitting(true);
             setErrors({});
 
-            let coverUrl = coverImageUrl;
-            if (coverImage) {
-                setUploading(true);
-                try {
-                    coverUrl = await api.uploadEventImage(coverImage);
-                } catch (error: any) {
-                    toast.error(error.message || 'Failed to upload image');
-                    setUploading(false);
-                    return;
-                }
-                setUploading(false);
-            }
-
             const deadlineISO = new Date(formData.registrationDeadline).toISOString();
 
             const payload = {
                 title: formData.title,
                 description: formData.description,
-                coverImageUrl: coverUrl,
+                coverImageUrl: coverUploadedUrl || undefined,
                 coverFocalX: coverFocal.x,
                 coverFocalY: coverFocal.y,
                 category: formData.category,
@@ -455,10 +484,10 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
                 <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">Event Preview</p>
             </div>
             <div className="bg-white/80 dark:bg-neutral-900/60 backdrop-blur-md rounded-xl p-4 shadow-sm border border-black/5 dark:border-white/10">
-                {coverImageUrl ? (
+                {coverPreview ? (
                     <div className="aspect-video rounded-lg mb-3 overflow-hidden">
                         <img
-                            src={coverImageUrl}
+                            src={coverPreview}
                             alt="Event cover"
                             className="w-full h-full object-cover"
                             style={{ objectPosition: coverObjectPosition(coverFocal.x, coverFocal.y) }}
@@ -723,35 +752,27 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
                 {step === 1 && (
                     <ScrollReveal className="space-y-6 md:space-y-8">
                         <div>
-                            <label className="block text-sm font-semibold text-foreground mb-3">Cover Image</label>
-                            <div className="aspect-video bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl rounded-2xl border-2 border-dashed border-black/10 dark:border-white/15 hover:border-[#ff6b6b] transition-colors cursor-pointer flex flex-col items-center justify-center group">
+                            <label className="block text-sm font-semibold text-foreground mb-3">
+                                Cover Image
+                                <span className="text-xs text-muted-foreground font-normal ml-2">(Optional)</span>
+                            </label>
+                            <div className="relative aspect-video bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl rounded-2xl border-2 border-dashed border-black/10 dark:border-white/15 hover:border-[#ff6b6b] transition-colors flex flex-col items-center justify-center group">
                                 <input
+                                    ref={coverInputRef}
                                     type="file"
                                     id="coverImage"
                                     accept="image/jpeg,image/jpg,image/png"
                                     onChange={(e) => {
-                                        const file = e.target.files?.[0];
-                                        if (file) {
-                                            if (file.size > MAX_UPLOAD_BYTES) {
-                                                toast.error(`Image is too large. Please upload a file under ${MAX_UPLOAD_MB}MB.`);
-                                                return;
-                                            }
-                                            setCoverImage(file);
-                                            setCoverFocal({ x: 50, y: 50 });
-                                            const reader = new FileReader();
-                                            reader.onloadend = () => {
-                                                setCoverImageUrl(reader.result as string);
-                                            };
-                                            reader.readAsDataURL(file);
-                                        }
+                                        const file = e.target.files?.[0]
+                                        if (file) handleCoverSelect(file)
                                     }}
                                     className="hidden"
                                     disabled={uploading}
                                 />
                                 <label htmlFor="coverImage" className="cursor-pointer text-center w-full h-full flex flex-col items-center justify-center">
-                                    {coverImageUrl ? (
+                                    {coverPreview ? (
                                         <img
-                                            src={coverImageUrl}
+                                            src={coverPreview}
                                             alt="Cover preview"
                                             className="w-full h-full object-cover rounded-2xl"
                                             style={{ objectPosition: coverObjectPosition(coverFocal.x, coverFocal.y) }}
@@ -761,17 +782,39 @@ export function CreateEventPage({ adminOrg }: CreateEventPageProps = {}) {
                                             <div className="w-16 h-16 bg-card rounded-2xl shadow-md flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
                                                 <ImageIcon className="w-8 h-8 text-[#ff6b6b]" />
                                             </div>
-                                            <p className="text-foreground font-medium">
-                                                {uploading ? 'Uploading...' : 'Click to upload cover image'}
-                                            </p>
+                                            <p className="text-foreground font-medium">Click to upload cover image</p>
                                             <p className="text-xs text-muted-foreground mt-1">16:9 ratio recommended • PNG, JPG up to {MAX_UPLOAD_MB}MB</p>
                                         </>
                                     )}
                                 </label>
+
+                                {coverPreview && !uploading && (
+                                    <button
+                                        type="button"
+                                        onClick={clearCover}
+                                        aria-label="Remove cover image"
+                                        className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-sm text-white flex items-center justify-center transition-colors"
+                                    >
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                )}
+
+                                {uploading && (
+                                    <div className="absolute inset-0 rounded-2xl bg-black/50 backdrop-blur-[2px] flex flex-col items-center justify-center gap-2 text-white">
+                                        <Loader2 className="w-6 h-6 animate-spin" />
+                                        <p className="text-sm font-semibold">Uploading photo…</p>
+                                    </div>
+                                )}
                             </div>
-                            {coverImageUrl && (
+                            {coverPreview && !uploading && coverUploadedUrl && (
+                                <p className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 mt-2">
+                                    <CheckCircle className="w-3.5 h-3.5" />
+                                    Photo uploaded — you won&apos;t wait for it when you submit.
+                                </p>
+                            )}
+                            {coverPreview && (
                                 <div className="mt-4 p-4 bg-white/70 dark:bg-neutral-900/40 backdrop-blur-xl rounded-2xl border border-black/5 dark:border-white/10">
-                                    <CoverFocalPointPicker imageUrl={coverImageUrl} value={coverFocal} onChange={setCoverFocal} />
+                                    <CoverFocalPointPicker imageUrl={coverPreview} value={coverFocal} onChange={setCoverFocal} />
                                 </div>
                             )}
                         </div>
