@@ -62,6 +62,10 @@ export function NavbarManager() {
     pathname.startsWith("/auth") ||
     pathname === "/onboarding" ||
     pathname === "/org-signup" ||
+    // The create-event wizard ships its own header, step bar and action footer.
+    // Layering the global org nav on top puts two bars in the same top strip at
+    // the same z-index, and buries the mobile nav under the wizard's footer.
+    pathname === "/org-events/create" ||
     pathname.startsWith("/admin")
 
 
