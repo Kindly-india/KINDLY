@@ -21,6 +21,7 @@ import { UpdateGalleryDto } from './dto/update-gallery.dto';
 import { BroadcastMessageDto } from './dto/broadcast-message.dto';
 import { SelfCheckInDto } from './dto/self-check-in.dto';
 import { SubmitReviewDto } from './dto/submit-review.dto';
+import { MAX_FILE_SIZE_BYTES } from '../common/file-validation.util';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AdminGuard } from '../auth/guards/admin.guard';
 import { OptionalAuthGuard } from '../auth/guards/optional-auth.guard';
@@ -245,7 +246,9 @@ export class EventController {
   // ✅ NEW: Upload Org Signature
   @Post('org/signature')
   @UseGuards(JwtAuthGuard)
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', { limits: { fileSize: MAX_FILE_SIZE_BYTES } }),
+  )
   async uploadSignature(
     @Request() req: any,
     @UploadedFile() file: Express.Multer.File,

@@ -22,6 +22,7 @@ import { ChangeEmailDto } from './dto/change-email.dto';
 import { AddReviewDto } from './dto/add-review.dto';
 import { SetApprovalDto } from './dto/set-approval.dto';
 import { SetSuspensionDto } from '../common/dto/set-suspension.dto';
+import { MAX_FILE_SIZE_BYTES } from '../common/file-validation.util';
 
 @Controller('organizations')
 export class OrganizationController {
@@ -172,7 +173,9 @@ export class OrganizationController {
   // POST /organizations/gallery — org owner only
   @UseGuards(JwtAuthGuard)
   @Post('gallery')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', { limits: { fileSize: MAX_FILE_SIZE_BYTES } }),
+  )
   async uploadOrgGalleryPhoto(
     @Request() req: any,
     @UploadedFile() file: Express.Multer.File,

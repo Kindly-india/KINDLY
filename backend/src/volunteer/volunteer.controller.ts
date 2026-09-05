@@ -20,6 +20,7 @@ import { ChangeEmailDto } from './dto/change-email.dto';
 import { OnboardingDto } from './dto/onboarding.dto';
 import { EnsureProfileDto } from './dto/ensure-profile.dto';
 import { OptionalAuthGuard } from '../auth/guards/optional-auth.guard';
+import { MAX_FILE_SIZE_BYTES } from '../common/file-validation.util';
 import { AdminGuard } from '../auth/guards/admin.guard';
 import { SuperAdminGuard } from '../auth/guards/super-admin.guard';
 import { SetSuspensionDto } from '../common/dto/set-suspension.dto';
@@ -127,7 +128,10 @@ export class VolunteerController {
   // 6. Upload Photo (Protected)
   @UseGuards(JwtAuthGuard)
   @Post('gallery')
-  @UseInterceptors(FileInterceptor('file')) // 'file' matches the frontend formData key
+  // 'file' matches the frontend formData key
+  @UseInterceptors(
+    FileInterceptor('file', { limits: { fileSize: MAX_FILE_SIZE_BYTES } }),
+  )
   async uploadGalleryPhoto(
     @Request() req: any,
     @UploadedFile() file: Express.Multer.File,

@@ -16,6 +16,7 @@ import { UpdatePasswordDto } from './dto/update-password.dto';
 import { UploadOrgDocumentDto } from './dto/upload-org-document.dto';
 import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { MAX_FILE_SIZE_BYTES } from '../common/file-validation.util';
 
 @Controller('auth')
 export class AuthController {
@@ -27,7 +28,9 @@ export class AuthController {
   // since it's reachable by anyone.
   @Throttle({ short: { limit: 10, ttl: 3_600_000 } })
   @Post('signup/organization/documents')
-  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 5 * 1024 * 1024 } }))
+  @UseInterceptors(
+    FileInterceptor('file', { limits: { fileSize: MAX_FILE_SIZE_BYTES } }),
+  )
   async uploadOrgDocument(
     @UploadedFile() file: Express.Multer.File,
     @Body(ValidationPipe) dto: UploadOrgDocumentDto,

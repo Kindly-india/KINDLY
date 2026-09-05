@@ -3,13 +3,16 @@ import { BadRequestException } from '@nestjs/common';
 
 const ALLOWED_IMAGE_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const ALLOWED_KYC_MIME_TYPES = ['application/pdf', 'image/jpeg', 'image/png'];
-const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
+export const MAX_FILE_SIZE_MB = 25;
+export const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
 export function validateImageFile(file: Express.Multer.File): void {
   if (!file) throw new BadRequestException('No file provided');
 
   if (file.size > MAX_FILE_SIZE_BYTES)
-    throw new BadRequestException('File size must not exceed 5MB');
+    throw new BadRequestException(
+      `File size must not exceed ${MAX_FILE_SIZE_MB}MB`,
+    );
 
   if (!ALLOWED_IMAGE_MIME_TYPES.includes(file.mimetype))
     throw new BadRequestException(
@@ -35,7 +38,9 @@ export function validateKycDocumentFile(file: Express.Multer.File): string {
   if (!file) throw new BadRequestException('No file provided');
 
   if (file.size > MAX_FILE_SIZE_BYTES)
-    throw new BadRequestException('File size must not exceed 5MB');
+    throw new BadRequestException(
+      `File size must not exceed ${MAX_FILE_SIZE_MB}MB`,
+    );
 
   if (!ALLOWED_KYC_MIME_TYPES.includes(file.mimetype))
     throw new BadRequestException('Only PDF, JPEG, and PNG files are allowed');

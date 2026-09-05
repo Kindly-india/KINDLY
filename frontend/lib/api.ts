@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { MAX_UPLOAD_BYTES, MAX_UPLOAD_MB } from './utils'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -475,8 +476,8 @@ export const api = {
   // Upload event cover image
   uploadEventImage: async (file: File): Promise<string> => {
     // Validate file
-    if (file.size > 5 * 1024 * 1024) {
-      throw new Error('File size must be less than 5MB');
+    if (file.size > MAX_UPLOAD_BYTES) {
+      throw new Error(`File size must be less than ${MAX_UPLOAD_MB}MB`);
     }
 
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
@@ -1578,7 +1579,7 @@ export const api = {
 
   // ============ IMAGE UPLOADS ============
   uploadProfileImage: async (file: File, type: 'avatar' | 'cover') => {
-    if (file.size > 5 * 1024 * 1024) throw new Error('File must be less than 5MB');
+    if (file.size > MAX_UPLOAD_BYTES) throw new Error(`File must be less than ${MAX_UPLOAD_MB}MB`);
 
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
     if (!allowedTypes.includes(file.type)) throw new Error('Only JPG/PNG allowed');

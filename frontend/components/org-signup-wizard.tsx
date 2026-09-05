@@ -23,7 +23,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card } from "@/components/ui/card"
-import { cn } from "@/lib/utils"
+import { cn, MAX_UPLOAD_BYTES, MAX_UPLOAD_MB } from "@/lib/utils"
 import { api } from "@/lib/api"
 import { toast } from "sonner"
 
@@ -154,9 +154,8 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
   ) => {
     if (!file) return;
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('File size must be less than 5MB');
+    if (file.size > MAX_UPLOAD_BYTES) {
+      toast.error(`File size must be less than ${MAX_UPLOAD_MB}MB`);
       return;
     }
 

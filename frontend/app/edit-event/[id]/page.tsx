@@ -18,7 +18,7 @@ import {
   Lock // Added Lock icon for the "Option C" error state
 } from "lucide-react"
 import { api } from "@/lib/api"
-import { coverObjectPosition } from "@/lib/utils"
+import { coverObjectPosition, MAX_UPLOAD_BYTES, MAX_UPLOAD_MB } from "@/lib/utils"
 import { CoverFocalPointPicker, type FocalPoint } from "@/components/cover-focal-point-picker"
 
 const categories = [
@@ -171,8 +171,8 @@ export default function EditEventPage() {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        alert("Image size must be less than 5MB")
+      if (file.size > MAX_UPLOAD_BYTES) {
+        alert(`Image size must be less than ${MAX_UPLOAD_MB}MB`)
         return
       }
       setImageFile(file)
@@ -365,7 +365,7 @@ export default function EditEventPage() {
                       <Upload className="w-6 h-6 text-teal-600" />
                     </div>
                     <span className="text-sm font-medium text-foreground">Click to upload image</span>
-                    <span className="text-xs text-muted-foreground mt-1">JPG or PNG (Max 5MB)</span>
+                    <span className="text-xs text-muted-foreground mt-1">JPG or PNG (Max {MAX_UPLOAD_MB}MB)</span>
                     <input
                       type="file"
                       className="hidden"
