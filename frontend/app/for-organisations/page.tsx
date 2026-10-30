@@ -1,8 +1,8 @@
 "use client"
 
 import {
-  BarChart3, Users2, Zap, Check, QrCode, FileText, Award,
-  ShieldCheck, Bell, Globe, ChevronDown, Calendar, TrendingUp, ArrowLeft
+  BarChart3, Users2, Check, FileText, Award, ShieldCheck, Globe, ChevronDown,
+  Calendar, TrendingUp, ArrowLeft, MapPin, Megaphone
 } from "lucide-react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
@@ -13,88 +13,88 @@ const features = [
     color: "text-blue-600",
     bg: "bg-blue-50 dark:bg-blue-500/15",
     title: "Create Events in Minutes",
-    body: "Build a detailed event listing with title, cause category, date, time, GPS location, description, requirements, and volunteer capacity. Once submitted, your event goes through a quick review and then appears on the Kindly discovery feed for all volunteers in your city."
+    body: "A guided flow takes you from idea to listing: title, cause category, date and time, a pinned location on the map, requirements, volunteer limit and registration deadline — with a live preview as you go. Once submitted, your event goes through a quick review and then appears on the Kindly discovery feed."
   },
   {
     icon: Users2,
     color: "text-violet-600",
     bg: "bg-violet-50 dark:bg-violet-500/15",
     title: "See Every Registered Volunteer",
-    body: "Your event dashboard shows every registered volunteer with their full Kindly profile — skills, past events, total volunteer hours, and endorsements. You can assess the profile of your incoming volunteers before the event day, helping you plan roles and responsibilities better."
+    body: "Your event roster lists every registered volunteer. Open any name to see their Kindly profile — skills, past events, volunteer hours and endorsements — so you can plan roles and responsibilities before the event day."
   },
   {
-    icon: QrCode,
+    icon: MapPin,
     color: "text-emerald-600",
     bg: "bg-emerald-50 dark:bg-emerald-500/15",
-    title: "QR-Based Attendance — No Paper",
-    body: "A unique QR code is generated automatically for each of your events. Volunteers scan it at the venue using the Kindly app to check in. Our geo-lock technology confirms they are physically at your location. Attendance is recorded instantly — no sign-in sheets, no manual counting, no disputes."
+    title: "Check-In Without the Paperwork",
+    body: "On the day, volunteers check themselves in at the venue with a single tap, and you can check anyone in (or undo a mistake) from your roster. Attendance is recorded instantly and your headcount updates live — no sign-in sheets, no manual counting, no disputes."
   },
   {
     icon: ShieldCheck,
     color: "text-teal-600",
     bg: "bg-teal-50 dark:bg-teal-500/15",
-    title: "Geo-Lock Prevents Fake Check-Ins",
-    body: "Every check-in is verified against the event's GPS coordinates. Volunteers must be within 200 metres of the venue to complete check-in. This guarantees that every attendance record is genuine, making your reports accurate and your certificates credible to recipients."
+    title: "Geo-Lock Keeps Attendance Honest",
+    body: "Self check-in opens when your event starts and only works within 200 metres of the location you pinned. That keeps every attendance record genuine, making your reports accurate and your certificates credible to the people who receive them."
   },
   {
     icon: Award,
     color: "text-amber-600",
     bg: "bg-amber-50 dark:bg-amber-500/15",
-    title: "Automatic Certificate Generation",
-    body: "Once you mark an event complete, Kindly automatically generates a personalised digital certificate for every attending volunteer — signed with your organisation's name. Volunteers download it directly from their profile. You never have to create or send a certificate manually again."
+    title: "Certificates You Issue in One Go",
+    body: "After you complete an event, issue a personalised certificate to everyone who attended — signed with your organisation's signature and carrying a unique verification ID. Volunteers download it from their profile, so you never have to create or send certificates by hand."
   },
   {
     icon: BarChart3,
     color: "text-orange-600",
     bg: "bg-orange-50 dark:bg-orange-500/15",
     title: "Analytics Dashboard",
-    body: "Track your organisation's volunteer program over time. See total events hosted, total volunteers across all events, average turnout rate, and volunteer retention. Understand which types of events attract the most volunteers and which cause categories resonate most in your city."
+    body: "Track your volunteer program over time: total volunteer hours, active volunteers, events hosted, your repeat-volunteer rate and an impact-growth chart. An event-by-event performance table shows what works, and you can export a report to share with your supporters."
   },
   {
     icon: FileText,
     color: "text-rose-600",
     bg: "bg-rose-50 dark:bg-rose-500/15",
     title: "Event Reports & Photo Gallery",
-    body: "After each event, upload a photo gallery and complete the event report. The report captures final attendance, volunteer hours contributed, and a summary of what was accomplished. This report forms part of your organisation's public profile and impact history on Kindly."
+    body: "After each event, review the report — turnout, total impact hours and average rating — and add photos to the event gallery. Each event also gets a public showcase page that volunteers can share."
   },
   {
-    icon: Bell,
+    icon: Megaphone,
     color: "text-purple-600",
     bg: "bg-purple-50 dark:bg-purple-500/15",
-    title: "Volunteer Reviews",
-    body: "Attending volunteers can leave reviews of your event after the fact. This gives you honest, direct feedback from the ground. Organisations with high review scores are featured more prominently on the discovery feed, helping you attract more committed volunteers over time."
+    title: "Message Everyone Registered",
+    body: "Send a broadcast to every registered volunteer — a changed meeting point, what to bring, a last-minute thank-you. Updates appear on the volunteer's event page, and cancelling an event emails everyone who registered."
   },
   {
     icon: TrendingUp,
     color: "text-cyan-600",
     bg: "bg-cyan-50 dark:bg-cyan-500/15",
-    title: "Build a Trusted Organisation Profile",
-    body: "Your Kindly profile grows with every event you host. Past events, attendee counts, cause categories, and volunteer reviews all build your public reputation. A strong profile makes future volunteer recruitment significantly easier — people sign up for organisations they trust."
+    title: "A Public Identity Volunteers Trust",
+    body: "Your organisation gets a profile of its own: tagline, mission, an action gallery, past and upcoming events, followers and volunteer reviews. Approved organisations can carry a verified badge. Your profile grows with every event you host — people sign up for organisations they trust."
   },
   {
     icon: Globe,
     color: "text-muted-foreground",
     bg: "bg-muted",
-    title: "Reach Volunteers Across Your City",
-    body: "When you publish an event, it appears in the discovery feed of every volunteer in your city who matches your cause category. Volunteers can filter by cause, so your beach cleanup reaches environmentalists, your tutoring event reaches educators, and your food drive reaches the right hands."
+    title: "Reach Volunteers Who Care",
+    body: "Volunteers browse the discovery feed by cause, date and place, and tell us which causes they care about when they join. So your river clean-up reaches people who love the outdoors, your tutoring event reaches educators, and your food drive reaches the right hands."
   }
 ]
 
 const steps = [
-  { n: "01", title: "Register & get verified", desc: "Create your organisation account. We review your profile before your events go live. Verification typically takes 1–2 business days." },
-  { n: "02", title: "Create your first event", desc: "Fill in event details, set the GPS location, add your QR poster, and publish. Volunteers can immediately start registering." },
-  { n: "03", title: "Manage your attendees", desc: "Track registrations in real time. View volunteer profiles, communicate event updates, and prepare your QR code for the day." },
-  { n: "04", title: "Run the event, track attendance live", desc: "On event day, watch check-ins happen in real time on your dashboard. Geo-verified attendance, no paperwork." },
-  { n: "05", title: "Complete the report, send certificates", desc: "Submit the event report, upload photos. Certificates are sent to volunteers automatically. Your analytics update immediately." }
+  { n: "01", title: "Register & get verified", desc: "Create your organisation account and tell us about your work. Our team reviews every application before your events go live, and you'll get an email as soon as you're approved." },
+  { n: "02", title: "Create your first event", desc: "Add the details, pin the location on the map, set your volunteer limit and submit. Once our team approves it, it appears on the discovery feed and volunteers can start registering." },
+  { n: "03", title: "Manage your attendees", desc: "Track registrations in real time, open volunteer profiles, and message everyone who has registered with event updates." },
+  { n: "04", title: "Run the event, track attendance live", desc: "Volunteers check in at the venue — within 200 metres, once the event has started. Watch the roster update live, or check people in yourself." },
+  { n: "05", title: "Complete the event, recognise your volunteers", desc: "Mark the event complete, add photos and issue certificates to everyone who attended. Your analytics update immediately." }
 ]
 
 const faqs = [
-  { q: "How does the organisation verification process work?", a: "After you create an account, Kindly reviews your organisation details — mission, contact information, and type. We verify NGOs, registered trusts, and community groups. The review takes 1–2 business days. Once approved, your events appear on the discovery feed immediately upon publishing." },
-  { q: "Is Kindly free for organisations?", a: "Yes. Kindly is currently free for organisations during this phase of the platform. You can create unlimited events, manage unlimited volunteers, and generate unlimited certificates at no cost." },
-  { q: "Can I see volunteer profiles before the event?", a: "Yes. Every volunteer who registers for your event is visible in your event dashboard with their full Kindly profile — skills, past volunteer history, and endorsements. You can use this to plan roles and understand your incoming team." },
-  { q: "What if a volunteer doesn't show up?", a: "Volunteers who don't check in by the event's end time are automatically marked as absent. You can also manually mark specific volunteers absent from the dashboard. Absent volunteers do not receive certificates." },
-  { q: "Can I edit or cancel an event after publishing?", a: "Yes. You can edit event details at any time from your event dashboard. If you need to cancel an event, all registered volunteers are automatically notified. We ask that you give at least 24 hours notice when possible." },
-  { q: "How do I get the QR code for check-in?", a: "A unique QR code is automatically generated for each event you create. Find it in your event dashboard under 'Event QR'. You can download and print it or display it on a screen at the venue." }
+  { q: "How does the organisation verification process work?", a: "After you create an account, our team reviews your organisation's details — mission, contact information and type — along with any supporting documents you attach, such as a registration certificate, PAN or proof of organisation. We welcome NGOs, registered trusts, institution-backed groups and community groups. Once you're approved you'll get an email, and your events go live after their own quick review." },
+  { q: "Is Kindly free for organisations?", a: "Kindly is currently free for organisations during this phase of the platform — you can create events, manage volunteers and issue certificates at no cost. If you choose to sell tickets for an event, a platform fee applies; we'll share the details when you set up a paid event." },
+  { q: "Can I see volunteer profiles before the event?", a: "Yes. Every volunteer who registers appears on your event roster. Open any name to see their Kindly profile — skills, past volunteer history, hours and endorsements — and use it to plan roles and understand your incoming team." },
+  { q: "What if a volunteer doesn't show up?", a: "When an event is completed, registered volunteers who never checked in are marked as missed. You can also check volunteers in, or undo a check-in, from your roster. Certificates go only to volunteers who attended." },
+  { q: "Can I edit or cancel an event after publishing?", a: "You can edit event details from your event dashboard. If you need to cancel an event, every registered volunteer is emailed automatically. We ask that you give at least 24 hours' notice when possible." },
+  { q: "How does check-in work?", a: "Volunteers check themselves in at the venue with one tap. Check-in opens when your event starts and only works within 200 metres of the location you pinned, so attendance records stay genuine. You can also check volunteers in from your roster." }
 ]
 
 export default function ForOrganisationsPage() {
@@ -116,17 +116,17 @@ export default function ForOrganisationsPage() {
             <div>
               <span className="text-blue-600 font-bold text-xs tracking-widest uppercase mb-5 block">For Organisations</span>
               <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-6 leading-[1.1]">
-                Run your volunteer program like a pro.
+                Give your organisation an identity volunteers trust.
               </h1>
               <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
-                Kindly gives NGOs and community groups the tools to recruit, manage, track, and certify volunteers — without the administrative overhead. Focus on your mission. We handle the logistics.
+                Kindly gives NGOs and community groups a verified public profile and the tools to recruit, check in, certify and recognise volunteers — without the administrative overhead. Focus on your mission. We handle the logistics.
               </p>
               <div className="space-y-3 mb-8">
                 {[
-                  "Geo-verified attendance — no fake check-ins",
-                  "Automatic certificates for every attendee",
-                  "Analytics dashboard for your entire program",
-                  "Volunteer profiles so you know who's showing up"
+                  "A verified public profile volunteers can trust",
+                  "Location-verified check-in — attendance you can rely on",
+                  "Certificates you can issue to everyone who attended",
+                  "Analytics and volunteer profiles for your whole program"
                 ].map((item) => (
                   <div key={item} className="flex items-start gap-3">
                     <div className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-500/15 flex items-center justify-center mt-0.5 shrink-0">
@@ -152,26 +152,26 @@ export default function ForOrganisationsPage() {
                       <Users2 className="w-6 h-6 text-blue-600" />
                     </div>
                     <div>
-                      <div className="text-2xl font-bold text-foreground">128</div>
+                      <div className="text-2xl font-bold text-foreground">40</div>
                       <div className="text-xs text-muted-foreground uppercase tracking-wide">Registered Volunteers</div>
                     </div>
                   </div>
                   <div className="h-2 bg-muted rounded-full overflow-hidden">
-                    <div className="h-full bg-blue-600 rounded-full" style={{ width: "78%" }} />
+                    <div className="h-full bg-blue-600 rounded-full" style={{ width: "80%" }} />
                   </div>
                   <div className="flex justify-between mt-2">
-                    <span className="text-xs text-muted-foreground">78 checked in</span>
-                    <span className="text-xs text-blue-600 font-medium">61% arrived</span>
+                    <span className="text-xs text-muted-foreground">32 checked in</span>
+                    <span className="text-xs text-blue-600 font-medium">80% arrived</span>
                   </div>
                 </div>
                 <div className="bg-card rounded-2xl shadow-sm p-5 mb-4">
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-amber-100 dark:bg-amber-500/15 rounded-full flex items-center justify-center">
-                      <Zap className="w-6 h-6 text-amber-600" />
+                    <div className="w-12 h-12 bg-teal-100 dark:bg-teal-500/15 rounded-full flex items-center justify-center">
+                      <ShieldCheck className="w-6 h-6 text-teal-600" />
                     </div>
                     <div>
-                      <div className="text-2xl font-bold text-foreground">98%</div>
-                      <div className="text-xs text-muted-foreground uppercase tracking-wide">Avg Turnout Rate</div>
+                      <div className="text-2xl font-bold text-foreground">32</div>
+                      <div className="text-xs text-muted-foreground uppercase tracking-wide">Location-Verified Check-Ins</div>
                     </div>
                   </div>
                 </div>
@@ -181,12 +181,13 @@ export default function ForOrganisationsPage() {
                       <Award className="w-6 h-6 text-emerald-600" />
                     </div>
                     <div>
-                      <div className="text-2xl font-bold text-foreground">2,450</div>
+                      <div className="text-2xl font-bold text-foreground">32</div>
                       <div className="text-xs text-muted-foreground uppercase tracking-wide">Certificates Issued</div>
                     </div>
                   </div>
                 </div>
               </div>
+              <p className="text-xs text-muted-foreground text-center">Illustrative sample event</p>
             </div>
           </div>
         </div>
@@ -218,7 +219,7 @@ export default function ForOrganisationsPage() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-foreground mb-4">Every tool you need</h2>
-            <p className="text-muted-foreground text-lg max-w-xl mx-auto">Built specifically for how Indian NGOs and community groups actually operate.</p>
+            <p className="text-muted-foreground text-lg max-w-xl mx-auto">Built for how NGOs and community groups actually operate.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {features.map((f, i) => (
@@ -265,7 +266,7 @@ export default function ForOrganisationsPage() {
       <section className="py-24 px-6 text-center">
         <div className="max-w-2xl mx-auto">
           <h2 className="text-4xl font-bold text-foreground mb-4">Ready to grow your volunteer program?</h2>
-          <p className="text-muted-foreground mb-8 text-lg">Join verified organisations across India using Kindly to make their missions more effective.</p>
+          <p className="text-muted-foreground mb-8 text-lg">Join verified organisations using Kindly to make their missions more effective.</p>
           <a
             href="/org-signup"
             className="h-12 px-10 bg-primary hover:bg-primary text-primary-foreground text-[15px] font-bold rounded-full inline-flex items-center justify-center transition-colors"
