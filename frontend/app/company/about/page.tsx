@@ -1,196 +1,172 @@
-"use client"
+import type { Metadata } from "next"
+import { Building2, FileCheck, Heart, Repeat, Shield, Sparkles, TrendingUp, Users, Zap } from "lucide-react"
+import { ScrollReveal } from "@/components/ui/scroll-reveal"
+import { CtaBand } from "@/components/marketing/cta"
+import { Container, Eyebrow, GradientText, Section, SectionHeading } from "@/components/marketing/primitives"
+import { MarketingShell } from "@/components/marketing/shell"
+import { StatStrip } from "@/components/marketing/stats"
+import { CONTACT_EMAIL, STATS } from "@/lib/marketing-content"
 
-import { Heart, Globe, Shield, TrendingUp, Users, Zap, Mail, MapPin, ArrowLeft } from "lucide-react"
-import { useRouter } from "next/navigation"
+export const metadata: Metadata = {
+  title: "About",
+  description: "Kindly gives organisations and volunteers an identity. Learn why we built it, what we believe, and where we are heading.",
+  openGraph: {
+    title: "About Kindly",
+    description: "We believe in the power of showing up.",
+    type: "website",
+  },
+}
 
-const values = [
-  {
-    icon: Shield,
-    color: "text-blue-600",
-    bg: "bg-blue-50 dark:bg-blue-500/15",
-    title: "Integrity over optics",
-    desc: "Volunteer hours on Kindly are recorded from check-in, and self check-in only works at the venue, within 200 metres. We built verification into the foundation because credibility — for volunteers and organisations alike — is the only thing worth building on."
-  },
-  {
-    icon: Heart,
-    color: "text-rose-600",
-    bg: "bg-rose-50 dark:bg-rose-500/15",
-    title: "Community before product",
-    desc: "Kindly is a product, but it is more importantly a community. The decisions we make about features, design, and policy start with one question: does this make it easier or harder for someone to show up and help? Technology is just the enabler."
-  },
-  {
-    icon: TrendingUp,
-    color: "text-emerald-600",
-    bg: "bg-emerald-50 dark:bg-emerald-500/15",
-    title: "Long-term impact",
-    desc: "One-off charity drives create feel-good moments. Long-term volunteering creates change. Kindly is built to turn a first-time volunteer into a habitual one — through recognition, community, and a profile that grows with every event attended."
-  },
-  {
-    icon: Globe,
-    color: "text-amber-600",
-    bg: "bg-amber-50 dark:bg-amber-500/15",
-    title: "Real causes, close to home",
-    desc: "The most powerful act of kindness is one that happens close to home. Kindly does not aggregate generic campaigns — it connects you with real organisations running real events in your community, wherever that is. Local problems need local people."
-  },
-  {
-    icon: Zap,
-    color: "text-violet-600",
-    bg: "bg-violet-50 dark:bg-violet-500/15",
-    title: "Friction is the enemy",
-    desc: "The number one reason people don't volunteer is not lack of desire — it's lack of a clear, easy path. Every design decision on Kindly is made to reduce friction: fewer steps, no gatekeeping, no bureaucracy. Showing up should be simple."
-  },
-  {
-    icon: Users,
-    color: "text-teal-600",
-    bg: "bg-teal-50 dark:bg-teal-500/15",
-    title: "Transparency by default",
-    desc: "Every organisation on Kindly is reviewed before it goes live. Volunteer hours come from check-ins, not self-reporting, and certificates come only from the organisations that issued them. Trust is built by showing the truth, not curating it."
-  }
+const GAPS = [
+  { icon: Sparkles, title: "Intent without motivation", text: "Most volunteers mean well. But nothing makes showing up feel seen or remembered, so a busy week quietly wins." },
+  { icon: Building2, title: "Organisations without an identity", text: "Genuine NGOs and community groups look no different from anyone else online. Their work lives in chat groups, posters and spreadsheets." },
+  { icon: FileCheck, title: "Service without proof", text: "Attendance is taken on paper and paper certificates are hard to trust. A volunteer’s effort can’t easily be verified or shown to anyone." },
 ]
 
-const timeline = [
-  { year: "End 2025", event: "The idea", desc: "I noticed that local Community Organisations struggle not with funding but with reliable manpower. Meanwhile, thousands of students and young professionals want to contribute but cannot find vetted opportunities. The idea for Kindly is written on a notebook." },
-  { year: "Early 2026", event: "First version", desc: "I worked in some organisations to find out that events are created and carried out manually. Attendance is tracked on paper." },
-  { year: "Early 2026", event: "Platform launch", desc: "That’s when I brought the idea in my head to life, and kindly was created. Kindly is a full platform — event creation, volunteer profiles, location-verified check-in, and certificates." },
-  { year: "October 2026", event: "Where we are now", desc: "232 volunteers, 14 organisations and 101 volunteer hours so far — and growing." },
-  { year: "Vision for 2026 Onwards", event: "Growing the community", desc: "Kindly should be available to every organisation and volunteer who wants it, wherever they are. 50,000 volunteers. 1,200+ events hosted. Location-verified check-ins already keep attendance honest — the aim is certificates credible enough to be accepted by colleges and employers. This is just the beginning." }
+const VALUES = [
+  { icon: Shield, title: "Integrity over optics", text: "Volunteer hours on Kindly are recorded from check-in, and self check-in only works at the venue, within 200 metres. We built verification into the foundation because credibility, for volunteers and organisations alike, is the only thing worth building on." },
+  { icon: Heart, title: "Community before product", text: "Kindly is a product, but it is more importantly a community. The decisions we make about features, design and policy start with one question: does this make it easier or harder for someone to show up and help? Technology is just the enabler." },
+  { icon: TrendingUp, title: "Long-term impact", text: "One-off charity drives create feel-good moments. Long-term volunteering creates change. Kindly is built to turn a first-time volunteer into a habitual one, through recognition, community and a profile that grows with every event attended." },
+  { icon: Users, title: "Real causes, close to home", text: "The most powerful act of kindness is one that happens close to home. Kindly does not aggregate generic campaigns. It connects you with real organisations running real events in your community, wherever that is." },
+  { icon: Zap, title: "Friction is the enemy", text: "The number one reason people don’t volunteer is not lack of desire, it’s lack of a clear, easy path. Every design decision on Kindly is made to reduce friction: fewer steps, no gatekeeping, no bureaucracy. Showing up should be simple." },
+  { icon: Repeat, title: "Transparency by default", text: "Every organisation on Kindly is reviewed before it goes live. Volunteer hours come from check-ins, not self-reporting, and certificates come only from the organisations that issued them. Trust is built by showing the truth, not curating it." },
 ]
 
+const TIMELINE = [
+  { when: "End 2025", title: "The idea", text: "I noticed that local community organisations struggle not with funding but with reliable manpower. Meanwhile, thousands of students and young professionals want to contribute but cannot find vetted opportunities. The idea for Kindly is written on a notebook." },
+  { when: "Early 2026", title: "First version", text: "I worked in some organisations to find out that events are created and carried out manually. Attendance is tracked on paper." },
+  { when: "Early 2026", title: "Platform launch", text: "That’s when I brought the idea in my head to life, and Kindly was created. Kindly is a full platform: event creation, volunteer profiles, location-verified check-in and certificates." },
+  { when: STATS.asOf, title: "Where we are now", text: `${STATS.volunteers} volunteers, ${STATS.organisations} organisations and ${STATS.hours} volunteer hours so far, and growing.` },
+  { when: "Vision for 2026 onwards", title: "Growing the community", text: "Kindly should be available to every organisation and volunteer who wants it, wherever they are. 50,000 volunteers. 1,200+ events hosted. Location-verified check-ins already keep attendance honest. The aim is certificates credible enough to be accepted by colleges and employers. This is just the beginning." },
+]
 
 export default function AboutPage() {
-  const router = useRouter()
-
   return (
-    <div className="bg-background min-h-screen">
-
+    <MarketingShell>
       {/* Hero */}
-      <section className="pt-32 pb-24 px-6 text-center">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex justify-start mb-6">
-            <button onClick={() => router.back()} className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-              <ArrowLeft className="w-4 h-4" />
-              Back
-            </button>
-          </div>
-          <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-5 block">About Kindly</span>
-          <h1 className="text-5xl md:text-7xl font-bold text-foreground mb-8 tracking-tight leading-[1.05]">
-            We believe in the power<br />of{" "}
-            <span className="italic font-serif text-muted-foreground">showing up.</span>
-          </h1>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-            Kindly is a volunteering platform that gives organisations and volunteers an identity. We connect people who want to help with organisations that need them — and we verify every step of the way. Not because we don&apos;t trust people. Because trust is what makes impact real.
-          </p>
-        </div>
+      <section className="relative overflow-hidden pb-16 pt-14 text-center sm:pb-24 sm:pt-24">
+        <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[36rem] bg-[radial-gradient(55%_60%_at_50%_0%,rgba(255,107,107,0.16),transparent)]" />
+        <Container className="max-w-4xl">
+          <ScrollReveal>
+            <Eyebrow className="justify-center">About Kindly</Eyebrow>
+            <h1 className="mt-5 text-4xl font-bold tracking-tight text-foreground sm:text-6xl lg:text-7xl lg:leading-[1.04]">
+              We believe in the power of <GradientText>showing up.</GradientText>
+            </h1>
+            <p className="mx-auto mt-7 max-w-3xl text-lg leading-relaxed text-muted-foreground sm:text-xl">
+              Kindly is a volunteering platform that gives organisations and volunteers an identity. We connect people who want to help with organisations that need them, and we verify every step of the way. Not because we don’t trust people. Because trust is what makes impact real.
+            </p>
+          </ScrollReveal>
+        </Container>
       </section>
 
+      <StatStrip />
 
       {/* Mission */}
-      <section className="py-24 px-6">
-        <div className="max-w-3xl mx-auto">
-          <h2 className="text-3xl font-bold text-foreground mb-8">Our Mission</h2>
-          <div className="space-y-5 text-[17px] text-muted-foreground leading-relaxed">
-            <p>
-              India has one of the youngest populations in the world and one of the most pressing set of social challenges — in education, environment, food security, health, and more. At the same time, there are millions of students and young professionals who genuinely want to contribute but have no reliable way to connect with the causes that need them.
-            </p>
-            <p>
-              Kindly exists to close that gap. We are building the infrastructure for volunteering: an identity for every organisation, authentic proof for every volunteer, and a community that gives people a reason to keep showing up. The goal is to make volunteering as easy, reliable, and habitual as ordering a meal.
-            </p>
-            <p>
-              Kindly is also building a community. A place where doing good becomes a part of your identity. Where your volunteer hours tell a story. Where the people you meet on event day become people you associate with for years.
-            </p>
-            <p>
-              We measure success not in downloads or revenue but in hours volunteered, certificates earned, and organisations that can now do more with the reliable human energy Kindly brings to them.
-            </p>
+      <Section>
+        <Container>
+          <div className="grid gap-10 lg:grid-cols-[1fr_1.5fr] lg:gap-20">
+            <ScrollReveal>
+              <Eyebrow>Our mission</Eyebrow>
+              <h2 className="mt-4 text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:leading-[1.1]">Build the infrastructure for volunteering.</h2>
+            </ScrollReveal>
+            <ScrollReveal delay={0.08} className="space-y-5 text-[17px] leading-relaxed text-muted-foreground">
+              <p>India has one of the youngest populations in the world and one of the most pressing sets of social challenges: in education, environment, food security, health, and more. At the same time, there are millions of students and young professionals who genuinely want to contribute but have no reliable way to connect with the causes that need them.</p>
+              <p>Kindly exists to close that gap. We are building the infrastructure for volunteering: an identity for every organisation, authentic proof for every volunteer, and a community that gives people a reason to keep showing up. The goal is to make volunteering as easy, reliable and habitual as ordering a meal.</p>
+              <p>Kindly is also building a community. A place where doing good becomes a part of your identity. Where your volunteer hours tell a story. Where the people you meet on event day become people you associate with for years.</p>
+              <p>We measure success not in downloads or revenue but in hours volunteered, certificates earned, and organisations that can now do more with the reliable human energy Kindly brings to them.</p>
+            </ScrollReveal>
           </div>
-        </div>
-      </section>
+        </Container>
+      </Section>
+
+      {/* The idea */}
+      <Section tone="cream">
+        <Container>
+          <SectionHeading
+            align="center"
+            eyebrow="The idea"
+            title={<>Intent is common. Motivation can be <GradientText>designed.</GradientText></>}
+            lead="Good intent isn’t the problem. Three gaps stand between a kind impulse and a lasting habit of service. Kindly is built to close all three at once: an identity for organisations, authentic proof for volunteers, and a social layer that makes showing up worth it."
+          />
+          <div className="mt-14 grid gap-6 md:grid-cols-3">
+            {GAPS.map((g, i) => (
+              <ScrollReveal key={g.title} delay={i * 0.08}>
+                <div className="h-full rounded-3xl border border-border bg-card p-8 shadow-sm">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#7b2529] text-white"><g.icon className="h-6 w-6" aria-hidden /></span>
+                  <h3 className="mt-6 text-xl font-bold text-foreground">{g.title}</h3>
+                  <p className="mt-3 leading-relaxed text-muted-foreground">{g.text}</p>
+                </div>
+              </ScrollReveal>
+            ))}
+          </div>
+        </Container>
+      </Section>
 
       {/* Values */}
-      <section className="py-24 px-6 bg-muted">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-foreground mb-4">What we believe</h2>
-            <p className="text-muted-foreground text-lg max-w-xl mx-auto">These are not slogans. They are the principles that drive every product decision we make.</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {values.map((v, i) => (
-              <div key={i} className="bg-card p-8 rounded-2xl">
-                <div className={`w-12 h-12 ${v.bg} rounded-xl flex items-center justify-center mb-5`}>
-                  <v.icon className={`w-6 h-6 ${v.color}`} />
+      <Section>
+        <Container>
+          <SectionHeading align="center" eyebrow="What we believe" title="Principles that drive every product decision" lead="These are not slogans. They are the choices we hold ourselves to." />
+          <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {VALUES.map((v, i) => (
+              <ScrollReveal key={v.title} delay={(i % 3) * 0.07}>
+                <div className="h-full rounded-3xl border border-border bg-card p-7">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#fde8e5] text-[#7b2529] dark:bg-[#ff6b6b]/15 dark:text-[#ffb4ae]"><v.icon className="h-5 w-5" aria-hidden /></span>
+                  <h3 className="mt-5 text-lg font-bold text-foreground">{v.title}</h3>
+                  <p className="mt-2 text-[15px] leading-relaxed text-muted-foreground">{v.text}</p>
                 </div>
-                <h3 className="text-lg font-bold text-foreground mb-3">{v.title}</h3>
-                <p className="text-muted-foreground text-sm leading-relaxed">{v.desc}</p>
-              </div>
+              </ScrollReveal>
             ))}
           </div>
-        </div>
-      </section>
+        </Container>
+      </Section>
 
-      {/* Story / Timeline */}
-      <section className="py-24 px-6">
-        <div className="max-w-3xl mx-auto">
-          <h2 className="text-3xl font-bold text-foreground mb-12">Our Story</h2>
-          <div className="space-y-0">
-            {timeline.map((item, i) => (
-              <div key={i} className="relative flex gap-8 pb-12 last:pb-0">
-                <div className="flex flex-col items-center">
-                  <div className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold shrink-0">
-                    {i + 1}
-                  </div>
-                  {i < timeline.length - 1 && (
-                    <div className="w-0.5 flex-1 bg-muted mt-2" />
-                  )}
-                </div>
-                <div className="pb-2">
-                  <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">{item.year}</div>
-                  <h3 className="text-xl font-bold text-foreground mb-3">{item.event}</h3>
-                  <p className="text-muted-foreground leading-relaxed text-[15px]">{item.desc}</p>
-                </div>
-              </div>
+      {/* Story */}
+      <Section tone="muted">
+        <Container className="max-w-3xl">
+          <SectionHeading eyebrow="Our story" title="From a notebook to a platform" />
+          <ol className="mt-12">
+            {TIMELINE.map((t, i) => (
+              <li key={t.title} className="relative flex gap-6 pb-12 last:pb-0">
+                {i < TIMELINE.length - 1 && <span aria-hidden className="absolute left-5 top-11 h-[calc(100%-2.75rem)] w-px bg-border" />}
+                <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#ff6b6b] to-[#f59e0b] text-sm font-bold text-white">{i + 1}</span>
+                <ScrollReveal className="pb-1">
+                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">{t.when}</p>
+                  <h3 className="mt-1 text-xl font-bold text-foreground">{t.title}</h3>
+                  <p className="mt-2 text-[16px] leading-relaxed text-muted-foreground">{t.text}</p>
+                </ScrollReveal>
+              </li>
             ))}
-          </div>
-        </div>
-      </section>
+          </ol>
+        </Container>
+      </Section>
 
-      {/* Team / Founders Note */}
-      <section className="py-24 px-6 bg-muted">
-        <div className="max-w-3xl mx-auto">
-          <h2 className="text-3xl font-bold text-foreground mb-8">A Note from the Founder</h2>
-          <div className="bg-card p-8 rounded-2xl shadow-sm">
-            <p className="text-[17px] text-muted-foreground leading-relaxed mb-6 italic">
-              The real work in our communities has always been done quietly. I watched people build communities after their 9-to-5s without asking for a microphone. But today, good intentions get lost in the noise. KINDLY is our answer to that. We built a platform that turns intent into measurable, real-world action. It’s for the people who actually want to show up, not just talk about it.
-            </p>
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#ff6b6b] to-[#f59e0b] flex items-center justify-center text-white font-bold text-lg">
-                MD
-              </div>
-              <div>
-                <div className="font-bold text-foreground">Manas Dhivare</div>
-                <div className="text-sm text-muted-foreground">Founder, Kindly</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Founder */}
+      <Section>
+        <Container className="max-w-3xl">
+          <SectionHeading eyebrow="A note from the founder" title="Why we built this" />
+          <ScrollReveal>
+            <figure className="mt-10 rounded-3xl border border-border bg-card p-8 shadow-sm sm:p-10">
+              <blockquote className="text-lg italic leading-relaxed text-muted-foreground sm:text-xl">
+                “The real work in our communities has always been done quietly. I watched people build communities after their 9-to-5s without asking for a microphone. But today, good intentions get lost in the noise. KINDLY is our answer to that. We built a platform that turns intent into measurable, real-world action. It’s for the people who actually want to show up, not just talk about it.”
+              </blockquote>
+              <figcaption className="mt-8 flex items-center gap-4">
+                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-[#ff6b6b] to-[#f59e0b] text-lg font-bold text-white" aria-hidden>MD</span>
+                <span>
+                  <span className="block font-bold text-foreground">Manas Dhivare</span>
+                  <span className="block text-sm text-muted-foreground">Founder, Kindly</span>
+                </span>
+              </figcaption>
+            </figure>
+          </ScrollReveal>
+        </Container>
+      </Section>
 
-      {/* Contact */}
-      <section className="py-24 px-6 text-center">
-        <div className="max-w-2xl mx-auto">
-          <h2 className="text-4xl font-bold text-foreground mb-4">Get in touch</h2>
-          <p className="text-muted-foreground mb-10 text-lg">We read every message. Whether you&apos;re a volunteer, an organisation, a journalist, or someone who just wants to say hello.</p>
-          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
-            <a href="mailto:team@kindly.co.in" className="flex items-center gap-3 text-foreground font-medium hover:text-muted-foreground transition-colors">
-              <Mail className="w-5 h-5 text-muted-foreground" />
-              team@kindly.co.in
-            </a>
-            <span className="text-muted-foreground hidden sm:block">|</span>
-            <div className="flex items-center gap-3 text-foreground font-medium">
-              <MapPin className="w-5 h-5 text-muted-foreground" />
-              India
-            </div>
-          </div>
-        </div>
-      </section>
-    </div>
+      <CtaBand
+        title="Get in touch."
+        lead={`We read every message, whether you’re a volunteer, an organisation, a journalist, or someone who just wants to say hello. Write to ${CONTACT_EMAIL}.`}
+        primary={{ href: `mailto:${CONTACT_EMAIL}`, label: "Write to us" }}
+        secondary={{ href: "/how-it-works", label: "See how it works" }}
+      />
+    </MarketingShell>
   )
 }
