@@ -1,8 +1,8 @@
 "use client"
 
 import {
-  Globe, Trophy, Users, Shield, QrCode, Heart, Zap, BookOpen,
-  Star, MapPin, ChevronDown, CheckCircle2, ArrowLeft
+  Globe, Trophy, Users, Shield, Heart, Zap, BookOpen,
+  Star, MapPin, Compass, ChevronDown, CheckCircle2, ArrowLeft
 } from "lucide-react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
@@ -13,36 +13,36 @@ const features = [
     icon: Globe,
     color: "text-blue-600",
     bg: "bg-blue-50 dark:bg-blue-500/15",
-    title: "Events",
-    body: "Discover hundreds of volunteering events in Nashik, and in future for Mumbai, Pune, Delhi, Bangalore, Chennai, Hyderabad, and Kolkata. Events are posted by verified NGOs and community groups — so every opportunity you see is real, vetted, and ready for you to show up."
+    title: "Events You Can Trust",
+    body: "Browse upcoming volunteering events posted by verified NGOs and community groups, and see every detail before you commit — the venue, the on-site host, what to bring and what you'll be doing. Every organisation and every event is reviewed first, so what you see is real and ready for you to show up."
   },
   {
     icon: Trophy,
     color: "text-amber-600",
     bg: "bg-amber-50 dark:bg-amber-500/15",
     title: "Verified Digital Certificates",
-    body: "Every event you attend earns you a digitally-signed certificate from the organisation. Each certificate is personalized with your name, event details, and volunteer hours. Download as PDF and add to your LinkedIn, resume, or college application. Certificates are generated automatically — no chasing required."
+    body: "After an event, the organisation issues a certificate to everyone who attended — signed by the organisation and personalised with your name, the event details, your volunteer hours and a unique verification ID. Download it as a PDF and add it to your LinkedIn, resume, or college application."
   },
   {
-    icon: QrCode,
+    icon: MapPin,
     color: "text-violet-600",
     bg: "bg-violet-50 dark:bg-violet-500/15",
-    title: "QR Check-In with Geo-Lock",
-    body: "Check in by scanning the organisation's QR code at the venue. Our geo-lock system verifies you are physically at the location — within 200 metres — before confirming attendance. This makes your presence undeniable and your certificate credible. No proxy attendance, ever."
+    title: "One-Tap Check-In with Geo-Lock",
+    body: "On the day, open your ticket and tap Check In. Our geo-lock verifies you are physically at the venue — within 200 metres, once the event has started — before confirming attendance, and your volunteer hours are credited automatically. That makes your presence undeniable and your certificate credible."
   },
   {
     icon: Users,
     color: "text-emerald-600",
     bg: "bg-emerald-50 dark:bg-emerald-500/15",
     title: "A Real Volunteer Community",
-    body: "Your Kindly profile is your volunteer identity. Follow other volunteers, get endorsed for skills like teaching, logistics, or first aid, and see who you've crossed paths with across events. The social layer is built to make volunteering feel like belonging to something — not just attending an event."
+    body: "Your Kindly profile is your volunteer identity. Follow other volunteers, get endorsed for skills like teaching, logistics, or first aid, and share your day with photos and a few words from events you attended. The social layer is built to make volunteering feel like belonging to something — not just attending an event."
   },
   {
     icon: Heart,
     color: "text-rose-600",
     bg: "bg-rose-50 dark:bg-rose-500/15",
     title: "Track Your Impact Over Time",
-    body: "Your profile automatically tracks every event you've attended, total volunteer hours, organisations you've worked with, and cause categories you've contributed to. Your impact history is public and shareable — a living proof of your commitment, not just a number on a dashboard."
+    body: "Your profile automatically tracks every event you've attended, total volunteer hours, organisations you've worked with, and cause categories you've contributed to. It's a living record of your commitment, not just a number on a dashboard — and you decide who sees it: keep your account public, or make it private and approve who follows you."
   },
   {
     icon: Star,
@@ -55,38 +55,38 @@ const features = [
     icon: BookOpen,
     color: "text-teal-600",
     bg: "bg-teal-50 dark:bg-teal-500/15",
-    title: "Skill-Based Discovery",
-    body: "Tell Kindly your skills — photography, cooking, teaching, coding, first aid, carpentry, and more. Events that need your specific skills are surfaced first in your feed. Your time is valuable. We help you find where it makes the most difference."
+    title: "Discovery Built Around You",
+    body: "Tell Kindly which causes you care about — river clean-ups, teaching, animal rescue, art and more — and when you're free. Your feed is personalised around them, so your time goes where it makes the most difference. You can also search and filter by cause, date, time of day and duration."
   },
   {
     icon: Shield,
     color: "text-muted-foreground",
     bg: "bg-muted",
     title: "Only Verified Organisations",
-    body: "Every organisation on Kindly is reviewed before their events go live. We check their mission, legitimacy, and past event history. You will never show up to an event that doesn't exist or isn't what it claimed to be. Your safety and your time are non-negotiable."
+    body: "Every organisation on Kindly is reviewed by our team before its events go live, and every event is reviewed too. Approved organisations can carry a verified badge on their profile, so you can show up with confidence. Your safety and your time matter."
   },
   {
     icon: Zap,
     color: "text-purple-600",
     bg: "bg-purple-50 dark:bg-purple-500/15",
     title: "Zero Friction Signup",
-    body: "Create your profile in under 2 minutes. No lengthy approval process. No document uploads. Just your name, city, interests, and skills. Your first event registration can happen on the same day you sign up. We built Kindly for students and young professionals with busy schedules."
+    body: "Sign in with an email one-time code, Google or a passkey — no password to remember. No lengthy approval process and no document uploads: just your name, interests and skills. Your first event registration can happen on the same day you sign up. We built Kindly for students and young professionals with busy schedules."
   },
   {
-    icon: MapPin,
+    icon: Compass,
     color: "text-cyan-600",
     bg: "bg-cyan-50 dark:bg-cyan-500/15",
-    title: "Hyper-Local Causes",
-    body: "Kindly prioritises local impact. The events you see are happening in your neighbourhood and your city — not generic national campaigns. Whether it's planting trees in your ward, teaching at a local school, or helping at a community kitchen two streets away, Kindly keeps volunteering close to home."
+    title: "Causes Close to Home",
+    body: "Search events by place, see exactly where each one happens on a map before you commit, and pick the ones that fit your week. Whether it's planting trees, teaching at a local school, or helping at a community kitchen, Kindly keeps volunteering close to your life."
   }
 ]
 
 const faqs = [
   { q: "Do I need experience to volunteer?", a: "No. Most events on Kindly require only your time and willingness. Event listings clearly mention if any specific skills or qualifications are needed. If an event says 'open to all', no prior experience is required." },
-  { q: "Can I volunteer if I'm a student?", a: "Absolutely. Kindly is built with students in mind. Our certificates are recognised by many colleges for community service hours. You can volunteer on weekends and build a portfolio of real impact for internship and placement interviews." },
-  { q: "What happens if I cancel a registration?", a: "You can cancel any time before the event starts from your dashboard. The organisation is notified and your spot opens up for another volunteer. Cancellations do not affect your profile negatively. We only ask that you cancel as early as possible." },
-  { q: "How do I get my certificate?", a: "Certificates are automatically generated once the organisation marks the event as complete. You will find it in your event history. Download it anytime — it never expires." },
-  { q: "Is Kindly free?", a: "Yes, completely free for volunteers. There are no paid features, no premium tiers, and no hidden costs. Kindly's mission is access — we do not charge the people showing up to help." },
+  { q: "Can I volunteer if I'm a student?", a: "Absolutely. Kindly is built with students in mind. Many colleges value community-service hours, and your certificates and verified hours give you something concrete to show. You can volunteer on weekends and build a portfolio of real impact for internship and placement interviews." },
+  { q: "What happens if I cancel a registration?", a: "You can cancel any time before the event starts from your dashboard, and your spot opens up for another volunteer. Cancellations do not affect your profile negatively. We only ask that you cancel as early as possible." },
+  { q: "How do I get my certificate?", a: "Once the event is over, the organisation issues certificates to everyone who attended. You'll find yours in your event history and can download it as a PDF any time." },
+  { q: "Is Kindly free?", a: "Yes. Kindly is free for volunteers — no premium tiers and no hidden charges. Some organisations may charge a ticket price for workshops or special events; the price is shown on the event page before you book." },
 ]
 
 export default function ForVolunteersPage() {
@@ -109,7 +109,7 @@ export default function ForVolunteersPage() {
             Your time is<br />your superpower.
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
-            Kindly turns the desire to help into a habit. Find events near you, show up, earn verified certificates, and build a volunteer identity that lasts beyond any single act of kindness.
+            Kindly turns the desire to help into a habit. Find events near you, show up, earn certificates and verified hours, and build a volunteer identity that lasts beyond any single act of kindness.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a
@@ -158,13 +158,13 @@ export default function ForVolunteersPage() {
             <div>
               <h2 className="text-4xl font-bold text-foreground mb-6 leading-tight">Your volunteer profile. Your legacy.</h2>
               <p className="text-muted-foreground leading-relaxed mb-6">
-                Every event you attend enriches your Kindly profile. It is visible to other volunteers and organisations. Think of it as a portfolio of impact — not just a list of events, but proof that you are someone who shows up.
+                Every event you attend enriches your Kindly profile. It is visible to other volunteers and organisations unless you choose to make it private. Think of it as a portfolio of impact — not just a list of events, but proof that you are someone who shows up.
               </p>
               <div className="space-y-4">
                 {[
                   "Total verified volunteer hours",
                   "Cause categories you support",
-                  "Skills endorsed by your peers",
+                  "Skills endorsed by organisations",
                   "Organisations you've worked with",
                   "Events you've attended",
                   "Followers in the Kindly community"
@@ -176,29 +176,32 @@ export default function ForVolunteersPage() {
                 ))}
               </div>
             </div>
-            <div className="bg-card rounded-3xl p-6 shadow-sm border border-border">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-orange-400 to-rose-400 flex items-center justify-center text-white text-2xl font-bold">A</div>
-                <div>
-                  <div className="font-bold text-foreground text-lg">Manas Dhivare</div>
-                  <div className="text-sm text-muted-foreground">Nashik, Maharashtra</div>
+            <div>
+              <div className="bg-card rounded-3xl p-6 shadow-sm border border-border">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-orange-400 to-rose-400 flex items-center justify-center text-white text-2xl font-bold">A</div>
+                  <div>
+                    <div className="font-bold text-foreground text-lg">Ananya Iyer</div>
+                    <div className="text-sm text-muted-foreground">Weekend volunteer</div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-4 mb-6">
+                  {[{ n: "7", l: "Events" }, { n: "22", l: "Hours" }, { n: "4", l: "Skills" }].map((s, i) => (
+                    <div key={i} className="text-center p-3 bg-muted rounded-xl">
+                      <div className="text-xl font-bold text-foreground">{s.n}</div>
+                      <div className="text-xs text-muted-foreground">{s.l}</div>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {["Teaching", "Photography", "Event Support", "Illustration"].map((skill) => (
+                    <span key={skill} className="text-xs px-3 py-1 bg-orange-50 dark:bg-orange-500/15 text-orange-700 rounded-full font-medium">
+                      {skill}
+                    </span>
+                  ))}
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-4 mb-6">
-                {[{ n: "34", l: "Events" }, { n: "142", l: "Hours" }, { n: "8", l: "Skills" }].map((s, i) => (
-                  <div key={i} className="text-center p-3 bg-muted rounded-xl">
-                    <div className="text-xl font-bold text-foreground">{s.n}</div>
-                    <div className="text-xs text-muted-foreground">{s.l}</div>
-                  </div>
-                ))}
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {["Teaching", "Photography", "First Aid", "Logistics", "Cooking"].map((skill) => (
-                  <span key={skill} className="text-xs px-3 py-1 bg-orange-50 dark:bg-orange-500/15 text-orange-700 rounded-full font-medium">
-                    {skill}
-                  </span>
-                ))}
-              </div>
+              <p className="text-xs text-muted-foreground text-center mt-3">Illustrative sample profile</p>
             </div>
           </div>
         </div>
