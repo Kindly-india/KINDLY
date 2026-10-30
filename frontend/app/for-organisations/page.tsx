@@ -1,280 +1,274 @@
-"use client"
-
+import type { Metadata } from "next"
+import Link from "next/link"
 import {
-  BarChart3, Users2, Check, FileText, Award, ShieldCheck, Globe, ChevronDown,
-  Calendar, TrendingUp, ArrowLeft, MapPin, Megaphone
+  ArrowRight, Award, BarChart3, Building2, CalendarCheck, Camera, CheckCircle2, ClipboardCheck, FileCheck,
+  ListChecks, MapPin, MapPinned, Megaphone, Repeat, Search, ShieldCheck, Sparkles, Star, Ticket, Users,
 } from "lucide-react"
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { ScrollReveal } from "@/components/ui/scroll-reveal"
+import { CtaBand } from "@/components/marketing/cta"
+import { DeviceDuo } from "@/components/marketing/device"
+import { FaqAccordion, type FaqItem } from "@/components/marketing/faq"
+import { FaqJsonLd } from "@/components/marketing/faq-json-ld"
+import { LoopSection } from "@/components/marketing/loop"
+import { Container, Eyebrow, GradientText, Section, SectionHeading, ctaPrimary, ctaSecondary } from "@/components/marketing/primitives"
+import { MarketingShell } from "@/components/marketing/shell"
+import { FeatureShowcase } from "@/components/marketing/showcase"
+import { StatStrip } from "@/components/marketing/stats"
 
-const features = [
-  {
-    icon: Calendar,
-    color: "text-blue-600",
-    bg: "bg-blue-50 dark:bg-blue-500/15",
-    title: "Create Events in Minutes",
-    body: "A guided flow takes you from idea to listing: title, cause category, date and time, a pinned location on the map, requirements, volunteer limit and registration deadline — with a live preview as you go. Once submitted, your event goes through a quick review and then appears on the Kindly discovery feed."
+export const metadata: Metadata = {
+  title: "For organisations",
+  description: "Give your NGO or community group a verified public identity, run events with a live roster and location-verified check-in, and recognise every volunteer with certificates.",
+  openGraph: {
+    title: "Kindly for organisations",
+    description: "A verified identity for your organisation, honest attendance and certificates for every volunteer.",
+    type: "website",
   },
-  {
-    icon: Users2,
-    color: "text-violet-600",
-    bg: "bg-violet-50 dark:bg-violet-500/15",
-    title: "See Every Registered Volunteer",
-    body: "Your event roster lists every registered volunteer. Open any name to see their Kindly profile — skills, past events, volunteer hours and endorsements — so you can plan roles and responsibilities before the event day."
-  },
-  {
-    icon: MapPin,
-    color: "text-emerald-600",
-    bg: "bg-emerald-50 dark:bg-emerald-500/15",
-    title: "Check-In Without the Paperwork",
-    body: "On the day, volunteers check themselves in at the venue with a single tap, and you can check anyone in (or undo a mistake) from your roster. Attendance is recorded instantly and your headcount updates live — no sign-in sheets, no manual counting, no disputes."
-  },
-  {
-    icon: ShieldCheck,
-    color: "text-teal-600",
-    bg: "bg-teal-50 dark:bg-teal-500/15",
-    title: "Geo-Lock Keeps Attendance Honest",
-    body: "Self check-in opens when your event starts and only works within 200 metres of the location you pinned. That keeps every attendance record genuine, making your reports accurate and your certificates credible to the people who receive them."
-  },
-  {
-    icon: Award,
-    color: "text-amber-600",
-    bg: "bg-amber-50 dark:bg-amber-500/15",
-    title: "Certificates You Issue in One Go",
-    body: "After you complete an event, issue a personalised certificate to everyone who attended — signed with your organisation's signature and carrying a unique verification ID. Volunteers download it from their profile, so you never have to create or send certificates by hand."
-  },
-  {
-    icon: BarChart3,
-    color: "text-orange-600",
-    bg: "bg-orange-50 dark:bg-orange-500/15",
-    title: "Analytics Dashboard",
-    body: "Track your volunteer program over time: total volunteer hours, active volunteers, events hosted, your repeat-volunteer rate and an impact-growth chart. An event-by-event performance table shows what works, and you can export a report to share with your supporters."
-  },
-  {
-    icon: FileText,
-    color: "text-rose-600",
-    bg: "bg-rose-50 dark:bg-rose-500/15",
-    title: "Event Reports & Photo Gallery",
-    body: "After each event, review the report — turnout, total impact hours and average rating — and add photos to the event gallery. Each event also gets a public showcase page that volunteers can share."
-  },
-  {
-    icon: Megaphone,
-    color: "text-purple-600",
-    bg: "bg-purple-50 dark:bg-purple-500/15",
-    title: "Message Everyone Registered",
-    body: "Send a broadcast to every registered volunteer — a changed meeting point, what to bring, a last-minute thank-you. Updates appear on the volunteer's event page, and cancelling an event emails everyone who registered."
-  },
-  {
-    icon: TrendingUp,
-    color: "text-cyan-600",
-    bg: "bg-cyan-50 dark:bg-cyan-500/15",
-    title: "A Public Identity Volunteers Trust",
-    body: "Your organisation gets a profile of its own: tagline, mission, an action gallery, past and upcoming events, followers and volunteer reviews. Approved organisations can carry a verified badge. Your profile grows with every event you host — people sign up for organisations they trust."
-  },
-  {
-    icon: Globe,
-    color: "text-muted-foreground",
-    bg: "bg-muted",
-    title: "Reach Volunteers Who Care",
-    body: "Volunteers browse the discovery feed by cause, date and place, and tell us which causes they care about when they join. So your river clean-up reaches people who love the outdoors, your tutoring event reaches educators, and your food drive reaches the right hands."
-  }
+}
+
+const PILLARS = [
+  { icon: Building2, title: "An identity, not just a listing", text: "A verified public profile with your mission, gallery, events, followers and reviews, so volunteers can find you, check you out and trust you at a glance." },
+  { icon: MapPinned, title: "Attendance you can rely on", text: "Volunteers check in at the venue, within 200 metres of the location you pinned, once your event has started. No sign-in sheets, no disputes." },
+  { icon: Award, title: "Recognition that travels", text: "Certificates, impact hours and posts from your events carry your name onto volunteers’ profiles, and bring the next volunteer to your door." },
 ]
 
-const steps = [
-  { n: "01", title: "Register & get verified", desc: "Create your organisation account and tell us about your work. Our team reviews every application before your events go live, and you'll get an email as soon as you're approved." },
-  { n: "02", title: "Create your first event", desc: "Add the details, pin the location on the map, set your volunteer limit and submit. Once our team approves it, it appears on the discovery feed and volunteers can start registering." },
-  { n: "03", title: "Manage your attendees", desc: "Track registrations in real time, open volunteer profiles, and message everyone who has registered with event updates." },
-  { n: "04", title: "Run the event, track attendance live", desc: "Volunteers check in at the venue — within 200 metres, once the event has started. Watch the roster update live, or check people in yourself." },
-  { n: "05", title: "Complete the event, recognise your volunteers", desc: "Mark the event complete, add photos and issue certificates to everyone who attended. Your analytics update immediately." }
+const STEPS = [
+  { icon: Building2, title: "Apply", text: "Create an organisation account and tell us about your work. Optionally attach a registration certificate, PAN or proof of organisation." },
+  { icon: ShieldCheck, title: "We review", text: "Our team reviews every application before an organisation goes live. Your documents are kept in private storage." },
+  { icon: CheckCircle2, title: "You’re approved", text: "You get an email as soon as you’re approved, and your organisation can carry a verified badge." },
+  { icon: CalendarCheck, title: "Events go live", text: "Create your first event. After a quick review it appears in the discovery feed and volunteers can start registering." },
 ]
 
-const faqs = [
-  { q: "How does the organisation verification process work?", a: "After you create an account, our team reviews your organisation's details — mission, contact information and type — along with any supporting documents you attach, such as a registration certificate, PAN or proof of organisation. We welcome NGOs, registered trusts, institution-backed groups and community groups. Once you're approved you'll get an email, and your events go live after their own quick review." },
-  { q: "Is Kindly free for organisations?", a: "Kindly is currently free for organisations during this phase of the platform — you can create events, manage volunteers and issue certificates at no cost. If you choose to sell tickets for an event, a platform fee applies; we'll share the details when you set up a paid event." },
-  { q: "Can I see volunteer profiles before the event?", a: "Yes. Every volunteer who registers appears on your event roster. Open any name to see their Kindly profile — skills, past volunteer history, hours and endorsements — and use it to plan roles and understand your incoming team." },
-  { q: "What if a volunteer doesn't show up?", a: "When an event is completed, registered volunteers who never checked in are marked as missed. You can also check volunteers in, or undo a check-in, from your roster. Certificates go only to volunteers who attended." },
-  { q: "Can I edit or cancel an event after publishing?", a: "You can edit event details from your event dashboard. If you need to cancel an event, every registered volunteer is emailed automatically. We ask that you give at least 24 hours' notice when possible." },
-  { q: "How does check-in work?", a: "Volunteers check themselves in at the venue with one tap. Check-in opens when your event starts and only works within 200 metres of the location you pinned, so attendance records stay genuine. You can also check volunteers in from your roster." }
+const FAQS: FaqItem[] = [
+  { q: "How does verification work?", a: "After you create an account, our team reviews your organisation’s details (mission, contact information and type) along with any supporting documents you attach, such as a registration certificate, PAN or proof of organisation. We welcome registered NGOs and trusts, institution-backed groups, informal community groups and individual organisers. You’ll get an email once you’re approved." },
+  { q: "Do our events need approval?", a: "Yes. New events are submitted for a quick review by our team and appear in the discovery feed once approved. You can edit event details from your dashboard afterwards." },
+  { q: "What does it cost?", a: "Kindly is free to use for organisations and volunteers: there are no subscriptions or paid features. The only charge is on ticketed events. Volunteers pay the ticket price you set through a secure online payment, and a platform fee applies, deducted before we pay out your balance after the event." },
+  { q: "Can I see who is coming?", a: "Yes. Every registered volunteer appears on your event roster. Open any name to see their Kindly profile (skills, past events, hours and endorsements) and plan roles before the day." },
+  { q: "How does check-in work?", a: "Volunteers check themselves in at the venue with one tap. Check-in opens when your event starts and only works within 200 metres of the location you pinned, so attendance stays genuine. You can also check volunteers in, or undo a check-in, from your roster." },
+  { q: "What if a volunteer doesn’t show up?", a: "When you complete an event, registered volunteers who never checked in are marked as missed. Certificates go only to volunteers who attended." },
+  { q: "Who issues certificates?", a: "You do. After the event, issue certificates to everyone who attended. Each is signed with your organisation’s signature and carries a unique verification ID, and volunteers download it as a PDF from their profile." },
+  { q: "Can I cancel an event?", a: "Yes. If you cancel, every registered volunteer is emailed automatically and paid tickets are refunded. We ask for at least 24 hours’ notice when possible." },
 ]
 
 export default function ForOrganisationsPage() {
-  const [openFaq, setOpenFaq] = useState<number | null>(null)
-  const router = useRouter()
-
   return (
-    <div className="bg-background min-h-screen">
-      {/* Hero */}
-      <section className="pt-32 pb-24 px-6">
-        <div className="max-w-5xl mx-auto">
-          <div className="mb-8">
-            <button onClick={() => router.back()} className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-              <ArrowLeft className="w-4 h-4" />
-              Back
-            </button>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
-            <div>
-              <span className="text-blue-600 font-bold text-xs tracking-widest uppercase mb-5 block">For Organisations</span>
-              <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-6 leading-[1.1]">
-                Give your organisation an identity volunteers trust.
-              </h1>
-              <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
-                Kindly gives NGOs and community groups a verified public profile and the tools to recruit, check in, certify and recognise volunteers — without the administrative overhead. Focus on your mission. We handle the logistics.
-              </p>
-              <div className="space-y-3 mb-8">
-                {[
-                  "A verified public profile volunteers can trust",
-                  "Location-verified check-in — attendance you can rely on",
-                  "Certificates you can issue to everyone who attended",
-                  "Analytics and volunteer profiles for your whole program"
-                ].map((item) => (
-                  <div key={item} className="flex items-start gap-3">
-                    <div className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-500/15 flex items-center justify-center mt-0.5 shrink-0">
-                      <Check className="w-3 h-3 text-emerald-600" />
-                    </div>
-                    <span className="text-foreground text-[15px]">{item}</span>
-                  </div>
-                ))}
-              </div>
-              <a
-                href="/org-signup"
-                className="h-12 px-8 bg-primary hover:bg-primary text-primary-foreground text-[15px] font-bold rounded-full inline-flex items-center justify-center transition-colors"
-              >
-                Register Your Organisation
-              </a>
-            </div>
+    <MarketingShell>
+      <FaqJsonLd items={FAQS} />
 
-            <div className="space-y-4">
-              <div className="bg-muted p-6 rounded-3xl">
-                <div className="bg-card rounded-2xl shadow-sm p-5 mb-4">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="w-12 h-12 bg-blue-100 dark:bg-blue-500/15 rounded-full flex items-center justify-center">
-                      <Users2 className="w-6 h-6 text-blue-600" />
-                    </div>
-                    <div>
-                      <div className="text-2xl font-bold text-foreground">40</div>
-                      <div className="text-xs text-muted-foreground uppercase tracking-wide">Registered Volunteers</div>
-                    </div>
-                  </div>
-                  <div className="h-2 bg-muted rounded-full overflow-hidden">
-                    <div className="h-full bg-blue-600 rounded-full" style={{ width: "80%" }} />
-                  </div>
-                  <div className="flex justify-between mt-2">
-                    <span className="text-xs text-muted-foreground">32 checked in</span>
-                    <span className="text-xs text-blue-600 font-medium">80% arrived</span>
-                  </div>
-                </div>
-                <div className="bg-card rounded-2xl shadow-sm p-5 mb-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-teal-100 dark:bg-teal-500/15 rounded-full flex items-center justify-center">
-                      <ShieldCheck className="w-6 h-6 text-teal-600" />
-                    </div>
-                    <div>
-                      <div className="text-2xl font-bold text-foreground">32</div>
-                      <div className="text-xs text-muted-foreground uppercase tracking-wide">Location-Verified Check-Ins</div>
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-card rounded-2xl shadow-sm p-5">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-500/15 rounded-full flex items-center justify-center">
-                      <Award className="w-6 h-6 text-emerald-600" />
-                    </div>
-                    <div>
-                      <div className="text-2xl font-bold text-foreground">32</div>
-                      <div className="text-xs text-muted-foreground uppercase tracking-wide">Certificates Issued</div>
-                    </div>
-                  </div>
-                </div>
+      {/* Hero */}
+      <section className="relative overflow-hidden pb-16 pt-12 sm:pb-24 sm:pt-20">
+        <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[42rem] bg-[radial-gradient(60%_55%_at_75%_0%,rgba(255,107,107,0.16),transparent)] dark:bg-[radial-gradient(60%_55%_at_75%_0%,rgba(255,107,107,0.12),transparent)]" />
+        <Container>
+          <div className="grid items-center gap-14 lg:grid-cols-[1.05fr_1fr] lg:gap-10">
+            <ScrollReveal>
+              <Eyebrow>For organisations</Eyebrow>
+              <h1 className="mt-5 text-4xl font-bold tracking-tight text-foreground sm:text-5xl lg:text-[3.6rem] lg:leading-[1.05]">
+                Give your organisation an identity volunteers <GradientText>trust.</GradientText>
+              </h1>
+              <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground">
+                Kindly gives NGOs and community groups a verified public profile and the tools to run events, check volunteers in, issue certificates and understand their impact, so you can spend your time on the mission.
+              </p>
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                <Link href="/org-signup" className={ctaPrimary}>Register your organisation <ArrowRight className="h-4 w-4" aria-hidden /></Link>
+                <Link href="/how-it-works" className={ctaSecondary}>See how it works</Link>
               </div>
-              <p className="text-xs text-muted-foreground text-center">Illustrative sample event</p>
-            </div>
+              <ul className="mt-8 grid gap-3 text-[15px] text-foreground sm:grid-cols-2">
+                {["Reviewed and verified by our team", "Location-verified attendance", "Certificates for every attendee", "Free to use"].map((t) => (
+                  <li key={t} className="flex items-center gap-2.5">
+                    <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-500" aria-hidden />
+                    {t}
+                  </li>
+                ))}
+              </ul>
+            </ScrollReveal>
+            <ScrollReveal delay={0.1}>
+              <DeviceDuo desktop="org-profile-public" mobile="org-profile-public" priority />
+              <p className="mt-4 text-center text-xs text-muted-foreground">A public organisation profile · Illustrative sample data</p>
+            </ScrollReveal>
           </div>
-        </div>
+        </Container>
       </section>
 
-      {/* How It Works for Orgs */}
-      <section className="py-24 px-6 bg-muted">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-foreground mb-4">How it works for you</h2>
-            <p className="text-muted-foreground text-lg max-w-xl mx-auto">From registration to certificates — the full organisation workflow.</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
-            {steps.map((step, i) => (
-              <div key={i} className="text-center">
-                <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold mx-auto mb-4">
-                  {step.n}
+      <StatStrip />
+
+      {/* Why */}
+      <Section tone="cream">
+        <Container>
+          <SectionHeading
+            align="center"
+            eyebrow="Why organisations join"
+            title="Your work deserves more than a chat group and a spreadsheet."
+            lead="Genuine NGOs and community groups look no different from anyone else online. Their events live in chat groups, posters and sign-in sheets: scattered, hard to discover and hard to trust. Kindly gives them one verified place."
+          />
+          <div className="mt-14 grid gap-6 md:grid-cols-3">
+            {PILLARS.map((p, i) => (
+              <ScrollReveal key={p.title} delay={i * 0.08}>
+                <div className="h-full rounded-3xl border border-border bg-card p-8 shadow-sm">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#7b2529] text-white"><p.icon className="h-6 w-6" aria-hidden /></span>
+                  <h3 className="mt-6 text-xl font-bold text-foreground">{p.title}</h3>
+                  <p className="mt-3 leading-relaxed text-muted-foreground">{p.text}</p>
                 </div>
-                <h3 className="font-bold text-foreground text-sm mb-2">{step.title}</h3>
-                <p className="text-xs text-muted-foreground leading-relaxed">{step.desc}</p>
-              </div>
+              </ScrollReveal>
             ))}
           </div>
-        </div>
-      </section>
+        </Container>
+      </Section>
 
       {/* Features */}
-      <section className="py-24 px-6">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-foreground mb-4">Every tool you need</h2>
-            <p className="text-muted-foreground text-lg max-w-xl mx-auto">Built for how NGOs and community groups actually operate.</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {features.map((f, i) => (
-              <div key={i} className="flex gap-5 p-6 rounded-2xl border border-border hover:border-border hover:shadow-sm transition-all">
-                <div className={`w-12 h-12 ${f.bg} rounded-xl flex items-center justify-center shrink-0`}>
-                  <f.icon className={`w-6 h-6 ${f.color}`} />
-                </div>
-                <div>
-                  <h3 className="text-[16px] font-bold text-foreground mb-2">{f.title}</h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed">{f.body}</p>
-                </div>
-              </div>
+      <FeatureShowcase
+        id="identity"
+        eyebrow="Verified identity"
+        title="A public profile that does the introducing"
+        lead="Volunteers land on your profile from your events, their friends’ posts and search. Make it count."
+        bullets={[
+          { icon: ShieldCheck, title: "Reviewed before you go live", text: "Every application is reviewed by our team, and approved organisations can carry a verified badge." },
+          { icon: Camera, title: "Mission, gallery and track record", text: "Tagline, mission, an action gallery, a wall of fame, and your past and upcoming events, plus the hours volunteers have given you." },
+          { icon: Star, title: "Followers and reviews", text: "Volunteers follow you and review the events they attended, so your reputation is built in the open." },
+        ]}
+        note="Registered NGOs and trusts, institution-backed groups, informal community groups and individual organisers can all apply."
+        visual={<DeviceDuo desktop="org-profile-owner" mobile="org-profile-owner" />}
+        caption="Your organisation’s profile, with edit controls · Illustrative sample data"
+      />
+
+      <FeatureShowcase
+        id="events"
+        tone="muted"
+        reverse
+        eyebrow="Create events"
+        title="Create an event in minutes"
+        lead="A guided, mobile-friendly flow takes you from idea to a listing volunteers can register for."
+        bullets={[
+          { icon: CalendarCheck, title: "Guided steps, live preview", text: "Details, schedule and logistics, with checks along the way and a live preview of how the listing will look." },
+          { icon: MapPin, title: "A pinned location", text: "Search for the venue or drop a pin on the map. Volunteer check-in is verified against this spot." },
+          { icon: Users, title: "Slots, deadlines and age limits", text: "Set a volunteer limit or leave it open, a registration deadline and a minimum age." },
+          { icon: Ticket, title: "Free or ticketed", text: "Events are free by default. If you choose to sell tickets, volunteers pay through a secure online payment." },
+        ]}
+        note="New events are reviewed by our team before they appear in the public feed."
+        visual={<DeviceDuo desktop="wizard-details" mobile="wizard-schedule" />}
+        caption="Event creation: schedule, location, volunteer limit and ticketing, with a live preview · Illustrative sample data"
+      />
+
+      <FeatureShowcase
+        id="run-the-day"
+        eyebrow="Run the day"
+        title="Run the day with a live roster"
+        lead="See who is coming, check people in as they arrive and keep everyone informed, from a phone or a laptop."
+        bullets={[
+          { icon: ListChecks, title: "Live headcount", text: "Registered, checked-in and slots-left counts update as volunteers arrive." },
+          { icon: ClipboardCheck, title: "Check-in, two ways", text: "Volunteers check themselves in at the venue, or you check them in from the roster, and undo a slip in one tap." },
+          { icon: Megaphone, title: "Broadcast to attendees", text: "Send updates to everyone registered: a changed meeting point, what to bring, a thank-you." },
+        ]}
+        visual={<DeviceDuo desktop="manage-checkin" mobile="manage-roster" />}
+        caption="The event roster with real-time check-in status · Illustrative sample data"
+      />
+
+      <FeatureShowcase
+        id="recognise"
+        tone="muted"
+        reverse
+        eyebrow="Recognise and report"
+        title="Recognise your volunteers, then see your impact"
+        lead="When the event is over, close the loop: certificates for everyone who attended, and a report you can share with your own supporters."
+        bullets={[
+          { icon: Award, title: "Certificates with your signature", text: "Issue certificates to everyone who attended. Each carries your organisation’s signature and a unique verification ID." },
+          { icon: BarChart3, title: "A post-event report", text: "Turnout, total impact hours, average rating and your event gallery in one page." },
+          { icon: Camera, title: "Photos that tell the story", text: "Add photos to the event gallery. They appear on the event’s public showcase page." },
+        ]}
+        visual={<DeviceDuo desktop="report" mobile="report" />}
+        caption="Post-event report: turnout, impact hours and rating · Illustrative sample data"
+      />
+
+      <FeatureShowcase
+        id="insights"
+        eyebrow="Analytics"
+        title="Know how your volunteer programme is doing"
+        lead="Your command centre shows the hours given, the people behind them and how reliably they turn up."
+        bullets={[
+          { icon: BarChart3, title: "Impact over time", text: "Total volunteer hours, active volunteers and events hosted, with an impact-growth chart." },
+          { icon: Repeat, title: "Repeat-volunteer rate", text: "See how many volunteers come back and how reliably registered volunteers turn up." },
+          { icon: FileCheck, title: "Event by event", text: "An event performance table, and a report you can export to share with your supporters." },
+        ]}
+        visual={<DeviceDuo desktop="org-analytics" mobile="org-analytics" />}
+        caption="Organisation analytics: impact growth, reliability and event performance · Illustrative sample data"
+      />
+
+      <FeatureShowcase
+        id="reach"
+        tone="muted"
+        reverse
+        eyebrow="Reach"
+        title="Reach volunteers who care"
+        lead="Volunteers find you by cause, date and place, and the feed is personalised around what they care about."
+        bullets={[
+          { icon: Search, title: "Found by cause, date and place", text: "Search and filters help volunteers find events that fit their week and their interests." },
+          { icon: Sparkles, title: "Personal from the first tap", text: "Volunteers choose the causes they care about when they join, and their feed is shaped around them." },
+          { icon: ShieldCheck, title: "Listings they can trust", text: "Because every organisation and event is reviewed, volunteers browse and book with confidence." },
+        ]}
+        visual={<DeviceDuo desktop="events-feed" mobile="event-detail" />}
+        caption="What volunteers see: discovery feed and an event page · Illustrative sample data"
+      />
+
+      <LoopSection />
+
+      {/* Getting started */}
+      <Section id="get-started">
+        <Container>
+          <SectionHeading align="center" eyebrow="Getting started" title="From application to your first event in four steps" lead="Verification protects volunteers and the organisations they trust. Here is what to expect." />
+          <ol className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {STEPS.map((s, i) => (
+              <li key={s.title} className="list-none">
+                <ScrollReveal delay={i * 0.07} className="h-full">
+                  <div className="h-full rounded-3xl border border-border bg-card p-7">
+                    <div className="flex items-center justify-between">
+                      <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#fde8e5] text-[#7b2529] dark:bg-[#ff6b6b]/15 dark:text-[#ffb4ae]"><s.icon className="h-5 w-5" aria-hidden /></span>
+                      <span className="text-3xl font-bold text-muted-foreground/30">{i + 1}</span>
+                    </div>
+                    <h3 className="mt-5 text-lg font-bold text-foreground">{s.title}</h3>
+                    <p className="mt-2 text-[15px] leading-relaxed text-muted-foreground">{s.text}</p>
+                  </div>
+                </ScrollReveal>
+              </li>
             ))}
+          </ol>
+        </Container>
+      </Section>
+
+      {/* Pricing */}
+      <Section tone="cream" id="pricing">
+        <Container>
+          <SectionHeading align="center" eyebrow="Pricing" title="Free to use. Clear about money." lead="No subscriptions, no paid features. The only charge is on ticketed events." />
+          <div className="mx-auto mt-12 grid max-w-4xl gap-6 md:grid-cols-2">
+            <ScrollReveal>
+              <div className="h-full rounded-3xl border border-border bg-card p-8">
+                <p className="text-sm font-bold uppercase tracking-[0.14em] text-emerald-600 dark:text-emerald-400">Free</p>
+                <h3 className="mt-3 text-2xl font-bold text-foreground">Everything you need to run events</h3>
+                <p className="mt-3 leading-relaxed text-muted-foreground">Your public profile, event creation, the live roster, check-in, broadcasts, certificates, reports and analytics, at no cost to your organisation or your volunteers.</p>
+              </div>
+            </ScrollReveal>
+            <ScrollReveal delay={0.08}>
+              <div className="h-full rounded-3xl border border-border bg-card p-8">
+                <p className="text-sm font-bold uppercase tracking-[0.14em] text-[#7b2529] dark:text-[#f4a6a0]">Ticketed events</p>
+                <h3 className="mt-3 text-2xl font-bold text-foreground">Only when you choose to sell tickets</h3>
+                <p className="mt-3 leading-relaxed text-muted-foreground">Volunteers pay the ticket price you set through a secure online payment. A platform fee applies and is deducted before we pay out your balance after the event.</p>
+              </div>
+            </ScrollReveal>
           </div>
-        </div>
-      </section>
+        </Container>
+      </Section>
 
       {/* FAQ */}
-      <section className="py-24 px-6 bg-muted">
-        <div className="max-w-3xl mx-auto">
-          <h2 className="text-3xl font-bold text-foreground mb-12 text-center">Organisation FAQs</h2>
-          <div className="space-y-3">
-            {faqs.map((faq, i) => (
-              <div key={i} className="bg-card rounded-2xl overflow-hidden">
-                <button
-                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  className="w-full flex items-center justify-between p-6 text-left gap-4"
-                >
-                  <span className="font-semibold text-foreground text-[15px]">{faq.q}</span>
-                  <ChevronDown className={`w-5 h-5 text-muted-foreground shrink-0 transition-transform ${openFaq === i ? "rotate-180" : ""}`} />
-                </button>
-                {openFaq === i && (
-                  <div className="px-6 pb-6">
-                    <p className="text-muted-foreground leading-relaxed text-[15px]">{faq.a}</p>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <Section id="faq">
+        <Container className="max-w-3xl">
+          <SectionHeading align="center" eyebrow="FAQ" title="Questions organisations ask" />
+          <div className="mt-12"><FaqAccordion items={FAQS} /></div>
+        </Container>
+      </Section>
 
-      {/* CTA */}
-      <section className="py-24 px-6 text-center">
-        <div className="max-w-2xl mx-auto">
-          <h2 className="text-4xl font-bold text-foreground mb-4">Ready to grow your volunteer program?</h2>
-          <p className="text-muted-foreground mb-8 text-lg">Join verified organisations using Kindly to make their missions more effective.</p>
-          <a
-            href="/org-signup"
-            className="h-12 px-10 bg-primary hover:bg-primary text-primary-foreground text-[15px] font-bold rounded-full inline-flex items-center justify-center transition-colors"
-          >
-            Register Your Organisation — It&apos;s Free
-          </a>
-        </div>
-      </section>
-    </div>
+      <CtaBand
+        title="Bring your organisation onto Kindly."
+        lead="Join the organisations building a verified identity, and a community that keeps showing up."
+        primary={{ href: "/org-signup", label: "Register your organisation" }}
+        secondary={{ href: "/how-it-works", label: "See how it works" }}
+      />
+    </MarketingShell>
   )
 }
