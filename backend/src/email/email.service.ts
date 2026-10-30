@@ -225,7 +225,7 @@ export class EmailService {
             <td align="center" style="padding-top:24px;">
               <p style="margin:0;font-size:12px;color:#86868b;line-height:1.6;">
                 You received this because you have an account on KINDLY.<br/>
-                © 2026 KINDLY. Nashik, India.
+                © 2026 KINDLY. India.
               </p>
             </td>
           </tr>

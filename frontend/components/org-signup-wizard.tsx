@@ -697,7 +697,7 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
                     <Input
                       name="name"
 
-                      placeholder="Green Warriors Nashik"
+                      placeholder="Green Warriors"
                       className="h-10 md:h-14 bg-muted border-0 rounded-lg md:rounded-xl text-[13px] md:text-[17px] text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-[#f59e0b]"
                     />
                   </div>
@@ -707,7 +707,7 @@ export function OrgSignupWizard({ onBack }: OrgSignupWizardProps) {
                     <Input
                       name="areaLocality"
 
-                      placeholder="Nashik, Maharashtra"
+                      placeholder="Neighbourhood or area"
                       className="h-10 md:h-14 bg-muted border-0 rounded-lg md:rounded-xl text-[13px] md:text-[17px] text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-[#f59e0b]"
                     />
                   </div>
