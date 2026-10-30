@@ -33,7 +33,7 @@ import { ScrollReveal } from "@/components/ui/scroll-reveal"
 /**
  * EventDetailsPage Component
  * * This page serves as the primary touchpoint for volunteers to discover
- * and commit to social initiatives in Nashik. It displays full event details,
+ * and commit to social initiatives. It displays full event details,
  * logistics, and the curated "Connect" social activity.
  */
 export default function EventDetailsPage() {

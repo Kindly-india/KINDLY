@@ -501,7 +501,7 @@ export default function RegisteredEventDetailPage() {
                   <div>
                     <p className="text-[10px] font-bold text-muted-foreground uppercase mb-1">Venue</p>
                     <p className="text-base font-bold text-foreground truncate max-w-[180px]">{event.location}</p>
-                    <p className="text-sm text-muted-foreground font-medium">Nashik, Maharashtra</p>
+                    
                   </div>
                 </div>
 

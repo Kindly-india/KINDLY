@@ -354,7 +354,7 @@ export default function EventReportPage() {
                       >
                         {reg.volunteer_profiles?.full_name || "Volunteer"}
                       </Link>
-                      <p className="text-xs text-muted-foreground">{reg.volunteer_profiles?.city || "Nashik"}</p>
+                      <p className="text-xs text-muted-foreground">{reg.volunteer_profiles?.city || ""}</p>
                     </div>
                   </div>
                   {isPresent ? (

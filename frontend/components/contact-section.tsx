@@ -107,7 +107,7 @@ export function ContactSection() {
         <div className="pt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[12px] text-white/50">
           <span className="whitespace-nowrap">team@kindly.co.in</span>
           <span className="whitespace-nowrap">+91 7517018954</span>
-          <span className="flex items-center gap-1 whitespace-nowrap"><MapPin className="w-3 h-3" /> Nashik, India</span>
+          <span className="flex items-center gap-1 whitespace-nowrap"><MapPin className="w-3 h-3" /> India</span>
           <span className="text-white/20">•</span>
           <a href="/legal/privacy" className="whitespace-nowrap hover:text-white transition-colors">Privacy Policy</a>
           <a href="/legal/terms" className="whitespace-nowrap hover:text-white transition-colors">Terms of Use</a>

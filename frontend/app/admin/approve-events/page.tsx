@@ -439,7 +439,7 @@ export default function AdminApprovalPage() {
                 <CheckCircle className="w-10 h-10 opacity-20" />
             </div>
             <p className="font-bold text-sm uppercase tracking-widest">Select an event to polish</p>
-            <p className="text-xs text-muted-foreground mt-2">All submissions from Nashik organizations will appear here.</p>
+            <p className="text-xs text-muted-foreground mt-2">All submissions from organizations will appear here.</p>
           </div>
         )}
       </main>

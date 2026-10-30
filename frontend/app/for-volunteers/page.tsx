@@ -1,248 +1,229 @@
-"use client"
-
-import {
-  Globe, Trophy, Users, Shield, QrCode, Heart, Zap, BookOpen,
-  Star, MapPin, ChevronDown, CheckCircle2, ArrowLeft
-} from "lucide-react"
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import type { Metadata } from "next"
 import Link from "next/link"
+import {
+  ArrowRight, Award, Bell, Camera, CheckCircle2, Clock, Compass, HandHeart, Heart, History, IdCard, Info, Lock, MapPin,
+  MapPinned, Search, ShieldCheck, Sparkles, Star, Ticket, Trophy,
+} from "lucide-react"
+import { ScrollReveal } from "@/components/ui/scroll-reveal"
+import { CtaBand } from "@/components/marketing/cta"
+import { DeviceDuo, PhoneTrio } from "@/components/marketing/device"
+import { FaqAccordion, type FaqItem } from "@/components/marketing/faq"
+import { FaqJsonLd } from "@/components/marketing/faq-json-ld"
+import { LoopSection } from "@/components/marketing/loop"
+import { Container, Eyebrow, GradientText, Section, SectionHeading, ctaPrimary, ctaSecondary } from "@/components/marketing/primitives"
+import { MarketingShell } from "@/components/marketing/shell"
+import { FeatureShowcase } from "@/components/marketing/showcase"
+import { StatStrip } from "@/components/marketing/stats"
 
-const features = [
-  {
-    icon: Globe,
-    color: "text-blue-600",
-    bg: "bg-blue-50 dark:bg-blue-500/15",
-    title: "Events",
-    body: "Discover hundreds of volunteering events in Nashik, and in future for Mumbai, Pune, Delhi, Bangalore, Chennai, Hyderabad, and Kolkata. Events are posted by verified NGOs and community groups — so every opportunity you see is real, vetted, and ready for you to show up."
+export const metadata: Metadata = {
+  title: "For volunteers",
+  description: "Find events that matter, check in at the venue, and earn certificates, verified hours and a volunteer identity that lasts beyond any single act of kindness.",
+  openGraph: {
+    title: "Kindly for volunteers",
+    description: "Your time is your superpower. Now it has a record.",
+    type: "website",
   },
-  {
-    icon: Trophy,
-    color: "text-amber-600",
-    bg: "bg-amber-50 dark:bg-amber-500/15",
-    title: "Verified Digital Certificates",
-    body: "Every event you attend earns you a digitally-signed certificate from the organisation. Each certificate is personalized with your name, event details, and volunteer hours. Download as PDF and add to your LinkedIn, resume, or college application. Certificates are generated automatically — no chasing required."
-  },
-  {
-    icon: QrCode,
-    color: "text-violet-600",
-    bg: "bg-violet-50 dark:bg-violet-500/15",
-    title: "QR Check-In with Geo-Lock",
-    body: "Check in by scanning the organisation's QR code at the venue. Our geo-lock system verifies you are physically at the location — within 200 metres — before confirming attendance. This makes your presence undeniable and your certificate credible. No proxy attendance, ever."
-  },
-  {
-    icon: Users,
-    color: "text-emerald-600",
-    bg: "bg-emerald-50 dark:bg-emerald-500/15",
-    title: "A Real Volunteer Community",
-    body: "Your Kindly profile is your volunteer identity. Follow other volunteers, get endorsed for skills like teaching, logistics, or first aid, and see who you've crossed paths with across events. The social layer is built to make volunteering feel like belonging to something — not just attending an event."
-  },
-  {
-    icon: Heart,
-    color: "text-rose-600",
-    bg: "bg-rose-50 dark:bg-rose-500/15",
-    title: "Track Your Impact Over Time",
-    body: "Your profile automatically tracks every event you've attended, total volunteer hours, organisations you've worked with, and cause categories you've contributed to. Your impact history is public and shareable — a living proof of your commitment, not just a number on a dashboard."
-  },
-  {
-    icon: Star,
-    color: "text-orange-600",
-    bg: "bg-orange-50 dark:bg-orange-500/15",
-    title: "Leave Reviews for Organisations",
-    body: "After each event, you can rate the experience and leave an honest review for the organisation. This helps future volunteers make informed choices and pushes organisations to run better events. Your feedback directly improves the quality of volunteering for everyone."
-  },
-  {
-    icon: BookOpen,
-    color: "text-teal-600",
-    bg: "bg-teal-50 dark:bg-teal-500/15",
-    title: "Skill-Based Discovery",
-    body: "Tell Kindly your skills — photography, cooking, teaching, coding, first aid, carpentry, and more. Events that need your specific skills are surfaced first in your feed. Your time is valuable. We help you find where it makes the most difference."
-  },
-  {
-    icon: Shield,
-    color: "text-muted-foreground",
-    bg: "bg-muted",
-    title: "Only Verified Organisations",
-    body: "Every organisation on Kindly is reviewed before their events go live. We check their mission, legitimacy, and past event history. You will never show up to an event that doesn't exist or isn't what it claimed to be. Your safety and your time are non-negotiable."
-  },
-  {
-    icon: Zap,
-    color: "text-purple-600",
-    bg: "bg-purple-50 dark:bg-purple-500/15",
-    title: "Zero Friction Signup",
-    body: "Create your profile in under 2 minutes. No lengthy approval process. No document uploads. Just your name, city, interests, and skills. Your first event registration can happen on the same day you sign up. We built Kindly for students and young professionals with busy schedules."
-  },
-  {
-    icon: MapPin,
-    color: "text-cyan-600",
-    bg: "bg-cyan-50 dark:bg-cyan-500/15",
-    title: "Hyper-Local Causes",
-    body: "Kindly prioritises local impact. The events you see are happening in your neighbourhood and your city — not generic national campaigns. Whether it's planting trees in your ward, teaching at a local school, or helping at a community kitchen two streets away, Kindly keeps volunteering close to home."
-  }
+}
+
+const PILLARS = [
+  { icon: Compass, title: "Find what fits", text: "Events matched to the causes you care about, with search and filters for date, time of day and duration." },
+  { icon: Award, title: "Keep the proof", text: "Check-ins that are verified, hours credited automatically and certificates from the organisations you served." },
+  { icon: Heart, title: "Belong to something", text: "A profile, a journey, endorsements and a community that notices when you show up." },
 ]
 
-const faqs = [
-  { q: "Do I need experience to volunteer?", a: "No. Most events on Kindly require only your time and willingness. Event listings clearly mention if any specific skills or qualifications are needed. If an event says 'open to all', no prior experience is required." },
-  { q: "Can I volunteer if I'm a student?", a: "Absolutely. Kindly is built with students in mind. Our certificates are recognised by many colleges for community service hours. You can volunteer on weekends and build a portfolio of real impact for internship and placement interviews." },
-  { q: "What happens if I cancel a registration?", a: "You can cancel any time before the event starts from your dashboard. The organisation is notified and your spot opens up for another volunteer. Cancellations do not affect your profile negatively. We only ask that you cancel as early as possible." },
-  { q: "How do I get my certificate?", a: "Certificates are automatically generated once the organisation marks the event as complete. You will find it in your event history. Download it anytime — it never expires." },
-  { q: "Is Kindly free?", a: "Yes, completely free for volunteers. There are no paid features, no premium tiers, and no hidden costs. Kindly's mission is access — we do not charge the people showing up to help." },
+const TRUST = [
+  { icon: ShieldCheck, title: "Reviewed organisations", text: "Every organisation is reviewed by our team before its events go live, and every event is reviewed too. Approved organisations can carry a verified badge." },
+  { icon: MapPinned, title: "Verified check-in", text: "Check-in opens when the event starts and only works within 200 metres of the venue, so your attendance is genuine." },
+  { icon: Lock, title: "You control your profile", text: "Keep your account public, or make it private and approve who follows you." },
+]
+
+const FAQS: FaqItem[] = [
+  { q: "Do I need experience to volunteer?", a: "No. Most events on Kindly need only your time and willingness. Listings clearly say if a specific skill or qualification is needed, and if an event is open to all, no prior experience is required." },
+  { q: "Can I volunteer if I’m a student?", a: "Absolutely. Kindly is built with students in mind. Many colleges value community-service hours, and your certificates and verified hours give you something concrete to show. You can volunteer on weekends and build a portfolio of real impact for internship and placement interviews." },
+  { q: "How do I get my certificate?", a: "Once the event is over, the organisation issues certificates to everyone who attended. You’ll find yours in your event history and can download it as a PDF any time." },
+  { q: "What happens if I cancel a registration?", a: "You can cancel any time before the event starts from your dashboard, and your spot opens up for another volunteer. Cancellations don’t affect your profile. We only ask that you cancel as early as possible." },
+  { q: "Is Kindly free?", a: "Yes. Kindly is free to use: there are no subscriptions or paid features. Some organisations ticket workshops or special events. The ticket price is shown on the event page before you book, a secure online payment is used, and a platform fee applies to ticketed events." },
+  { q: "Who can see my profile?", a: "By default your profile is visible to other volunteers and organisations. You can make your account private at any time and approve who follows you. Posts can only be created for events you attended." },
 ]
 
 export default function ForVolunteersPage() {
-  const [openFaq, setOpenFaq] = useState<number | null>(null)
-  const router = useRouter()
-
   return (
-    <div className="bg-background min-h-screen">
+    <MarketingShell>
+      <FaqJsonLd items={FAQS} />
+
       {/* Hero */}
-      <section className="pt-32 pb-24 px-6 bg-gradient-to-b from-orange-50/60 dark:from-orange-50/10 to-white dark:to-background">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="flex justify-start mb-6">
-            <button onClick={() => router.back()} className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-              <ArrowLeft className="w-4 h-4" />
-              Back
-            </button>
-          </div>
-          <span className="text-orange-600 font-bold text-xs tracking-widest uppercase mb-5 block">For Volunteers</span>
-          <h1 className="text-5xl md:text-7xl font-bold text-foreground mb-6 tracking-tight leading-[1.05]">
-            Your time is<br />your superpower.
-          </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
-            Kindly turns the desire to help into a habit. Find events near you, show up, earn verified certificates, and build a volunteer identity that lasts beyond any single act of kindness.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a
-              href="/signup"
-              className="h-12 px-8 bg-gradient-to-r from-[#ff6b6b] to-[#f59e0b] hover:opacity-90 text-white text-[15px] font-bold rounded-full inline-flex items-center justify-center transition-opacity"
-            >
-              Create Free Account
-            </a>
-            <Link
-              href="/events"
-              className="h-12 px-8 bg-card border-2 border-border hover:border-border text-foreground text-[15px] font-bold rounded-full inline-flex items-center justify-center transition-colors"
-            >
-              Browse Events
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* What You Get */}
-      <section className="py-24 px-6">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-foreground mb-4">Everything you need to volunteer well</h2>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">Kindly is not just an event directory. It is an end-to-end experience built around the volunteer&apos;s journey.</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {features.map((f, i) => (
-              <div key={i} className="flex gap-5 p-6 rounded-2xl border border-border hover:border-border hover:shadow-sm transition-all">
-                <div className={`w-12 h-12 ${f.bg} rounded-xl flex items-center justify-center shrink-0`}>
-                  <f.icon className={`w-6 h-6 ${f.color}`} />
-                </div>
-                <div>
-                  <h3 className="text-[16px] font-bold text-foreground mb-2">{f.title}</h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed">{f.body}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Profile Section */}
-      <section className="py-24 px-6 bg-muted">
-        <div className="max-w-4xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
-            <div>
-              <h2 className="text-4xl font-bold text-foreground mb-6 leading-tight">Your volunteer profile. Your legacy.</h2>
-              <p className="text-muted-foreground leading-relaxed mb-6">
-                Every event you attend enriches your Kindly profile. It is visible to other volunteers and organisations. Think of it as a portfolio of impact — not just a list of events, but proof that you are someone who shows up.
+      <section className="relative overflow-hidden pb-16 pt-12 sm:pb-24 sm:pt-20">
+        <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[42rem] bg-[radial-gradient(60%_55%_at_25%_0%,rgba(245,158,11,0.18),transparent)] dark:bg-[radial-gradient(60%_55%_at_25%_0%,rgba(245,158,11,0.12),transparent)]" />
+        <Container>
+          <div className="grid items-center gap-14 lg:grid-cols-[1.05fr_1fr] lg:gap-10">
+            <ScrollReveal>
+              <Eyebrow>For volunteers</Eyebrow>
+              <h1 className="mt-5 text-4xl font-bold tracking-tight text-foreground sm:text-5xl lg:text-[3.6rem] lg:leading-[1.05]">
+                Your time is your superpower. <GradientText>Now it has a record.</GradientText>
+              </h1>
+              <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground">
+                Kindly turns the desire to help into a habit. Find events near you, check in at the venue, and build a volunteer identity of certificates, verified hours and people who notice that you show up.
               </p>
-              <div className="space-y-4">
-                {[
-                  "Total verified volunteer hours",
-                  "Cause categories you support",
-                  "Skills endorsed by your peers",
-                  "Organisations you've worked with",
-                  "Events you've attended",
-                  "Followers in the Kindly community"
-                ].map((item, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
-                    <span className="text-foreground text-[15px]">{item}</span>
-                  </div>
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                <Link href="/signup" className={ctaPrimary}>Create free account <ArrowRight className="h-4 w-4" aria-hidden /></Link>
+                <Link href="/events" className={ctaSecondary}>Browse events</Link>
+              </div>
+              <ul className="mt-8 grid gap-3 text-[15px] text-foreground sm:grid-cols-2">
+                {["Free to use", "Sign in with an email code, Google or a passkey", "Certificates and verified hours", "Make your profile private anytime"].map((t) => (
+                  <li key={t} className="flex items-center gap-2.5">
+                    <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-500" aria-hidden />
+                    {t}
+                  </li>
                 ))}
-              </div>
-            </div>
-            <div className="bg-card rounded-3xl p-6 shadow-sm border border-border">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-orange-400 to-rose-400 flex items-center justify-center text-white text-2xl font-bold">A</div>
-                <div>
-                  <div className="font-bold text-foreground text-lg">Manas Dhivare</div>
-                  <div className="text-sm text-muted-foreground">Nashik, Maharashtra</div>
-                </div>
-              </div>
-              <div className="grid grid-cols-3 gap-4 mb-6">
-                {[{ n: "34", l: "Events" }, { n: "142", l: "Hours" }, { n: "8", l: "Skills" }].map((s, i) => (
-                  <div key={i} className="text-center p-3 bg-muted rounded-xl">
-                    <div className="text-xl font-bold text-foreground">{s.n}</div>
-                    <div className="text-xs text-muted-foreground">{s.l}</div>
-                  </div>
-                ))}
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {["Teaching", "Photography", "First Aid", "Logistics", "Cooking"].map((skill) => (
-                  <span key={skill} className="text-xs px-3 py-1 bg-orange-50 dark:bg-orange-500/15 text-orange-700 rounded-full font-medium">
-                    {skill}
-                  </span>
-                ))}
-              </div>
-            </div>
+              </ul>
+            </ScrollReveal>
+            <ScrollReveal delay={0.1}>
+              <DeviceDuo desktop="events-feed" mobile="event-detail" priority />
+              <p className="mt-4 text-center text-xs text-muted-foreground">Event discovery and an event page · Illustrative sample data</p>
+            </ScrollReveal>
           </div>
-        </div>
+        </Container>
       </section>
 
-      {/* FAQ */}
-      <section className="py-24 px-6">
-        <div className="max-w-3xl mx-auto">
-          <h2 className="text-3xl font-bold text-foreground mb-12 text-center">Questions from volunteers</h2>
-          <div className="space-y-3">
-            {faqs.map((faq, i) => (
-              <div key={i} className="border border-border rounded-2xl overflow-hidden">
-                <button
-                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  className="w-full flex items-center justify-between p-6 text-left gap-4"
-                >
-                  <span className="font-semibold text-foreground text-[15px]">{faq.q}</span>
-                  <ChevronDown className={`w-5 h-5 text-muted-foreground shrink-0 transition-transform ${openFaq === i ? "rotate-180" : ""}`} />
-                </button>
-                {openFaq === i && (
-                  <div className="px-6 pb-6">
-                    <p className="text-muted-foreground leading-relaxed text-[15px]">{faq.a}</p>
-                  </div>
-                )}
-              </div>
+      <StatStrip />
+
+      {/* The idea */}
+      <Section tone="cream">
+        <Container>
+          <SectionHeading
+            align="center"
+            eyebrow="Why Kindly"
+            title="Most people want to help. Very few keep showing up."
+            lead="Good intent isn’t the problem. Nothing makes showing up feel seen or remembered, so a busy week quietly wins. Kindly gives your service a record and a community, so there is a reason to come back."
+          />
+          <div className="mt-14 grid gap-6 md:grid-cols-3">
+            {PILLARS.map((p, i) => (
+              <ScrollReveal key={p.title} delay={i * 0.08}>
+                <div className="h-full rounded-3xl border border-border bg-card p-8 shadow-sm">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#7b2529] text-white"><p.icon className="h-6 w-6" aria-hidden /></span>
+                  <h3 className="mt-6 text-xl font-bold text-foreground">{p.title}</h3>
+                  <p className="mt-3 leading-relaxed text-muted-foreground">{p.text}</p>
+                </div>
+              </ScrollReveal>
             ))}
           </div>
-        </div>
-      </section>
+        </Container>
+      </Section>
 
-      {/* Final CTA */}
-      <section className="py-20 px-6 bg-gradient-to-r from-[#ff6b6b]/10 to-[#f59e0b]/10">
-        <div className="max-w-2xl mx-auto text-center">
-          <Heart className="w-12 h-12 mx-auto mb-6 text-rose-500" />
-          <h2 className="text-4xl font-bold text-foreground mb-4">You belong here.</h2>
-          <p className="text-muted-foreground mb-8 text-lg">Join a community of people who don&apos;t just care — they show up.</p>
-          <a
-            href="/signup"
-            className="h-12 px-10 bg-primary hover:bg-primary text-primary-foreground text-[15px] font-bold rounded-full inline-flex items-center justify-center transition-colors"
-          >
-            Start Volunteering Today
-          </a>
-        </div>
-      </section>
-    </div>
+      <FeatureShowcase
+        id="discover"
+        eyebrow="Discover and register"
+        title="Find the right event, then commit in a few taps"
+        lead="Browse events that match your interests and see everything you need to decide."
+        bullets={[
+          { icon: Search, title: "Search and filters", text: "Search by title or place. Filter by cause, date, time of day and duration." },
+          { icon: Info, title: "Everything up front", text: "The venue and map, the on-site host, dress code, what to bring, the cause, and The After plan if the organiser has one." },
+          { icon: Ticket, title: "Book in a few taps", text: "Reserve a spot and get a ticket. Paid events use a secure online payment." },
+        ]}
+        note="When you join you pick the causes you care about, so your feed starts personal."
+        visual={<DeviceDuo desktop="events-feed" mobile="events-filters" />}
+        caption="Event discovery with filters · Illustrative sample data"
+      />
+
+      <FeatureShowcase
+        id="check-in"
+        tone="muted"
+        reverse
+        eyebrow="Ticket and check-in"
+        title="A ticket on your phone, and attendance that is verified"
+        lead="On the day, open your ticket and check in with one tap, only when you are really there."
+        bullets={[
+          { icon: Ticket, title: "Ticket and logistics", text: "Time, venue, on-site host and dress code, plus briefings from the organiser." },
+          { icon: MapPin, title: "Location-verified check-in", text: "Check-in opens when the event starts and works only within 200 metres of the venue." },
+          { icon: Clock, title: "Hours, credited automatically", text: "Your volunteering hours are recorded from check-in. No sign-in sheets, no chasing." },
+        ]}
+        visual={<PhoneTrio shots={["registered-ticket", "checkin-too-far", "checkin-success"]} />}
+        caption="Your ticket · check-in blocked when too far from the venue · check-in confirmed · Illustrative sample data"
+      />
+
+      <FeatureShowcase
+        id="proof"
+        eyebrow="Proof of service"
+        title="Proof of service that is worth keeping"
+        lead="Every event you attend becomes part of a record you can show to a college, an employer or a friend."
+        bullets={[
+          { icon: Award, title: "Certificates from the organiser", text: "After the event, the organisation issues a certificate with your name, hours and a unique verification ID. Download it as a PDF." },
+          { icon: History, title: "A history that adds up", text: "Events attended, hours given and certificates earned, all in one place." },
+          { icon: Sparkles, title: "An impact report", text: "Hours, causes supported and activity over time in a personal impact report." },
+        ]}
+        visual={<DeviceDuo desktop="showcase-certificate" mobile="impact-report" />}
+        caption="An event showcase with your certificate, and a personal impact report · Illustrative sample data"
+      />
+
+      <FeatureShowcase
+        id="identity"
+        tone="muted"
+        reverse
+        eyebrow="Your identity"
+        title="An identity built from real service"
+        lead="Your profile isn’t a CV you wrote. It is a record of what you actually did, and who vouches for it."
+        bullets={[
+          { icon: IdCard, title: "A profile that tells your story", text: "Headline, bio, skills, social links, cover and photo, plus a gallery from the events you have joined." },
+          { icon: Trophy, title: "Journey and badges", text: "A timeline of events you attended, with badges for milestones, certificates and hours." },
+          { icon: HandHeart, title: "Endorsements from organisations", text: "Organisations can endorse the skills you showed on the day." },
+          { icon: Lock, title: "In your control", text: "Make your account private and approve who follows you." },
+        ]}
+        visual={<DeviceDuo desktop="profile-own" mobile="profile-own" />}
+        caption="A volunteer profile: story, journey, badges and gallery · Illustrative sample data"
+      />
+
+      <FeatureShowcase
+        id="community"
+        eyebrow="Community"
+        title="The social layer that brings people back"
+        lead="Share the day with the community, and see what your peers are doing next."
+        bullets={[
+          { icon: Camera, title: "Share the day", text: "Post photos and a caption from events you attended: up to five photos a post and three posts per event." },
+          { icon: Heart, title: "Follow, like, comment", text: "Follow volunteers and organisations, react to posts, and discover people through suggestions and search." },
+          { icon: Bell, title: "Stay in the loop", text: "In-app notifications for likes, comments and follow requests, and briefings from organisers on the event page." },
+        ]}
+        note="Posts can only be created for completed events you actually attended, so the feed is made of real, verified service."
+        visual={<PhoneTrio shots={["community", "post-detail", "create-post"]} />}
+        caption="Community · a post with comments · sharing a post · Illustrative sample data"
+      />
+
+      <LoopSection />
+
+      {/* Trust */}
+      <Section tone="cream">
+        <Container>
+          <SectionHeading align="center" eyebrow="Built on trust" title="Show up with confidence." lead="You should never wonder whether an event is real, or whether your hours will count." />
+          <div className="mt-14 grid gap-6 md:grid-cols-3">
+            {TRUST.map((t, i) => (
+              <ScrollReveal key={t.title} delay={i * 0.08}>
+                <div className="h-full rounded-3xl border border-border bg-card p-8">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#fde8e5] text-[#7b2529] dark:bg-[#ff6b6b]/15 dark:text-[#ffb4ae]"><t.icon className="h-6 w-6" aria-hidden /></span>
+                  <h3 className="mt-5 text-xl font-bold text-foreground">{t.title}</h3>
+                  <p className="mt-2 leading-relaxed text-muted-foreground">{t.text}</p>
+                </div>
+              </ScrollReveal>
+            ))}
+          </div>
+          <div className="mx-auto mt-10 flex max-w-3xl items-start gap-4 rounded-3xl border border-border bg-card p-7">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"><Star className="h-5 w-5" aria-hidden /></span>
+            <p className="leading-relaxed text-muted-foreground"><strong className="text-foreground">Free to use.</strong> There are no subscriptions or paid features. If an organisation tickets an event, the price is on the event page before you book.</p>
+          </div>
+        </Container>
+      </Section>
+
+      <Section id="faq">
+        <Container className="max-w-3xl">
+          <SectionHeading align="center" eyebrow="FAQ" title="Questions from volunteers" />
+          <div className="mt-12"><FaqAccordion items={FAQS} /></div>
+        </Container>
+      </Section>
+
+      <CtaBand
+        title="You belong here."
+        lead="Join a community of people who don’t just care. They show up."
+        primary={{ href: "/signup", label: "Start volunteering today" }}
+        secondary={{ href: "/how-it-works", label: "See how it works" }}
+      />
+    </MarketingShell>
   )
 }

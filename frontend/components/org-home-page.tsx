@@ -558,7 +558,7 @@ export function OrgHomePage() {
           <div className="border-t border-white/10 mt-6 pt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-[12px] text-neutral-500">
             <span className="whitespace-nowrap">team@kindly.co.in</span>
             <span className="whitespace-nowrap">+91 7517018954</span>
-            <span className="flex items-center gap-1 whitespace-nowrap"><MapPin className="w-3 h-3" /> Nashik, India</span>
+            <span className="flex items-center gap-1 whitespace-nowrap"><MapPin className="w-3 h-3" /> India</span>
           </div>
         </div>
       </footer>

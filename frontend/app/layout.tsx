@@ -19,7 +19,7 @@ const inter = Inter({
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.kindly.co.in'
 const DEFAULT_OG_IMAGE = `${SITE_URL}/og-default.png`
 const DEFAULT_TITLE = 'KINDLY — Volunteer with people, not just for causes'
-const DEFAULT_DESCRIPTION = 'Find events near you. Show up. Make friends. Make a difference. Sundays in Nashik are for KINDLY.'
+const DEFAULT_DESCRIPTION = 'Find events near you. Show up. Make friends. Make a difference.'
 
 export const metadata: Metadata = {
   title: {
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   description: DEFAULT_DESCRIPTION,
   generator: "Next.js",
   applicationName: "KINDLY",
-  keywords: ["volunteering", "community organizations", "NGO", "social impact", "community service", "Nashik", "KINDLY"],
+  keywords: ["volunteering", "community organizations", "NGO", "social impact", "community service", "KINDLY"],
   authors: [{ name: "KINDLY Team" }],
   icons: {
     // Single theme-aware SVG (embeds both light/dark renders, switches via

@@ -466,7 +466,7 @@ export function VolunteerHomePage() {
                 <div className="text-center md:text-left">
                   <h3 className="text-[18px] md:text-[26px] font-bold text-foreground dark:text-white">{formatHoursTotal(stats.hoursContributed)} Volunteer Hours</h3>
                   <p className="text-[13px] md:text-[15px] text-muted-foreground dark:text-neutral-400 mt-0.5">Total Contribution</p>
-                  <p className="text-[13px] md:text-[15px] text-foreground dark:text-neutral-300 mt-3 max-w-md">You&apos;re making a real difference in {profile?.city || "Nashik"}. Keep up the amazing work!</p>
+                  <p className="text-[13px] md:text-[15px] text-foreground dark:text-neutral-300 mt-3 max-w-md">You&apos;re making a real difference{profile?.city ? ` in ${profile.city}` : ""}. Keep up the amazing work!</p>
 
                   <Link
                     href="/volunteer-impact"
@@ -642,7 +642,7 @@ export function VolunteerHomePage() {
           <div className="border-t border-white/10 mt-6 pt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-[12px] text-neutral-500">
             <span className="whitespace-nowrap">team@kindly.co.in</span>
             <span className="whitespace-nowrap">+91 7517018954</span>
-            <span className="flex items-center gap-1 whitespace-nowrap"><MapPin className="w-3 h-3" /> Nashik, India</span>
+            <span className="flex items-center gap-1 whitespace-nowrap"><MapPin className="w-3 h-3" /> India</span>
           </div>
         </div>
       </footer>
